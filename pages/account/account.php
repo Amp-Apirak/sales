@@ -15,9 +15,6 @@ if (isset($_SESSION['role']) && isset($_SESSION['team_id'])) {
     exit;
 }
 
-print_r($role);
-print_r($team_id);
-
 // ดึงข้อมูลจากฟอร์มค้นหา
 $search = isset($_POST['searchservice']) ? $_POST['searchservice'] : '';
 $search_company = isset($_POST['company']) ? $_POST['company'] : '';
@@ -26,19 +23,21 @@ $search_role = isset($_POST['role']) ? $_POST['role'] : '';
 $search_position = isset($_POST['position']) ? $_POST['position'] : '';
 
 //การดึงข้อมูลจากฐานข้อมูลแต่ละคอลัมน์เพื่อสร้างตัวเลือก
-//สำหรับบริษัท (Company)
+// สำหรับบริษัท (Company)
 $sql_company = "SELECT DISTINCT company FROM users";
 $query_company = $condb->query($sql_company);
-//สำหรับทีม (Team)
+
+// สำหรับทีม (Team)
 $sql_team = "SELECT DISTINCT team_name FROM teams";
 $query_team = $condb->query($sql_team);
-//สำหรับบทบาท (Role)
+
+// สำหรับบทบาท (Role)
 $sql_role = "SELECT DISTINCT role FROM users";
 $query_role = $condb->query($sql_role);
-//สำหรับตำแหน่ง (Position)
+
+// สำหรับตำแหน่ง (Position)
 $sql_position = "SELECT DISTINCT position FROM users";
 $query_position = $condb->query($sql_position);
-
 
 // สร้าง SQL Query โดยพิจารณาจากการค้นหา
 $sql_users = "SELECT u.username, u.first_name, u.last_name, u.company, u.role, t.team_name, u.position, u.phone, u.email, u.created_at
@@ -46,30 +45,55 @@ $sql_users = "SELECT u.username, u.first_name, u.last_name, u.company, u.role, t
               LEFT JOIN teams t ON u.team_id = t.team_id
               WHERE 1=1";
 
-// กรณีที่ role เป็น Executive สามารถเห็นข้อมูลทั้งหมด
+// กรณีที่ role ไม่ใช่ Executive ให้แสดงเฉพาะข้อมูลทีมของผู้ใช้เอง
 if ($role !== 'Executive') {
-    // ถ้าไม่ใช่ Executive จะเห็นเฉพาะข้อมูลในทีมตัวเอง
-    $sql_users .= " AND u.team_id = '$team_id'";
+    $sql_users .= " AND u.team_id = :team_id";
 }
 
 // เพิ่มเงื่อนไขการค้นหาตามฟิลด์ที่ระบุ
 if (!empty($search)) {
-    $sql_users .= " AND (u.username LIKE '%$search%' OR u.first_name LIKE '%$search%' OR u.last_name LIKE '%$search%' OR u.phone LIKE '%$search%' OR u.email LIKE '%$search%')";
+    $sql_users .= " AND (u.username LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search OR u.phone LIKE :search OR u.email LIKE :search)";
 }
 if (!empty($search_company)) {
-    $sql_users .= " AND u.company = '$search_company'";
+    $sql_users .= " AND u.company = :search_company";
 }
 if (!empty($search_team)) {
-    $sql_users .= " AND t.team_name = '$search_team'";
+    $sql_users .= " AND t.team_name = :search_team";
 }
 if (!empty($search_role)) {
-    $sql_users .= " AND u.role = '$search_role'";
+    $sql_users .= " AND u.role = :search_role";
 }
 if (!empty($search_position)) {
-    $sql_users .= " AND u.position = '$search_position'";
+    $sql_users .= " AND u.position = :search_position";
 }
 
-$query_users = $condb->query($sql_users);
+// เตรียม statement
+$stmt = $condb->prepare($sql_users);
+
+// ทำการ bind ค่าต่างๆ
+if ($role !== 'Executive') {
+    $stmt->bindParam(':team_id', $team_id);
+}
+if (!empty($search)) {
+    $search_param = "%$search%";
+    $stmt->bindParam(':search', $search_param);
+}
+if (!empty($search_company)) {
+    $stmt->bindParam(':search_company', $search_company);
+}
+if (!empty($search_team)) {
+    $stmt->bindParam(':search_team', $search_team);
+}
+if (!empty($search_role)) {
+    $stmt->bindParam(':search_role', $search_role);
+}
+if (!empty($search_position)) {
+    $stmt->bindParam(':search_position', $search_position);
+}
+
+// Execute query
+$stmt->execute();
+$query_users = $stmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -133,7 +157,7 @@ $query_users = $condb->query($sql_users);
                                                     <div class="row">
                                                         <div class="col-sm-3">
                                                             <div class="form-group ">
-                                                                <input type="text" class="form-control " id="searchservice" name="searchservice" value="<?php echo $search; ?>" placeholder="ค้นหา...">
+                                                                <input type="text" class="form-control " id="searchservice" name="searchservice" value="<?php echo htmlspecialchars($search); ?>" placeholder="ค้นหา...">
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-3">
@@ -151,7 +175,7 @@ $query_users = $condb->query($sql_users);
                                                                 <select class="custom-select select2" name="company">
                                                                     <option value="">เลือก</option>
                                                                     <?php while ($company = $query_company->fetch()) { ?>
-                                                                        <option value="<?php echo $company['company']; ?>"><?php echo $company['company']; ?></option>
+                                                                        <option value="<?php echo htmlspecialchars($company['company']); ?>"><?php echo htmlspecialchars($company['company']); ?></option>
                                                                     <?php } ?>
                                                                 </select>
                                                             </div>
@@ -162,10 +186,9 @@ $query_users = $condb->query($sql_users);
                                                                 <select class="custom-select select2" name="team">
                                                                     <option value="">เลือก</option>
                                                                     <?php while ($team = $query_team->fetch()) { ?>
-                                                                        <option value="<?php echo $team['team_name']; ?>"><?php echo $team['team_name']; ?></option>
+                                                                        <option value="<?php echo htmlspecialchars($team['team_name']); ?>"><?php echo htmlspecialchars($team['team_name']); ?></option>
                                                                     <?php } ?>
                                                                 </select>
-
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-2">
@@ -174,10 +197,9 @@ $query_users = $condb->query($sql_users);
                                                                 <select class="custom-select select2" name="role">
                                                                     <option value="">เลือก</option>
                                                                     <?php while ($role = $query_role->fetch()) { ?>
-                                                                        <option value="<?php echo $role['role']; ?>"><?php echo $role['role']; ?></option>
+                                                                        <option value="<?php echo htmlspecialchars($role['role']); ?>"><?php echo htmlspecialchars($role['role']); ?></option>
                                                                     <?php } ?>
                                                                 </select>
-
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-2">
@@ -186,7 +208,7 @@ $query_users = $condb->query($sql_users);
                                                                 <select class="custom-select select2" name="position">
                                                                     <option value="">เลือก</option>
                                                                     <?php while ($position = $query_position->fetch()) { ?>
-                                                                        <option value="<?php echo $position['position']; ?>"><?php echo $position['position']; ?></option>
+                                                                        <option value="<?php echo htmlspecialchars($position['position']); ?>"><?php echo htmlspecialchars($position['position']); ?></option>
                                                                     <?php } ?>
                                                                 </select>
                                                             </div>
@@ -235,17 +257,17 @@ $query_users = $condb->query($sql_users);
                                         </thead>
 
                                         <tbody>
-                                            <?php while ($user = $query_users->fetch()) { ?>
+                                            <?php foreach ($query_users as $user) { ?>
                                                 <tr id="myTable">
-                                                    <td><?php echo $user['username']; ?></td>
-                                                    <td><?php echo $user['first_name'] . ' ' . $user['last_name']; ?></td>
-                                                    <td><?php echo $user['company']; ?></td>
-                                                    <td><?php echo $user['team_name']; ?></td>
-                                                    <td><?php echo $user['role']; ?></td>
-                                                    <td><?php echo $user['position']; ?></td>
-                                                    <td><?php echo $user['phone']; ?></td>
-                                                    <td><?php echo $user['email']; ?></td>
-                                                    <td><?php echo $user['created_at']; ?></td>
+                                                    <td><?php echo htmlspecialchars($user['username']); ?></td>
+                                                    <td><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></td>
+                                                    <td><?php echo htmlspecialchars($user['company']); ?></td>
+                                                    <td><?php echo htmlspecialchars($user['team_name']); ?></td>
+                                                    <td><?php echo htmlspecialchars($user['role']); ?></td>
+                                                    <td><?php echo htmlspecialchars($user['position']); ?></td>
+                                                    <td><?php echo htmlspecialchars($user['phone']); ?></td>
+                                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                                    <td><?php echo htmlspecialchars($user['created_at']); ?></td>
                                                     <td>
                                                         <a href="" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
                                                         <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>

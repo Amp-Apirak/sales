@@ -5,24 +5,30 @@ session_start();
 // เชื่อมต่อฐานข้อมูล
 include('../../config/condb.php');
 
-// ตรวจสอบสิทธิ์ผู้ใช้
+// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    // กรณีไม่มีการตั้งค่า Session หรือล็อกอิน
+    echo "Error: Session variables not set. Please login again.";
+    exit;
+}
+
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
 $created_by = $_SESSION['user_id']; // ดึง user_id ของผู้สร้างจาก session
 
 // ตรวจสอบว่าผู้ใช้กดปุ่ม "เพิ่มผู้ใช้" หรือไม่
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // รับข้อมูลจากฟอร์ม
-    $first_name = $_POST['first_name'];
-    $last_name = $_POST['last_name'];
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
+    // รับข้อมูลจากฟอร์มและล้างข้อมูลด้วย htmlspecialchars เพื่อป้องกัน XSS
+    $first_name = htmlspecialchars($_POST['first_name'], ENT_QUOTES, 'UTF-8');
+    $last_name = htmlspecialchars($_POST['last_name'], ENT_QUOTES, 'UTF-8');
+    $username = htmlspecialchars($_POST['username'], ENT_QUOTES, 'UTF-8');
+    $email = htmlspecialchars($_POST['email'], ENT_QUOTES, 'UTF-8');
+    $phone = htmlspecialchars($_POST['phone'], ENT_QUOTES, 'UTF-8');
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // เข้ารหัสรหัสผ่าน
-    $position = $_POST['position'];
+    $position = htmlspecialchars($_POST['position'], ENT_QUOTES, 'UTF-8');
     $team_id_new = $_POST['team_id'];
     $role_new = $_POST['role'];
-    $company = $_POST['company'];  // รับข้อมูลบริษัทจากฟอร์ม
+    $company = htmlspecialchars($_POST['company'], ENT_QUOTES, 'UTF-8');  // รับข้อมูลบริษัทจากฟอร์ม
 
     // ตรวจสอบสิทธิ์ Sale Supervisor: สามารถเลือกทีมและบทบาทเฉพาะทีมของตัวเอง และไม่สามารถสร้าง Executive ได้
     if ($role === 'Sale Supervisor') {
@@ -46,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ตรวจสอบว่ามีชื่อผู้ใช้งานระบบที่ซ้ำหรือไม่
     $checkusername_sql = "SELECT * FROM users WHERE username = :username";
     $stmt = $condb->prepare($checkusername_sql);
-    $stmt->bindParam(':username', $username);
+    $stmt->bindParam(':username', $username, PDO::PARAM_STR);
     $stmt->execute();
     $existing_user = $stmt->fetch();
 
@@ -66,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // ตรวจสอบว่ามีอีเมลที่ซ้ำหรือไม่
         $checkemail_sql = "SELECT * FROM users WHERE email = :email";
         $stmt = $condb->prepare($checkemail_sql);
-        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->execute();
         $existing_user = $stmt->fetch();
 
@@ -86,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // ตรวจสอบว่ามีเบอร์โทรศัพท์ซ้ำหรือไม่
             $checkphone_sql = "SELECT * FROM users WHERE phone = :phone";
             $stmt = $condb->prepare($checkphone_sql);
-            $stmt->bindParam(':phone', $phone);
+            $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
             $stmt->execute();
             $existing_user = $stmt->fetch();
 
@@ -108,17 +114,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $sql = "INSERT INTO users (first_name, last_name, username, email, phone, password, position, team_id, role, company, created_by)
                             VALUES (:first_name, :last_name, :username, :email, :phone, :password, :position, :team_id, :role, :company, :created_by)";
                     $stmt = $condb->prepare($sql);
-                    $stmt->bindParam(':first_name', $first_name);
-                    $stmt->bindParam(':last_name', $last_name);
-                    $stmt->bindParam(':username', $username);
-                    $stmt->bindParam(':email', $email);
-                    $stmt->bindParam(':phone', $phone);
-                    $stmt->bindParam(':password', $password);
-                    $stmt->bindParam(':position', $position);
-                    $stmt->bindParam(':team_id', $team_id_new);
-                    $stmt->bindParam(':role', $role_new);
-                    $stmt->bindParam(':company', $company); // เพิ่มการเก็บ company
-                    $stmt->bindParam(':created_by', $created_by); // เก็บ user ที่สร้างผู้ใช้งาน
+                    $stmt->bindParam(':first_name', $first_name, PDO::PARAM_STR);
+                    $stmt->bindParam(':last_name', $last_name, PDO::PARAM_STR);
+                    $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+                    $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+                    $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
+                    $stmt->bindParam(':password', $password, PDO::PARAM_STR);
+                    $stmt->bindParam(':position', $position, PDO::PARAM_STR);
+                    $stmt->bindParam(':team_id', $team_id_new, PDO::PARAM_INT);
+                    $stmt->bindParam(':role', $role_new, PDO::PARAM_STR);
+                    $stmt->bindParam(':company', $company, PDO::PARAM_STR);
+                    $stmt->bindParam(':created_by', $created_by, PDO::PARAM_INT);
                     $stmt->execute();
 
                     // แสดงข้อความเมื่อเพิ่มผู้ใช้สำเร็จด้วย SweetAlert
@@ -146,17 +152,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($role === 'Sale Supervisor') {
     $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
     $stmt_teams = $condb->prepare($sql_teams);
-    $stmt_teams->bindParam(':team_id', $team_id);
+    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_INT); // ระบุว่าเป็น integer
     $stmt_teams->execute();
     $query_teams = $stmt_teams->fetchAll();
 } else {
     $sql_teams = "SELECT team_id, team_name FROM teams";
-    $query_teams = $condb->query($sql_teams)->fetchAll();
+    $stmt_teams = $condb->prepare($sql_teams);
+    $stmt_teams->execute();
+    $query_teams = $stmt_teams->fetchAll();
 }
 
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -193,7 +199,7 @@ if ($role === 'Sale Supervisor') {
             </div>
 
             <div class="form-group">
-                <label for="phone">เบอร์โทรศัทพ์</label>
+                <label for="phone">เบอร์โทรศัพท์</label>
                 <input type="phone" class="form-control" id="phone" name="phone" required>
             </div>
 
