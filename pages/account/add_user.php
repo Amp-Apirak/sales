@@ -8,9 +8,7 @@ include('../../config/condb.php');
 // ตรวจสอบสิทธิ์ผู้ใช้
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
-
-// print_r($role);
-// print_r($team_id);
+$created_by = $_SESSION['user_id']; // ดึง user_id ของผู้สร้างจาก session
 
 // ตรวจสอบว่าผู้ใช้กดปุ่ม "เพิ่มผู้ใช้" หรือไม่
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -19,15 +17,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $last_name = $_POST['last_name'];
     $username = $_POST['username'];
     $email = $_POST['email'];
-    $phone = $_POST['phone']; // รับค่าจากฟอร์ม
+    $phone = $_POST['phone'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // เข้ารหัสรหัสผ่าน
     $position = $_POST['position'];
     $team_id_new = $_POST['team_id'];
     $role_new = $_POST['role'];
+    $company = $_POST['company'];  // รับข้อมูลบริษัทจากฟอร์ม
 
     // ตรวจสอบสิทธิ์ Sale Supervisor: สามารถเลือกทีมและบทบาทเฉพาะทีมของตัวเอง และไม่สามารถสร้าง Executive ได้
     if ($role === 'Sale Supervisor') {
-        // ตรวจสอบว่าผู้ใช้พยายามกำหนดบทบาทเป็น Executive หรือไม่
         if ($role_new === 'Executive') {
             echo "<script>
                     alert('คุณไม่มีสิทธิ์สร้างผู้ใช้งานที่มีบทบาทเป็น Executive');
@@ -36,8 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // ตรวจสอบว่าผู้ใช้พยายามสร้างผู้ใช้งานในทีมอื่นที่ไม่ใช่ทีมของตัวเองหรือไม่
-        if ($team_id_new !== $team_id) {
+        if ($team_id_new != $team_id) {
             echo "<script>
                     alert('คุณสามารถสร้างผู้ใช้งานได้เฉพาะทีมของคุณเท่านั้น');
                     window.location.href = 'add_user.php';
@@ -108,8 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // เพิ่มข้อมูลผู้ใช้ลงฐานข้อมูล
                 try {
-                    $sql = "INSERT INTO users (first_name, last_name, username, email, phone, password, position, team_id, role)
-                            VALUES (:first_name, :last_name, :username, :email, :phone, :password, :position, :team_id, :role)";
+                    $sql = "INSERT INTO users (first_name, last_name, username, email, phone, password, position, team_id, role, company, created_by)
+                            VALUES (:first_name, :last_name, :username, :email, :phone, :password, :position, :team_id, :role, :company, :created_by)";
                     $stmt = $condb->prepare($sql);
                     $stmt->bindParam(':first_name', $first_name);
                     $stmt->bindParam(':last_name', $last_name);
@@ -120,6 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->bindParam(':position', $position);
                     $stmt->bindParam(':team_id', $team_id_new);
                     $stmt->bindParam(':role', $role_new);
+                    $stmt->bindParam(':company', $company); // เพิ่มการเก็บ company
+                    $stmt->bindParam(':created_by', $created_by); // เก็บ user ที่สร้างผู้ใช้งาน
                     $stmt->execute();
 
                     // แสดงข้อความเมื่อเพิ่มผู้ใช้สำเร็จด้วย SweetAlert
@@ -145,19 +144,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ดึงข้อมูลทีมจากฐานข้อมูลเพื่อนำมาแสดงใน dropdown
 if ($role === 'Sale Supervisor') {
-    // สำหรับ Sale Supervisor แสดงเฉพาะทีมที่ตัวเองอยู่
     $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
     $stmt_teams = $condb->prepare($sql_teams);
     $stmt_teams->bindParam(':team_id', $team_id);
     $stmt_teams->execute();
     $query_teams = $stmt_teams->fetchAll();
 } else {
-    // สำหรับ Executive แสดงทุกทีม
     $sql_teams = "SELECT team_id, team_name FROM teams";
     $query_teams = $condb->query($sql_teams)->fetchAll();
 }
 
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -206,6 +205,11 @@ if ($role === 'Sale Supervisor') {
             <div class="form-group">
                 <label for="password">รหัสผ่าน</label>
                 <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="company">บริษัท</label>
+                <input type="text" class="form-control" id="company" name="company" required>
             </div>
 
             <div class="form-group">

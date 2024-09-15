@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         icon: 'success',
                         confirmButtonText: 'ตกลง'
                     }).then(function() {
-                        window.location.href = 'pages/account/add_user.php'; // นำไปยังหน้าถัดไปหลังจาก SweetAlert
+                        window.location.href = 'pages/account/account.php'; // นำไปยังหน้าถัดไปหลังจาก SweetAlert
                     });
                 }, 100);
               </script>";

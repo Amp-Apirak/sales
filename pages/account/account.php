@@ -1,12 +1,85 @@
+<?php
+// เริ่มต้น session
+session_start();
+
+// เชื่อมต่อฐานข้อมูล
+include('../../config/condb.php');
+
+// ตรวจสอบสิทธิ์ผู้ใช้งาน
+if (isset($_SESSION['role']) && isset($_SESSION['team_id'])) {
+    $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
+    $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
+} else {
+    // กรณีที่ไม่มีการเข้าสู่ระบบหรือตัวแปร $_SESSION ไม่ถูกตั้งค่า
+    echo "Error: Session variables not set. Please login again.";
+    exit;
+}
+
+print_r($role);
+print_r($team_id);
+
+// ดึงข้อมูลจากฟอร์มค้นหา
+$search = isset($_POST['searchservice']) ? $_POST['searchservice'] : '';
+$search_company = isset($_POST['company']) ? $_POST['company'] : '';
+$search_team = isset($_POST['team']) ? $_POST['team'] : '';
+$search_role = isset($_POST['role']) ? $_POST['role'] : '';
+$search_position = isset($_POST['position']) ? $_POST['position'] : '';
+
+//การดึงข้อมูลจากฐานข้อมูลแต่ละคอลัมน์เพื่อสร้างตัวเลือก
+//สำหรับบริษัท (Company)
+$sql_company = "SELECT DISTINCT company FROM users";
+$query_company = $condb->query($sql_company);
+//สำหรับทีม (Team)
+$sql_team = "SELECT DISTINCT team_name FROM teams";
+$query_team = $condb->query($sql_team);
+//สำหรับบทบาท (Role)
+$sql_role = "SELECT DISTINCT role FROM users";
+$query_role = $condb->query($sql_role);
+//สำหรับตำแหน่ง (Position)
+$sql_position = "SELECT DISTINCT position FROM users";
+$query_position = $condb->query($sql_position);
+
+
+// สร้าง SQL Query โดยพิจารณาจากการค้นหา
+$sql_users = "SELECT u.username, u.first_name, u.last_name, u.company, u.role, t.team_name, u.position, u.phone, u.email, u.created_at
+              FROM users u
+              LEFT JOIN teams t ON u.team_id = t.team_id
+              WHERE 1=1";
+
+// กรณีที่ role เป็น Executive สามารถเห็นข้อมูลทั้งหมด
+if ($role !== 'Executive') {
+    // ถ้าไม่ใช่ Executive จะเห็นเฉพาะข้อมูลในทีมตัวเอง
+    $sql_users .= " AND u.team_id = '$team_id'";
+}
+
+// เพิ่มเงื่อนไขการค้นหาตามฟิลด์ที่ระบุ
+if (!empty($search)) {
+    $sql_users .= " AND (u.username LIKE '%$search%' OR u.first_name LIKE '%$search%' OR u.last_name LIKE '%$search%' OR u.phone LIKE '%$search%' OR u.email LIKE '%$search%')";
+}
+if (!empty($search_company)) {
+    $sql_users .= " AND u.company = '$search_company'";
+}
+if (!empty($search_team)) {
+    $sql_users .= " AND t.team_name = '$search_team'";
+}
+if (!empty($search_role)) {
+    $sql_users .= " AND u.role = '$search_role'";
+}
+if (!empty($search_position)) {
+    $sql_users .= " AND u.position = '$search_position'";
+}
+
+$query_users = $condb->query($sql_users);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <?php $menu = "account"; ?>
-<?php include('../../config/condb.php'); ?>
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SalePipeline | Account Magement</title>
+    <title>SalePipeline | Account Management</title>
     <?php include  '../../include/header.php'; ?>
 </head>
 
@@ -26,12 +99,12 @@
                 <div class="container-fluid">
                     <div class="row mb-2">
                         <div class="col-sm-6">
-                            <h1 class="m-0">Account Magement</h1>
+                            <h1 class="m-0">Account Management</h1>
                         </div><!-- /.col -->
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
-                                <li class="breadcrumb-item"><a href="#">Home</a></li>
-                                <li class="breadcrumb-item active">Account Magement v1</li>
+                                <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">Home</a></li>
+                                <li class="breadcrumb-item active">Account Management v1</li>
                             </ol>
                         </div><!-- /.col -->
                     </div><!-- /.row -->
@@ -56,21 +129,16 @@
                                                 </h3>
                                             </div>
                                             <div class="card-body">
-                                                <form action="account.php" method="POST">
+                                                <form action="#" method="POST">
                                                     <div class="row">
                                                         <div class="col-sm-3">
                                                             <div class="form-group ">
-                                                                <input type="text" class="form-control " id="searchservice" name="searchservice" value="" placeholder="ค้นหา...">
-                                                                <input type="hidden" class="form-control " id="search_backup" name="search_backup" value="">
-                                                                <input type="hidden" class="form-control " id="tb_position_backup" name="tb_position_backup" value="">
-                                                                <input type="hidden" class="form-control " id="tb_team_backup" name="tb_team_backup" value="">
-                                                                <input type="hidden" class="form-control " id="tb_role_backup" name="tb_role_backup" value="">
+                                                                <input type="text" class="form-control " id="searchservice" name="searchservice" value="<?php echo $search; ?>" placeholder="ค้นหา...">
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-3">
                                                             <div class="form-group ">
-                                                                <button type="submit" class="btn btn-primary" id="search"
-                                                                    name="search">ค้นหา</button>
+                                                                <button type="submit" class="btn btn-primary" id="search" name="search">ค้นหา</button>
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-5">
@@ -79,39 +147,50 @@
                                                     <div class="row">
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
-                                                                <label>ตำแหน่ง</label>
-                                                                <select class="custom-select select2" name="user_position">
+                                                                <label>บริษัท</label>
+                                                                <select class="custom-select select2" name="company">
                                                                     <option value="">เลือก</option>
-                                                                    >
-                                                                    <option value=""
-                                                                        selected="selected">
-                                                                    </option>
+                                                                    <?php while ($company = $query_company->fetch()) { ?>
+                                                                        <option value="<?php echo $company['company']; ?>"><?php echo $company['company']; ?></option>
+                                                                    <?php } ?>
                                                                 </select>
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
                                                                 <label>ทีม</label>
-                                                                <select class="custom-select select2" name="user_team">
+                                                                <select class="custom-select select2" name="team">
                                                                     <option value="">เลือก</option>
-                                                                    <option value=""
-                                                                        selected="selected">
-                                                                    </option>
-
+                                                                    <?php while ($team = $query_team->fetch()) { ?>
+                                                                        <option value="<?php echo $team['team_name']; ?>"><?php echo $team['team_name']; ?></option>
+                                                                    <?php } ?>
                                                                 </select>
+
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
                                                                 <label>บทบาท</label>
-                                                                <select class="custom-select select2" name="user_role">
+                                                                <select class="custom-select select2" name="role">
                                                                     <option value="">เลือก</option>
-                                                                    <option value=""
-                                                                        selected="selected">
+                                                                    <?php while ($role = $query_role->fetch()) { ?>
+                                                                        <option value="<?php echo $role['role']; ?>"><?php echo $role['role']; ?></option>
+                                                                    <?php } ?>
+                                                                </select>
+
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-2">
+                                                            <div class="form-group">
+                                                                <label>ตำแหน่ง</label>
+                                                                <select class="custom-select select2" name="position">
+                                                                    <option value="">เลือก</option>
+                                                                    <?php while ($position = $query_position->fetch()) { ?>
+                                                                        <option value="<?php echo $position['position']; ?>"><?php echo $position['position']; ?></option>
+                                                                    <?php } ?>
                                                                 </select>
                                                             </div>
                                                         </div>
-
                                                     </div>
                                                 </form>
                                             </div>
@@ -126,8 +205,7 @@
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
                             <div class="col-md-12 pb-3">
-                                <a href="account_is.php" class="btn btn-success btn-sm float-right">เพิ่มข้อมูล<i
-                                        class=""></i></a>
+                                <a href="add_user.php" class="btn btn-success btn-sm float-right">เพิ่มข้อมูล<i class=""></i></a>
                             </div><br>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
 
@@ -157,21 +235,23 @@
                                         </thead>
 
                                         <tbody>
-                                            <tr id="myTable">
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td>
-                                                    <a href="account_edit.php?user_id=" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                    <a href="#" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                </td>
-                                            </tr>
+                                            <?php while ($user = $query_users->fetch()) { ?>
+                                                <tr id="myTable">
+                                                    <td><?php echo $user['username']; ?></td>
+                                                    <td><?php echo $user['first_name'] . ' ' . $user['last_name']; ?></td>
+                                                    <td><?php echo $user['company']; ?></td>
+                                                    <td><?php echo $user['team_name']; ?></td>
+                                                    <td><?php echo $user['role']; ?></td>
+                                                    <td><?php echo $user['position']; ?></td>
+                                                    <td><?php echo $user['phone']; ?></td>
+                                                    <td><?php echo $user['email']; ?></td>
+                                                    <td><?php echo $user['created_at']; ?></td>
+                                                    <td>
+                                                        <a href="" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                        <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                    </td>
+                                                </tr>
+                                            <?php } ?>
                                         </tbody>
                                         <tfoot>
                                             <tr>
@@ -179,8 +259,8 @@
                                                 <th>ชื่อ-สกุล</th>
                                                 <th>บริษัท</th>
                                                 <th>ทีม</th>
-                                                <th>ตำแหน่ง</th>
                                                 <th>บทบาท</th>
+                                                <th>ตำแหน่ง</th>
                                                 <th>เบอร์โทรศัทพ์</th>
                                                 <th>Email</th>
                                                 <th>วันที่สร้าง</th>
@@ -192,7 +272,6 @@
                                 <!-- /.card-body -->
                             </div>
                             <!-- //Section ตารางแสดงผล -->
-
 
                         </div>
                     </div>
