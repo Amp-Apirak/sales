@@ -103,7 +103,7 @@
                                                         </div>
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
-                                                                <label>วันสร้าง</label>
+                                                                <label>บทบาท</label>
                                                                 <select class="custom-select select2" name="user_role">
                                                                     <option value="">เลือก</option>
                                                                     <option value=""
@@ -147,8 +147,8 @@
                                                 <th>ชื่อ-สกุล</th>
                                                 <th>บริษัท</th>
                                                 <th>ทีม</th>
-                                                <th>ตำแหน่ง</th>
                                                 <th>บทบาท</th>
+                                                <th>ตำแหน่ง</th>
                                                 <th>เบอร์โทรศัทพ์</th>
                                                 <th>Email</th>
                                                 <th>วันที่สร้าง</th>
