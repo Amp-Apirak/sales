@@ -35,9 +35,9 @@
 <!-- overlayScrollbars -->
 <script src="<?php echo BASE_URL; ?>assets/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
 <!-- AdminLTE App -->
-<script src="<?php echo BASE_URL; ?>assets/dist/js/adminlte.js"></script>
+<script src="<?php echo BASE_URL; ?>assets/js/adminlte.js"></script>
 <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
-<script src="<?php echo BASE_URL; ?>assets/dist/js/pages/dashboard.js"></script>
+<script src="<?php echo BASE_URL; ?>assets/js/pages/dashboard.js"></script>
 <!-- DataTables  & Plugins -->
 <script src="<?php echo BASE_URL; ?>assets/plugins/datatables/jquery.dataTables.min.js"></script>
 <script src="<?php echo BASE_URL; ?>assets/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>

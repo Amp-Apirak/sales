@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<?php $menu = "account"; ?>
 <?php include('../../config/condb.php'); ?>
 
 <head>
@@ -14,6 +15,7 @@
 
         <!-- Navbar -->
         <!-- Main Sidebar Container -->
+        <!-- Preloader -->
         <?php include  '../../include/navbar.php'; ?>
         <!-- /.navbar -->
 
