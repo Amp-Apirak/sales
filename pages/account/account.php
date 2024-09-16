@@ -230,7 +230,7 @@ $query_users = $stmt->fetchAll();
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
                             <div class="col-md-12 pb-3">
-                                <a href="add_user.php" class="btn btn-success btn-sm float-right">เพิ่มข้อมูล<i class=""></i></a>
+                                <a href="add_account.php" class="btn btn-success btn-sm float-right">เพิ่มข้อมูล<i class=""></i></a>
                             </div><br>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
 
