@@ -2,18 +2,20 @@
 // เริ่มต้น session
 session_start();
 
+// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    // กรณีไม่มีการตั้งค่า Session หรือล็อกอิน
+    header("Location: login.php"); // Redirect ไปยังหน้า login.php
+    exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
+}
+
 // เชื่อมต่อฐานข้อมูล
 include('../../config/condb.php');
 
-// ตรวจสอบสิทธิ์ผู้ใช้งาน
-if (isset($_SESSION['role']) && isset($_SESSION['team_id'])) {
-    $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
-    $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
-} else {
-    // กรณีที่ไม่มีการเข้าสู่ระบบหรือตัวแปร $_SESSION ไม่ถูกตั้งค่า
-    echo "Error: Session variables not set. Please login again.";
-    exit;
-}
+
+$role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
+$team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
+$user_id = $_SESSION['user_id'];  // ดึง user_id ของผู้ใช้จาก session
 
 // ดึงข้อมูลจากฟอร์มค้นหา
 $search = isset($_POST['searchservice']) ? $_POST['searchservice'] : '';
@@ -34,6 +36,7 @@ $query_team = $condb->query($sql_team);
 // สำหรับบทบาท (Role)
 $sql_role = "SELECT DISTINCT role FROM users";
 $query_role = $condb->query($sql_role);
+
 
 // สำหรับตำแหน่ง (Position)
 $sql_position = "SELECT DISTINCT position FROM users";

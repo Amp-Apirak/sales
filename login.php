@@ -20,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['team_id'] = $user['team_id'];
+        $_SESSION['first_name'] = $user['first_name'];
+        $_SESSION['last_name'] = $user['last_name'];
 
         // แสดง SweetAlert เมื่อเข้าสู่ระบบสำเร็จ
         echo "<script>
@@ -30,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         icon: 'success',
                         confirmButtonText: 'ตกลง'
                     }).then(function() {
-                        window.location.href = 'pages/account/account.php'; // นำไปยังหน้าถัดไปหลังจาก SweetAlert
+                        window.location.href = 'index.php'; // นำไปยังหน้าถัดไปหลังจาก SweetAlert
                     });
                 }, 100);
               </script>";

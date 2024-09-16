@@ -1,7 +1,22 @@
+<?php
+// เริ่มต้น session
+session_start();
+
+// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    // กรณีไม่มีการตั้งค่า Session หรือล็อกอิน
+    header("Location: login.php"); // Redirect ไปยังหน้า login.php
+    exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
+}
+
+// เชื่อมต่อฐานข้อมูล
+include('config/condb.php');
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <?php $menu = "index"; ?>
-<?php require_once 'config/condb.php'; ?>
 
 <head>
     <meta charset="utf-8">
@@ -12,11 +27,6 @@
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
     <div class="wrapper">
-
-        <!-- Preloader -->
-        <div class="preloader flex-column justify-content-center align-items-center">
-            <img class="animation__shake" src="assets/img/AdminLTELogo.png" alt="AdminLTELogo" height="60" width="60">
-        </div>
 
         <!-- Navbar -->
         <!-- Main Sidebar Container -->
