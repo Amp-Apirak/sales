@@ -12,24 +12,6 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSIO
 // เชื่อมต่อฐานข้อมูล
 include('config/condb.php');
 
-// รับค่า URL path
-$request = $_SERVER['REQUEST_URI'];
-
-// สร้าง router แบบง่ายๆ
-switch ($request) {
-    case '/account':
-        require __DIR__ . '/sales/pages/account/account.php';
-        break;
-    case '/project':
-        require __DIR__ . '/sales/pages/project/project.php';
-        break;
-    // สามารถเพิ่มเส้นทางได้ตามต้องการ
-    default:
-        http_response_code(404);
-        require __DIR__ . '/404.php'; // หน้า error 404
-        break;
-}
-
 ?>
 
 <!DOCTYPE html>
