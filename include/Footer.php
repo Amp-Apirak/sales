@@ -53,4 +53,7 @@
 <script src="<?php echo BASE_URL; ?>assets/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
 <!-- sweetalert -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert-dev.min.js"></script>
+<!-- Select2 -->
+<script src="<?php echo BASE_URL; ?>assets/plugins/select2/js/select2.full.min.js"></script>
+
 </body>

@@ -24,3 +24,9 @@
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
     <!-- sweetalert -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/dist/css/adminlte.min.css">
+    
