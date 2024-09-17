@@ -43,7 +43,7 @@ $sql_position = "SELECT DISTINCT position FROM users";
 $query_position = $condb->query($sql_position);
 
 // สร้าง SQL Query โดยพิจารณาจากการค้นหา
-$sql_users = "SELECT u.username, u.first_name, u.last_name, u.company, u.role, t.team_name, u.position, u.phone, u.email, u.created_at
+$sql_users = "SELECT u.user_id, u.username, u.first_name, u.last_name, u.company, u.role, t.team_name, u.position, u.phone, u.email, u.created_at
               FROM users u
               LEFT JOIN teams t ON u.team_id = t.team_id
               WHERE 1=1";
@@ -272,7 +272,7 @@ $query_users = $stmt->fetchAll();
                                                     <td><?php echo htmlspecialchars($user['email']); ?></td>
                                                     <td><?php echo htmlspecialchars($user['created_at']); ?></td>
                                                     <td>
-                                                        <a href="" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                        <a href="edit_account.php?user_id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
                                                         <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                                     </td>
                                                 </tr>
