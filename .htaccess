@@ -1,0 +1,6 @@
+RewriteEngine On
+
+# ถ้า URL ไม่มีไฟล์จริงหรือตำแหน่งโฟลเดอร์จริง ให้ส่งไปที่ index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
