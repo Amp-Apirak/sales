@@ -8,7 +8,7 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
 
 ?>
 
-<!-- Preloader -->
+Preloader
 <div class="preloader flex-column justify-content-center align-items-center">
     <img class="animation__shake" src="<?php echo BASE_URL; ?>assets/img/pitt.png" alt="Account Magement" height="60" width="60">
 </div>

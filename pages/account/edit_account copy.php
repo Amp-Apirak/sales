@@ -1,15 +1,7 @@
 <?php
-// เริ่มต้น session
-session_start();
+//session_start and Config DB
+include  '../../include/Add_session.php'; 
 
-// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
-if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit;
-}
-
-// เชื่อมต่อฐานข้อมูล
-include('../../config/condb.php');
 
 // ตรวจสอบว่ามีการส่ง user_id มาหรือไม่
 if (isset($_GET['user_id'])) {

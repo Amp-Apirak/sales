@@ -28,5 +28,9 @@
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/plugins/select2/css/select2.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
     <!-- Theme style -->
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/dist/css/adminlte.min.css">
-    
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/adminlte.min.css">
+
+    <!-- Toastr -->
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/plugins/toastr/toastr.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">

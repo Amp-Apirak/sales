@@ -1,17 +1,6 @@
 <?php
-// เริ่มต้น session
-session_start();
-
-// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
-if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
-    // กรณีไม่มีการตั้งค่า Session หรือล็อกอิน
-    header("Location: login.php"); // Redirect ไปยังหน้า login.php
-    exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
-}
-
-// เชื่อมต่อฐานข้อมูล
-include('../../config/condb.php');
-
+//session_start and Config DB
+include  '../../include/Add_session.php'; 
 
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session

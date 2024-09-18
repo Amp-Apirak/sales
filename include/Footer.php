@@ -56,4 +56,7 @@
 <!-- Select2 -->
 <script src="<?php echo BASE_URL; ?>assets/plugins/select2/js/select2.full.min.js"></script>
 
+<!-- Toastr -->
+<script src="<?php echo BASE_URL; ?>assets/plugins/toastr/toastr.min.js"></script>
+
 </body>
