@@ -150,6 +150,7 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
             }
 
             .logout-btn {
+                width: 50vw;
                 margin-top: 10px;
                 padding: 5px 10px;
                 background-color: #f8f9fa;
@@ -208,10 +209,10 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
                 <img src="<?php echo BASE_URL; ?>assets/img/ad.jpg" alt="User Image">
             </div>
             <div class="info">
-                <a href="#" class="d-block user-name"><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>
-                <a href="#" class="d-block user-role"><?php echo htmlspecialchars($_SESSION['role']); ?></a>
+                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-name"><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>
+                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role"><?php echo htmlspecialchars($_SESSION['role']); ?></a>
             </div>
-            <a href="<?php echo BASE_URL; ?>logout.php" class="logout-btn">
+            <a href="<?php echo BASE_URL; ?>logout.php" class="logout-btn info">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </a>
         </div>
