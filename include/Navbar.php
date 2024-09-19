@@ -105,101 +105,146 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
         <style>
             .user-panel {
                 display: flex;
+                /* กำหนดการแสดงผลแบบยืดหยุ่น (flexbox) */
                 flex-direction: column;
+                /* จัดเรียงองค์ประกอบในแนวตั้ง */
                 align-items: center;
+                /* จัดตำแหน่งองค์ประกอบให้อยู่ตรงกลาง */
                 padding: 15px;
+                /* กำหนดระยะห่างภายในขององค์ประกอบ */
                 text-align: center;
+                /* จัดข้อความให้อยู่กึ่งกลาง */
             }
 
             .user-panel .image {
                 margin-bottom: 10px;
+                /* เพิ่มระยะห่างด้านล่างของรูป */
             }
 
             .user-panel .image img {
                 max-width: 80px;
+                /* กำหนดความกว้างสูงสุดของรูปที่ 80px */
                 width: 100%;
+                /* กำหนดความกว้างเต็มที่ของรูป */
                 height: auto;
+                /* กำหนดความสูงตามสัดส่วนของรูป */
                 min-width: 40px;
-                /* ป้องกันไม่ให้รูปเล็กเกินไป */
+                /* กำหนดความกว้างขั้นต่ำที่ 40px เพื่อป้องกันรูปไม่เล็กเกินไป */
                 border-radius: 50%;
+                /* ทำให้รูปเป็นวงกลม */
                 border: 2px solid #fff;
+                /* เพิ่มขอบสีขาวที่ความหนา 2px */
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                /* เพิ่มเงาให้กับรูป */
                 object-fit: cover;
+                /* ทำให้รูปครอบคลุมพื้นที่โดยไม่ถูกยืด */
             }
 
             .user-panel .info {
                 display: flex;
+                /* ใช้ flexbox ในการจัดวางข้อมูล */
                 flex-direction: column;
+                /* จัดเรียงข้อมูลในแนวตั้ง */
                 align-items: center;
+                /* จัดตำแหน่งข้อมูลให้อยู่กึ่งกลาง */
             }
 
             .user-panel .info .d-block {
                 color: #333;
+                /* กำหนดสีตัวอักษรเป็นสีเทาเข้ม */
                 text-decoration: none;
+                /* ไม่ต้องมีขีดเส้นใต้ */
                 margin: 2px 0;
+                /* เพิ่มระยะห่างบน-ล่าง 2px */
             }
 
             .user-panel .info .user-name {
                 font-weight: bold;
+                /* ทำให้ชื่อผู้ใช้หนาขึ้น */
                 font-size: 1em;
+                /* กำหนดขนาดตัวอักษรที่ 1em */
             }
 
             .user-panel .info .user-role {
                 font-size: 0.9em;
+                /* กำหนดขนาดตัวอักษรที่ 0.9em */
                 color: #666;
+                /* กำหนดสีตัวอักษรเป็นสีเทาอ่อน */
             }
 
             .logout-btn {
                 width: 50vw;
                 margin-top: 10px;
+                /* เพิ่มระยะห่างด้านบน 10px */
                 padding: 5px 10px;
+                /* เพิ่มระยะห่างภายใน (padding) ของปุ่ม */
                 background-color: #f8f9fa;
+                /* กำหนดสีพื้นหลังเป็นสีเทาอ่อน */
                 color: #343a40;
+                /* กำหนดสีตัวอักษรเป็นสีเทาเข้ม */
                 border-radius: 5px;
+                /* ทำให้มุมของปุ่มโค้งมน */
                 text-decoration: none;
+                /* ไม่ต้องมีขีดเส้นใต้ */
                 transition: all 0.3s ease;
+                /* เพิ่มการเปลี่ยนแปลงของปุ่มอย่างนุ่มนวล */
                 font-size: 0.8em;
+                /* กำหนดขนาดตัวอักษรของปุ่ม */
                 border: 1px solid #dee2e6;
+                /* เพิ่มขอบบาง ๆ ให้กับปุ่ม */
             }
 
             .logout-btn:hover {
                 background-color: #e9ecef;
+                /* เปลี่ยนสีพื้นหลังเมื่อเอาเมาส์ชี้ */
                 color: #dc3545;
+                /* เปลี่ยนสีตัวอักษรเป็นสีแดงเมื่อเอาเมาส์ชี้ */
             }
 
             .logout-btn i {
                 margin-right: 5px;
+                /* เพิ่มระยะห่างทางขวาของไอคอนในปุ่ม */
             }
 
+            /* การปรับแต่งสำหรับหน้าจอที่มีความกว้างน้อยกว่า 768px */
             @media (max-width: 768px) {
                 .user-panel .image img {
                     max-width: 70px;
+                    /* ปรับขนาดรูปให้เล็กลงเมื่อหน้าจอแคบลง */
                 }
 
                 .user-panel .info .user-name,
                 .user-panel .info .user-role {
                     font-size: 0.9em;
+                    /* ปรับขนาดตัวอักษรให้เล็กลง */
                 }
 
                 .logout-btn {
                     font-size: 0.75em;
+                    /* ปรับขนาดตัวอักษรของปุ่มให้เล็กลง */
                     padding: 4px 8px;
+                    /* ปรับระยะห่างภายในของปุ่มให้เล็กลง */
                 }
             }
 
+            /* การปรับแต่งสำหรับหน้าจอที่มีความกว้างน้อยกว่า 576px */
             @media (max-width: 576px) {
                 .user-panel .image img {
                     max-width: 60px;
+                    /* ปรับขนาดรูปให้เล็กลงอีกเมื่อหน้าจอเล็กลงมาก */
                 }
 
                 .user-panel .info .user-name,
                 .user-panel .info .user-role {
                     font-size: 0.8em;
+                    /* ปรับขนาดตัวอักษรให้เล็กลงอีกเมื่อหน้าจอเล็กมาก */
                 }
 
                 .logout-btn {
                     font-size: 0.7em;
+                    /* ปรับขนาดตัวอักษรของปุ่มให้เล็กลงที่สุด */
                     padding: 3px 6px;
+                    /* ปรับระยะห่างภายในปุ่มให้เล็กลงที่สุด */
                 }
             }
         </style>
@@ -230,7 +275,7 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
         </div> -->
 
         <!-- Sidebar Menu -->
-        <nav class="mt-2">
+        <nav class="mt-3">
             <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent nav-collapse-hide-child" data-widget="treeview" role="menu" data-accordion="false">
                 <!-- Add icons to the links using the .nav-icon class
                with font-awesome or any other icon font library -->
@@ -402,6 +447,7 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
         }
     }
 </style>
+
 <script>
     window.addEventListener('load', function() {
         const preloader = document.querySelector('.preloader');
