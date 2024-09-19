@@ -1,6 +1,13 @@
 <?php
 //session_start and Config DB
-include  '../../include/Add_session.php'; 
+include  '../../include/Add_session.php';
+
+// ตรวจสอบว่า User ได้ login แล้วหรือยัง และตรวจสอบ Role
+if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor')) {
+    // ถ้า Role ไม่ใช่ Executive หรือ Sale Supervisor ให้ redirect ไปยังหน้าอื่น เช่น หน้า Dashboard
+    header("Location: " . BASE_URL . "index.php"); // เปลี่ยนเส้นทางไปหน้า Dashboard
+    exit(); // หยุดการทำงานของสคริปต์
+}
 
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session

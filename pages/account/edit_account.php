@@ -3,6 +3,12 @@
 //session_start and Config DB
 include  '../../include/Add_session.php';
 
+// sweet alert 
+echo '
+<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert-dev.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.css">';
+
 
 // ตรวจสอบว่ามีการส่ง user_id มาหรือไม่
 if (isset($_GET['user_id'])) {
@@ -88,9 +94,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt_update->bindParam(':user_id', $user_id, PDO::PARAM_INT);
 
     if ($stmt_update->execute()) {
-        echo "<script>alert('อัปเดตข้อมูลสำเร็จ!'); window.location.href = 'account.php';</script>";
+        echo  '<script>
+        setTimeout(function() {
+            swal({
+                title: "Update success",
+                text: "Update data success. ",
+                type: "success"
+            }, function() {
+                window.location = "account.php"; //หน้าที่ต้องการให้กระโดดไป
+        });
+        }, 1000);
+</script>';
     } else {
-        echo "<script>alert('เกิดข้อผิดพลาดในการอัปเดตข้อมูล');</script>";
+        echo '<script>
+                        setTimeout(function() {
+                        swal({
+                            title: "Oop.....!",
+                            text: "Update data unsuccess, please try again.",
+                            type: "warning"
+                        }, function() {
+                            window.location = "login.php"; //หน้าที่ต้องการให้กระโดดไป
+                        });
+                        }, 1000);
+                    </script>';
     }
 }
 

@@ -55,6 +55,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert-dev.min.js"></script>
 <!-- Select2 -->
 <script src="<?php echo BASE_URL; ?>assets/plugins/select2/js/select2.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- Toastr -->
 <script src="<?php echo BASE_URL; ?>assets/plugins/toastr/toastr.min.js"></script>
