@@ -1,6 +1,6 @@
 <?php
 //session_start and Config DB
-include  '../../include/Add_session.php'; 
+include  '../../include/Add_session.php';
 
 
 // ตรวจสอบว่ามีการส่ง user_id มาหรือไม่
