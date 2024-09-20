@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 17, 2024 at 06:49 PM
+-- Generation Time: Sep 20, 2024 at 06:54 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -34,8 +34,31 @@ CREATE TABLE `customers` (
   `address` text DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
-  `remark` text DEFAULT NULL
+  `remark` text DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Dumping data for table `customers`
+--
+
+INSERT INTO `customers` (`customer_id`, `customer_name`, `company`, `address`, `phone`, `email`, `remark`, `created_by`, `created_at`) VALUES
+(1, 'John Doe', 'TechCorp', '123 Main St, City A', '555-1234', 'john.doe@techcorp.com', 'ลูกค้าประจำ', 1, '2024-09-20 15:03:08'),
+(2, 'Jane Smith', 'Innovate Inc', '456 Elm St, City B', '555-5678', 'jane.smith@innovate.com', 'ลูกค้าใหม่', 2, '2024-09-20 15:03:08'),
+(3, 'Michael Brown', 'Design Solutions', '789 Oak St, City C', '555-7890', 'michael.brown@design.com', '', 1, '2024-09-20 15:03:08'),
+(4, 'Emily Davis', 'BuildIt', '101 Pine St, City D', '555-2345', 'emily.davis@buildit.com', 'ลูกค้าโครงการใหญ่', 3, '2024-09-20 15:03:08'),
+(5, 'William Johnson', 'ConstructCo', '202 Maple St, City E', '555-6789', 'william.johnson@constructco.com', '', 2, '2024-09-20 15:03:08'),
+(6, 'Olivia Wilson', 'WebCreatives', '303 Birch St, City F', '555-3456', 'olivia.wilson@webcreatives.com', 'ลูกค้าโครงการเล็ก', 1, '2024-09-20 15:03:08'),
+(7, 'James Taylor', 'MarketingPro', '404 Cedar St, City G', '555-9012', 'james.taylor@marketingpro.com', '', 3, '2024-09-20 15:03:08'),
+(8, 'Sophia Anderson', 'Smart Solutions', '505 Aspen St, City H', '555-7890', 'sophia.anderson@smartsolutions.com', 'ลูกค้าประจำ', 2, '2024-09-20 15:03:08'),
+(9, 'Liam Martinez', 'SecurityTech', '606 Spruce St, City I', '555-4567', 'liam.martinez@securitytech.com', '', 1, '2024-09-20 15:03:08'),
+(10, 'Emma White', 'AutoMechanic', '707 Pinecone St, City J', '555-6789', 'emma.white@automechanic.com', 'ลูกค้าใหม่', 3, '2024-09-20 15:03:08'),
+(11, 'Noah Harris', 'GreenEnergy', '808 Redwood St, City K', '555-2345', 'noah.harris@greenenergy.com', '', 2, '2024-09-20 15:03:08'),
+(12, 'Ava Lewis', 'HealthPlus', '909 Sequoia St, City L', '555-5678', 'ava.lewis@healthplus.com', 'ลูกค้าประจำ', 1, '2024-09-20 15:03:08'),
+(13, 'Benjamin Walker', 'BuildFuture', '1000 Willow St, City M', '555-7890', 'benjamin.walker@buildfuture.com', '', 2, '2024-09-20 15:03:08'),
+(14, 'Mia Hall', 'StartUpLab', '1100 Cypress St, City N', '555-9012', 'mia.hall@startuplab.com', 'ลูกค้าใหม่', 3, '2024-09-20 15:03:08'),
+(15, 'Lucas Clark', 'FinTech Solutions', '1200 Dogwood St, City O', '555-3456', 'lucas.clark@fintechsolutions.com', '', 1, '2024-09-20 15:03:08');
 
 -- --------------------------------------------------------
 
@@ -120,12 +143,12 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, `role`, `team_id`, `position`, `phone`, `password`, `company`, `created_at`, `created_by`) VALUES
-(1, 'Sale 1', 'Bangpuk', 'Sale', 'ApirakSS@gmail.com', 'Seller', 2, 'IT', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:43:58', NULL),
+(1, 'Supachai', 'Bangpuk', 'Sale', 'ApirakSS@gmail.com', 'Seller', 2, 'IT', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:43:58', NULL),
 (2, 'Apirak', 'Bangpuk', 'Admin', 'Apirak@gmail.com', 'Executive', 1, 'IT', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:43:58', NULL),
 (3, 'Apirak', 'Bangpuk', 'Supervisor', 'apirak.ba@gmail.com', 'Sale Supervisor', 1, 'IT support', NULL, '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:43:58', NULL),
-(4, 'Apirak', 'Bangpuk', 'Support', 'apirakAA@gmail.com', 'Engineer', 3, 'IT Service', '0839595811', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:55:43', 2),
+(4, 'Apirakt', 'Bangpuk', 'Support', 'apirakAA@gmail.com', 'Engineer', 3, 'IT Service', '0839595811', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:55:43', 2),
 (5, 'Panit', 'Poapun', 'Panit', 'Panit@gmail.com', 'Executive', 4, 'Executive Director', '0839595822', '$2y$10$eAar02e4iaTG6bhKs2XLfua7ck.2co.8dkla8VX0tVCC5cnQfc/E6', 'PIT', '2024-09-17 15:15:37', 2),
-(12, 'Ying', 'Positakub', 'ying', 'Ying@gmail.com', 'Sale Supervisor', 3, 'Product Sale', '0839595888', '$2y$10$c7lOPwTFlqF/qsiFR/K1DuNPzfXae.PPsJ5O4NH2bIazwc8mWYsNq', 'PIT', '2024-09-17 15:26:14', 2);
+(12, 'Rungnapa', 'Positakub', 'ying', 'Ying@gmail.com', 'Sale Supervisor', 3, 'Product Sale', '0839595888', '$2y$10$c7lOPwTFlqF/qsiFR/K1DuNPzfXae.PPsJ5O4NH2bIazwc8mWYsNq', 'PIT', '2024-09-17 15:26:14', 2);
 
 --
 -- Indexes for dumped tables
@@ -168,7 +191,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `customer_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `customer_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `projects`
