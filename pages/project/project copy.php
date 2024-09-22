@@ -29,16 +29,13 @@ $search_team = clean_input($_POST['team'] ?? '');
 $where_clause_dropdown = "";
 $params_dropdown = array();
 
-
-// role sale ssupervisor lookup team only
 if ($role == 'Sale Supervisor') {
-    $where_clause_dropdown = " WHERE u.team_id = :team_id";
+    $where_clause_dropdown = "WHERE u.team_id = :team_id";
     $params_dropdown[':team_id'] = $team_id;
 } elseif ($role != 'Executive') {
     $where_clause_dropdown = "WHERE p.created_by = :created_by";
     $params_dropdown[':created_by'] = $created_by;
 }
-
 
 // Product Dropdown
 $stmt = $condb->prepare("SELECT DISTINCT product FROM projects p $where_clause_dropdown");
