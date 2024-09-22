@@ -1,173 +1,116 @@
 <?php
-// session_start and Config DB
+// เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
 
-// ตรวจสอบการ login และดึงข้อมูลผู้ใช้จาก session
-$role = $_SESSION['role'];
-$team_id = $_SESSION['team_id'];
-$created_by = $_SESSION['user_id'];
+// ดึงข้อมูลผู้ใช้จาก session
+$role = $_SESSION['role'] ?? '';
+$team_id = $_SESSION['team_id'] ?? 0;
+$created_by = $_SESSION['user_id'] ?? 0;
 
+// ฟังก์ชันทำความสะอาดข้อมูล input
+function clean_input($data)
+{
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
 
-// รับค่าจากฟอร์มการค้นหา
-$search_service = isset($_POST['searchservice']) ? trim($_POST['searchservice']) : '';
-$search_product = isset($_POST['product']) ? $_POST['product'] : '';
-$search_status = isset($_POST['status']) ? $_POST['status'] : '';
-$search_creator = isset($_POST['creator']) ? $_POST['creator'] : '';
-$search_customer = isset($_POST['customer']) ? $_POST['customer'] : '';
-$search_year = isset($_POST['year']) ? $_POST['year'] : '';
+// รับค่าจากฟอร์มการค้นหาและทำความสะอาด
+$search_service = clean_input($_POST['searchservice'] ?? '');
+$search_product = clean_input($_POST['product'] ?? '');
+$search_status = clean_input($_POST['status'] ?? '');
+$search_creator = filter_var($_POST['creator'] ?? 0, FILTER_VALIDATE_INT);
+$search_customer = filter_var($_POST['customer'] ?? 0, FILTER_VALIDATE_INT);
+$search_year = filter_var($_POST['year'] ?? 0, FILTER_VALIDATE_INT);
 
-// ดึงข้อมูลจากฐานข้อมูลสำหรับ Dropdown list
-$products = $condb->query("SELECT DISTINCT product FROM projects")->fetchAll(PDO::FETCH_ASSOC);
-$statuses = $condb->query("SELECT DISTINCT status FROM projects")->fetchAll(PDO::FETCH_ASSOC);
-$creators = $condb->query("SELECT DISTINCT created_by, first_name, last_name FROM users")->fetchAll(PDO::FETCH_ASSOC);
-$customers = $condb->query("SELECT DISTINCT customer_id, customer_name FROM customers")->fetchAll(PDO::FETCH_ASSOC);
-$years = $condb->query("SELECT DISTINCT YEAR(created_at) AS year FROM projects")->fetchAll(PDO::FETCH_ASSOC);
+// กำหนด where clause สำหรับ dropdown ตามบทบาทผู้ใช้
+$where_clause_dropdown = "";
+$params_dropdown = array();
+
+if ($role == 'Sale Supervisor') {
+    $where_clause_dropdown = "WHERE p.team_id = :team_id";
+    $params_dropdown[':team_id'] = $team_id;
+} elseif ($role != 'Executive') {
+    $where_clause_dropdown = "WHERE p.created_by = :created_by";
+    $params_dropdown[':created_by'] = $created_by;
+}
+
+// Product Dropdown
+$stmt = $condb->prepare("SELECT DISTINCT product FROM projects p $where_clause_dropdown");
+$stmt->execute($params_dropdown);
+$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Status Dropdown
+$stmt = $condb->prepare("SELECT DISTINCT status FROM projects p $where_clause_dropdown");
+$stmt->execute($params_dropdown);
+$statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Creator Dropdown
+$stmt = $condb->prepare("
+    SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name 
+    FROM users u 
+    INNER JOIN projects p ON u.user_id = p.created_by 
+    $where_clause_dropdown
+");
+$stmt->execute($params_dropdown);
+$creators = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Customer Dropdown
+$stmt = $condb->prepare("
+    SELECT DISTINCT c.customer_id, c.customer_name 
+    FROM customers c
+    INNER JOIN projects p ON c.customer_id = p.customer_id 
+    $where_clause_dropdown
+");
+$stmt->execute($params_dropdown);
+$customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Year Dropdown
+$stmt = $condb->prepare("SELECT DISTINCT YEAR(created_at) AS year FROM projects p $where_clause_dropdown");
+$stmt->execute($params_dropdown);
+$years = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 // กำหนด where clause ตามบทบาทผู้ใช้
 $where_clause = "WHERE 1=1";
+$params = array();
+
 if ($role == 'Sale Supervisor') {
-    // หากเป็น Sale Supervisor ให้แสดงเฉพาะข้อมูลทีมตัวเอง
     $where_clause .= " AND p.team_id = :team_id";
+    $params[':team_id'] = $team_id;
 } elseif ($role != 'Executive') {
-    // หากเป็น Seller หรือบทบาทอื่น ๆ ให้แสดงเฉพาะข้อมูลที่ตัวเองสร้าง
     $where_clause .= " AND p.created_by = :created_by";
+    $params[':created_by'] = $created_by;
 }
 
 // เพิ่มเงื่อนไขการค้นหา
 if (!empty($search_service)) {
     $where_clause .= " AND (p.project_name LIKE :search_service OR c.customer_name LIKE :search_service)";
+    $params[':search_service'] = "%$search_service%";
 }
 if (!empty($search_product)) {
     $where_clause .= " AND p.product = :search_product";
+    $params[':search_product'] = $search_product;
 }
 if (!empty($search_status)) {
     $where_clause .= " AND p.status = :search_status";
+    $params[':search_status'] = $search_status;
 }
 if (!empty($search_creator)) {
     $where_clause .= " AND p.created_by = :search_creator";
+    $params[':search_creator'] = $search_creator;
 }
 if (!empty($search_customer)) {
     $where_clause .= " AND p.customer_id = :search_customer";
+    $params[':search_customer'] = $search_customer;
 }
 if (!empty($search_year)) {
     $where_clause .= " AND YEAR(p.created_at) = :search_year";
+    $params[':search_year'] = $search_year;
 }
 
-// 1. ดึงจำนวนโปรเจ็กต์ทั้งหมด
-$sql_total_projects = "
-    SELECT COUNT(p.project_id) as total_projects
-    FROM projects p
-    LEFT JOIN customers c ON p.customer_id = c.customer_id
-    $where_clause
-";
-$stmt_total_projects = $condb->prepare($sql_total_projects);
-
-// ผูกค่ากับ statement
-if ($role == 'Sale Supervisor') {
-    $stmt_total_projects->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-} elseif ($role != 'Executive') {
-    $stmt_total_projects->bindParam(':created_by', $created_by, PDO::PARAM_INT);
-}
-if (!empty($search_service)) {
-    $search_param = '%' . $search_service . '%';
-    $stmt_total_projects->bindParam(':search', $search_param, PDO::PARAM_STR);
-}
-
-// Execute query และดึงผลลัพธ์
-$stmt_total_projects->execute();
-$total_projects = $stmt_total_projects->fetchColumn();
-
-// 2. ดึงจำนวนผลิตภัณฑ์ทั้งหมด (Product)
-$sql_total_products = "
-    SELECT COUNT(DISTINCT p.product) as total_products
-    FROM projects p
-    $where_clause
-";
-$stmt_total_products = $condb->prepare($sql_total_products);
-
-// ผูกค่ากับ statement
-if ($role == 'Sale Supervisor') {
-    $stmt_total_products->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-} elseif ($role != 'Executive') {
-    $stmt_total_products->bindParam(':created_by', $created_by, PDO::PARAM_INT);
-}
-if (!empty($search_service)) {
-    $stmt_total_products->bindParam(':search', $search_param, PDO::PARAM_STR);
-}
-
-// Execute query และดึงผลลัพธ์
-$stmt_total_products->execute();
-$total_products = $stmt_total_products->fetchColumn();
-
-// 3. ดึงยอดขายรวมทั้งหมด (Sale Price with VAT)
-$sql_total_sale = "
-    SELECT SUM(p.sale_vat) as total_sale
-    FROM projects p
-    $where_clause
-";
-$stmt_total_sale = $condb->prepare($sql_total_sale);
-
-// ผูกค่ากับ statement
-if ($role == 'Sale Supervisor') {
-    $stmt_total_sale->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-} elseif ($role != 'Executive') {
-    $stmt_total_sale->bindParam(':created_by', $created_by, PDO::PARAM_INT);
-}
-if (!empty($search_service)) {
-    $stmt_total_sale->bindParam(':search', $search_param, PDO::PARAM_STR);
-}
-
-// Execute query และดึงผลลัพธ์
-$stmt_total_sale->execute();
-$total_sale = $stmt_total_sale->fetchColumn();
-
-// 4. ดึงต้นทุนรวมทั้งหมด (Cost Price with VAT)
-$sql_total_cost = "
-    SELECT SUM(p.cost_vat) as total_cost
-    FROM projects p
-    $where_clause
-";
-$stmt_total_cost = $condb->prepare($sql_total_cost);
-
-// ผูกค่ากับ statement
-if ($role == 'Sale Supervisor') {
-    $stmt_total_cost->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-} elseif ($role != 'Executive') {
-    $stmt_total_cost->bindParam(':created_by', $created_by, PDO::PARAM_INT);
-}
-if (!empty($search_service)) {
-    $stmt_total_cost->bindParam(':search', $search_param, PDO::PARAM_STR);
-}
-
-// Execute query และดึงผลลัพธ์
-$stmt_total_cost->execute();
-$total_cost = $stmt_total_cost->fetchColumn();
-
-// 5. ดึงจำนวนผู้สร้าง (Create By) ที่แตกต่างกัน
-$sql_total_creators = "
-    SELECT COUNT(DISTINCT p.created_by) as total_creators
-    FROM projects p
-    $where_clause
-";
-$stmt_total_creators = $condb->prepare($sql_total_creators);
-
-// ผูกค่ากับ statement
-if ($role == 'Sale Supervisor') {
-    $stmt_total_creators->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-} elseif ($role != 'Executive') {
-    $stmt_total_creators->bindParam(':created_by', $created_by, PDO::PARAM_INT);
-}
-if (!empty($search_service)) {
-    $stmt_total_creators->bindParam(':search', $search_param, PDO::PARAM_STR);
-}
-
-// Execute query และดึงผลลัพธ์
-$stmt_total_creators->execute();
-$total_creators = $stmt_total_creators->fetchColumn();
-
-// 6. ดึงข้อมูลที่จะแสดงในตารางโปรเจ็กต์
-// เตรียม query สำหรับดึงข้อมูลโปรเจกต์
+// SQL query สำหรับดึงข้อมูลโปรเจกต์
 $sql_projects = "
     SELECT p.*, u.first_name, u.last_name, c.customer_name
     FROM projects p
@@ -178,46 +121,20 @@ $sql_projects = "
 ";
 
 $stmt_projects = $condb->prepare($sql_projects);
-
-// ผูกค่ากับ statement
-if ($role == 'Sale Supervisor') {
-    $stmt_projects->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-} elseif ($role != 'Executive') {
-    $stmt_projects->bindParam(':created_by', $created_by, PDO::PARAM_INT);
-}
-if (!empty($search_service)) {
-    $search_param = '%' . $search_service . '%';
-    $stmt_projects->bindParam(':search_service', $search_param, PDO::PARAM_STR);
-}
-if (!empty($search_product)) {
-    $stmt_projects->bindParam(':search_product', $search_product, PDO::PARAM_STR);
-}
-if (!empty($search_status)) {
-    $stmt_projects->bindParam(':search_status', $search_status, PDO::PARAM_STR);
-}
-if (!empty($search_creator)) {
-    $stmt_projects->bindParam(':search_creator', $search_creator, PDO::PARAM_INT);
-}
-if (!empty($search_customer)) {
-    $stmt_projects->bindParam(':search_customer', $search_customer, PDO::PARAM_INT);
-}
-if (!empty($search_year)) {
-    $stmt_projects->bindParam(':search_year', $search_year, PDO::PARAM_INT);
-}
-
-// Execute query และดึงข้อมูลโปรเจ็กต์ทั้งหมด
-$stmt_projects->execute();
+$stmt_projects->execute($params);
 $projects = $stmt_projects->fetchAll(PDO::FETCH_ASSOC);
 
-
-// นับจำนวนโครงการทั้งหมดและข้อมูลอื่นๆ สำหรับแสดงผลในกราฟ
+// คำนวณสถิติต่างๆ
 $total_projects = count($projects);
 $total_cost = 0;
 $total_sale = 0;
+$unique_creators = array();
 foreach ($projects as $project) {
     $total_cost += $project['cost_no_vat'];
     $total_sale += $project['sale_no_vat'];
+    $unique_creators[$project['created_by']] = true;
 }
+$total_creators = count($unique_creators);
 
 ?>
 
@@ -369,8 +286,8 @@ foreach ($projects as $project) {
                                                                 <select class="custom-select select2" name="product">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($products as $product) { ?>
-                                                                        <option value="<?php echo $product['product']; ?>">
-                                                                            <?php echo $product['product']; ?>
+                                                                        <option value="<?php echo htmlspecialchars($product['product']); ?>" <?php echo ($search_product == $product['product']) ? 'selected' : ''; ?>>
+                                                                            <?php echo htmlspecialchars($product['product']); ?>
                                                                         </option>
                                                                     <?php } ?>
                                                                 </select>
@@ -382,8 +299,8 @@ foreach ($projects as $project) {
                                                                 <select class="custom-select select2" name="status">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($statuses as $status) { ?>
-                                                                        <option value="<?php echo $status['status']; ?>">
-                                                                            <?php echo $status['status']; ?>
+                                                                        <option value="<?php echo htmlspecialchars($status['status']); ?>" <?php echo ($search_status == $status['status']) ? 'selected' : ''; ?>>
+                                                                            <?php echo htmlspecialchars($status['status']); ?>
                                                                         </option>
                                                                     <?php } ?>
                                                                 </select>
@@ -394,11 +311,11 @@ foreach ($projects as $project) {
                                                                 <label>Create By</label>
                                                                 <select class="custom-select select2" name="creator">
                                                                     <option value="">เลือก</option>
-                                                                    <?php foreach ($creators as $creator) { ?>
-                                                                        <option value="<?php echo $creator['created_by']; ?>">
-                                                                            <?php echo $creator['first_name'] . ' ' . $creator['last_name']; ?>
+                                                                    <?php foreach ($creators as $creator) : ?>
+                                                                        <option value="<?php echo htmlspecialchars($creator['created_by']); ?>" <?php echo ($search_creator == $creator['created_by']) ? 'selected' : ''; ?>>
+                                                                            <?php echo htmlspecialchars($creator['first_name'] . ' ' . $creator['last_name']); ?>
                                                                         </option>
-                                                                    <?php } ?>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -407,11 +324,11 @@ foreach ($projects as $project) {
                                                                 <label>Customer</label>
                                                                 <select class="custom-select select2" name="customer">
                                                                     <option value="">เลือก</option>
-                                                                    <?php foreach ($customers as $customer) { ?>
-                                                                        <option value="<?php echo $customer['customer_id']; ?>">
-                                                                            <?php echo $customer['customer_name']; ?>
+                                                                    <?php foreach ($customers as $customer) : ?>
+                                                                        <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>" <?php echo ($search_customer == $customer['customer_id']) ? 'selected' : ''; ?>>
+                                                                            <?php echo htmlspecialchars($customer['customer_name']); ?>
                                                                         </option>
-                                                                    <?php } ?>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -420,11 +337,11 @@ foreach ($projects as $project) {
                                                                 <label>Year</label>
                                                                 <select class="custom-select select2" name="year">
                                                                     <option value="">เลือก</option>
-                                                                    <?php foreach ($years as $year) { ?>
-                                                                        <option value="<?php echo $year['year']; ?>">
-                                                                            <?php echo $year['year']; ?>
+                                                                    <?php foreach ($years as $year) : ?>
+                                                                        <option value="<?php echo htmlspecialchars($year['year']); ?>" <?php echo ($search_year == $year['year']) ? 'selected' : ''; ?>>
+                                                                            <?php echo htmlspecialchars($year['year']); ?>
                                                                         </option>
-                                                                    <?php } ?>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -474,15 +391,17 @@ foreach ($projects as $project) {
                                         <tbody>
                                             <?php foreach ($projects as $project) { ?>
                                                 <tr id="myTable">
+                                                    <td><?php echo htmlspecialchars($project['contract_no']); ?></td>
+                                                    <td><?php echo htmlspecialchars($project['product']); ?></td>
                                                     <td><?php echo htmlspecialchars($project['project_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($project['customer_name']); ?></td>
                                                     <td><?php echo htmlspecialchars($project['status']); ?></td>
                                                     <td><?php echo number_format($project['sale_no_vat'], 2); ?></td>
                                                     <td><?php echo number_format($project['cost_no_vat'], 2); ?></td>
+                                                    <td><?php echo number_format($project['potential'], 2); ?></td>
                                                     <td><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
                                                     <td><?php echo htmlspecialchars($project['created_at']); ?></td>
                                                     <td>
-                                                        <a href="view_project.php?id=<?php echo urlencode(encryptUserId($customer['project_id'])); ?>" class="btn btn-sm btn-primary">
+                                                        <a href="view_project.php?id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
                                                         <a href="edit_project.php?user_id" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
