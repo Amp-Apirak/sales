@@ -32,13 +32,12 @@ $params_dropdown = array();
 
 // role sale ssupervisor lookup team only
 if ($role == 'Sale Supervisor') {
-    $where_clause_dropdown = " WHERE u.team_id = :team_id";
+    $where_clause_dropdown = " WHERE p.created_by IN (SELECT user_id FROM users WHERE team_id = :team_id)";
     $params_dropdown[':team_id'] = $team_id;
 } elseif ($role != 'Executive') {
-    $where_clause_dropdown = "WHERE p.created_by = :created_by";
+    $where_clause_dropdown = " WHERE p.created_by = :created_by";
     $params_dropdown[':created_by'] = $created_by;
 }
-
 
 // Product Dropdown
 $stmt = $condb->prepare("SELECT DISTINCT product FROM projects p $where_clause_dropdown");
@@ -75,14 +74,18 @@ $stmt = $condb->prepare("SELECT DISTINCT YEAR(created_at) AS year FROM projects 
 $stmt->execute($params_dropdown);
 $years = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// teams Dropdown
-$stmt = $condb->prepare("
-    SELECT DISTINCT t.team_id, t.team_name
-    FROM teams t
-    INNER JOIN users u ON t.team_id = u.team_id
-    INNER JOIN projects p ON u.user_id = p.created_by
-    $where_clause_dropdown
-");
+// Team Dropdown (เฉพาะ Executive หรือ Sale Supervisor)
+if ($role == 'Executive' || $role == 'Sale Supervisor') {
+    $team_query = ($role == 'Sale Supervisor') ? "WHERE team_id = :team_id" : "";
+    $stmt = $condb->prepare("SELECT DISTINCT team_id, team_name FROM teams $team_query");
+    if ($role == 'Sale Supervisor') {
+        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
+    }
+    $stmt->execute();
+    $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
 $stmt->execute($params_dropdown);
 $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -98,6 +101,12 @@ if ($role == 'Sale Supervisor') {
 } elseif ($role != 'Executive') {
     $where_clause .= " AND p.created_by = :created_by";
     $params[':created_by'] = $created_by;
+}
+
+// เพิ่มเงื่อนไขการค้นหาทีม
+if (($role == 'Executive' || $role == 'Sale Supervisor') && !empty($search_team)) {
+    $where_clause .= " AND t.team_name = :search_team";
+    $params[':search_team'] = $search_team;
 }
 
 // เพิ่มเงื่อนไขการค้นหา
