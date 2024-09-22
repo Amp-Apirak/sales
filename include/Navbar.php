@@ -367,6 +367,26 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>pages/setting/product/product.php" class="nav-link <?php if ($menu == "product") {
+                                                                                                    echo "active";
+                                                                                                } ?> ">
+                        <i class="nav-icon fas fa-box-open"></i>
+                        <p>
+                            Product
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>pages/setting/team/team.php" class="nav-link <?php if ($menu == "team") {
+                                                                                                    echo "active";
+                                                                                                } ?> ">
+                        <i class="nav-icon fas fa-users"></i>
+                        <p>
+                            Team
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="https://adminlte.io/docs/3.1/" class="nav-link">
                         <i class="nav-icon fas fa-file"></i>
                         <p>Documentation</p>

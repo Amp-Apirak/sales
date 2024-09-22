@@ -1,31 +1,37 @@
 <?php
-// เริ่ม session และเชื่อมต่อฐานข้อมูล
-include '../../include/Add_session.php';
+// เริ่มต้น session
+session_start();
 
-// ดึงข้อมูลผู้ใช้จาก session
-$role = $_SESSION['role'] ?? '';
-$team_id = $_SESSION['team_id'] ?? 0;
-$created_by = $_SESSION['user_id'] ?? 0;
+// เชื่อมต่อฐานข้อมูล
+include('../../../config/condb.php');
+
+// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    // กรณีไม่มีการตั้งค่า Session หรือล็อกอิน
+    header("Location: " . BASE_URL . "login.php");  // Redirect ไปยังหน้า login.php
+    exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
+}
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
-<?php $menu = "project"; ?>
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SalePipeline | Project Management</title>
-    <?php include  '../../include/header.php'; ?>
+    <title>SalePipeline | Team Magement</title>
+    <?php include '../../../include/header.php' ?>
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
     <div class="wrapper">
 
+        <!-- Preloader -->
         <!-- Navbar -->
         <!-- Main Sidebar Container -->
-        <!-- Preloader -->
-        <?php include  '../../include/navbar.php'; ?>
+        <?php include '../../../include/navbar.php' ?>
         <!-- /.navbar -->
 
         <!-- Content Wrapper. Contains page content -->
@@ -35,12 +41,12 @@ $created_by = $_SESSION['user_id'] ?? 0;
                 <div class="container-fluid">
                     <div class="row mb-2">
                         <div class="col-sm-6">
-                            <h1 class="m-0">Project Management</h1>
+                            <h1 class="m-0">Team Magement</h1>
                         </div><!-- /.col -->
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
                                 <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">Home</a></li>
-                                <li class="breadcrumb-item active">Project Management v1</li>
+                                <li class="breadcrumb-item active">Team Magement v1</li>
                             </ol>
                         </div><!-- /.col -->
                     </div><!-- /.row -->
@@ -51,11 +57,7 @@ $created_by = $_SESSION['user_id'] ?? 0;
             <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-12">
 
-                        </div>
-                    </div>
                 </div><!-- /.container-fluid -->
             </section>
             <!-- /.content -->
@@ -63,9 +65,8 @@ $created_by = $_SESSION['user_id'] ?? 0;
         <!-- /.content-wrapper -->
 
         <!-- // include footer -->
-        <?php include  '../../include/footer.php'; ?>
+        <?php include('../../../include/footer.php'); ?>
     </div>
     <!-- ./wrapper -->
-</body>
 
 </html>

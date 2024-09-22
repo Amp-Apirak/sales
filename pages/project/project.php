@@ -403,9 +403,11 @@ $total_creators = count($unique_creators);
                             <!-- //Section Search -->
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
-                            <div class="col-md-12 pb-3">
-                                <a href="add_project.php" class="btn btn-success btn-sm float-right">เพิ่มข้อมูล<i class=""></i></a>
-                            </div><br>
+                            <?php if ($role != 'Engineer') : ?>
+                                <div class="col-md-12 pb-3">
+                                    <a href="add_project.php" class="btn btn-success btn-sm float-right">เพิ่มข้อมูล<i class=""></i></a>
+                                </div><br>
+                            <?php endif; ?>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
 
                             <!-- Section ตารางแสดงผล -->
@@ -440,7 +442,24 @@ $total_creators = count($unique_creators);
                                                     <td><?php echo htmlspecialchars($project['contract_no']); ?></td>
                                                     <td><?php echo htmlspecialchars($project['product']); ?></td>
                                                     <td><?php echo htmlspecialchars($project['project_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($project['status']); ?></td>
+                                                    <td>
+                                                        <?php
+                                                        if (strcasecmp($project["status"], 'Waiting for approve') == 0) {
+                                                            echo "<span class='badge badge-primary'>{$project['status']}</span>";
+                                                        } elseif (strcasecmp($project["status"], 'On Process') == 0) {
+                                                            echo "<span class='badge badge-warning'>{$project['status']}</span>";
+                                                        } elseif (strcasecmp($project["status"], 'On Hold') == 0) {
+                                                            echo "<span class='badge badge-info'>{$project['status']}</span>";
+                                                        } elseif (strcasecmp($project["status"], 'Done') == 0) {
+                                                            echo "<span class='badge badge-success'>{$project['status']}</span>";
+                                                        } elseif (strcasecmp($project["status"], 'Loss') == 0) {
+                                                            echo "<span class='badge badge-danger'>{$project['status']}</span>";
+                                                        } else {
+                                                            echo "<span class='badge badge-secondary'>{$project['status']}</span>";
+                                                        }
+                                                        ?>
+
+                                                    </td>
                                                     <td><?php echo number_format($project['sale_no_vat'], 2); ?></td>
                                                     <td><?php echo number_format($project['cost_no_vat'], 2); ?></td>
                                                     <td><?php echo number_format($project['potential'], 2); ?></td>
