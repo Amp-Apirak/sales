@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 20, 2024 at 06:54 PM
+-- Generation Time: Sep 22, 2024 at 06:03 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -94,6 +94,27 @@ CREATE TABLE `projects` (
   `updated_by` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Dumping data for table `projects`
+--
+
+INSERT INTO `projects` (`project_id`, `project_name`, `sales_price`, `start_date`, `end_date`, `status`, `contract_no`, `product`, `remark`, `sales_date`, `seller`, `sale_no_vat`, `sale_vat`, `cost_no_vat`, `cost_vat`, `gross_profit`, `potential`, `es_sale_no_vat`, `es_cost_no_vat`, `es_gp_no_vat`, `customer_id`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
+(1, 'Project Alpha', 100000.00, '2023-01-10', '2023-02-10', 'In Progress', 'CN001', 'Product A', 'Remark for project Alpha', '2023-01-10', 1, 95000.00, 5000.00, 85000.00, 10000.00, 10000.00, 80.50, 92000.00, 83000.00, 9000.00, 1, '2024-09-22 05:54:27', 1, '2024-09-22 05:54:27', 2),
+(2, 'Project Beta', 150000.00, '2023-02-15', '2023-03-20', 'Completed', 'CN002', 'Product B', 'Remark for project Beta', '2023-02-20', 2, 145000.00, 5000.00, 125000.00, 20000.00, 20000.00, 85.30, 140000.00, 130000.00, 10000.00, 2, '2024-09-22 05:54:27', 2, '2024-09-22 05:54:27', 1),
+(3, 'Project Gamma', 200000.00, '2023-03-05', '2023-04-10', 'On Hold', 'CN003', 'Product C', 'Remark for project Gamma', '2023-03-10', 3, 190000.00, 10000.00, 160000.00, 30000.00, 30000.00, 80.00, 185000.00, 175000.00, 10000.00, 3, '2024-09-22 05:54:27', 3, '2024-09-22 05:54:27', 2),
+(4, 'Project Delta', 250000.00, '2023-04-01', '2023-05-01', 'Cancelled', 'CN004', 'Product D', 'Remark for project Delta', '2023-04-05', 4, 240000.00, 10000.00, 210000.00, 30000.00, 30000.00, 79.00, 235000.00, 225000.00, 10000.00, 4, '2024-09-22 05:54:27', 4, '2024-09-22 05:54:27', 3),
+(5, 'Project Epsilon', 300000.00, '2023-05-15', '2023-06-15', 'In Progress', 'CN005', 'Product E', 'Remark for project Epsilon', '2023-05-20', 5, 285000.00, 15000.00, 240000.00, 45000.00, 45000.00, 82.00, 290000.00, 270000.00, 20000.00, 5, '2024-09-22 05:54:27', 5, '2024-09-22 05:54:27', 2),
+(6, 'Project Zeta', 350000.00, '2023-06-10', '2023-07-10', 'Completed', 'CN006', 'Product F', 'Remark for project Zeta', '2023-06-15', 1, 330000.00, 20000.00, 290000.00, 40000.00, 40000.00, 81.00, 340000.00, 320000.00, 20000.00, 1, '2024-09-22 05:54:27', 1, '2024-09-22 05:54:27', 3),
+(7, 'Project Eta', 400000.00, '2023-07-01', '2023-08-01', 'On Hold', 'CN007', 'Product G', 'Remark for project Eta', '2023-07-05', 2, 380000.00, 20000.00, 320000.00, 60000.00, 60000.00, 80.50, 390000.00, 370000.00, 20000.00, 2, '2024-09-22 05:54:27', 2, '2024-09-22 05:54:27', 1),
+(8, 'Project Theta', 450000.00, '2023-08-05', '2023-09-05', 'Cancelled', 'CN008', 'Product H', 'Remark for project Theta', '2023-08-10', 3, 430000.00, 20000.00, 370000.00, 60000.00, 60000.00, 82.00, 440000.00, 420000.00, 20000.00, 3, '2024-09-22 05:54:27', 3, '2024-09-22 05:54:27', 4),
+(9, 'Project Iota', 500000.00, '2023-09-01', '2023-10-01', 'In Progress', 'CN009', 'Product I', 'Remark for project Iota', '2023-09-05', 4, 480000.00, 20000.00, 410000.00, 70000.00, 70000.00, 81.50, 490000.00, 460000.00, 30000.00, 4, '2024-09-22 05:54:27', 4, '2024-09-22 05:54:27', 1),
+(10, 'Project Kappa', 550000.00, '2023-10-10', '2023-11-10', 'Completed', 'CN010', 'Product J', 'Remark for project Kappa', '2023-10-15', 5, 520000.00, 30000.00, 450000.00, 70000.00, 70000.00, 81.00, 530000.00, 500000.00, 30000.00, 5, '2024-09-22 05:54:27', 5, '2024-09-22 05:54:27', 2),
+(11, 'Project Lambda', 600000.00, '2023-11-01', '2023-12-01', 'On Hold', 'CN011', 'Product K', 'Remark for project Lambda', '2023-11-05', 1, 580000.00, 20000.00, 510000.00, 70000.00, 70000.00, 80.50, 590000.00, 560000.00, 30000.00, 1, '2024-09-22 05:54:27', 1, '2024-09-22 05:54:27', 3),
+(12, 'Project Mu', 650000.00, '2023-12-10', '2024-01-10', 'In Progress', 'CN012', 'Product L', 'Remark for project Mu', '2023-12-15', 2, 630000.00, 20000.00, 540000.00, 90000.00, 90000.00, 82.00, 640000.00, 610000.00, 30000.00, 2, '2024-09-22 05:54:27', 2, '2024-09-22 05:54:27', 4),
+(13, 'Project Nu', 700000.00, '2024-01-01', '2024-02-01', 'Completed', 'CN013', 'Product M', 'Remark for project Nu', '2024-01-05', 3, 680000.00, 20000.00, 580000.00, 100000.00, 100000.00, 82.50, 690000.00, 660000.00, 30000.00, 3, '2024-09-22 05:54:27', 3, '2024-09-22 05:54:27', 1),
+(14, 'Project Xi', 750000.00, '2024-02-15', '2024-03-15', 'Cancelled', 'CN014', 'Product N', 'Remark for project Xi', '2024-02-20', 4, 720000.00, 30000.00, 620000.00, 100000.00, 100000.00, 81.00, 730000.00, 700000.00, 30000.00, 4, '2024-09-22 05:54:27', 4, '2024-09-22 05:54:27', 2),
+(15, 'Project Omicron', 800000.00, '2024-03-05', '2024-04-05', 'In Progress', 'CN015', 'Product O', 'Remark for project Omicron', '2024-03-10', 5, 770000.00, 30000.00, 670000.00, 100000.00, 100000.00, 81.50, 780000.00, 750000.00, 30000.00, 5, '2024-09-22 05:54:27', 5, '2024-09-22 05:54:27', 3);
+
 -- --------------------------------------------------------
 
 --
@@ -144,7 +165,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, `role`, `team_id`, `position`, `phone`, `password`, `company`, `created_at`, `created_by`) VALUES
 (1, 'Supachai', 'Bangpuk', 'Sale', 'ApirakSS@gmail.com', 'Seller', 2, 'IT', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:43:58', NULL),
-(2, 'Apirak', 'Bangpuk', 'Admin', 'Apirak@gmail.com', 'Executive', 1, 'IT', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:43:58', NULL),
+(2, 'Apirak', 'Bangpuk', 'Admin', 'Apirak@gmail.com', 'Executive', 1, 'IT', '0839595800', '$2y$10$jcmTr.I9CthXOrWFC78XjuOjwPoZlbvF80M4RKow4RvnNbm1Ej8dO', 'PIT', '2024-09-15 16:43:58', NULL),
 (3, 'Apirak', 'Bangpuk', 'Supervisor', 'apirak.ba@gmail.com', 'Sale Supervisor', 1, 'IT support', NULL, '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:43:58', NULL),
 (4, 'Apirakt', 'Bangpuk', 'Support', 'apirakAA@gmail.com', 'Engineer', 3, 'IT Service', '0839595811', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'PIT', '2024-09-15 16:55:43', 2),
 (5, 'Panit', 'Poapun', 'Panit', 'Panit@gmail.com', 'Executive', 4, 'Executive Director', '0839595822', '$2y$10$eAar02e4iaTG6bhKs2XLfua7ck.2co.8dkla8VX0tVCC5cnQfc/E6', 'PIT', '2024-09-17 15:15:37', 2),
@@ -197,7 +218,7 @@ ALTER TABLE `customers`
 -- AUTO_INCREMENT for table `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `project_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `teams`
