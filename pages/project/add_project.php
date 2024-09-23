@@ -84,6 +84,7 @@ $created_by = $_SESSION['user_id'] ?? 0;
                                                                 <option>Bidding</option>
                                                                 <option>Win</option>
                                                                 <option>Lost</option>
+                                                                <option>Cancelled</option>
                                                             </select>
                                                         </div>
                                                         <!-- /.form-group -->
@@ -180,7 +181,7 @@ $created_by = $_SESSION['user_id'] ?? 0;
                                             <div class="row">
                                                 <div class="col col">
                                                     <div class="form-group">
-                                                        <label>ตั้งการคำนวณ Vat (%)</label>
+                                                        <label>ตั้งการคำนวณ <span class="text-primary">Vat (%)</span></label>
                                                         <select class="form-control select2" name="vat" id="vat" style="width: 100%;">
                                                             <option value="7">7%</option>
                                                             <option value="0">0%</option>
@@ -192,7 +193,7 @@ $created_by = $_SESSION['user_id'] ?? 0;
                                                     <!-- /.form-group -->
 
                                                     <div class="form-group">
-                                                        <label>ราคาขาย/รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <label><span class="text-primary">ราคาขาย</span>/รวมภาษีมูลค่าเพิ่ม</label>
                                                         <input type="int" name="sale_vat" class="form-control" value="" id="sale_vat" placeholder="">
                                                     </div>
 
@@ -202,7 +203,7 @@ $created_by = $_SESSION['user_id'] ?? 0;
                                                     </div>
 
                                                     <div class="form-group">
-                                                        <label>ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <label><span class="text-primary">ราคาต้นทุน</span>/รวมภาษีมูลค่าเพิ่ม</label>
                                                         <input type="int" name="cost_vat" id="cost_vat" class="form-control" placeholder="">
                                                     </div>
                                                     <div class="form-group">
@@ -243,17 +244,17 @@ $created_by = $_SESSION['user_id'] ?? 0;
                                                 <div class="col col">
                                                     <!-- /.form-group -->
                                                     <div class="form-group">
-                                                        <label>ยอดขาย/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <label><span class="text-primary">ยอดขาย</span>/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
                                                         <input type="text" name="es_sale_no_vat" class="form-control" value="" id="es_sale_no_vat" style="background-color:#F8F8FF" placeholder="">
                                                     </div>
 
                                                     <div class="form-group">
-                                                        <label>ต้นทุน/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <label><span class="text-primary">ต้นทุน</span>/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
                                                         <input type="text" name="es_cost_no_vat" class="form-control" value="" id="es_cost_no_vat" style="background-color:#F8F8FF" placeholder="">
                                                     </div>
 
                                                     <div class="form-group">
-                                                        <label>กำไรที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <label><span class="text-primary">กำไรที่คาดการณ์</span>ไม่รวมภาษีมูลค่าเพิ่ม</label>
                                                         <input type="text" name="es_gp_no_vat" class="form-control" value="" id="es_gp_no_vat" style="background-color:#F8F8FF" placeholder="">
                                                     </div>
                                                 </div>

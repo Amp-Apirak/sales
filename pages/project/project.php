@@ -446,14 +446,20 @@ $total_creators = count($unique_creators);
                                                         <?php
                                                         if (strcasecmp($project["status"], 'Waiting for approve') == 0) {
                                                             echo "<span class='badge badge-primary'>{$project['status']}</span>";
-                                                        } elseif (strcasecmp($project["status"], 'On Process') == 0) {
-                                                            echo "<span class='badge badge-warning'>{$project['status']}</span>";
                                                         } elseif (strcasecmp($project["status"], 'On Hold') == 0) {
+                                                            echo "<span class='badge badge-warning'>{$project['status']}</span>";
+                                                        } elseif (strcasecmp($project["status"], 'Quotation') == 0) {
                                                             echo "<span class='badge badge-info'>{$project['status']}</span>";
-                                                        } elseif (strcasecmp($project["status"], 'Done') == 0) {
+                                                        } elseif (strcasecmp($project["status"], 'Negotiation') == 0) {
+                                                            echo "<span class='badge badge-primary'>{$project['status']}</span>";
+                                                        } elseif (strcasecmp($project["status"], 'Bidding') == 0) {
+                                                            echo "<span class='badge badge-warning'>{$project['status']}</span>";
+                                                        } elseif (strcasecmp($project["status"], 'Win') == 0) {
                                                             echo "<span class='badge badge-success'>{$project['status']}</span>";
-                                                        } elseif (strcasecmp($project["status"], 'Loss') == 0) {
+                                                        } elseif (strcasecmp($project["status"], 'Lost') == 0) {
                                                             echo "<span class='badge badge-danger'>{$project['status']}</span>";
+                                                        } elseif (strcasecmp($project["status"], 'Cancelled') == 0) {  // เพิ่มสถานะ Cancelled
+                                                            echo "<span class='badge badge-secondary'>{$project['status']}</span>"; // ใช้สีเทาหรือสีอื่นที่คุณต้องการ
                                                         } else {
                                                             echo "<span class='badge badge-secondary'>{$project['status']}</span>";
                                                         }
