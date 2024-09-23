@@ -303,37 +303,42 @@ $created_by = $_SESSION['user_id'] ?? 0;
 
 <!-- // ฟังก์ชันในการเพิ่มคอมม่าในตัวเลข -->
 <script>
+    // ฟังก์ชันสำหรับการเพิ่มคอมม่าให้ตัวเลขเพื่อแสดงผลให้อ่านง่ายขึ้น
     function addCommas(nStr) {
-        nStr += '';
-        var x = nStr.split('.');
-        var x1 = x[0];
-        var x2 = x.length > 1 ? '.' + x[1] : '';
-        var rgx = /(\d+)(\d{3})/;
+        nStr += ''; // แปลงค่าตัวเลขเป็นสตริง
+        var x = nStr.split('.'); // แยกส่วนจำนวนเต็มและทศนิยม
+        var x1 = x[0]; // จำนวนเต็ม
+        var x2 = x.length > 1 ? '.' + x[1] : ''; // ทศนิยม
+        var rgx = /(\d+)(\d{3})/; // รูปแบบการตรวจจับตัวเลขที่ต้องเพิ่มคอมม่า
         while (rgx.test(x1)) {
-            x1 = x1.replace(rgx, '$1' + ',' + '$2');
+            x1 = x1.replace(rgx, '$1' + ',' + '$2'); // เพิ่มคอมม่าทุก 3 หลัก
         }
-        return x1 + x2;
+        return x1 + x2; // ส่งกลับค่าพร้อมคอมม่า
     }
 
+    // ฟังก์ชันสำหรับลบคอมม่าออกจากตัวเลขก่อนนำไปคำนวณ
     function removeCommas(nStr) {
-        return nStr.replace(/,/g, '');
+        return nStr.replace(/,/g, ''); // ลบคอมม่าทั้งหมดออกจากตัวเลข
     }
 
+    // เมื่อ DOM ถูกโหลดเสร็จสมบูรณ์
     document.addEventListener('DOMContentLoaded', function() {
-        var priceInputs = document.querySelectorAll('input[type="int"]');
+        var priceInputs = document.querySelectorAll('input[type="int"]'); // เลือกอินพุตที่เป็นประเภทตัวเลข
 
+        // เพิ่ม Event Listener ให้กับอินพุตที่เป็นประเภทตัวเลข
         priceInputs.forEach(function(input) {
             input.addEventListener('input', function() {
-                var cleanValue = removeCommas(this.value);
+                var cleanValue = removeCommas(this.value); // ลบคอมม่าก่อนคำนวณ
                 if (!isNaN(cleanValue) && cleanValue.length > 0) {
-                    this.value = addCommas(cleanValue);
+                    this.value = addCommas(cleanValue); // เพิ่มคอมม่ากลับในค่าใหม่
                 }
             });
         });
 
+        // ลบคอมม่าก่อนส่งข้อมูลฟอร์ม
         document.querySelector('form').addEventListener('submit', function(event) {
             priceInputs.forEach(function(input) {
-                input.value = removeCommas(input.value);
+                input.value = removeCommas(input.value); // ลบคอมม่าก่อนส่งค่าไปเซิร์ฟเวอร์
             });
         });
     });
@@ -342,40 +347,44 @@ $created_by = $_SESSION['user_id'] ?? 0;
 <!-- คำนวณ Cost Project -->
 <script>
     $(document).ready(function() {
+        // ฟังก์ชันจัดรูปแบบตัวเลขให้มีคอมม่า
         function formatNumber(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
+        // ฟังก์ชันคำนวณราคาที่ไม่รวม VAT จากราคาที่รวม VAT
         function calculateNoVatPrice(priceWithVat, vat) {
-            return priceWithVat / (1 + (vat / 100));
+            return priceWithVat / (1 + (vat / 100)); // คำนวณราคาที่ไม่รวม VAT
         }
 
+        // ฟังก์ชันคำนวณราคาที่รวม VAT จากราคาที่ไม่รวม VAT
         function calculateWithVatPrice(priceNoVat, vat) {
-            return priceNoVat * (1 + (vat / 100));
+            return priceNoVat * (1 + (vat / 100)); // คำนวณราคาที่รวม VAT
         }
 
+        // ฟังก์ชันคำนวณกำไรขั้นต้นและเปอร์เซ็นต์กำไรขั้นต้น
         function calculateGrossProfit() {
-            var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
-            var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
+            var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0; // อ่านค่าราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม
+            var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0; // อ่านค่าราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
 
             if (saleNoVat && costNoVat) {
-                var grossProfit = saleNoVat - costNoVat;
-                $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
+                var grossProfit = saleNoVat - costNoVat; // คำนวณกำไรขั้นต้น
+                $("#gross_profit").val(formatNumber(grossProfit.toFixed(2))); // แสดงผลกำไรขั้นต้น
 
-                var grossProfitPercentage = (grossProfit / saleNoVat) * 100;
-                $("#potential").val(grossProfitPercentage.toFixed(2) + "%");
+                var grossProfitPercentage = (grossProfit / saleNoVat) * 100; // คำนวณเปอร์เซ็นต์กำไรขั้นต้น
+                $("#potential").val(grossProfitPercentage.toFixed(2) + "%"); // แสดงผลเปอร์เซ็นต์กำไรขั้นต้น
             }
         }
 
-        // ฟังก์ชันคำนวณ Estimate Potential
+        // ฟังก์ชันคำนวณ Estimate Potential (การประมาณการยอดขาย ต้นทุน และกำไร)
         function recalculateEstimate() {
             var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
             var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
-            var status = $("#status").val();
+            var status = $("#status").val(); // สถานะโครงการ
             var estimateSaleNoVat = 0;
             var estimateCostNoVat = 0;
 
-            // กำหนดเปอร์เซ็นต์ตามสถานะ
+            // กำหนดเปอร์เซ็นต์ตามสถานะโครงการ
             var percentage = 0;
             switch (status) {
                 case 'Lost':
@@ -395,69 +404,69 @@ $created_by = $_SESSION['user_id'] ?? 0;
                     break;
             }
 
-            // คำนวณตามเปอร์เซ็นต์ที่กำหนด
+            // คำนวณยอดขายและต้นทุนที่คาดการณ์ตามสถานะ
             estimateSaleNoVat = (saleNoVat * percentage) / 100;
             estimateCostNoVat = (costNoVat * percentage) / 100;
 
-            // แสดงผลการคำนวณ
+            // แสดงผลยอดขาย ต้นทุน และกำไรที่คาดการณ์
             $("#es_sale_no_vat").val(formatNumber(estimateSaleNoVat.toFixed(2)));
             $("#es_cost_no_vat").val(formatNumber(estimateCostNoVat.toFixed(2)));
             $("#es_gp_no_vat").val(formatNumber((estimateSaleNoVat - estimateCostNoVat).toFixed(2)));
         }
 
-        // คำนวณเมื่อกรอกข้อมูลในช่อง ราคาขาย/รวมภาษีมูลค่าเพิ่ม
+        // เมื่อกรอกข้อมูลในช่อง ราคาขาย/รวมภาษีมูลค่าเพิ่ม
         $("#sale_vat").on("input", function() {
             var saleVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
             var vat = parseFloat($("#vat").val()) || 0;
 
-            var saleNoVat = calculateNoVatPrice(saleVat, vat);
-            $("#sale_no_vat").val(formatNumber(saleNoVat.toFixed(2)));
+            var saleNoVat = calculateNoVatPrice(saleVat, vat); // คำนวณราคาที่ไม่รวมภาษีมูลค่าเพิ่ม
+            $("#sale_no_vat").val(formatNumber(saleNoVat.toFixed(2))); // แสดงราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม
 
-            calculateGrossProfit();
+            calculateGrossProfit(); // คำนวณกำไรขั้นต้น
             recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
-        // คำนวณเมื่อกรอกข้อมูลในช่อง ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม
+        // เมื่อกรอกข้อมูลในช่อง ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม
         $("#sale_no_vat").on("input", function() {
             var saleNoVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
             var vat = parseFloat($("#vat").val()) || 0;
 
             if (saleNoVat && vat) {
-                var saleVat = calculateWithVatPrice(saleNoVat, vat);
-                $("#sale_vat").val(formatNumber(saleVat.toFixed(2)));
+                var saleVat = calculateWithVatPrice(saleNoVat, vat); // คำนวณราคาขาย/รวมภาษีมูลค่าเพิ่ม
+                $("#sale_vat").val(formatNumber(saleVat.toFixed(2))); // แสดงราคาขาย/รวมภาษีมูลค่าเพิ่ม
             }
 
-            calculateGrossProfit();
+            calculateGrossProfit(); // คำนวณกำไรขั้นต้น
             recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
-        // คำนวณเมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม
+        // เมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม
         $("#cost_vat").on("input", function() {
             var costVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
             var vat = parseFloat($("#vat").val()) || 0;
 
-            var costNoVat = calculateNoVatPrice(costVat, vat);
-            $("#cost_no_vat").val(formatNumber(costNoVat.toFixed(2)));
+            var costNoVat = calculateNoVatPrice(costVat, vat); // คำนวณราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
+            $("#cost_no_vat").val(formatNumber(costNoVat.toFixed(2))); // แสดงราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
 
-            calculateGrossProfit();
+            calculateGrossProfit(); // คำนวณกำไรขั้นต้น
             recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
-        // คำนวณเมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
+        // เมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
         $("#cost_no_vat").on("input", function() {
-            calculateGrossProfit();
+            calculateGrossProfit(); // คำนวณกำไรขั้นต้น
             recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
-        // คำนวณเมื่อเปลี่ยนค่า VAT
+        // เมื่อมีการเปลี่ยนค่า VAT
         $("#vat").on("change", function() {
-            $("#sale_vat").trigger("input");
+            $("#sale_vat").trigger("input"); // เรียกคำนวณใหม่
             $("#sale_no_vat").trigger("input");
             $("#cost_vat").trigger("input");
             $("#cost_no_vat").trigger("input");
         });
 
-        // คำนวณเมื่อเปลี่ยนสถานะ
+        // เมื่อมีการเปลี่ยนสถานะโครงการ
         $("#status").on("change", function() {
             recalculateEstimate(); // คำนวณ Estimate Potential ใหม่
         });
