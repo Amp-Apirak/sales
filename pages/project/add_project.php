@@ -303,7 +303,6 @@ $created_by = $_SESSION['user_id'] ?? 0;
 
 <!-- // ฟังก์ชันในการเพิ่มคอมม่าในตัวเลข -->
 <script>
-    // ฟังก์ชันในการเพิ่มคอมม่าในตัวเลข
     function addCommas(nStr) {
         nStr += '';
         var x = nStr.split('.');
@@ -316,18 +315,15 @@ $created_by = $_SESSION['user_id'] ?? 0;
         return x1 + x2;
     }
 
-    // ฟังก์ชันในการลบคอมม่าออก
     function removeCommas(nStr) {
         return nStr.replace(/,/g, '');
     }
 
-    // Event ที่จะจัดการเมื่อกรอกข้อมูลในช่องอินพุต
     document.addEventListener('DOMContentLoaded', function() {
         var priceInputs = document.querySelectorAll('input[type="int"]');
 
         priceInputs.forEach(function(input) {
             input.addEventListener('input', function() {
-                // ลบคอมม่าก่อนคำนวณ และเพิ่มคอมม่ากลับในค่าใหม่
                 var cleanValue = removeCommas(this.value);
                 if (!isNaN(cleanValue) && cleanValue.length > 0) {
                     this.value = addCommas(cleanValue);
@@ -335,7 +331,6 @@ $created_by = $_SESSION['user_id'] ?? 0;
             });
         });
 
-        // ลบคอมม่าก่อนส่งฟอร์ม
         document.querySelector('form').addEventListener('submit', function(event) {
             priceInputs.forEach(function(input) {
                 input.value = removeCommas(input.value);
@@ -343,29 +338,26 @@ $created_by = $_SESSION['user_id'] ?? 0;
         });
     });
 </script>
-<!-- // ฟังก์ชันในการเพิ่มคอมม่าในตัวเลข -->
 
+<!-- คำนวณ Cost Project -->
 <script>
     $(document).ready(function() {
         function formatNumber(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        // ฟังก์ชันคำนวณราคาที่ไม่รวม VAT
         function calculateNoVatPrice(priceWithVat, vat) {
             return priceWithVat / (1 + (vat / 100));
         }
 
-        // ฟังก์ชันคำนวณราคาที่รวม VAT จากราคาที่ไม่รวม VAT
         function calculateWithVatPrice(priceNoVat, vat) {
             return priceNoVat * (1 + (vat / 100));
         }
 
-        // ฟังก์ชันคำนวณกำไรขั้นต้นและกำไรขั้นต้นคิดเป็น %
         function calculateGrossProfit() {
             var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
             var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
-            
+
             if (saleNoVat && costNoVat) {
                 var grossProfit = saleNoVat - costNoVat;
                 $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
@@ -373,6 +365,44 @@ $created_by = $_SESSION['user_id'] ?? 0;
                 var grossProfitPercentage = (grossProfit / saleNoVat) * 100;
                 $("#potential").val(grossProfitPercentage.toFixed(2) + "%");
             }
+        }
+
+        // ฟังก์ชันคำนวณ Estimate Potential
+        function recalculateEstimate() {
+            var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
+            var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
+            var status = $("#status").val();
+            var estimateSaleNoVat = 0;
+            var estimateCostNoVat = 0;
+
+            // กำหนดเปอร์เซ็นต์ตามสถานะ
+            var percentage = 0;
+            switch (status) {
+                case 'Lost':
+                    percentage = 0;
+                    break;
+                case 'Quotation':
+                    percentage = 10;
+                    break;
+                case 'Negotiation':
+                    percentage = 30;
+                    break;
+                case 'Bidding':
+                    percentage = 50;
+                    break;
+                case 'Win':
+                    percentage = 100;
+                    break;
+            }
+
+            // คำนวณตามเปอร์เซ็นต์ที่กำหนด
+            estimateSaleNoVat = (saleNoVat * percentage) / 100;
+            estimateCostNoVat = (costNoVat * percentage) / 100;
+
+            // แสดงผลการคำนวณ
+            $("#es_sale_no_vat").val(formatNumber(estimateSaleNoVat.toFixed(2)));
+            $("#es_cost_no_vat").val(formatNumber(estimateCostNoVat.toFixed(2)));
+            $("#es_gp_no_vat").val(formatNumber((estimateSaleNoVat - estimateCostNoVat).toFixed(2)));
         }
 
         // คำนวณเมื่อกรอกข้อมูลในช่อง ราคาขาย/รวมภาษีมูลค่าเพิ่ม
@@ -383,8 +413,8 @@ $created_by = $_SESSION['user_id'] ?? 0;
             var saleNoVat = calculateNoVatPrice(saleVat, vat);
             $("#sale_no_vat").val(formatNumber(saleNoVat.toFixed(2)));
 
-            // เรียกใช้ฟังก์ชันคำนวณกำไรขั้นต้น
             calculateGrossProfit();
+            recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
         // คำนวณเมื่อกรอกข้อมูลในช่อง ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม
@@ -397,8 +427,8 @@ $created_by = $_SESSION['user_id'] ?? 0;
                 $("#sale_vat").val(formatNumber(saleVat.toFixed(2)));
             }
 
-            // คำนวณกำไรขั้นต้น
             calculateGrossProfit();
+            recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
         // คำนวณเมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม
@@ -409,23 +439,27 @@ $created_by = $_SESSION['user_id'] ?? 0;
             var costNoVat = calculateNoVatPrice(costVat, vat);
             $("#cost_no_vat").val(formatNumber(costNoVat.toFixed(2)));
 
-            // เรียกใช้ฟังก์ชันคำนวณกำไรขั้นต้น
             calculateGrossProfit();
+            recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
         // คำนวณเมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
         $("#cost_no_vat").on("input", function() {
             calculateGrossProfit();
+            recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
         // คำนวณเมื่อเปลี่ยนค่า VAT
         $("#vat").on("change", function() {
-            // เรียกคำนวณใหม่เมื่อเปลี่ยนค่า VAT
             $("#sale_vat").trigger("input");
             $("#sale_no_vat").trigger("input");
             $("#cost_vat").trigger("input");
             $("#cost_no_vat").trigger("input");
         });
+
+        // คำนวณเมื่อเปลี่ยนสถานะ
+        $("#status").on("change", function() {
+            recalculateEstimate(); // คำนวณ Estimate Potential ใหม่
+        });
     });
 </script>
-
