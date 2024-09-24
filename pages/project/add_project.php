@@ -6,7 +6,120 @@ include '../../include/Add_session.php';
 $role = $_SESSION['role'] ?? '';
 $team_id = $_SESSION['team_id'] ?? 0;
 $created_by = $_SESSION['user_id'] ?? 0;
+
+// ตรวจสอบสิทธิ์การเข้าถึง
+if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
+    header("Location: unauthorized.php");
+    exit();
+}
+
+
+// ฟังก์ชันทำความสะอาดข้อมูล input
+function clean_input($data)
+{
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
+
+$alert = ''; // ตัวแปรสำหรับแสดงข้อความแจ้งเตือน
+
+// ตรวจสอบว่ามีการส่งฟอร์มหรือไม่
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // ทำความสะอาดข้อมูลที่ได้จากฟอร์ม
+    $project_name = clean_input($_POST['project_name']);
+    $sales_date = clean_input($_POST['sales_date']);
+    $date_start = clean_input($_POST['date_start']);
+    $date_end = clean_input($_POST['date_end']);
+    $status = clean_input($_POST['status']);
+    $contract_no = clean_input($_POST['con_number']);
+    $product_id = filter_var($_POST['product_id'], FILTER_VALIDATE_INT);
+    $customer_id = filter_var($_POST['customer_id'], FILTER_VALIDATE_INT);
+    $sale_vat = filter_var(str_replace(',', '', $_POST['sale_vat']), FILTER_VALIDATE_FLOAT);
+    $sale_no_vat = filter_var(str_replace(',', '', $_POST['sale_no_vat']), FILTER_VALIDATE_FLOAT);
+    $cost_vat = filter_var(str_replace(',', '', $_POST['cost_vat']), FILTER_VALIDATE_FLOAT);
+    $cost_no_vat = filter_var(str_replace(',', '', $_POST['cost_no_vat']), FILTER_VALIDATE_FLOAT);
+    $gross_profit = filter_var(str_replace(',', '', $_POST['gross_profit']), FILTER_VALIDATE_FLOAT);
+    $potential = filter_var(str_replace('%', '', $_POST['potential']), FILTER_VALIDATE_FLOAT);
+    $es_sale_no_vat = filter_var(str_replace(',', '', $_POST['es_sale_no_vat']), FILTER_VALIDATE_FLOAT);
+    $es_cost_no_vat = filter_var(str_replace(',', '', $_POST['es_cost_no_vat']), FILTER_VALIDATE_FLOAT);
+    $es_gp_no_vat = filter_var(str_replace(',', '', $_POST['es_gp_no_vat']), FILTER_VALIDATE_FLOAT);
+    $remark = clean_input($_POST['remark']);
+    $vat = filter_var($_POST['vat'], FILTER_VALIDATE_FLOAT);
+
+    // ตรวจสอบข้อมูลที่จำเป็น
+    if (empty($project_name) || empty($status) || !$product_id || !is_numeric($product_id)) {
+        $alert = "error|กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน ประกอบด้วย ชื่อโครงการ, สถานะ, ชื่อสินค้าที่ขาย";
+    } else {
+        try {
+            // เริ่ม transaction
+            $condb->beginTransaction();
+
+            // ตรวจสอบว่ามีโครงการชื่อซ้ำหรือไม่
+            $stmt = $condb->prepare("SELECT COUNT(*) FROM projects WHERE project_name = :project_name");
+            $stmt->bindParam(':project_name', $project_name, PDO::PARAM_STR);
+            $stmt->execute();
+            if ($stmt->fetchColumn() > 0) {
+                throw new Exception("มีโครงการชื่อนี้อยู่แล้ว");
+            }
+
+            // เตรียมคำสั่ง SQL สำหรับการเพิ่มข้อมูล
+            $sql = "INSERT INTO projects 
+                (project_name, start_date, end_date, status, contract_no, product, customer_id, sale_vat, sale_no_vat, cost_vat, 
+                cost_no_vat, gross_profit, potential, sales_date, es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at) 
+                VALUES 
+                (:project_name, :start_date, :end_date, :status, :contract_no, :product, :customer_id, :sale_vat, :sale_no_vat, :cost_vat, 
+                :cost_no_vat, :gross_profit, :potential, :sales_date, :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW())";
+
+            $stmt = $condb->prepare($sql);
+            $stmt->execute([
+                ':project_name' => $project_name,
+                ':start_date' => $date_start,
+                ':end_date' => $date_end,
+                ':status' => $status,
+                ':contract_no' => $contract_no,
+                ':product' => $product_id,
+                ':customer_id' => $customer_id ?: null, // ใส่ null หากไม่มี customer_id
+                ':sale_vat' => $sale_vat,
+                ':sale_no_vat' => $sale_no_vat,
+                ':cost_vat' => $cost_vat,
+                ':cost_no_vat' => $cost_no_vat,
+                ':gross_profit' => $gross_profit,
+                ':potential' => $potential,
+                ':sales_date' => $sales_date,
+                ':es_sale_no_vat' => $es_sale_no_vat,
+                ':es_cost_no_vat' => $es_cost_no_vat,
+                ':es_gp_no_vat' => $es_gp_no_vat,
+                ':remark' => $remark,
+                ':vat' => $vat,
+                ':created_by' => $created_by
+            ]);
+
+            // Commit transaction
+            $condb->commit();
+            $alert = "success|บันทึกข้อมูลโครงการเรียบร้อยแล้ว";
+        } catch (Exception $e) {
+            // Rollback transaction ในกรณีที่เกิดข้อผิดพลาด
+            $condb->rollBack();
+            $alert = "error|" . $e->getMessage();
+        }
+    }
+}
+
+// ดึงข้อมูลสำหรับ dropdowns
+$stmt = $condb->query("SELECT * FROM products");
+$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$stmt = $condb->query("SELECT * FROM customers");
+$customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
+
+<!-- ส่วนของ HTML form ที่มีอยู่แล้ว -->
+
+<!-- เพิ่ม SweetAlert library -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,6 +130,27 @@ $created_by = $_SESSION['user_id'] ?? 0;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Project Management</title>
     <?php include  '../../include/header.php'; ?>
+
+    <!-- /* ใช้ฟอนต์ Noto Sans Thai กับ label */ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
+        label {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 200; /* ปรับระดับน้ำหนักของฟอนต์ */
+            font-size: 16px;
+            color: #333;
+        }
+
+        .custom-label {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #FF5733;
+        }
+    </style>
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -48,6 +182,9 @@ $created_by = $_SESSION['user_id'] ?? 0;
             </div>
             <!-- /.content-header -->
 
+            <!-- ใส่ SweetAlert CSS -->
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
             <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
@@ -60,7 +197,7 @@ $created_by = $_SESSION['user_id'] ?? 0;
                                     <!-- /.Pipeline descriptions ----------------------------------------------------------------------->
                                     <form action="#" method="POST" enctype="multipart/form-data">
                                         <!-- /.card -->
-                                        <div class="card card-primary h-100 w-100">
+                                        <div class="card card-primary h-80 w-100">
                                             <div class="card-header ">
                                                 <h3 class="card-title">Pipeline descriptions</h3>
                                             </div>
@@ -69,13 +206,13 @@ $created_by = $_SESSION['user_id'] ?? 0;
                                                     <div class="col col-6">
                                                         <div class="form-group">
                                                             <label>วันเปิดการขาย</label>
-                                                            <input type="date" name="date_start" class="form-control" id="exampleInputEmail1" placeholder="">
+                                                            <input type="date" name="sales_date" class="form-control" id="exampleInputEmail1" placeholder="">
                                                         </div>
                                                     </div>
                                                     <div class="col col-6">
                                                         <div class="form-group">
                                                             <label>สถานะโครงการ<span class="text-danger">*</span></label>
-                                                            <select class="form-control select2" name="status" id="status" style="width: 100%;" required>
+                                                            <select class="form-control select2" name="status" id="status" style="width: 100%;" >
                                                                 <option selected="selected">Select</option>
                                                                 <option>Wiating for approve</option>
                                                                 <option>On-Hold</option>
@@ -112,12 +249,23 @@ $created_by = $_SESSION['user_id'] ?? 0;
                                                         </div>
                                                     </div>
                                                     <div class="col col-6">
+                                                        <?php
+                                                        // ดึงข้อมูลจากตาราง Products โดยใช้ prepared statement
+                                                        $query = "SELECT * FROM products";
+                                                        $stmt = $condb->prepare($query);
+                                                        $stmt->execute();
+                                                        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                                        ?>
+
                                                         <div class="form-group">
-                                                            <label>สินค้าที่ขาย</label>
-                                                            <select class="custom-select select2" name="product">
-                                                                <option value="">Select</option>
-                                                                <option value="" selected="selected">
-                                                                </option>
+                                                            <label>สินค้าที่ขาย<span class="text-danger">*</span></label>
+                                                            <select name="product_id" class="form-control select2" >
+                                                                <option value="">Select Product</option>
+                                                                <?php foreach ($products as $product): ?>
+                                                                    <option value="<?php echo htmlspecialchars($product['product_id']); ?>">
+                                                                        <?php echo htmlspecialchars($product['product_name']); ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
                                                             </select>
                                                         </div>
                                                         <!-- /.form-group -->
@@ -126,7 +274,7 @@ $created_by = $_SESSION['user_id'] ?? 0;
 
                                                 <div class="form-group">
                                                     <label>ชื่อโครงการ<span class="text-danger">*</span></label>
-                                                    <input type="text" name="project_name" class="form-control" id="exampleInputEmail1" placeholder="ชื่อโครงการ" required>
+                                                    <input type="text" name="project_name" class="form-control" id="exampleInputEmail1" placeholder="ชื่อโครงการ" >
                                                 </div>
                                             </div>
                                             <div class="card-footer">
@@ -136,19 +284,30 @@ $created_by = $_SESSION['user_id'] ?? 0;
 
                                         <!-- /.Customer descriptions ----------------------------------------------------------------------->
                                         <!-- /.card -->
-                                        <div class="card card-success h-100 w-100">
+                                        <div class="card card-success h-45 w-100">
                                             <div class="card-header">
                                                 <h3 class="card-title">Customer descriptions</h3>
                                             </div>
                                             <div class="card-body">
                                                 <div class="row">
                                                     <div class="col col-12">
+                                                        <?php
+                                                        // ดึงข้อมูลลูกค้าทั้งหมดจากตาราง customers โดยใช้ prepared statement
+                                                        $query = "SELECT * FROM customers";
+                                                        $stmt = $condb->prepare($query);
+                                                        $stmt->execute();
+                                                        $customers = $stmt->fetchAll(PDO::FETCH_ASSOC); // ดึงข้อมูลทั้งหมดมาเก็บในตัวแปร $customers
+                                                        ?>
+
                                                         <div class="form-group">
                                                             <label>ข้อมูลลูกค้า</label>
-                                                            <select class="custom-select select2" name="customer_id">
-                                                                <option value="">Select</option>
-                                                                <option value="" selected="selected">
-                                                                </option>
+                                                            <select name="customer_id" class="form-control select2">
+                                                                <option value="">Select Customer</option>
+                                                                <?php foreach ($customers as $customer): ?>
+                                                                    <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>">
+                                                                        <?php echo htmlspecialchars($customer['customer_name']); ?> , <?php echo htmlspecialchars($customer['company']); ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
                                                             </select>
                                                         </div>
                                                         <!-- /.form-group -->
@@ -161,7 +320,7 @@ $created_by = $_SESSION['user_id'] ?? 0;
 
                                             </div>
                                             <div class="card-footer">
-                                                <small>***ไม่พบข้อมูลลูกค้าสามารถเพิ่มได้ที่ เมนู "Customer"*** </small>
+                                                <label class="custom-label"><small>***ไม่พบข้อมูลลูกค้าสามารถเพิ่มได้ที่ เมนู "Customer"*** </small></label>
                                             </div>
                                             <!-- /.card-body -->
                                         </div>
@@ -298,6 +457,29 @@ $created_by = $_SESSION['user_id'] ?? 0;
         <?php include  '../../include/footer.php'; ?>
     </div>
     <!-- ./wrapper -->
+    <script>
+        $(function() {
+            $('.select2').select2();
+        });
+
+        <?php
+        if (!empty($alert)) {
+            list($status, $msg) = explode('|', $alert);
+            echo "
+            Swal.fire({
+                icon: '$status',
+                title: '" . ($status == 'success' ? 'สำเร็จ!' : 'เกิดข้อผิดพลาด!') . "',
+                text: '$msg',
+                confirmButtonText: 'ตกลง'
+            }).then((result) => {
+                if (result.isConfirmed && '$status' === 'success') {
+                    window.location.href = 'project.php';
+                }
+            });
+            ";
+        }
+        ?>
+    </script>
 </body>
 
 </html>
