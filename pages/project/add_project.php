@@ -64,13 +64,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception("มีโครงการชื่อนี้อยู่แล้ว");
             }
 
-            // เตรียมคำสั่ง SQL สำหรับการเพิ่มข้อมูล
-            $sql = "INSERT INTO projects 
-                (project_name, start_date, end_date, status, contract_no, product, customer_id, sale_vat, sale_no_vat, cost_vat, 
-                cost_no_vat, gross_profit, potential, sales_date, es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at) 
-                VALUES 
-                (:project_name, :start_date, :end_date, :status, :contract_no, :product, :customer_id, :sale_vat, :sale_no_vat, :cost_vat, 
-                :cost_no_vat, :gross_profit, :potential, :sales_date, :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW())";
+            // เตรียม SQL สำหรับการเพิ่มข้อมูล
+            $sql = "INSERT INTO projects (project_name, start_date, end_date, status, contract_no, product, customer_id, 
+                    sale_vat, sale_no_vat, cost_vat, cost_no_vat, gross_profit, potential, sales_date,
+                    es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at, seller) 
+                    VALUES (:project_name, :start_date, :end_date, :status, :contract_no, :product, :customer_id, 
+                    :sale_vat, :sale_no_vat, :cost_vat, :cost_no_vat, :gross_profit, :potential, :sales_date,
+                    :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW(), :seller)";
 
             $stmt = $condb->prepare($sql);
             $stmt->execute([
@@ -93,7 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':es_gp_no_vat' => $es_gp_no_vat,
                 ':remark' => $remark,
                 ':vat' => $vat,
-                ':created_by' => $created_by
+                ':created_by' => $created_by,
+                ':seller' => $created_by
             ]);
 
             // Commit transaction
@@ -139,7 +140,8 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         /* ใช้ฟอนต์ Noto Sans Thai กับ label */
         label {
             font-family: 'Noto Sans Thai', sans-serif;
-            font-weight: 200; /* ปรับระดับน้ำหนักของฟอนต์ */
+            font-weight: 200;
+            /* ปรับระดับน้ำหนักของฟอนต์ */
             font-size: 16px;
             color: #333;
         }
@@ -212,7 +214,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <div class="col col-6">
                                                         <div class="form-group">
                                                             <label>สถานะโครงการ<span class="text-danger">*</span></label>
-                                                            <select class="form-control select2" name="status" id="status" style="width: 100%;" >
+                                                            <select class="form-control select2" name="status" id="status" style="width: 100%;">
                                                                 <option selected="selected">Select</option>
                                                                 <option>Wiating for approve</option>
                                                                 <option>On-Hold</option>
@@ -259,7 +261,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                                                         <div class="form-group">
                                                             <label>สินค้าที่ขาย<span class="text-danger">*</span></label>
-                                                            <select name="product_id" class="form-control select2" >
+                                                            <select name="product_id" class="form-control select2">
                                                                 <option value="">Select Product</option>
                                                                 <?php foreach ($products as $product): ?>
                                                                     <option value="<?php echo htmlspecialchars($product['product_id']); ?>">
@@ -274,7 +276,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                                                 <div class="form-group">
                                                     <label>ชื่อโครงการ<span class="text-danger">*</span></label>
-                                                    <input type="text" name="project_name" class="form-control" id="exampleInputEmail1" placeholder="ชื่อโครงการ" >
+                                                    <input type="text" name="project_name" class="form-control" id="exampleInputEmail1" placeholder="ชื่อโครงการ">
                                                 </div>
                                             </div>
                                             <div class="card-footer">
