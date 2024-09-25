@@ -470,7 +470,7 @@ $total_creators = count($unique_creators);
                                                 <tr id="myTable">
                                                     <td><?php echo htmlspecialchars($project['contract_no']); ?></td>
                                                     <td><?php echo htmlspecialchars($project['product_name']); ?></td>
-                                                    <td style="width: 500px; word-wrap: break-word;" ><?php echo htmlspecialchars($project['project_name']); ?></td>
+                                                    <td style="width: 500px; word-wrap: break-word;"><?php echo htmlspecialchars($project['project_name']); ?></td>
                                                     <td>
                                                         <?php
                                                         if (strcasecmp($project["status"], 'Waiting for approve') == 0) {
@@ -497,15 +497,23 @@ $total_creators = count($unique_creators);
                                                     </td>
                                                     <td><?php echo number_format($project['sale_no_vat'], 2); ?></td>
                                                     <td><?php echo number_format($project['cost_no_vat'], 2); ?></td>
-                                                    <td><?php echo number_format($project['potential'], 2); ?></td>
+                                                    <td>
+                                                        <?php
+                                                        if (!empty($project['potential'])) {
+                                                            echo htmlspecialchars($project['potential']) . '%';
+                                                        } else {
+                                                            echo ''; // แสดงค่าว่างหากไม่มีข้อมูล
+                                                        }
+                                                        ?>
+                                                    </td>
                                                     <td><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
                                                     <td><?php echo htmlspecialchars($project['created_at']); ?></td>
                                                     <td><?php echo htmlspecialchars($project['team_name']); ?></td>
                                                     <td>
-                                                        <a href="view_project.php?id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
+                                                        <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
-                                                        <a href="edit_project.php?user_id" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                        <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
                                                         <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                                     </td>
                                                 </tr>
