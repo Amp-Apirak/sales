@@ -75,76 +75,79 @@ try {
 
         .content-wrapper {
             padding: 20px;
-            background-color: #ffffff;
         }
 
         .project-header {
             background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
             color: white;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 15px;
+            border-radius: 5px;
             margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .project-title {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
-        .project-details {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .project-detail-item {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 5px 10px;
+        .project-status {
+            display: inline-block;
+            padding: 3px 8px;
             border-radius: 15px;
             font-size: 12px;
+            font-weight: 600;
+            background-color: rgba(255, 255, 255, 0.2);
         }
 
-        .section-card {
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        .project-date {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .info-card {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             margin-bottom: 20px;
-            overflow: hidden;
         }
 
-        .section-header {
-            background-color: #f8f9fa;
+        .info-card-header {
+            background-color: #f1f3f5;
             color: #333;
-            padding: 12px 15px;
+            padding: 10px 15px;
             font-weight: 600;
             font-size: 16px;
             border-bottom: 1px solid #dee2e6;
+            border-radius: 5px 5px 0 0;
         }
 
-        .section-body {
+        .info-card-body {
             padding: 15px;
         }
 
         .info-item {
+            display: flex;
             margin-bottom: 10px;
         }
 
         .info-label {
             font-weight: 600;
             color: #555;
-            min-width: 150px;
-            display: inline-block;
+            width: 140px;
+            flex-shrink: 0;
+        }
+
+        .info-value {
+            flex-grow: 1;
         }
 
         .financial-summary {
-            background: #f8f9fa;
+            background-color: #e9ecef;
+            border-radius: 5px;
             padding: 15px;
-            border-radius: 8px;
-            color: #333;
             margin-top: 15px;
-            border: 1px solid #dee2e6;
         }
 
         .financial-item {
@@ -154,111 +157,170 @@ try {
             font-size: 14px;
         }
 
-        .icon-circle {
-            width: 30px;
-            height: 30px;
-            background-color: #e9ecef;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 8px;
+        .financial-label {
+            font-weight: 600;
         }
 
-        .icon-circle i {
-            font-size: 12px;
-            color: #4e73df;
+        .financial-value {
+            font-weight: 700;
+        }
+
+        .profit-highlight {
+            color: #28a745;
         }
     </style>
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
-        <!-- Navbar and Sidebar include -->
         <?php include '../../include/navbar.php'; ?>
-
         <div class="content-wrapper">
             <section class="content">
                 <div class="container-fluid">
                     <div class="project-header">
-                        <div class="project-title"><?php echo htmlspecialchars($project['project_name']); ?></div>
-                        <div class="project-details">
-                            <span class="project-detail-item"><i class="fas fa-chart-line mr-1"></i><?php echo htmlspecialchars($project['status']); ?></span>
-                            <span class="project-detail-item"><i class="far fa-calendar-alt mr-1"></i><?php echo htmlspecialchars($project['start_date']); ?> - <?php echo htmlspecialchars($project['end_date']); ?></span>
+                        <div class="project-title">Project Gamma</div>
+                        <span class="project-status">On Hold</span>
+                        <div class="project-date"><i class="far fa-calendar-alt mr-2"></i>2023-03-05 - 2023-04-10</div>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ
+                        </div>
+                        <div class="info-card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">เลขที่สัญญา:</span>
+                                        <span class="info-value">CN003</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">สินค้า:</span>
+                                        <span class="info-value">Product C</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">รายละเอียดสินค้า:</span>
+                                        <span class="info-value">This is a description for Product C.</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">วันที่สร้าง:</span>
+                                        <span class="info-value">2024-09-22 12:54:27</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">ผู้สร้าง:</span>
+                                        <span class="info-value">Apirak Bangpuk</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">วันที่แก้ไขล่าสุด:</span>
+                                        <span class="info-value">2024-09-25 11:26:36</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">ผู้แก้ไขล่าสุด:</span>
+                                        <span class="info-value">Apirak Bangpuk</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="section-card">
-                                <div class="section-header">
-                                    <i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ
-                                </div>
-                                <div class="section-body">
-                                    <div class="info-item"><span class="info-label">เลขที่สัญญา:</span> <?php echo htmlspecialchars($project['contract_no']); ?></div>
-                                    <div class="info-item"><span class="info-label">สินค้า:</span> <?php echo htmlspecialchars($project['product_name']); ?></div>
-                                    <div class="info-item"><span class="info-label">รายละเอียดสินค้า:</span> <?php echo htmlspecialchars($project['product_description']); ?></div>
-                                    <div class="info-item"><span class="info-label">วันที่สร้าง:</span> <?php echo htmlspecialchars($project['created_at']); ?></div>
-                                    <div class="info-item"><span class="info-label">ผู้สร้าง:</span> <?php echo htmlspecialchars($project['creator_first_name'] . ' ' . $project['creator_last_name']); ?></div>
-                                    <div class="info-item"><span class="info-label">วันที่แก้ไขล่าสุด:</span> <?php echo htmlspecialchars($project['updated_at']); ?></div>
-                                    <div class="info-item"><span class="info-label">ผู้แก้ไขล่าสุด:</span> <?php echo htmlspecialchars($project['updater_first_name'] . ' ' . $project['updater_last_name']); ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="section-card">
-                                <div class="section-header">
+                            <div class="info-card">
+                                <div class="info-card-header">
                                     <i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า
                                 </div>
-                                <div class="section-body">
-                                    <div class="info-item"><span class="info-label">ชื่อลูกค้า:</span> <?php echo htmlspecialchars($project['customer_name']); ?></div>
-                                    <div class="info-item"><span class="info-label">บริษัท:</span> <?php echo htmlspecialchars($project['company']); ?></div>
-                                    <div class="info-item"><span class="info-label">ที่อยู่:</span> <?php echo htmlspecialchars($project['address']); ?></div>
-                                    <div class="info-item"><span class="info-label">โทรศัพท์:</span> <?php echo htmlspecialchars($project['customer_phone']); ?></div>
-                                    <div class="info-item"><span class="info-label">อีเมล:</span> <?php echo htmlspecialchars($project['customer_email']); ?></div>
+                                <div class="info-card-body">
+                                    <div class="info-item">
+                                        <span class="info-label">ชื่อลูกค้า:</span>
+                                        <span class="info-value">Michael Brown</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">บริษัท:</span>
+                                        <span class="info-value">Design Solutions</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">ที่อยู่:</span>
+                                        <span class="info-value">789 Oak St, City C</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">โทรศัพท์:</span>
+                                        <span class="info-value">555-7890</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">อีเมล:</span>
+                                        <span class="info-value">michael.brown@design.com</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-card-header">
+                                    <i class="fas fa-user-tie mr-2"></i>ข้อมูลผู้ขาย
+                                </div>
+                                <div class="info-card-body">
+                                    <div class="info-item">
+                                        <span class="info-label">ชื่อผู้ขาย:</span>
+                                        <span class="info-value">Apirak Bangpuk</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">อีเมล:</span>
+                                        <span class="info-value">apirak.ba@gmail.com</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">โทรศัพท์:</span>
+                                        <span class="info-value">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">ทีม:</span>
+                                        <span class="info-value">Innovation</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">หัวหน้าทีมฝ่ายขาย:</span>
+                                        <span class="info-value">Apirak Bangpuk</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="section-card">
-                                <div class="section-header">
-                                    <i class="fas fa-user-tie mr-2"></i>ข้อมูลผู้ขาย
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <i class="fas fa-chart-bar mr-2"></i>ข้อมูลทางการเงิน
+                        </div>
+                        <div class="info-card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">ราคาขาย (รวมภาษี):</span>
+                                        <span class="info-value">190,000.00 บาท</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">ราคาขาย (ไม่รวมภาษี):</span>
+                                        <span class="info-value">10,000.00 บาท</span>
+                                    </div>
                                 </div>
-                                <div class="section-body">
-                                    <div class="info-item"><span class="info-label">ชื่อผู้ขาย:</span> <?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></div>
-                                    <div class="info-item"><span class="info-label">อีเมล:</span> <?php echo htmlspecialchars($project['seller_email']); ?></div>
-                                    <div class="info-item"><span class="info-label">โทรศัพท์:</span> <?php echo htmlspecialchars($project['seller_phone']); ?></div>
-                                    <div class="info-item"><span class="info-label">ทีม:</span> <?php echo htmlspecialchars($project['team_name']); ?></div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">ต้นทุน (รวมภาษี):</span>
+                                        <span class="info-value">160,000.00 บาท</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">ต้นทุน (ไม่รวมภาษี):</span>
+                                        <span class="info-value">30,000.00 บาท</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="section-card">
-                                <div class="section-header">
-                                    <i class="fas fa-chart-bar mr-2"></i>ข้อมูลทางการเงิน
+                            <div class="financial-summary">
+                                <div class="financial-item">
+                                    <span class="financial-label">กำไรขั้นต้น:</span>
+                                    <span class="financial-value profit-highlight">30,000.00 บาท</span>
                                 </div>
-                                <div class="section-body">
-                                    <div class="info-item"><span class="info-label">ราคาขาย (รวมภาษี):</span> <?php echo number_format($project['sale_vat'], 2); ?> บาท</div>
-                                    <div class="info-item"><span class="info-label">ราคาขาย (ไม่รวมภาษี):</span> <?php echo number_format($project['sale_no_vat'], 2); ?> บาท</div>
-                                    <div class="info-item"><span class="info-label">ต้นทุน (รวมภาษี):</span> <?php echo number_format($project['cost_vat'], 2); ?> บาท</div>
-                                    <div class="info-item"><span class="info-label">ต้นทุน (ไม่รวมภาษี):</span> <?php echo number_format($project['cost_no_vat'], 2); ?> บาท</div>
-                                    <div class="financial-summary">
-                                        <div class="financial-item">
-                                            <span>
-                                                <div class="icon-circle"><i class="fas fa-chart-line"></i></div> กำไรขั้นต้น:
-                                            </span>
-                                            <strong><?php echo number_format($project['gross_profit'], 2); ?> บาท</strong>
-                                        </div>
-                                        <div class="financial-item">
-                                            <span>
-                                                <div class="icon-circle"><i class="fas fa-percentage"></i></div> กำไรขั้นต้น (%):
-                                            </span>
-                                            <strong><?php echo number_format($project['potential'], 2); ?>%</strong>
-                                        </div>
-                                    </div>
+                                <div class="financial-item">
+                                    <span class="financial-label">กำไรขั้นต้น (%):</span>
+                                    <span class="financial-value profit-highlight">80.00%</span>
                                 </div>
                             </div>
                         </div>
