@@ -104,6 +104,29 @@ $query_users = $stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Account Management</title>
     <?php include  '../../include/header.php'; ?>
+
+    <!-- /* ใช้ฟอนต์ Noto Sans Thai กับ label */ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
+        th,
+        h1 {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 700;
+            /* ปรับระดับน้ำหนักของฟอนต์ */
+            font-size: 16px;
+            color: #333;
+        }
+
+        .custom-th {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #FF5733;
+        }
+    </style>
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -323,6 +346,18 @@ $query_users = $stmt->fetchAll();
                 "autoWidth": false,
                 "responsive": true,
             });
+        });
+    </script>
+    <script>
+        // Dropdown Select2
+        $(function() {
+            // Initialize Select2 Elements
+            $('.select2').select2()
+
+            // Initialize Select2 Elements with Bootstrap4 theme
+            $('.select2bs4').select2({
+                theme: 'bootstrap4'
+            })
         });
     </script>
 </body>

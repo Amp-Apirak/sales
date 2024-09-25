@@ -14,28 +14,45 @@ function clean_input($data)
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
-// ฟังก์ชันสำหรับสร้าง UUID แบบปลอดภัย
-function generateUUID()
-{
-    $data = random_bytes(16);
-    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // เวอร์ชัน 4 UUID
-    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // UUID variant
-    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-}
-
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
-$created_by = $_SESSION['user_id']; // ดึง user_id ของผู้สร้างจาก session
+$updated_by = $_SESSION['user_id']; // ดึง user_id ของผู้แก้ไขจาก session
 
-// ตรวจสอบว่าผู้ใช้กดปุ่ม "เพิ่มลูกค้า" หรือไม่
+// ตรวจสอบว่ามีการส่ง customer_id มาใน URL หรือไม่
+if (isset($_GET['customer_id'])) {
+    // ถอดรหัส customer_id ที่ได้รับจาก URL
+    $encrypted_customer_id = urldecode($_GET['customer_id']);
+    $customer_id = decryptUserId($encrypted_customer_id);
+
+    // ตรวจสอบว่าถอดรหัสสำเร็จหรือไม่
+    if ($customer_id !== false) {
+        // ดึงข้อมูลลูกค้าจากฐานข้อมูลโดยใช้ customer_id
+        $sql = "SELECT * FROM customers WHERE customer_id = :customer_id";
+        $stmt = $condb->prepare($sql);
+        $stmt->bindParam(':customer_id', $customer_id, PDO::PARAM_STR);
+        $stmt->execute();
+        $customer = $stmt->fetch();
+
+        // ตรวจสอบว่าพบข้อมูลลูกค้าหรือไม่
+        if (!$customer) {
+            echo "ไม่พบข้อมูลลูกค้าที่ต้องการแก้ไข";
+            exit;
+        }
+    } else {
+        echo "รหัสลูกค้าไม่ถูกต้อง";
+        exit;
+    }
+} else {
+    echo "ไม่มีการส่งรหัสลูกค้ามา";
+    exit;
+}
+
+// ตรวจสอบว่าผู้ใช้กดปุ่ม "แก้ไขข้อมูลลูกค้า" หรือไม่
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ตรวจสอบ CSRF Token
     if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
         die("Invalid CSRF token");
     }
-
-    // สร้าง UUID สำหรับ project_id
-    $customer_id = generateUUID();
 
     // รับข้อมูลจากฟอร์มและล้างข้อมูลด้วย htmlspecialchars เพื่อป้องกัน XSS
     $customer_name = clean_input($_POST['customer_name']);
@@ -45,49 +62,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = clean_input($_POST['email']);
     $remark = clean_input($_POST['remark']);
 
-    // ตรวจสอบว่ามีชื่อบริษัทหรืออีเมลที่ซ้ำหรือไม่
-    $checkcustomer_sql = "SELECT * FROM customers WHERE company = :company OR email = :email OR phone = :phone";
+    // ตรวจสอบว่ามีชื่อบริษัทหรืออีเมลที่ซ้ำกับลูกค้าคนอื่นหรือไม่
+    $checkcustomer_sql = "SELECT * FROM customers WHERE (company = :company OR email = :email OR phone = :phone) AND customer_id != :customer_id ";
     $stmt = $condb->prepare($checkcustomer_sql);
     $stmt->bindParam(':company', $company, PDO::PARAM_STR);
     $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-    $stmt->bindParam(':phone', $email, PDO::PARAM_INT);
+    $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
+    $stmt->bindParam(':customer_id', $customer_id, PDO::PARAM_STR);
     $stmt->execute();
     $existing_customer = $stmt->fetch();
 
     if ($existing_customer) {
-        // ถ้าพบชื่อบริษัทหรืออีเมลซ้ำ
+        // ถ้าพบชื่อบริษัทหรืออีเมลหรือเบอร์ซ้ำ
         echo "<script>
                 setTimeout(function() {
                     Swal.fire({
                         title: 'เกิดข้อผิดพลาด',
-                        text: 'ชื่อบริษัทหรืออีเมลหรือเบอร์โทรนี้ถูกใช้ไปแล้ว!',
+                        text: 'ชื่อบริษัท อีเมล หรือเบอร์นี้ถูกใช้ไปแล้ว!',
                         icon: 'error',
                         confirmButtonText: 'ตกลง'
                     });
                 }, 100);
               </script>";
+    } else if (
+        $customer_name == $customer['customer_name'] &&
+        $company == $customer['company'] &&
+        $email == $customer['email'] &&
+        $phone == $customer['phone'] &&
+        $address == $customer['address'] &&
+        $remark == $customer['remark']
+    ) {
+        // ถ้าไม่มีการเปลี่ยนแปลงข้อมูล แสดง SweetAlert
+        echo  '<script>
+            setTimeout(function() {
+                Swal.fire({
+                    title: "Opp..",
+                    text: "No data corrections found.",
+                    icon: "error"
+                }).then(function() {
+                    window.location = "customer.php"; //หน้าที่ต้องการให้กระโดดไป
+                });
+            }, 1000);
+            </script>';
     } else {
-        // เพิ่มข้อมูลลูกค้าลงฐานข้อมูล
+        // แก้ไขข้อมูลลูกค้าในฐานข้อมูล
         try {
-            $sql = "INSERT INTO customers (customer_id, customer_name, company, address, phone, email, remark, created_by)
-                    VALUES (:customer_id, :customer_name, :company, :address, :phone, :email, :remark, :created_by)";
+            $sql = "UPDATE customers SET customer_name = :customer_name, company = :company, address = :address, phone = :phone, email = :email, remark = :remark, updated_by = :updated_by WHERE customer_id = :customer_id";
             $stmt = $condb->prepare($sql);
-            $stmt->bindParam(':customer_id', $customer_id, PDO::PARAM_STR);
             $stmt->bindParam(':customer_name', $customer_name, PDO::PARAM_STR);
             $stmt->bindParam(':company', $company, PDO::PARAM_STR);
             $stmt->bindParam(':address', $address, PDO::PARAM_STR);
             $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
             $stmt->bindParam(':email', $email, PDO::PARAM_STR);
             $stmt->bindParam(':remark', $remark, PDO::PARAM_STR);
-            $stmt->bindParam(':created_by', $created_by, PDO::PARAM_INT);
+            $stmt->bindParam(':updated_by', $updated_by, PDO::PARAM_INT);
+            $stmt->bindParam(':customer_id', $customer_id, PDO::PARAM_STR);
             $stmt->execute();
 
-            // แสดงข้อความเมื่อเพิ่มลูกค้าสำเร็จด้วย SweetAlert
+            // แสดงข้อความเมื่อแก้ไขสำเร็จด้วย SweetAlert
             echo "<script>
                     setTimeout(function() {
                         Swal.fire({
                             title: 'สำเร็จ!',
-                            text: 'เพิ่มลูกค้าเรียบร้อยแล้ว!',
+                            text: 'แก้ไขข้อมูลลูกค้าเรียบร้อยแล้ว!',
                             icon: 'success',
                             confirmButtonText: 'ตกลง'
                         }).then(function() {
@@ -109,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SalePipeline | Add Customer</title>
+    <title>SalePipeline | Edit Customer</title>
     <?php include '../../include/header.php'; ?>
     <!-- SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -129,12 +166,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="container-fluid">
                     <div class="row mb-2">
                         <div class="col-sm-6">
-                            <h1 class="m-0">Add Customer</h1>
+                            <h1 class="m-0">Edit Customer</h1>
                         </div>
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
                                 <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">Home</a></li>
-                                <li class="breadcrumb-item active">Add Customer</li>
+                                <li class="breadcrumb-item active">Edit Customer</li>
                             </ol>
                         </div>
                     </div>
@@ -147,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-12">
-                            <!-- ฟอร์มเพิ่มข้อมูลลูกค้า -->
+                            <!-- ฟอร์มแก้ไขข้อมูลลูกค้า -->
                             <div class="card card-primary h-100">
                                 <div class="card-header">
                                     <h3 class="card-title">Customer Information</h3>
@@ -164,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text"><i class="fas fa-address-book"></i></span>
                                                 </div>
-                                                <input type="text" name="customer_name" class="form-control" id="customer_name" placeholder="Customer Name" required>
+                                                <input type="text" name="customer_name" class="form-control" id="customer_name" value="<?php echo htmlspecialchars($customer['customer_name']); ?>" required>
                                             </div>
                                         </div>
 
@@ -175,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text"><i class="fas fa-building"></i></span>
                                                 </div>
-                                                <input type="text" name="company" class="form-control" id="company" placeholder="Company" required>
+                                                <input type="text" name="company" class="form-control" id="company" value="<?php echo htmlspecialchars($customer['company']); ?>" required>
                                             </div>
                                         </div>
 
@@ -186,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
                                                 </div>
-                                                <input type="text" name="address" class="form-control" id="address" placeholder="Address">
+                                                <input type="text" name="address" class="form-control" id="address" value="<?php echo htmlspecialchars($customer['address']); ?>">
                                             </div>
                                         </div>
 
@@ -197,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text"><i class="fas fa-phone"></i></span>
                                                 </div>
-                                                <input type="text" name="phone" class="form-control" id="phone" placeholder="Phone">
+                                                <input type="text" name="phone" class="form-control" id="phone" value="<?php echo htmlspecialchars($customer['phone']); ?>">
                                             </div>
                                         </div>
 
@@ -208,7 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                                                 </div>
-                                                <input type="email" name="email" class="form-control" id="email" placeholder="Email">
+                                                <input type="email" name="email" class="form-control" id="email" value="<?php echo htmlspecialchars($customer['email']); ?>">
                                             </div>
                                         </div>
 
@@ -219,7 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text"><i class="fas fa-comment"></i></span>
                                                 </div>
-                                                <textarea name="remark" class="form-control" id="remark" placeholder="Remark"></textarea>
+                                                <textarea name="remark" class="form-control" id="remark"><?php echo htmlspecialchars($customer['remark']); ?></textarea>
                                             </div>
                                         </div>
 
@@ -238,12 +275,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Footer -->
         <?php include '../../include/footer.php'; ?>
     </div>
-    <script>
-        document.querySelector('form').addEventListener('submit', function(event) {
-            var submitButton = event.target.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-        });
-    </script>
 </body>
 
 </html>

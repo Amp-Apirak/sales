@@ -13,20 +13,39 @@ if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
     exit();
 }
 
+// สร้างหรือดึง CSRF Token สำหรับป้องกันการโจมตี CSRF
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
 
 // ฟังก์ชันทำความสะอาดข้อมูล input
 function clean_input($data)
 {
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
+    return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
+}
+
+// ฟังก์ชันสำหรับสร้าง UUID แบบปลอดภัย
+function generateUUID()
+{
+    $data = random_bytes(16);
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // เวอร์ชัน 4 UUID
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // UUID variant
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
 $alert = ''; // ตัวแปรสำหรับแสดงข้อความแจ้งเตือน
 
 // ตรวจสอบว่ามีการส่งฟอร์มหรือไม่
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // ตรวจสอบ CSRF Token
+    if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("Invalid CSRF token");
+    }
+
+    // สร้าง UUID สำหรับ project_id
+    $project_id = generateUUID();
+
     // ทำความสะอาดข้อมูลที่ได้จากฟอร์ม
     $project_name = clean_input($_POST['project_name']);
     $sales_date = clean_input($_POST['sales_date']);
@@ -64,22 +83,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception("มีโครงการชื่อนี้อยู่แล้ว");
             }
 
-            // เตรียม SQL สำหรับการเพิ่มข้อมูล
-            $sql = "INSERT INTO projects (project_name, start_date, end_date, status, contract_no, product, customer_id, 
-                    sale_vat, sale_no_vat, cost_vat, cost_no_vat, gross_profit, potential, sales_date,
-                    es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at, seller) 
-                    VALUES (:project_name, :start_date, :end_date, :status, :contract_no, :product, :customer_id, 
-                    :sale_vat, :sale_no_vat, :cost_vat, :cost_no_vat, :gross_profit, :potential, :sales_date,
-                    :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW(), :seller)";
+            // เตรียม SQL สำหรับการเพิ่มข้อมูลโดยใช้ UUID สำหรับ project_id
+            $sql = "INSERT INTO projects (project_id, project_name, start_date, end_date, status, contract_no, product_id, customer_id, 
+            sale_vat, sale_no_vat, cost_vat, cost_no_vat, gross_profit, potential, sales_date,
+            es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at, seller) 
+            VALUES (:project_id, :project_name, :start_date, :end_date, :status, :contract_no, :product_id, :customer_id, 
+            :sale_vat, :sale_no_vat, :cost_vat, :cost_no_vat, :gross_profit, :potential, :sales_date,
+            :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW(), :seller)";
 
             $stmt = $condb->prepare($sql);
             $stmt->execute([
+                ':project_id' => $project_id,
                 ':project_name' => $project_name,
                 ':start_date' => $date_start,
                 ':end_date' => $date_end,
                 ':status' => $status,
                 ':contract_no' => $contract_no,
-                ':product' => $product_id,
+                ':product_id' => $product_id,
                 ':customer_id' => $customer_id ?: null, // ใส่ null หากไม่มี customer_id
                 ':sale_vat' => $sale_vat,
                 ':sale_no_vat' => $sale_no_vat,
@@ -109,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ดึงข้อมูลสำหรับ dropdowns
-$stmt = $condb->query("SELECT * FROM products");
+$stmt = $condb->query("SELECT product_id, product_name FROM products");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $stmt = $condb->query("SELECT * FROM customers");
@@ -198,6 +218,8 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="col-md-6">
                                     <!-- /.Pipeline descriptions ----------------------------------------------------------------------->
                                     <form action="#" method="POST" enctype="multipart/form-data">
+                                        <!-- Include the CSRF token as a hidden input -->
+                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                         <!-- /.card -->
                                         <div class="card card-primary h-80 w-100">
                                             <div class="card-header ">

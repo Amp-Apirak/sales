@@ -3,13 +3,6 @@
 //session_start and Config DB
 include  '../../include/Add_session.php';
 
-// sweet alert 
-echo '
-<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert-dev.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.css">';
-
-
 // ตรวจสอบว่ามีการส่ง user_id มาหรือไม่
 if (isset($_GET['user_id'])) {
     // ถอดรหัส user_id ที่ได้รับจาก URL
@@ -63,60 +56,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $team_id = $_POST['team_id'];
     $password = $_POST['password'];
 
-
-
-    // อัปเดตข้อมูลผู้ใช้ในฐานข้อมูล
-    // เช็คว่ามีการป้อนรหัสผ่านใหม่หรือไม่
-    if (!empty($password)) {
-        // เข้ารหัสรหัสผ่านใหม่
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-        // อัปเดตรหัสผ่านและข้อมูลอื่นๆ
-        $sql_update = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, phone = :phone, 
-      position = :position, role = :role, company = :company, team_id = :team_id, password = :password WHERE user_id = :user_id";
-        $stmt_update = $condb->prepare($sql_update);
-        $stmt_update->bindParam(':password', $hashed_password); // ผูก password ที่เข้ารหัส
-    } else {
-        // อัปเดตเฉพาะข้อมูลอื่นๆ โดยไม่เปลี่ยนแปลงรหัสผ่าน
-        $sql_update = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, phone = :phone, 
-      position = :position, role = :role, company = :company, team_id = :team_id WHERE user_id = :user_id";
-        $stmt_update = $condb->prepare($sql_update);
-    }
-
-    $stmt_update->bindParam(':first_name', $first_name);
-    $stmt_update->bindParam(':last_name', $last_name);
-    $stmt_update->bindParam(':email', $email);
-    $stmt_update->bindParam(':phone', $phone);
-    $stmt_update->bindParam(':position', $position);
-    $stmt_update->bindParam(':role', $role);
-    $stmt_update->bindParam(':company', $company);
-    $stmt_update->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-    $stmt_update->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-
-    if ($stmt_update->execute()) {
+    // ตรวจสอบว่ามีการเปลี่ยนแปลงข้อมูลหรือไม่
+    if (
+        $first_name == $user['first_name'] &&
+        $last_name == $user['last_name'] &&
+        $email == $user['email'] &&
+        $phone == $user['phone'] &&
+        $position == $user['position'] &&
+        $role == $user['role'] &&
+        $company == $user['company'] &&
+        $team_id == $user['team_id'] &&
+        empty($password)
+    ) {
+        // ถ้าไม่มีการเปลี่ยนแปลงข้อมูล แสดง SweetAlert
         echo  '<script>
-        setTimeout(function() {
-            swal({
-                title: "Update success",
-                text: "Update data success. ",
-                type: "success"
-            }, function() {
-                window.location = "account.php"; //หน้าที่ต้องการให้กระโดดไป
-        });
-        }, 1000);
-</script>';
+            setTimeout(function() {
+                Swal.fire({
+                    title: "Opp..",
+                    text: "No data corrections found.",
+                    icon: "error"
+                }).then(function() {
+                    window.location = "account.php"; //หน้าที่ต้องการให้กระโดดไป
+                });
+            }, 1000);
+            </script>';
     } else {
-        echo '<script>
-                        setTimeout(function() {
-                        swal({
-                            title: "Oop.....!",
-                            text: "Update data unsuccess, please try again.",
-                            type: "warning"
-                        }, function() {
-                            window.location = "login.php"; //หน้าที่ต้องการให้กระโดดไป
-                        });
-                        }, 1000);
-                    </script>';
+        // ถ้ามีการเปลี่ยนแปลงข้อมูล อัปเดตข้อมูลผู้ใช้ในฐานข้อมูล
+        try {
+            if (!empty($password)) {
+                // เข้ารหัสรหัสผ่านใหม่
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+                // อัปเดตรหัสผ่านและข้อมูลอื่นๆ
+                $sql_update = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, phone = :phone, 
+                  position = :position, role = :role, company = :company, team_id = :team_id, password = :password WHERE user_id = :user_id";
+                $stmt_update = $condb->prepare($sql_update);
+                $stmt_update->bindParam(':password', $hashed_password);
+            } else {
+                // อัปเดตเฉพาะข้อมูลอื่นๆ โดยไม่เปลี่ยนแปลงรหัสผ่าน
+                $sql_update = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, phone = :phone, 
+                  position = :position, role = :role, company = :company, team_id = :team_id WHERE user_id = :user_id";
+                $stmt_update = $condb->prepare($sql_update);
+            }
+
+            $stmt_update->bindParam(':first_name', $first_name);
+            $stmt_update->bindParam(':last_name', $last_name);
+            $stmt_update->bindParam(':email', $email);
+            $stmt_update->bindParam(':phone', $phone);
+            $stmt_update->bindParam(':position', $position);
+            $stmt_update->bindParam(':role', $role);
+            $stmt_update->bindParam(':company', $company);
+            $stmt_update->bindParam(':team_id', $team_id, PDO::PARAM_INT);
+            $stmt_update->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+
+            $stmt_update->execute();
+
+            echo '<script>
+                    Swal.fire({
+                        title: "Success",
+                        text: "ข้อมูลได้รับการอัปเดตเรียบร้อยแล้ว",
+                        icon: "success"
+                    }).then(function() {
+                        window.location = "account.php"; 
+                    });
+                </script>';
+        } catch (Exception $e) {
+            echo '<script>
+                    Swal.fire({
+                        title: "Error",
+                        text: "เกิดข้อผิดพลาดในการอัปเดตข้อมูล: ' . $e->getMessage() . '",
+                        icon: "error"
+                    }).then(function() {
+                        window.location = "account.php"; 
+                    });
+                </script>';
+        }
     }
 }
 
@@ -131,6 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Create Account</title>
     <?php include  '../../include/header.php'; ?>
+
+
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -161,9 +177,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div><!-- /.container-fluid -->
             </div>
             <!-- /.content-header -->
-
-            <!-- ใส่ SweetAlert CSS -->
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
             <!-- Main content -->
             <section class="content">

@@ -11,7 +11,7 @@ $user_id = $_SESSION['user_id'];  // user_id ของผู้ใช้
 $search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) : '';
 
 // Query พื้นฐานในการดึงข้อมูลลูกค้าทั้งหมด
-$sql_customers = "SELECT c.*, u.first_name, u.last_name, t.team_name 
+$sql_customers = "SELECT DISTINCT  c.*, u.first_name, u.last_name, t.team_name 
                   FROM customers c
                   LEFT JOIN users u ON c.created_by = u.user_id
                   LEFT JOIN teams t ON u.team_id = t.team_id
@@ -62,6 +62,29 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Customer Management</title>
     <?php include '../../include/header.php'; ?>
+
+    <!-- /* ใช้ฟอนต์ Noto Sans Thai กับ label */ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
+        th,
+        h1 {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 700;
+            /* ปรับระดับน้ำหนักของฟอนต์ */
+            font-size: 16px;
+            color: #333;
+        }
+
+        .custom-th {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #FF5733;
+        }
+    </style>
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">

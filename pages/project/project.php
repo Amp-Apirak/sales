@@ -18,7 +18,7 @@ function clean_input($data)
 
 // รับค่าจากฟอร์มการค้นหาและทำความสะอาด
 $search_service = clean_input($_POST['searchservice'] ?? '');
-$search_product = clean_input($_POST['product'] ?? '');
+$search_product = filter_var($_POST['product'] ?? 0, FILTER_VALIDATE_INT);
 $search_status = clean_input($_POST['status'] ?? '');
 $search_creator = filter_var($_POST['creator'] ?? 0, FILTER_VALIDATE_INT);
 $search_customer = filter_var($_POST['customer'] ?? 0, FILTER_VALIDATE_INT);
@@ -40,7 +40,12 @@ if ($role == 'Sale Supervisor') {
 }
 
 // Product Dropdown
-$stmt = $condb->prepare("SELECT DISTINCT product FROM projects p $where_clause_dropdown");
+$stmt = $condb->prepare("
+    SELECT DISTINCT p.product_id, pr.product_name 
+    FROM projects p
+    JOIN products pr ON p.product_id = pr.product_id
+    $where_clause_dropdown
+");
 $stmt->execute($params_dropdown);
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -119,7 +124,7 @@ if (!empty($search_team)) {
     $params[':search_team'] = $search_team;
 }
 if (!empty($search_product)) {
-    $where_clause .= " AND p.product = :search_product";
+    $where_clause .= " AND p.product_id = :search_product";
     $params[':search_product'] = $search_product;
 }
 if (!empty($search_status)) {
@@ -141,11 +146,12 @@ if (!empty($search_year)) {
 
 // SQL query สำหรับดึงข้อมูลโปรเจกต์ พร้อม team_name
 $sql_projects = "
-    SELECT p.*, u.first_name, u.last_name, c.customer_name, t.team_name
+    SELECT p.*, u.first_name, u.last_name, c.customer_name, t.team_name, pr.product_name
     FROM projects p
     LEFT JOIN customers c ON p.customer_id = c.customer_id
     LEFT JOIN users u ON p.created_by = u.user_id
     LEFT JOIN teams t ON u.team_id = t.team_id
+    LEFT JOIN products pr ON p.product_id = pr.product_id
     $where_clause
     ORDER BY p.project_id DESC
 ";
@@ -178,6 +184,29 @@ $total_creators = count($unique_creators);
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Project Management</title>
     <?php include  '../../include/header.php'; ?>
+
+    <!-- /* ใช้ฟอนต์ Noto Sans Thai กับ label */ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
+        th,
+        h1 {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 700;
+            /* ปรับระดับน้ำหนักของฟอนต์ */
+            font-size: 16px;
+            color: #333;
+        }
+
+        .custom-th {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #FF5733;
+        }
+    </style>
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -331,8 +360,8 @@ $total_creators = count($unique_creators);
                                                                 <select class="custom-select select2" name="product">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($products as $product) { ?>
-                                                                        <option value="<?php echo htmlspecialchars($product['product']); ?>" <?php echo ($search_product == $product['product']) ? 'selected' : ''; ?>>
-                                                                            <?php echo htmlspecialchars($product['product']); ?>
+                                                                        <option value="<?php echo htmlspecialchars($product['product_id']); ?>" <?php echo ($search_product == $product['product_id']) ? 'selected' : ''; ?>>
+                                                                            <?php echo htmlspecialchars($product['product_name']); ?>
                                                                         </option>
                                                                     <?php } ?>
                                                                 </select>
@@ -440,8 +469,8 @@ $total_creators = count($unique_creators);
                                             <?php foreach ($projects as $project) { ?>
                                                 <tr id="myTable">
                                                     <td><?php echo htmlspecialchars($project['contract_no']); ?></td>
-                                                    <td><?php echo htmlspecialchars($project['product']); ?></td>
-                                                    <td><?php echo htmlspecialchars($project['project_name']); ?></td>
+                                                    <td><?php echo htmlspecialchars($project['product_name']); ?></td>
+                                                    <td style="width: 500px; word-wrap: break-word;" ><?php echo htmlspecialchars($project['project_name']); ?></td>
                                                     <td>
                                                         <?php
                                                         if (strcasecmp($project["status"], 'Waiting for approve') == 0) {
@@ -532,6 +561,18 @@ $total_creators = count($unique_creators);
                 "autoWidth": false,
                 "responsive": true,
             });
+        });
+    </script>
+    <script>
+        // Dropdown Select2
+        $(function() {
+            // Initialize Select2 Elements
+            $('.select2').select2()
+
+            // Initialize Select2 Elements with Bootstrap4 theme
+            $('.select2bs4').select2({
+                theme: 'bootstrap4'
+            })
         });
     </script>
 </body>
