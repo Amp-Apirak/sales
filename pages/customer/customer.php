@@ -228,6 +228,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </section>
             <!-- /.content -->
         </div><!-- /.container-fluid -->
+        
         <!-- /.content-wrapper -->
         <!-- Footer -->
         <?php include '../../include/footer.php'; ?>
