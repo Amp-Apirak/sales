@@ -1,126 +1,132 @@
- <!----------------------------- start Modal Add user ------------------------------->
- <?php
-    if (isset($_POST['submit1'])) { /* ถ้า POST มีการกด Submit ให้ทำส่วนล่าง */
-        /* ประกาศตัวแปลเก็บค่า  POST ที่รับมาจาก INPUT  */
-        $contact_fullname  = $_POST['contact_fullname'];
-        $contact_position  = $_POST['contact_position'];
-        $contact_agency = $_POST['contact_agency'];
-        $contact_tel = $_POST['contact_tel'];
-        $contact_email = $_POST['contact_email'];
-        $contact_detail = $_POST['contact_detail'];
-        $contact_company = $_POST['contact_company'];
-        $contact_type = $_POST['contact_type'];
-        $contact_staff = $_POST['contact_staff'];
-        $contact_province = $_POST['contact_province'];
+<?php
 
-        //print_r($_POST);
-        //check duplicat
-        $sql = "SELECT * From contact WHERE contact_fullname = '$contact_fullname' OR contact_email = '$contact_email' OR contact_tel = '$contact_tel' ";
-        $result = $conn->query($sql);
-        $num = mysqli_num_rows($result);
+// สร้าง CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
-        // print_r($result); 
-        // print_r($num);
-        //ถ้า username ซ้ำ ให้เด้งกลับไปหน้าสมัครสมาชิก ปล.ข้อความใน sweetalert ปรับแต่งได้ตามความเหมาะสม
-        if ($num > 0) {
-            echo '<script>
-                            setTimeout(function() {
-                                swal({
-                                        title: "The data already exists in the system.!! ",  
-                                        text: "Please check the information again.",
-                                        type: "warning"
-                                    }, function() {
-                                        window.location = "#"; //หน้าที่ต้องการให้กระโดดไป
-                                        });
-                                        }, 1000);
-                                    </script>';
-        } else {
-            //ถ้า username ไม่ซ้ำ เก็บข้อมูลลงตาราง
 
-            //sql insert
-            $sql = "INSERT INTO `contact` ( `contact_fullname`,`contact_position`,`contact_agency`,
-                                            `contact_tel`, `contact_email`, `contact_detail`, `contact_company`, `contact_type`, `contact_staff`,
-                                            `contact_province`)
-                                        VALUES ('$contact_fullname','$contact_position','$contact_agency','$contact_tel', '$contact_email',
-                                            '$contact_detail', '$contact_company', '$contact_type', '$contact_staff', '$contact_province')";
+// ดึงข้อมูลจากตาราง users สำหรับแสดงในดรอปดาวน์ team_leader
+try {
+    $sql = "SELECT user_id, first_name, last_name FROM users ORDER BY first_name, last_name";
+    $stmt = $condb->prepare($sql);
+    $stmt->execute();
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Error fetching users: " . $e->getMessage());
+    $error_message = "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
+}
 
-            $result = $conn->query($sql);
-            if ($result) {
-                echo '<script>
-                                                    setTimeout(function() {
-                                                    swal({
-                                                            title: "Save data successfully",
-                                                            text: "",
-                                                            type: "success"
-                                                        }, function() {
-                                                            window.location = "contact.php"; //หน้าที่ต้องการให้กระโดดไป
-                                                            });
-                                                            }, 1000);
-                                                        </script>';
-            } else {
-                echo '<script>
-                                                    setTimeout(function() {
-                                                    swal({
-                                                            title: "Please check the information again.",
-                                                            type: "error"
-                                                    }, function() {
-                                                            window.location = "contact.php"; //หน้าที่ต้องการให้กระโดดไป
-                                                            });
-                                                            }, 1000);
-                                                        </script>';
+?>
+
+<div class="modal fade" id="editbtn">
+    <div class="modal-dialog editbtn">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Add Team</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- ฟอร์มเพิ่มข้อมูลทีม -->
+                <form id="addTeamForm" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="team_name">Team Name<span class="text-danger">*</span></label>
+                            <input type="text" name="team_name" class="form-control" id="team_name" placeholder="Team Name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="team_description">Description</label>
+                            <textarea class="form-control" name="team_description" id="team_description" rows="4" placeholder="Description"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="team_leader">Lead Team<span class="text-danger">*</span></label>
+                            <select class="form-control select2" id="team_leader" name="team_leader" required>
+                                <option value="">เลือกหัวหน้าทีม</option>
+                                <?php foreach ($users as $user): ?>
+                                    <option value="<?php echo htmlspecialchars($user['user_id']); ?>">
+                                        <?php echo htmlspecialchars($user['first_name'] . " " . $user['last_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer justify-content-between">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-success">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // เริ่มต้น Select2
+        $('.select2').select2();
+
+        // จัดการการส่งฟอร์ม
+        $('#addTeamForm').on('submit', function(e) {
+            e.preventDefault();
+
+            // เตรียมข้อมูลที่จะส่ง
+            var formData = {
+                team_name: $('#team_name').val().trim(),
+                team_description: $('#team_description').val().trim(),
+                team_leader: $('#team_leader').val(),
+                csrf_token: $('input[name="csrf_token"]').val()
+            };
+
+            // ตรวจสอบข้อมูลก่อนส่ง
+            if (!formData.team_name || !formData.team_leader) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ข้อมูลไม่ครบถ้วน',
+                    text: 'กรุณากรอกชื่อทีมและเลือกหัวหน้าทีม'
+                });
+                return;
             }
-            $conn = null; //close connect db
-        } //else chk dup
 
-    } //isset 
-    //devbanban.com
-    ?>
-
- <div class="modal fade" id="editbtn">
-     <div class="modal-dialog editbtn">
-         <div class="modal-content">
-             <div class="modal-header">
-                 <h4 class="modal-title">Add Team</h4>
-                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                     <span aria-hidden="true">&times;</span>
-                 </button>
-             </div>
-             <div class="modal-body">
-                 <form action="contact.php" method="POST" enctype="multipart/form-data">
-                     <div class="card-body">
-
-                         <div class="form-group">
-                             <label for="team_name">Team Name<span class="text-danger">*</span></label>
-                             <input type="text" name="team_name" class="form-control" id="team_name" placeholder="" required>
-                         </div>
-                         <!-- /.form-group -->
-
-                         <!-- textarea -->
-                         <div class="form-group">
-                             <label>Description</label>
-                             <textarea class="form-control" name="team_description" id="team_description" rows="4" placeholder=""></textarea>
-                         </div>
-
-
-                         <div class="form-group">
-                             <label>Lead Team<span class="text-danger">*</span></label>
-                             <select class="form-control select2" name="team_leader" required style="width: 100%;">
-                                 <option selected="selected">Select</option>
-                             </select>
-                         </div>
-                         <!-- /.form-group -->
-                     </div>
-
-             </div>
-             <div class="modal-footer justify-content-between">
-                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                 <button type="submit1" name="submit1" value="submit1" class="btn btn-success">Save</button>
-             </div>
-             </form>
-         </div>
-         <!-- /.modal-content -->
-     </div>
-     <!-- /.modal-dialog -->
- </div>
- <!-- /.modal -->
- <!----------------------------- end Modal Add user --------------------------------->
+            // ส่งข้อมูลไปยัง API
+            $.ajax({
+                url: 'http://localhost/sales/api/setting/team/team_api.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-CSRF-TOKEN', formData.csrf_token);
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'บันทึกสำเร็จ',
+                            text: response.message
+                        }).then(() => {
+                            window.location.href = 'team.php'; // ไปยังหน้าแสดงรายการทีม
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: response.error || 'ไม่สามารถบันทึกข้อมูลได้'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
+                    });
+                }
+            });
+        });
+    });
+</script>

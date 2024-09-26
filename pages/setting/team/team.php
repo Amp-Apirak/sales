@@ -218,6 +218,12 @@ $current_page = $data['current_page'];
         <?php include 'add_team.php'; ?>
     </div>
     <!-- ./wrapper -->
+    <!-- JS for Dropdown Select2 -->
+    <script>
+        $(function() {
+            $('.select2').select2();
+        });
+    </script>
 
     <!-- DataTables -->
     <script>
