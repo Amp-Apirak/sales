@@ -33,11 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT
 }
 
 // ตรวจสอบสิทธิ์ผู้ใช้ (ในกรณีที่ต้องการให้เฉพาะบาง role เท่านั้นที่เข้าถึงได้)
-if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'Executive', 'Sale Supervisor'])) {
-    http_response_code(403); // Forbidden
-    echo json_encode(['error' => 'Access denied.']);
-    exit();
-}
+// if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'Executive', 'Sale Supervisor'])) {
+//     http_response_code(403); // Forbidden
+//     echo json_encode(['error' => 'Access denied.']);
+//     exit();
+// }
 
 try {
     $method = $_SERVER['REQUEST_METHOD']; // ตรวจสอบ HTTP Method ที่ส่งเข้ามา

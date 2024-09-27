@@ -22,13 +22,13 @@ try {
     exit;
 }
 
-// ฟังก์ชันสำหรับเข้ารหัส user_id
+// ฟังก์ชันสำหรับเข้ารหัส ID
 function encryptUserId($user_id) {
     $secret_key = "your_secret_key";  // เปลี่ยนคีย์นี้ตามที่คุณต้องการ
     return base64_encode(openssl_encrypt($user_id, "aes-256-cbc", $secret_key, 0, "1234567890123456"));
 }
 
-// ฟังก์ชันสำหรับถอดรหัส user_id
+// ฟังก์ชันสำหรับถอดรหัส ID
 function decryptUserId($encrypted_user_id) {
     $secret_key = "your_secret_key";  // คีย์เดียวกับที่ใช้เข้ารหัส
     return openssl_decrypt(base64_decode($encrypted_user_id), "aes-256-cbc", $secret_key, 0, "1234567890123456");

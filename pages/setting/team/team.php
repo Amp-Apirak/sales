@@ -174,8 +174,8 @@ $current_page = $data['current_page'];
                                                         <td><?php echo htmlspecialchars($team['created_by']); ?></td>
                                                         <td><?php echo htmlspecialchars($team['created_at']); ?></td>
                                                         <td>
-                                                            <a href="edit_team.php?team_id=<?php echo urlencode($team['team_id']); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                            <a href="delete_team.php?team_id=<?php echo urlencode($team['team_id']); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                            <a href="edit_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-info btn-sm" data-toggle="modal" data-target="#editbtn"><i class="fas fa-pencil-alt"></i></a>
+                                                            <a href="delete_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                                         </td>
                                                     </tr>
                                                 <?php }

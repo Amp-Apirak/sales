@@ -5,6 +5,35 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+// ตรวจสอบว่ามีการส่ง customer_id มาใน URL หรือไม่
+if (isset($_GET['customer_id'])) {
+    // ถอดรหัส customer_id ที่ได้รับจาก URL
+    $encrypted_customer_id = urldecode($_GET['customer_id']);
+    $customer_id = decryptUserId($encrypted_customer_id);
+
+    // ตรวจสอบว่าถอดรหัสสำเร็จหรือไม่
+    if ($customer_id !== false) {
+        // ดึงข้อมูลลูกค้าจากฐานข้อมูลโดยใช้ customer_id
+        $sql = "SELECT * FROM customers WHERE customer_id = :customer_id";
+        $stmt = $condb->prepare($sql);
+        $stmt->bindParam(':customer_id', $customer_id, PDO::PARAM_STR);
+        $stmt->execute();
+        $customer = $stmt->fetch();
+
+        // ตรวจสอบว่าพบข้อมูลลูกค้าหรือไม่
+        if (!$customer) {
+            echo "ไม่พบข้อมูลลูกค้าที่ต้องการแก้ไข";
+            exit;
+        }
+    } else {
+        echo "รหัสลูกค้าไม่ถูกต้อง";
+        exit;
+    }
+} else {
+    echo "ไม่มีการส่งรหัสลูกค้ามา";
+    exit;
+}
+
 // ดึงข้อมูลจากตาราง users สำหรับแสดงในดรอปดาวน์ team_leader
 try {
     $sql = "SELECT user_id, first_name, last_name FROM users ORDER BY first_name, last_name";
