@@ -137,7 +137,7 @@ $current_page = $data['current_page'];
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
                             <div class="col-md-12 pb-3">
-                                <a href="add_team.php" class="btn btn-success btn-sm float-right" data-toggle="modal" data-target="#editbtn">เพิ่มข้อมูล<i class=""></i></a>
+                                <a href="add_team.php" class="btn btn-success btn-sm float-right" data-toggle="modal" data-target="#addbtn">เพิ่มข้อมูล<i class=""></i></a>
                             </div><br>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
 
@@ -174,7 +174,7 @@ $current_page = $data['current_page'];
                                                         <td><?php echo htmlspecialchars($team['created_by']); ?></td>
                                                         <td><?php echo htmlspecialchars($team['created_at']); ?></td>
                                                         <td>
-                                                            <a href="edit_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-info btn-sm" data-toggle="modal" data-target="#editbtn"><i class="fas fa-pencil-alt"></i></a>
+                                                            <a href="edit_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-info btn-sm edit-team" data-id="<?php echo urlencode(encryptUserId($team['team_id'])); ?>" data-toggle="modal" data-target="#editbtn"><i class="fas fa-pencil-alt"></i></a>
                                                             <a href="delete_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                                         </td>
                                                     </tr>
@@ -216,6 +216,10 @@ $current_page = $data['current_page'];
         <?php include '../../../include/footer.php'; ?>
         <!-- Add Team -->
         <?php include 'add_team.php'; ?>
+        <!-- Add Team -->
+        <!-- Edit Team -->
+        <?php include 'edit_team.php'; ?>
+        <!-- Edit Team -->
     </div>
     <!-- ./wrapper -->
     <!-- JS for Dropdown Select2 -->
@@ -245,6 +249,7 @@ $current_page = $data['current_page'];
             });
         });
     </script>
+
 </body>
 
 </html>

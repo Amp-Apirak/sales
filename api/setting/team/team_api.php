@@ -7,106 +7,136 @@ require_once '../../../config/condb.php';
 header('Content-Type: application/json; charset=utf-8');
 
 // ฟังก์ชันสร้าง UUID สำหรับใช้เป็นรหัสเฉพาะ
-function generateUUID() {
-    return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+function generateUUID()
+{
+    return sprintf(
+        '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
         mt_rand(0, 0xffff),
         mt_rand(0, 0x0fff) | 0x4000,
         mt_rand(0, 0x3fff) | 0x8000,
-        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff)
     );
 }
 
 // ฟังก์ชันทำความสะอาดข้อมูล input เพื่อป้องกันการโจมตี Cross-Site Scripting (XSS)
-function clean_input($data) {
+function clean_input($data)
+{
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
 // ป้องกันการโจมตี CSRF
-// ตรวจสอบว่า token ที่ส่งมากับ HTTP Headers ตรงกับ token ที่บันทึกใน session หรือไม่
 if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'DELETE') {
     if (!isset($_SERVER['HTTP_X_CSRF_TOKEN']) || $_SERVER['HTTP_X_CSRF_TOKEN'] !== $_SESSION['csrf_token']) {
-        http_response_code(403); // Forbidden
+        http_response_code(403);
         echo json_encode(['error' => 'Invalid CSRF token.']);
         exit();
     }
 }
 
-// ตรวจสอบสิทธิ์ผู้ใช้ (ในกรณีที่ต้องการให้เฉพาะบาง role เท่านั้นที่เข้าถึงได้)
+// ตรวจสอบสิทธิ์ผู้ใช้
 // if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'Executive', 'Sale Supervisor'])) {
-//     http_response_code(403); // Forbidden
+//     http_response_code(403);
 //     echo json_encode(['error' => 'Access denied.']);
 //     exit();
 // }
 
 try {
-    $method = $_SERVER['REQUEST_METHOD']; // ตรวจสอบ HTTP Method ที่ส่งเข้ามา
+    $method = $_SERVER['REQUEST_METHOD'];
 
-    // เลือกการทำงานตาม HTTP Method
     switch ($method) {
         case 'GET':
-            handleGetRequest($condb); // ดึงข้อมูลทีม
+            handleGetRequest($condb);
             break;
         case 'POST':
-            handlePostRequest($condb); // เพิ่มข้อมูลทีมใหม่
+            handlePostRequest($condb);
             break;
         case 'PUT':
-            handlePutRequest($condb); // อัปเดตข้อมูลทีม
+            handlePutRequest($condb);
             break;
         case 'DELETE':
-            handleDeleteRequest($condb); // ลบข้อมูลทีม
+            handleDeleteRequest($condb);
             break;
         default:
-            http_response_code(405); // Method Not Allowed (ไม่รองรับ Method อื่นๆ)
+            http_response_code(405);
             echo json_encode(['error' => 'Method Not Allowed']);
     }
 } catch (PDOException $e) {
-    // จัดการกรณีเกิดข้อผิดพลาดที่ไม่คาดคิด เช่น ปัญหาฐานข้อมูล
-    http_response_code(500); // Internal Server Error
-    echo json_encode(['error' => 'An unexpected error occurred. Please try again later.']);
-    error_log("Database error: " . $e->getMessage()); // บันทึกข้อผิดพลาดในไฟล์ log
+    http_response_code(500);
+    echo json_encode(['error' => 'An unexpected error occurred.']);
+    error_log("Database error: " . $e->getMessage());
 }
 
-// ฟังก์ชันจัดการ GET Request (ใช้ดึงข้อมูลทีมจากฐานข้อมูล)
-function handleGetRequest($condb) {
-    $search = isset($_GET['search']) ? '%' . clean_input($_GET['search']) . '%' : '%%'; // ตรวจสอบเงื่อนไขการค้นหา
-    $limit = isset($_GET['limit']) ? max(1, min((int)$_GET['limit'], 100)) : 10; // กำหนด limit ของจำนวนข้อมูลต่อหน้า
-    $page = max(1, isset($_GET['page']) ? (int)$_GET['page'] : 1); // กำหนด page
-    $offset = ($page - 1) * $limit; // คำนวณ OFFSET สำหรับแบ่งหน้า
+// ฟังก์ชันจัดการ GET Request
+function handleGetRequest($condb)
+{
+    // ตรวจสอบว่ามีการส่ง team_id มาหรือไม่
+    if (isset($_GET['team_id'])) {
+        $encoded_team_id = $_GET['team_id'];
 
-    // คำสั่ง SQL สำหรับดึงข้อมูลทีม พร้อมชื่อผู้เป็นหัวหน้าทีม (JOIN กับตาราง users)
-    $sql = "
-        SELECT teams.*, CONCAT(users.first_name, ' ', users.last_name) AS team_leader_name
-        FROM teams
-        LEFT JOIN users ON teams.team_leader = users.user_id
-        WHERE teams.team_name LIKE :search OR teams.team_description LIKE :search
-        LIMIT :limit OFFSET :offset";
-    $stmt = $condb->prepare($sql);
-    $stmt->bindParam(':search', $search, PDO::PARAM_STR);
-    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-    $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-    $stmt->execute();
+        // ถอดรหัส team_id
+        $team_id = decryptUserId($encoded_team_id);
 
-    $teams = $stmt->fetchAll(PDO::FETCH_ASSOC); // ดึงข้อมูลในรูปแบบ associative array
+        // SQL สำหรับดึงข้อมูลทีมโดยใช้ team_id
+        $sql = "SELECT teams.*, CONCAT(users.first_name, ' ', users.last_name) AS team_leader_name
+                FROM teams
+                LEFT JOIN users ON teams.team_leader = users.user_id
+                WHERE teams.team_id = :team_id";
+        $stmt = $condb->prepare($sql);
+        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+        $stmt->execute();
 
-    // นับจำนวนรายการทั้งหมดที่ตรงกับเงื่อนไขการค้นหา
-    $count_sql = "SELECT COUNT(*) as total FROM teams WHERE team_name LIKE :search OR team_description LIKE :search";
-    $count_stmt = $condb->prepare($count_sql);
-    $count_stmt->bindParam(':search', $search, PDO::PARAM_STR);
-    $count_stmt->execute();
-    $total_rows = $count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        $team = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // ส่งข้อมูลในรูปแบบ JSON พร้อมกับข้อมูลการแบ่งหน้า
-    echo json_encode([
-        'teams' => $teams,
-        'total_pages' => ceil($total_rows / $limit),
-        'current_page' => $page,
-        'total_records' => $total_rows
-    ]);
+        if ($team) {
+            echo json_encode(['success' => true, 'team' => $team]);
+        } else {
+            http_response_code(404);
+            echo json_encode(['error' => 'Team not found']);
+        }
+    } else {
+        // กรณีไม่ได้ส่ง team_id ให้ดึงข้อมูลทุกทีม
+        $search = isset($_GET['search']) ? '%' . clean_input($_GET['search']) . '%' : '%%';
+        $limit = isset($_GET['limit']) ? max(1, min((int)$_GET['limit'], 100)) : 10;
+        $page = max(1, isset($_GET['page']) ? (int)$_GET['page'] : 1);
+        $offset = ($page - 1) * $limit;
+
+        $sql = "SELECT teams.*, CONCAT(users.first_name, ' ', users.last_name) AS team_leader_name
+                FROM teams
+                LEFT JOIN users ON teams.team_leader = users.user_id
+                WHERE teams.team_name LIKE :search OR teams.team_description LIKE :search
+                LIMIT :limit OFFSET :offset";
+        $stmt = $condb->prepare($sql);
+        $stmt->bindParam(':search', $search, PDO::PARAM_STR);
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $count_sql = "SELECT COUNT(*) as total FROM teams WHERE team_name LIKE :search OR team_description LIKE :search";
+        $count_stmt = $condb->prepare($count_sql);
+        $count_stmt->bindParam(':search', $search, PDO::PARAM_STR);
+        $count_stmt->execute();
+        $total_rows = $count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+        echo json_encode([
+            'teams' => $teams,
+            'total_pages' => ceil($total_rows / $limit),
+            'current_page' => $page,
+            'total_records' => $total_rows
+        ]);
+    }
 }
 
-// ฟังก์ชันจัดการ POST Request (ใช้เพิ่มข้อมูลทีมใหม่)
-function handlePostRequest($condb) {
+
+
+// ฟังก์ชันจัดการ POST Request (ใช้เพิ่มข้อมูลทีมใหม่) -------------------------------------------------
+function handlePostRequest($condb)
+{
     $data = json_decode(file_get_contents('php://input'), true); // รับข้อมูล JSON ที่ส่งมา
 
     // ตรวจสอบว่ามีการส่งข้อมูลที่จำเป็นหรือไม่
@@ -145,8 +175,9 @@ function handlePostRequest($condb) {
     }
 }
 
-// ฟังก์ชันจัดการ PUT Request (ใช้แก้ไขข้อมูลทีมที่มีอยู่แล้ว)
-function handlePutRequest($condb) {
+// ฟังก์ชันจัดการ PUT Request (ใช้แก้ไขข้อมูลทีมที่มีอยู่แล้ว) -------------------------------------------------
+function handlePutRequest($condb)
+{
     $data = json_decode(file_get_contents('php://input'), true); // รับข้อมูล JSON ที่ส่งมา
 
     // ตรวจสอบว่ามีการส่งข้อมูลที่จำเป็นหรือไม่
@@ -155,6 +186,10 @@ function handlePutRequest($condb) {
         echo json_encode(['error' => 'Missing required fields']);
         exit();
     }
+
+    $encoded_team_id = $_GET['team_id'];
+    // ถอดรหัส team_id
+    $team_id = decryptUserId($encoded_team_id);
 
     $team_id = clean_input($data['team_id']);
     $team_name = clean_input($data['team_name']);
@@ -185,8 +220,9 @@ function handlePutRequest($condb) {
     }
 }
 
-// ฟังก์ชันจัดการ DELETE Request (ใช้ลบข้อมูลทีม)
-function handleDeleteRequest($condb) {
+// ฟังก์ชันจัดการ DELETE Request (ใช้ลบข้อมูลทีม) -------------------------------------------------
+function handleDeleteRequest($condb)
+{
     $data = json_decode(file_get_contents('php://input'), true); // รับข้อมูล JSON ที่ส่งมา
 
     // ตรวจสอบว่ามีการส่ง team_id มาหรือไม่

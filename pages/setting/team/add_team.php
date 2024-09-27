@@ -18,8 +18,8 @@ try {
 
 ?>
 
-<div class="modal fade" id="editbtn">
-    <div class="modal-dialog editbtn">
+<div class="modal fade" id="addbtn">
+    <div class="modal-dialog addbtn">
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">Add Team</h4>
