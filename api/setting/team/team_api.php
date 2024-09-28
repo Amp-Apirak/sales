@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT
     }
 }
 
-// ตรวจสอบสิทธิ์ผู้ใช้
+// ตรวจสอบสิทธิ์ผู้ใช้ (ถ้าต้องการ)
 // if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'Executive', 'Sale Supervisor'])) {
 //     http_response_code(403);
 //     echo json_encode(['error' => 'Access denied.']);
@@ -132,33 +132,28 @@ function handleGetRequest($condb)
     }
 }
 
-
-
-// ฟังก์ชันจัดการ POST Request (ใช้เพิ่มข้อมูลทีมใหม่) -------------------------------------------------
+// ฟังก์ชันจัดการ POST Request
 function handlePostRequest($condb)
 {
-    $data = json_decode(file_get_contents('php://input'), true); // รับข้อมูล JSON ที่ส่งมา
+    $data = json_decode(file_get_contents('php://input'), true);
 
-    // ตรวจสอบว่ามีการส่งข้อมูลที่จำเป็นหรือไม่
     if (!isset($data['team_name']) || !isset($data['team_leader'])) {
-        http_response_code(400); // Bad Request
+        http_response_code(400);
         echo json_encode(['error' => 'Missing required fields']);
         exit();
     }
 
-    $team_id = generateUUID(); // สร้าง UUID สำหรับ team_id
-    $team_name = clean_input($data['team_name']); // ทำความสะอาดข้อมูล team_name
+    $team_id = generateUUID();
+    $team_name = clean_input($data['team_name']);
     $team_description = isset($data['team_description']) ? clean_input($data['team_description']) : null;
-    $team_leader = clean_input($data['team_leader']); // ทำความสะอาดข้อมูล team_leader
+    $team_leader = clean_input($data['team_leader']);
 
-    // ตรวจสอบว่าข้อมูลที่จำเป็นไม่ว่างเปล่า
     if (empty($team_name) || empty($team_leader)) {
-        http_response_code(400); // Bad Request
+        http_response_code(400);
         echo json_encode(['error' => 'Invalid data provided']);
         exit();
     }
 
-    // SQL สำหรับเพิ่มข้อมูลทีมใหม่
     $sql = "INSERT INTO teams (team_id, team_name, team_description, team_leader) VALUES (:team_id, :team_name, :team_description, :team_leader)";
     $stmt = $condb->prepare($sql);
     $stmt->bindParam(':team_id', $team_id);
@@ -166,44 +161,36 @@ function handlePostRequest($condb)
     $stmt->bindParam(':team_description', $team_description);
     $stmt->bindParam(':team_leader', $team_leader);
 
-    // ตรวจสอบว่าบันทึกข้อมูลสำเร็จหรือไม่
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Team added successfully!', 'team_id' => $team_id]);
     } else {
-        http_response_code(500); // Internal Server Error
+        http_response_code(500);
         echo json_encode(['error' => 'Failed to add team']);
     }
 }
 
-// ฟังก์ชันจัดการ PUT Request (ใช้แก้ไขข้อมูลทีมที่มีอยู่แล้ว) -------------------------------------------------
+// ฟังก์ชันจัดการ PUT Request
 function handlePutRequest($condb)
 {
-    $data = json_decode(file_get_contents('php://input'), true); // รับข้อมูล JSON ที่ส่งมา
+    $data = json_decode(file_get_contents('php://input'), true);
 
-    // ตรวจสอบว่ามีการส่งข้อมูลที่จำเป็นหรือไม่
     if (!isset($data['team_id']) || !isset($data['team_name']) || !isset($data['team_leader'])) {
-        http_response_code(400); // Bad Request
+        http_response_code(400);
         echo json_encode(['error' => 'Missing required fields']);
         exit();
     }
 
-    $encoded_team_id = $_GET['team_id'];
-    // ถอดรหัส team_id
-    $team_id = decryptUserId($encoded_team_id);
-
-    $team_id = clean_input($data['team_id']);
+    $team_id = decryptUserId(clean_input($data['team_id']));
     $team_name = clean_input($data['team_name']);
     $team_description = isset($data['team_description']) ? clean_input($data['team_description']) : null;
     $team_leader = clean_input($data['team_leader']);
 
-    // ตรวจสอบว่าข้อมูลที่จำเป็นไม่ว่างเปล่า
     if (empty($team_id) || empty($team_name) || empty($team_leader)) {
-        http_response_code(400); // Bad Request
+        http_response_code(400);
         echo json_encode(['error' => 'Invalid data provided']);
         exit();
     }
 
-    // SQL สำหรับแก้ไขข้อมูลทีม
     $sql = "UPDATE teams SET team_name = :team_name, team_description = :team_description, team_leader = :team_leader WHERE team_id = :team_id";
     $stmt = $condb->prepare($sql);
     $stmt->bindParam(':team_id', $team_id);
@@ -211,46 +198,41 @@ function handlePutRequest($condb)
     $stmt->bindParam(':team_description', $team_description);
     $stmt->bindParam(':team_leader', $team_leader);
 
-    // ตรวจสอบว่าการอัปเดตสำเร็จหรือไม่
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Team updated successfully!']);
     } else {
-        http_response_code(500); // Internal Server Error
+        http_response_code(500);
         echo json_encode(['error' => 'Failed to update team']);
     }
 }
 
-// ฟังก์ชันจัดการ DELETE Request (ใช้ลบข้อมูลทีม) -------------------------------------------------
+// ฟังก์ชันจัดการ DELETE Request
 function handleDeleteRequest($condb)
 {
-    $data = json_decode(file_get_contents('php://input'), true); // รับข้อมูล JSON ที่ส่งมา
+    $data = json_decode(file_get_contents('php://input'), true);
 
-    // ตรวจสอบว่ามีการส่ง team_id มาหรือไม่
     if (!isset($data['team_id'])) {
-        http_response_code(400); // Bad Request
+        http_response_code(400);
         echo json_encode(['error' => 'Missing required team_id']);
         exit();
     }
 
-    $team_id = clean_input($data['team_id']); // ทำความสะอาดข้อมูล team_id
+    $team_id = clean_input($data['team_id']);
 
-    // ตรวจสอบว่าข้อมูลที่จำเป็นไม่ว่างเปล่า
     if (empty($team_id)) {
-        http_response_code(400); // Bad Request
+        http_response_code(400);
         echo json_encode(['error' => 'Invalid team_id provided']);
         exit();
     }
 
-    // SQL สำหรับลบข้อมูลทีม
     $sql = "DELETE FROM teams WHERE team_id = :team_id";
     $stmt = $condb->prepare($sql);
     $stmt->bindParam(':team_id', $team_id);
 
-    // ตรวจสอบว่าการลบสำเร็จหรือไม่
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Team deleted successfully!']);
     } else {
-        http_response_code(500); // Internal Server Error
+        http_response_code(500);
         echo json_encode(['error' => 'Failed to delete team']);
     }
 }

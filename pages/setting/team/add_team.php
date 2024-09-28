@@ -67,9 +67,6 @@ try {
 
 <script>
     $(document).ready(function() {
-        // เริ่มต้น Select2
-        $('.select2').select2();
-
         // จัดการการส่งฟอร์ม
         $('#addTeamForm').on('submit', function(e) {
             e.preventDefault();
