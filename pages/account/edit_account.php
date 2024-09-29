@@ -262,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text"><i class="fas fa-users"></i></span>
                                                         </div>
-                                                        <select class="form-control" id="team_id" name="team_id" required>
+                                                        <select class="form-control select2" id="team_id" name="team_id" required>
                                                             <?php
                                                             $sql_teams = "SELECT * FROM teams";
                                                             $query_teams = $condb->query($sql_teams);
@@ -315,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text"><i class="fas fa-key"></i></span> <!-- เพิ่มไอคอน -->
                                                     </div>
-                                                    <select class="form-control" id="role" name="role" required>
+                                                    <select class="form-control select2" id="role" name="role" required>
                                                         <option value="Executive" <?php if ($user['role'] == 'Executive') echo 'selected'; ?>>Executive</option>
                                                         <option value="Sale Supervisor" <?php if ($user['role'] == 'Sale Supervisor') echo 'selected'; ?>>Sale Supervisor</option>
                                                         <option value="Seller" <?php if ($user['role'] == 'Seller') echo 'selected'; ?>>Seller</option>

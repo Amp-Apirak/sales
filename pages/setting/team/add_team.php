@@ -1,19 +1,97 @@
 <?php
-
-// สร้าง CSRF token
+// สร้างหรือดึง CSRF Token สำหรับป้องกันการโจมตี CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
+$csrf_token = $_SESSION['csrf_token'];
 
-// ดึงข้อมูลจากตาราง users สำหรับแสดงในดรอปดาวน์ team_leader
-try {
-    $sql = "SELECT user_id, first_name, last_name FROM users ORDER BY first_name, last_name";
-    $stmt = $condb->prepare($sql);
+// ฟังก์ชันทำความสะอาดข้อมูล input
+function clean_input($data)
+{
+    return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
+}
+
+// ฟังก์ชันสำหรับสร้าง UUID แบบปลอดภัย
+function generateUUID()
+{
+    $data = random_bytes(16);
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // เวอร์ชัน 4 UUID
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // UUID variant
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+
+$role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
+$team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
+$created_by = $_SESSION['user_id']; // ดึง user_id ของผู้สร้างจาก session
+
+// ดึงข้อมูล users สำหรับเลือกหัวหน้าทีม
+$sql_users = "SELECT user_id, first_name, last_name FROM users";
+$stmt_users = $condb->prepare($sql_users);
+$stmt_users->execute();
+$users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
+
+// ตรวจสอบว่าผู้ใช้กดปุ่ม "เพิ่มลูกค้า" หรือไม่
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // ตรวจสอบ CSRF Token
+    if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("Invalid CSRF token");
+    }
+    // สร้าง UUID สำหรับ project_id
+    $team_id = generateUUID();
+
+    // รับข้อมูลจากฟอร์มและล้างข้อมูลด้วย htmlspecialchars เพื่อป้องกัน XSS
+    $team_name = clean_input($_POST['team_name']);
+    $team_description = clean_input($_POST['team_description']);
+    $team_leader = clean_input($_POST['team_leader']);
+
+    // ตรวจสอบว่ามีชื่อบริษัทหรืออีเมลที่ซ้ำหรือไม่
+    $checkteam_sql = "SELECT * FROM teams WHERE team_name = :team_name ";
+    $stmt = $condb->prepare($checkteam_sql);
+    $stmt->bindParam(':team_name', $team_name, PDO::PARAM_STR);
     $stmt->execute();
-    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    error_log("Error fetching users: " . $e->getMessage());
-    $error_message = "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
+    $existing_team = $stmt->fetch();
+
+    if ($existing_team) {
+        // ถ้าพบชื่อบริษัทหรืออีเมลซ้ำ
+        echo "<script>
+        setTimeout(function() {
+            Swal.fire({
+                title: 'เกิดข้อผิดพลาด',
+                text: 'ชื่อทีมนี้ถูกใช้ไปแล้ว!',
+                icon: 'error',
+                confirmButtonText: 'ตกลง'
+            });
+        }, 100);
+        </script>";
+    } else {
+        // ถ้าไม่พบชื่อบริษัทหรืออีเมลซ้ำ
+        try {
+            $sql = "INSERT INTO teams (team_id, team_name, team_description, team_leader, created_by) VALUES (:team_id, :team_name, :team_description, :team_leader, :created_by)";
+            $stmt = $condb->prepare($sql);
+            $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+            $stmt->bindParam(':team_name', $team_name, PDO::PARAM_STR);
+            $stmt->bindParam(':team_description', $team_description, PDO::PARAM_STR);
+            $stmt->bindParam(':team_leader', $team_leader, PDO::PARAM_INT);
+            $stmt->bindParam(':created_by', $created_by, PDO::PARAM_INT);
+            $stmt->execute();
+
+            // แสดงข้อความเมื่อเพิ่มทีมสำเร็จด้วย SweetAlert
+            echo "<script>
+        setTimeout(function() {
+            Swal.fire({
+                title: 'เพิ่มทีมสำเร็จ',
+                text: 'เพิ่มทีมสำเร็จแล้ว',
+                icon: 'success',
+                confirmButtonText: 'ตกลง'
+            }).then(function() {
+                window.location.href = 'team.php';
+            });
+        }, 100);
+        </script>";
+        } catch (PDOException $e) {
+            echo "Error: " . $e->getMessage();
+        }
+    }
 }
 
 ?>
@@ -65,64 +143,3 @@ try {
     </div>
 </div>
 
-<script>
-    $(document).ready(function() {
-        // จัดการการส่งฟอร์ม
-        $('#addTeamForm').on('submit', function(e) {
-            e.preventDefault();
-
-            // เตรียมข้อมูลที่จะส่ง
-            var formData = {
-                team_name: $('#team_name').val().trim(),
-                team_description: $('#team_description').val().trim(),
-                team_leader: $('#team_leader').val(),
-                csrf_token: $('input[name="csrf_token"]').val()
-            };
-
-            // ตรวจสอบข้อมูลก่อนส่ง
-            if (!formData.team_name || !formData.team_leader) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'ข้อมูลไม่ครบถ้วน',
-                    text: 'กรุณากรอกชื่อทีมและเลือกหัวหน้าทีม'
-                });
-                return;
-            }
-
-            // ส่งข้อมูลไปยัง API
-            $.ajax({
-                url: 'http://localhost/sales/api/setting/team/team_api.php',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(formData),
-                beforeSend: function(xhr) {
-                    xhr.setRequestHeader('X-CSRF-TOKEN', formData.csrf_token);
-                },
-                success: function(response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'บันทึกสำเร็จ',
-                            text: response.message
-                        }).then(() => {
-                            window.location.href = 'team.php'; // ไปยังหน้าแสดงรายการทีม
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'เกิดข้อผิดพลาด',
-                            text: response.error || 'ไม่สามารถบันทึกข้อมูลได้'
-                        });
-                    }
-                },
-                error: function() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'เกิดข้อผิดพลาด',
-                        text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
-                    });
-                }
-            });
-        });
-    });
-</script>

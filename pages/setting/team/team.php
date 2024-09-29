@@ -8,32 +8,45 @@ include('../../../config/condb.php');
 // ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
 if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
     // กรณีไม่มีการตั้งค่า Session หรือล็อกอิน
-    header("Location: " . BASE_URL . "login.php");
+    header("Location: " . BASE_URL . "login.php");  // Redirect ไปยังหน้า login.php
     exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
 }
 
-// ตรวจสอบว่ามีการส่งค่าการค้นหาหรือไม่
-$search = isset($_GET['searchservice']) ? $_GET['searchservice'] : '';
-$limit = isset($_GET['limit']) ? $_GET['limit'] : 10;
-$page = isset($_GET['page']) ? $_GET['page'] : 1;
+// ดึงข้อมูลจาก session
+$role = $_SESSION['role'];
+$team_id = $_SESSION['team_id'];
+$user_id = $_SESSION['user_id'];
 
-// สร้าง URL สำหรับ API โดยส่งค่าการค้นหาและการแบ่งหน้าไปด้วย
-$apiUrl = 'http://localhost/sales/api/setting/team/team_api.php?search=' . urlencode($search) . '&limit=' . $limit . '&page=' . $page;
-$response = file_get_contents($apiUrl);
 
-// ตรวจสอบว่าได้รับข้อมูลมาหรือไม่
-$data = json_decode($response, true); // แปลง JSON เป็น array
-if ($data === null) {
-    echo "Error decoding JSON: " . json_last_error_msg();
-    exit;
+// รับค่าการค้นหาจากฟอร์ม (method="GET")
+$search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) : '';
+
+// Query พื้นฐานในการดึงข้อมูลทีมทั้งหมด
+$sql_teams = "SELECT t.*, u.first_name AS leader_first_name, u.last_name AS leader_last_name, 
+              c.first_name AS creator_first_name, c.last_name AS creator_last_name
+              FROM teams t
+              LEFT JOIN users u ON t.team_leader = u.user_id
+              LEFT JOIN users c ON t.created_by = c.user_id
+              WHERE 1=1";
+
+// เพิ่มเงื่อนไขการค้นหาตามที่ผู้ใช้กรอกมา
+if (!empty($search_service)) {
+    $sql_teams .= " AND (t.team_name LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search)";
 }
 
-$teams = $data['teams'];
-$total_pages = $data['total_pages'];
-$current_page = $data['current_page'];
+// เตรียม statement และ bind ค่า
+$stmt = $condb->prepare($sql_teams);
+
+// ผูกค่าการค้นหากับ statement
+if (!empty($search_service)) {
+    $search_param = '%' . $search_service . '%';
+    $stmt->bindParam(':search', $search_param, PDO::PARAM_STR);
+}
+
+// Execute query เพื่อดึงข้อมูลทีม
+$stmt->execute();
+$teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -113,7 +126,7 @@ $current_page = $data['current_page'];
                                                     <div class="row">
                                                         <div class="col-sm-3">
                                                             <div class="form-group">
-                                                                <input type="text" class="form-control" id="searchservice" name="searchservice" value="<?php echo htmlspecialchars($search); ?>" placeholder="ค้นหา...">
+                                                                <input type="text" class="form-control" id="searchservice" name="searchservice" value="" placeholder="ค้นหา...">
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-3">
@@ -138,6 +151,9 @@ $current_page = $data['current_page'];
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
                             <div class="col-md-12 pb-3">
                                 <a href="add_team.php" class="btn btn-success btn-sm float-right" data-toggle="modal" data-target="#addbtn">เพิ่มข้อมูล<i class=""></i></a>
+                                <!-- Add Team -->
+                                <?php include 'add_team.php'; ?>
+                                <!-- Add Team -->
                             </div><br>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
 
@@ -162,48 +178,29 @@ $current_page = $data['current_page'];
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <!-- แสดงข้อมูลทีม -->
-                                            <?php if (!empty($teams)) {
-                                                $counter = 1;
-                                                foreach ($teams as $team) { ?>
-                                                    <tr>
-                                                        <td><?php echo $counter++; ?></td>
-                                                        <td><?php echo htmlspecialchars($team['team_name']); ?></td>
-                                                        <td><?php echo htmlspecialchars($team['team_description']); ?></td>
-                                                        <td><?php echo htmlspecialchars($team['team_leader_name']); ?></td>
-                                                        <td><?php echo htmlspecialchars($team['created_by']); ?></td>
-                                                        <td><?php echo htmlspecialchars($team['created_at']); ?></td>
-                                                        <td>
-                                                            <a href="edit_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-info btn-sm edit-team" data-id="<?php echo urlencode(encryptUserId($team['team_id'])); ?>" data-toggle="modal" data-target="#editbtn"><i class="fas fa-pencil-alt"></i></a>
-                                                            <a href="delete_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                        </td>
-                                                    </tr>
-                                                <?php }
-                                            } else { ?>
+                                            <?php foreach ($teams as $index => $team) { ?>
                                                 <tr>
-                                                    <td colspan="7" class="text-center">ไม่พบข้อมูลทีม</td>
+                                                    <td><?php echo $index + 1; ?></td>
+                                                    <td><?php echo htmlspecialchars($team['team_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                    <td><?php echo htmlspecialchars($team['team_description'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                    <td><?php echo htmlspecialchars($team['leader_first_name'] . " " . $team['leader_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                    <td><?php echo htmlspecialchars($team['creator_first_name'] . " " . $team['creator_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                    <td><?php echo htmlspecialchars($team['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
+
+                                                    <td>
+                                                        <a href="edit_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                        <a href="delete_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                    </td>
+
                                                 </tr>
+
                                             <?php } ?>
+
                                         </tbody>
                                     </table>
                                 </div>
                                 <!-- /.card-body -->
                             </div>
-                            <!-- //Section ตารางแสดงผล -->
-
-                            <!-- Pagination -->
-                            <!-- <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center">
-                                    <?php for ($i = 1; $i <= $total_pages; $i++) { ?>
-                                        <li class="page-item <?php echo $i == $current_page ? 'active' : ''; ?>">
-                                            <a class="page-link" href="?searchservice=<?php echo htmlspecialchars($search); ?>&limit=<?php echo $limit; ?>&page=<?php echo $i; ?>"><?php echo $i; ?></a>
-                                        </li>
-                                    <?php } ?>
-                                </ul>
-                            </nav> -->
-                            <!-- //Pagination -->
-                            <!-- //Section ตารางแสดงผล -->
-
                         </div>
                     </div>
                 </div>
@@ -214,12 +211,6 @@ $current_page = $data['current_page'];
 
         <!-- Footer -->
         <?php include '../../../include/footer.php'; ?>
-        <!-- Add Team -->
-        <?php include 'add_team.php'; ?>
-        <!-- Add Team -->
-        <!-- Edit Team -->
-        <?php include 'edit_team.php'; ?>
-        <!-- Edit Team -->
     </div>
     <!-- ./wrapper -->
     <!-- JS for Dropdown Select2 -->
@@ -228,6 +219,7 @@ $current_page = $data['current_page'];
             $('.select2').select2();
         });
     </script>
+    
 
     <!-- DataTables -->
     <script>

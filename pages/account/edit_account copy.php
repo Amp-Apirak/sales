@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="form-group">
                 <label for="team_id">Team</label>
-                <select class="form-control" id="team_id" name="team_id" required>
+                <select class="form-control select2" id="team_id" name="team_id" required>
                     <?php
                     $sql_teams = "SELECT * FROM teams";
                     $query_teams = $condb->query($sql_teams);
@@ -146,6 +146,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
     <?php include '../../include/footer.php'; ?>
+
+    <!-- JS for Dropdown Select2 -->
+    <script>
+        $(function() {
+            $('.select2').select2();
+        });
+    </script>
 </body>
 
 </html>
