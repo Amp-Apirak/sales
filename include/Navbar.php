@@ -357,19 +357,9 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
                 </li>
                 <li class="nav-header text-primary">Setting</li>
                 <li class="nav-item">
-                    <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="nav-link <?php if ($menu == "profile") {
-                                                                                                    echo "active";
-                                                                                                } ?> ">
-                        <i class="nav-icon fas fa-address-card"></i>
-                        <p>
-                            Profile
-                        </p>
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>pages/setting/product/product.php" class="nav-link <?php if ($menu == "product") {
-                                                                                                    echo "active";
-                                                                                                } ?> ">
+                                                                                                            echo "active";
+                                                                                                        } ?> ">
                         <i class="nav-icon fas fa-box-open"></i>
                         <p>
                             Product
@@ -378,8 +368,8 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
                 </li>
                 <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>pages/setting/team/team.php" class="nav-link <?php if ($menu == "team") {
-                                                                                                    echo "active";
-                                                                                                } ?> ">
+                                                                                                        echo "active";
+                                                                                                    } ?> ">
                         <i class="nav-icon fas fa-users"></i>
                         <p>
                             Team
@@ -390,6 +380,16 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
                     <a href="https://adminlte.io/docs/3.1/" class="nav-link">
                         <i class="nav-icon fas fa-file"></i>
                         <p>Documentation</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="nav-link <?php if ($menu == "profile") {
+                                                                                                    echo "active";
+                                                                                                } ?> ">
+                        <i class="nav-icon fas fa-address-card"></i>
+                        <p>
+                            Profile
+                        </p>
                     </a>
                 </li>
             </ul>
