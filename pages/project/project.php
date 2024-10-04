@@ -179,25 +179,24 @@ $total_creators = count($unique_creators);
 <html lang="en">
 <?php $menu = "project"; ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<?php $menu = "project"; ?>
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Project Management</title>
     <?php include  '../../include/header.php'; ?>
 
+    <!-- /* ใช้ฟอนต์ Noto Sans Thai กับ label */ -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
     <style>
+        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
         th,
         h1 {
             font-family: 'Noto Sans Thai', sans-serif;
             font-weight: 700;
-            font-size: 16px;
+            /* ปรับระดับน้ำหนักของฟอนต์ */
+            font-size: 14px;
             color: #333;
         }
 
@@ -206,119 +205,6 @@ $total_creators = count($unique_creators);
             font-weight: 600;
             font-size: 18px;
             color: #FF5733;
-        }
-
-        #example1 {
-            table-layout: fixed;
-            width: 100%;
-        }
-
-        #example1 th,
-        #example1 td {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            padding: 8px;
-            vertical-align: middle;
-        }
-
-        .col-contract {
-            width: 100px;
-        }
-
-        .col-product {
-            width: 100px;
-        }
-
-        .col-project {
-            width: 200px;
-        }
-
-        .col-status {
-            width: 80px;
-        }
-
-        .col-price {
-            width: 120px;
-        }
-
-        .col-percent {
-            width: 60px;
-        }
-
-        .col-date {
-            width: 100px;
-        }
-
-        .col-seller {
-            width: 100px;
-        }
-
-        .col-team {
-            width: 100px;
-        }
-
-        .col-remark {
-            width: 150px;
-        }
-
-        .col-customer {
-            width: 150px;
-        }
-
-        .col-creator {
-            width: 120px;
-        }
-
-        .col-action {
-            width: 100px;
-        }
-
-        #example1 thead th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-        }
-
-        #example1 tbody tr:hover {
-            background-color: #f5f5f5;
-        }
-
-        .badge {
-            font-size: 0.8em;
-            padding: 5px 8px;
-        }
-
-        .col-action .btn {
-            padding: 2px 5px;
-            margin: 2px;
-        }
-
-        @media screen and (max-width: 1200px) {
-            .col-project {
-                width: 150px;
-            }
-
-            .col-customer {
-                width: 120px;
-            }
-        }
-
-        @media screen and (max-width: 992px) {
-            .col-price {
-                width: 100px;
-            }
-
-            .col-remark {
-                width: 120px;
-            }
-        }
-
-        @media screen and (max-width: 768px) {
-            #example1 {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
         }
     </style>
 </head>
@@ -565,44 +451,44 @@ $total_creators = count($unique_creators);
                                     <table id="example1" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
-                                                <th class="col-contract">Contact No.</th>
-                                                <th class="col-product">Product</th>
-                                                <th class="col-project">Project Name</th>
-                                                <th class="col-status">Status</th>
-                                                <th class="col-price">Sale Price (Vat)</th>
-                                                <th class="col-price">Cost Price (Vat)</th>
-                                                <th class="col-price">Gross Profit</th>
-                                                <th class="col-percent">(%GP)</th>
-                                                <th class="col-date">Sales Date</th>
-                                                <th class="col-date">Start Date</th>
-                                                <th class="col-date">End Date</th>
-                                                <th class="col-contract">Contract No</th>
-                                                <th class="col-seller">Seller</th>
-                                                <th class="col-team">Team</th>
-                                                <th class="col-percent">Vat (%)</th>
-                                                <th class="col-price">Cost Price</th>
-                                                <th class="col-price">Sale Price</th>
-                                                <th class="col-price">Estimate Cost</th>
-                                                <th class="col-price">Estimate Sale</th>
-                                                <th class="col-price">Estimate GP</th>
-                                                <th class="col-remark">Remark</th>
-                                                <th class="col-customer">Customer Name</th>
-                                                <th class="col-customer">Customer Company</th>
-                                                <th class="col-customer">Customer Address</th>
-                                                <th class="col-customer">Customer Phone</th>
-                                                <th class="col-customer">Customer Email</th>
-                                                <th class="col-creator">Create By</th>
-                                                <th class="col-date">Create Date</th>
-                                                <th class="col-action">Action</th>
+                                                <th class="text-nowrap text-center">Contact No.</th>
+                                                <th class="text-nowrap text-center">Sales Date</th>
+                                                <th class="text-nowrap text-center">Start Date</th>
+                                                <th class="text-nowrap text-center">End Date</th>
+                                                <th class="text-nowrap text-center">Status</th>
+                                                <th class="text-nowrap text-center">Product</th>
+                                                <th class="text-nowrap text-center">Project Name</th>
+                                                <th class="text-nowrap text-center">Cost Price</th>
+                                                <th class="text-nowrap text-center">Cost Price (Vat)</th>
+                                                <th class="text-nowrap text-center">Sale Price</th>
+                                                <th class="text-nowrap text-center">Sale Price (Vat)</th>
+                                                <th class="text-nowrap text-center">Gross Profit</th>
+                                                <th class="text-nowrap text-center">(% GP)</th>
+                                                <th class="text-nowrap text-center">Vat (%)</th>
+                                                <th class="text-nowrap text-center">Estimate Cost</th>
+                                                <th class="text-nowrap text-center">Estimate Sale</th>
+                                                <th class="text-nowrap text-center">Estimate GP</th>
+                                                <th class="text-nowrap text-center">Seller</th>
+                                                <th class="text-nowrap text-center">Team</th>
+                                                <th class="text-nowrap text-center">Customer Name</th>
+                                                <th class="text-nowrap text-center">Customer Company</th>
+                                                <th class="text-nowrap text-center">Customer Address</th>
+                                                <th class="text-nowrap text-center">Customer Phone</th>
+                                                <th class="text-nowrap text-center">Customer Email</th>
+                                                <th class="text-nowrap text-center">Remark</th>
+                                                <th class="text-nowrap text-center">Create By</th>
+                                                <th class="text-nowrap text-center">Create Date</th>
+                                                <th class="text-nowrap text-center">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php foreach ($projects as $project) { ?>
+                                            <?php foreach ($projects as $project) : ?>
                                                 <tr>
-                                                    <td class="col-contract"><?php echo htmlspecialchars($project['contract_no']); ?></td>
-                                                    <td class="col-product"><?php echo htmlspecialchars($project['product_name']); ?></td>
-                                                    <td class="col-project"><?php echo htmlspecialchars($project['project_name']); ?></td>
-                                                    <td class="col-status">
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['end_date']); ?></td>
+                                                    <td class="text-nowrap text-center">
                                                         <?php
                                                         if (strcasecmp($project["status"], 'Waiting for approve') == 0) {
                                                             echo "<span class='badge badge-primary'>{$project['status']}</span>";
@@ -625,31 +511,31 @@ $total_creators = count($unique_creators);
                                                         }
                                                         ?>
                                                     </td>
-                                                    <td class="col-price"><?php echo number_format($project['sale_no_vat'], 2); ?></td>
-                                                    <td class="col-price"><?php echo number_format($project['cost_no_vat'], 2); ?></td>
-                                                    <td class="col-price"><?php echo number_format($project['gross_profit'], 2); ?></td>
-                                                    <td class="col-percent"><?php echo !empty($project['potential']) ? htmlspecialchars($project['potential']) . '%' : ''; ?></td>
-                                                    <td class="col-date"><?php echo htmlspecialchars($project['sales_date']); ?></td>
-                                                    <td class="col-date"><?php echo htmlspecialchars($project['start_date']); ?></td>
-                                                    <td class="col-date"><?php echo htmlspecialchars($project['end_date']); ?></td>
-                                                    <td class="col-contract"><?php echo htmlspecialchars($project['contract_no']); ?></td>
-                                                    <td class="col-seller"><?php echo htmlspecialchars($project['seller']); ?></td>
-                                                    <td class="col-team"><?php echo htmlspecialchars($project['team_name']); ?></td>
-                                                    <td class="col-percent"><?php echo number_format($project['vat'], 2); ?> (%)</td>
-                                                    <td class="col-price"><?php echo number_format($project['cost_no_vat'], 2); ?></td>
-                                                    <td class="col-price"><?php echo number_format($project['sale_no_vat'], 2); ?></td>
-                                                    <td class="col-price"><?php echo number_format($project['es_cost_no_vat'], 2); ?></td>
-                                                    <td class="col-price"><?php echo number_format($project['es_sale_no_vat'], 2); ?></td>
-                                                    <td class="col-price"><?php echo number_format($project['es_gp_no_vat'], 2); ?></td>
-                                                    <td class="col-remark"><?php echo htmlspecialchars($project['remark']); ?></td>
-                                                    <td class="col-customer"><?php echo htmlspecialchars($project['customer_name']); ?></td>
-                                                    <td class="col-customer"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="col-customer"><?php echo isset($project['address']) ? htmlspecialchars($project['address']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="col-customer"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="col-customer"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="col-creator"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
-                                                    <td class="col-date"><?php echo htmlspecialchars($project['created_at']); ?></td>
-                                                    <td class="col-action">
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['project_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['gross_profit'], 2); ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($project['potential']) ? htmlspecialchars($project['potential']) . '%' : ''; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['end_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['seller']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['team_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['vat'], 2); ?> (%)</td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['cost_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['sale_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['es_cost_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['es_sale_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['es_gp_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่มีข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['address']) ? htmlspecialchars($project['address']) : 'ไม่มีข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่มีข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่มีข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
+                                                    <td class="text-nowrap">
                                                         <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
@@ -657,41 +543,8 @@ $total_creators = count($unique_creators);
                                                         <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                                     </td>
                                                 </tr>
-                                            <?php } ?>
+                                            <?php endforeach; ?>
                                         </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <th>Contact No.</th>
-                                                <th>Product</th>
-                                                <th>Project Name</th>
-                                                <th>Status</th>
-                                                <th>Sale Price (Vat)</th>
-                                                <th>Cost Price (Vat)</th>
-                                                <th>Gross Profit</th>
-                                                <th>(%GP)</th>
-                                                <th>Sales Date</th>
-                                                <th>Start Date</th>
-                                                <th>End Date</th>
-                                                <th>Contract No</th>
-                                                <th>Seller</th>
-                                                <th>Team</th>
-                                                <th>Vat (%)</th>
-                                                <th>Cost Price</th>
-                                                <th>Sale Price</th>
-                                                <th>Estimate Cost</th>
-                                                <th>Estimate Sale</th>
-                                                <th>Estimate GP</th>
-                                                <th>Remark</th>
-                                                <th>Customer Name</th>
-                                                <th>Customer Company</th>
-                                                <th>Customer Address</th>
-                                                <th>Customer Phone</th>
-                                                <th>Customer Email</th>
-                                                <th>Create By</th>
-                                                <th>Create Date</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </tfoot>
                                     </table>
                                 </div>
                                 <!-- /.card-body -->
@@ -709,15 +562,65 @@ $total_creators = count($unique_creators);
         <!-- // include footer -->
         <?php include  '../../include/footer.php'; ?>
     </div>
-    <!-- ./wrapper -->
     <script>
         $(function() {
             $("#example1").DataTable({
-                "responsive": true,
+                "responsive": false, // ปิดการใช้งาน responsive เพื่อควบคุมความกว้างคอลัมน์
                 "lengthChange": false,
                 "autoWidth": false,
-                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+                "scrollX": true, // เพิ่มการเลื่อนแนวนอน
+                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
+                "columnDefs": [{
+                        "width": "100px",
+                        "targets": 0
+                    }, // Contact No.
+                    {
+                        "width": "100px",
+                        "targets": 1
+                    }, // Product
+                    {
+                        "width": "600px",
+                        "targets": 2
+                    }, // Project Name
+                    {
+                        "width": "80px",
+                        "targets": 3
+                    }, // Status
+                    {
+                        "width": "120px",
+                        "targets": [4, 5, 6]
+                    }, // Sale Price, Cost Price, Gross Profit
+                    {
+                        "width": "60px",
+                        "targets": 7
+                    }, // % GP
+                    {
+                        "width": "100px",
+                        "targets": [8, 9, 10, 11, 12, 13]
+                    }, // Dates, Contract No, Seller, Team
+                    {
+                        "width": "60px",
+                        "targets": 14
+                    }, // Vat (%)
+                    {
+                        "width": "120px",
+                        "targets": [15, 16, 17, 18, 19]
+                    }, // Prices and Estimates
+                    {
+                        "width": "150px",
+                        "targets": [20, 21, 22, 23, 24, 25]
+                    }, // Remark and Customer info
+                    {
+                        "width": "120px",
+                        "targets": [26, 27]
+                    }, // Create By, Create Date
+                    {
+                        "width": "100px",
+                        "targets": 28
+                    } // Action
+                ]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+
             $('#example2').DataTable({
                 "paging": true,
                 "lengthChange": false,
