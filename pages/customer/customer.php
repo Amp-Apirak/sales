@@ -72,9 +72,9 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         th,
         h1 {
             font-family: 'Noto Sans Thai', sans-serif;
-            font-weight: 700;
+            font-weight: 600;
             /* ปรับระดับน้ำหนักของฟอนต์ */
-            font-size: 16px;
+            font-size: 14px;
             color: #333;
         }
 
@@ -176,26 +176,26 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <table id="example1" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Customer Name</th>
-                                                <th>Phone</th>
-                                                <th>Email</th>
-                                                <th>Company</th>
-                                                <th>Created By</th>
-                                                <th>Created At</th>
-                                                <th>Action</th>
+                                                <th class="text-nowrap text-center">Customer Name</th>
+                                                <th class="text-nowrap text-center">Phone</th>
+                                                <th class="text-nowrap text-center">Email</th>
+                                                <th class="text-nowrap text-center">Company</th>
+                                                <th class="text-nowrap text-center">Created By</th>
+                                                <th class="text-nowrap text-center">Created At</th>
+                                                <th class="text-nowrap text-center">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <!-- แสดงข้อมูลลูกค้า -->
                                             <?php foreach ($customers as $customer) { ?>
                                                 <tr>
-                                                    <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['phone']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['email']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['company']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['created_at']); ?></td>
-                                                    <td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['phone']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['email']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['company']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['created_at']); ?></td>
+                                                    <td class="text-nowrap">
                                                         <a href="view_customer.php?id=<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>" class="btn btn-sm btn-primary">
                                                             <i class="fas fa-eye"></i>
                                                         </a>

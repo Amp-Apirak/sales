@@ -451,6 +451,7 @@ $total_creators = count($unique_creators);
                                     <table id="example1" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
+                                                <th class="text-nowrap text-center">Action</th>ฆ
                                                 <th class="text-nowrap text-center">Contact No.</th>
                                                 <th class="text-nowrap text-center">Sales Date</th>
                                                 <th class="text-nowrap text-center">Start Date</th>
@@ -478,12 +479,19 @@ $total_creators = count($unique_creators);
                                                 <th class="text-nowrap text-center">Remark</th>
                                                 <th class="text-nowrap text-center">Create By</th>
                                                 <th class="text-nowrap text-center">Create Date</th>
-                                                <th class="text-nowrap text-center">Action</th>
+
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <?php foreach ($projects as $project) : ?>
                                                 <tr>
+                                                    <td class="text-nowrap">
+                                                        <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                        <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                    </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
@@ -512,7 +520,7 @@ $total_creators = count($unique_creators);
                                                         ?>
                                                     </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
-                                                    <td class="text-nowrap" ><?php echo htmlspecialchars($project['project_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['project_name']); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['sale_no_vat'], 2); ?></td>
@@ -533,13 +541,7 @@ $total_creators = count($unique_creators);
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
-                                                    <td class="text-nowrap">
-                                                        <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                        <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                    </td>
+
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>

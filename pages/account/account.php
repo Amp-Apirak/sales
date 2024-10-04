@@ -116,7 +116,7 @@ $query_users = $stmt->fetchAll();
             font-family: 'Noto Sans Thai', sans-serif;
             font-weight: 700;
             /* ปรับระดับน้ำหนักของฟอนต์ */
-            font-size: 16px;
+            font-size: 14px;
             color: #333;
         }
 
@@ -265,31 +265,31 @@ $query_users = $stmt->fetchAll();
                                     <table id="example1" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
-                                                <th>ชื่อผู้ใช้งาน</th>
-                                                <th>ชื่อ-สกุล</th>
-                                                <th>บริษัท</th>
-                                                <th>ทีม</th>
-                                                <th>บทบาท</th>
-                                                <th>ตำแหน่ง</th>
-                                                <th>เบอร์โทรศัทพ์</th>
-                                                <th>Email</th>
-                                                <th>วันที่สร้าง</th>
-                                                <th>Action</th>
+                                                <th class="text-nowrap text-center">ชื่อผู้ใช้งาน</th>
+                                                <th class="text-nowrap text-center">ชื่อ-สกุล</th>
+                                                <th class="text-nowrap text-center">บริษัท</th>
+                                                <th class="text-nowrap text-center">ทีม</th>
+                                                <th class="text-nowrap text-center">บทบาท</th>
+                                                <th class="text-nowrap text-center">ตำแหน่ง</th>
+                                                <th class="text-nowrap text-center">เบอร์โทรศัทพ์</th>
+                                                <th class="text-nowrap text-center">Email</th>
+                                                <th class="text-nowrap text-center">วันที่สร้าง</th>
+                                                <th class="text-nowrap text-center">Action</th>
                                             </tr>
                                         </thead>
 
                                         <tbody>
                                             <?php foreach ($query_users as $user) { ?>
                                                 <tr id="myTable">
-                                                    <td><?php echo htmlspecialchars($user['username']); ?></td>
-                                                    <td><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($user['company']); ?></td>
-                                                    <td><?php echo htmlspecialchars($user['team_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($user['role']); ?></td>
-                                                    <td><?php echo htmlspecialchars($user['position']); ?></td>
-                                                    <td><?php echo htmlspecialchars($user['phone']); ?></td>
-                                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                                    <td><?php echo htmlspecialchars($user['created_at']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['username']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['company']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['team_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['role']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['position']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['phone']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['email']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['created_at']); ?></td>
                                                     <td>
                                                         <a href="edit_account.php?user_id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
                                                         <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
