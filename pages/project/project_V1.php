@@ -196,7 +196,7 @@ $total_creators = count($unique_creators);
             font-family: 'Noto Sans Thai', sans-serif;
             font-weight: 700;
             /* ปรับระดับน้ำหนักของฟอนต์ */
-            font-size: 14px;
+            font-size: 16px;
             color: #333;
         }
 
@@ -457,7 +457,7 @@ $total_creators = count($unique_creators);
                                                 <th class="text-nowrap text-center">End Date</th>
                                                 <th class="text-nowrap text-center">Status</th>
                                                 <th class="text-nowrap text-center">Product</th>
-                                                <th class="text-nowrap text-center">Project Name</th>
+                                                <th class="text-nowrap text-center" >Project Name</th>
                                                 <th class="text-nowrap text-center">Cost Price</th>
                                                 <th class="text-nowrap text-center">Cost Price (Vat)</th>
                                                 <th class="text-nowrap text-center">Sale Price</th>
@@ -481,6 +481,7 @@ $total_creators = count($unique_creators);
                                                 <th class="text-nowrap text-center">Action</th>
                                             </tr>
                                         </thead>
+
                                         <tbody>
                                             <?php foreach ($projects as $project) : ?>
                                                 <tr>
@@ -512,7 +513,7 @@ $total_creators = count($unique_creators);
                                                         ?>
                                                     </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
-                                                    <td class="text-nowrap" ><?php echo htmlspecialchars($project['project_name']); ?></td>
+                                                    <td class="project-name " width="40%"><?php echo htmlspecialchars($project['project_name']); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['sale_no_vat'], 2); ?></td>
@@ -530,7 +531,7 @@ $total_creators = count($unique_creators);
                                                     <td class="text-nowrap"><?php echo isset($project['address']) ? htmlspecialchars($project['address']) : 'ไม่มีข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่มีข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']); ?></td>
+                                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($project['remark']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
                                                     <td class="text-nowrap">
@@ -543,6 +544,38 @@ $total_creators = count($unique_creators);
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th class="text-nowrap text-center">Contact No.</th>
+                                                <th class="text-nowrap text-center">Sales Date</th>
+                                                <th class="text-nowrap text-center">Start Date</th>
+                                                <th class="text-nowrap text-center">End Date</th>
+                                                <th class="text-nowrap text-center">Status</th>
+                                                <th class="text-nowrap text-center">Product</th>
+                                                <th class="text-nowrap text-center">Project Name</th>
+                                                <th class="text-nowrap text-center">Cost Price</th>
+                                                <th class="text-nowrap text-center">Cost Price (Vat)</th>
+                                                <th class="text-nowrap text-center">Sale Price</th>
+                                                <th class="text-nowrap text-center">Sale Price (Vat)</th>
+                                                <th class="text-nowrap text-center">Gross Profit</th>
+                                                <th class="text-nowrap text-center">(% GP)</th>
+                                                <th class="text-nowrap text-center">Vat (%)</th>
+                                                <th class="text-nowrap text-center">Estimate Cost</th>
+                                                <th class="text-nowrap text-center">Estimate Sale</th>
+                                                <th class="text-nowrap text-center">Estimate GP</th>
+                                                <th class="text-nowrap text-center">Seller</th>
+                                                <th class="text-nowrap text-center">Team</th>
+                                                <th class="text-nowrap text-center">Customer Name</th>
+                                                <th class="text-nowrap text-center">Customer Company</th>
+                                                <th class="text-nowrap text-center">Customer Address</th>
+                                                <th class="text-nowrap text-center">Customer Phone</th>
+                                                <th class="text-nowrap text-center">Customer Email</th>
+                                                <th class="text-nowrap text-center">Remark</th>
+                                                <th class="text-nowrap text-center">Create By</th>
+                                                <th class="text-nowrap text-center">Create Date</th>
+                                                <th class="text-nowrap text-center">Action</th>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                                 <!-- /.card-body -->
@@ -560,65 +593,25 @@ $total_creators = count($unique_creators);
         <!-- // include footer -->
         <?php include  '../../include/footer.php'; ?>
     </div>
+    <!-- ./wrapper -->
     <script>
         $(function() {
             $("#example1").DataTable({
-                "responsive": false,
+                "responsive": true,
                 "lengthChange": false,
                 "autoWidth": false,
-                "scrollX": true,
-                "scrollCollapse": true,
-                "paging": true,
-                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
-                "columnDefs": [{
-                        "width": "80px",
-                        "targets": [0, 1, 2, 3]
-                    }, // Contact No., Dates
-                    {
-                        "width": "100px",
-                        "targets": [4, 5]
-                    }, // Status, Product
-                    {
-                        "width": "700px",
-                        "targets": 6
-                    }, // Project Name
-                    {
-                        "width": "100px",
-                        "targets": [7, 8, 9, 10, 11]
-                    }, // Prices
-                    {
-                        "width": "60px",
-                        "targets": [12, 13]
-                    }, // GP%, VAT%
-                    {
-                        "width": "100px",
-                        "targets": [14, 15, 16]
-                    }, // Estimates
-                    {
-                        "width": "100px",
-                        "targets": [17, 18]
-                    }, // Seller, Team
-                    {
-                        "width": "150px",
-                        "targets": [19, 20, 21, 22, 23]
-                    }, // Customer info
-                    {
-                        "width": "500px",
-                        "targets": 24
-                    }, // Remark
-                    {
-                        "width": "120px",
-                        "targets": [25, 26]
-                    }, // Create By, Create Date
-                    {
-                        "width": "100px",
-                        "targets": 27
-                    } // Action
-                ],
-                "fixedColumns": {
-                    leftColumns: 2 // ตรึง 2 คอลัมน์ซ้าย
-                }
+                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+                
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+            $('#example2').DataTable({
+                "paging": true,
+                "lengthChange": false,
+                "searching": false,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+            });
         });
     </script>
     <script>

@@ -512,7 +512,7 @@ $total_creators = count($unique_creators);
                                                         ?>
                                                     </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
-                                                    <td class="text-nowrap" ><?php echo htmlspecialchars($project['project_name']); ?></td>
+                                                    <td class="project-name "><?php echo htmlspecialchars($project['project_name']); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['sale_no_vat'], 2); ?></td>
@@ -530,7 +530,7 @@ $total_creators = count($unique_creators);
                                                     <td class="text-nowrap"><?php echo isset($project['address']) ? htmlspecialchars($project['address']) : 'ไม่มีข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่มีข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']); ?></td>
+                                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($project['remark']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
                                                     <td class="text-nowrap">

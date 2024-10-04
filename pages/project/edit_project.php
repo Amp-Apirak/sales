@@ -694,7 +694,21 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
-        // เมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม
+        // แก้ไขฟังก์ชันสำหรับช่อง ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
+        $("#cost_no_vat").on("input", function() {
+            var costNoVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
+            var vat = parseFloat($("#vat").val()) || 0;
+
+            if (costNoVat && vat) {
+                var costVat = calculateWithVatPrice(costNoVat, vat); // คำนวณราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม
+                $("#cost_vat").val(formatNumber(costVat.toFixed(2))); // แสดงราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม
+            }
+
+            calculateGrossProfit(); // คำนวณกำไรขั้นต้น
+            recalculateEstimate(); // คำนวณ Estimate Potential
+        });
+
+        // แก้ไขฟังก์ชันสำหรับช่อง ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม
         $("#cost_vat").on("input", function() {
             var costVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
             var vat = parseFloat($("#vat").val()) || 0;
@@ -706,15 +720,9 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
-        // เมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
-        $("#cost_no_vat").on("input", function() {
-            calculateGrossProfit(); // คำนวณกำไรขั้นต้น
-            recalculateEstimate(); // คำนวณ Estimate Potential
-        });
-
-        // เมื่อมีการเปลี่ยนค่า VAT
+        // เพิ่มการทริกเกอร์การคำนวณเมื่อมีการเปลี่ยนค่า VAT
         $("#vat").on("change", function() {
-            $("#sale_vat").trigger("input"); // เรียกคำนวณใหม่
+            $("#sale_vat").trigger("input");
             $("#sale_no_vat").trigger("input");
             $("#cost_vat").trigger("input");
             $("#cost_no_vat").trigger("input");
