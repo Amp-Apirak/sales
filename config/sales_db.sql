@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 26, 2024 at 07:07 PM
+-- Generation Time: Oct 05, 2024 at 10:37 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,6 +20,75 @@ SET time_zone = "+00:00";
 --
 -- Database: `sales_db`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `category`
+--
+
+CREATE TABLE `category` (
+  `id` char(36) NOT NULL COMMENT 'รหัสหมวดหมู่ (UUID)',
+  `service_category` varchar(255) NOT NULL COMMENT 'หมวดหมู่บริการ',
+  `category` varchar(255) NOT NULL COMMENT 'หมวดหมู่',
+  `sub_category` varchar(255) DEFAULT NULL COMMENT 'หมวดหมู่ย่อย',
+  `problems` text DEFAULT NULL COMMENT 'ปัญหา',
+  `cases` text DEFAULT NULL COMMENT 'กรณีศึกษา',
+  `resolve` text DEFAULT NULL COMMENT 'การแก้ไข',
+  `image_id` char(36) DEFAULT NULL COMMENT 'รหัสรูปภาพ (เชื่อมโยงกับตาราง Category_image)',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้าง',
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตล่าสุด',
+  `created_by` char(36) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `category`
+--
+
+INSERT INTO `category` (`id`, `service_category`, `category`, `sub_category`, `problems`, `cases`, `resolve`, `image_id`, `created_at`, `updated_at`, `created_by`) VALUES
+('', 'เครือข่าย', 'การเชื่อมต่อเครือข่าย', 'LAN', 'การเชื่อมต่อล้มเหลว', 'ผู้ใช้ไม่สามารถเข้าถึงอินเทอร์เน็ต', 'ตรวจสอบการตั้งค่า IP และรีสตาร์ทอุปกรณ์', NULL, '2024-10-04 18:35:54', '2024-10-04 18:35:54', NULL);
+
+--
+-- Triggers `category`
+--
+DELIMITER $$
+CREATE TRIGGER `before_insert_category` BEFORE INSERT ON `category` FOR EACH ROW BEGIN
+    -- ถ้าไม่ได้กำหนดค่า id ให้สร้าง UUID ใหม่
+    IF NEW.id IS NULL THEN
+        SET NEW.id = UUID();
+    END IF;
+END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `category_image`
+--
+
+CREATE TABLE `category_image` (
+  `id` char(36) NOT NULL COMMENT 'รหัสรูปภาพ (UUID)',
+  `file_name` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์',
+  `file_path` varchar(255) NOT NULL COMMENT 'ที่อยู่ไฟล์',
+  `file_type` varchar(50) DEFAULT NULL COMMENT 'ประเภทไฟล์',
+  `file_size` int(11) DEFAULT NULL COMMENT 'ขนาดไฟล์',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่อัปโหลด',
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตล่าสุด'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Triggers `category_image`
+--
+DELIMITER $$
+CREATE TRIGGER `before_insert_category_image` BEFORE INSERT ON `category_image` FOR EACH ROW BEGIN
+    -- ถ้าไม่ได้กำหนดค่า id ให้สร้าง UUID ใหม่
+    IF NEW.id IS NULL THEN
+        SET NEW.id = UUID();
+    END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -59,6 +128,7 @@ INSERT INTO `customers` (`customer_id`, `customer_name`, `company`, `address`, `
 ('6', 'Olivia Wilson', 'WebCreatives', '303 Birch St, City F', '555-3456', 'olivia.wilson@webcreatives.com', 'ลูกค้าโครงการเล็ก', 1, '2024-09-20 15:03:08'),
 ('7', 'James Taylor', 'MarketingPro', '404 Cedar St, City G', '555-9012', 'james.taylor@marketingpro.com', '', 3, '2024-09-20 15:03:08'),
 ('8', 'Sophia Anderson', 'Smart Solutions', '505 Aspen St, City H', '555-7890', 'sophia.anderson@smartsolutions.com', 'ลูกค้าประจำ', 2, '2024-09-20 15:03:08'),
+('8af25d3c-1e5d-4c59-9006-846911cb779a', 'ggggggggg', 'gggggggggggggg', 'gggggggggg', '0839595842', 'pirak.ba@gmail.com', 'ggggggggggggg', 3, '2024-09-28 15:37:33'),
 ('9', 'Liam Martinez', 'SecurityTech', '606 Spruce St, City I', '555-4567', 'liam.martinez@securitytech.com', '', 1, '2024-09-20 15:03:08'),
 ('99bd8425-10a1-4f31-92a7-95d7cfe5648a', 'ทดสอบ', 'ทดสอบ', 'ทดสอบ', '0839595654', 'sdfs@gmail.com', 'sfdsfdfd', 2, '2024-09-25 11:09:17'),
 ('d178cd84-7ad8-4225-b044-381bd602a1e2', 'หดหกดหกด', 'หกดกหดกหด', 'กหดกหดกหดกห', '0839596547', 'ba@gmail.com', 'เหกเกเกหดเกหเหกด', 2, '2024-09-25 11:15:48'),
@@ -92,6 +162,7 @@ INSERT INTO `products` (`product_id`, `product_name`, `product_description`, `cr
 ('6', 'Product F', 'This is a description for Product F.', '3', '2024-09-24 15:46:16'),
 ('7', 'Product G', 'This is a description for Product G.', '4', '2024-09-24 15:46:16'),
 ('8', 'Product H', 'This is a description for Product H.', '4', '2024-09-24 15:46:16'),
+('87438610-6611-4d56-b7dd-432f2a4da196', 'ทดสอบ', 'ทดสอบ', '3', '2024-09-30 15:17:13'),
 ('9', 'Product I', 'This is a description for Product I.', '5', '2024-09-24 15:46:16');
 
 -- --------------------------------------------------------
@@ -172,10 +243,20 @@ CREATE TABLE `teams` (
 --
 
 INSERT INTO `teams` (`team_id`, `team_name`, `team_description`, `created_by`, `created_at`, `updated_by`, `updated_at`, `team_leader`) VALUES
+('0586dbce-172c-4410-8fe2-cf120b46ad6b', 'หน่วยซีล', 'ปติบัติการลับ', '', '2024-09-28 08:25:53', '3', '2024-09-30 14:47:44', '66f3b9c48eff57.82225589'),
 ('1', 'Innovation', 'ทีม Product ', '', '2024-09-26 03:35:50', NULL, '2024-09-26 17:00:17', '1'),
+('109e03dc-7832-4cca-a061-16cf7615d3d7', 'sdfsdf', 'sdfdsfdsfds', '', '2024-09-28 15:40:31', NULL, NULL, '49279c96-4158-48c7-a1c2-a996e867ad34'),
+('19a7bb0f-e6d2-4756-9229-eef1cd99a2d7', 'Non Service', 'Non Service', '', '2024-09-27 14:59:49', NULL, '2024-09-29 15:36:42', '2'),
 ('2', 'Sales A', 'ทีมฝ่ายขายของบริษัท', '', '2024-09-26 03:35:50', NULL, '2024-09-26 17:00:31', '3'),
 ('3', 'Service', 'ทีมให้บริการ', '', '2024-09-26 03:35:50', NULL, '2024-09-26 17:00:41', '2'),
+('3047cbc0-50be-4398-aacd-bc2c399abaf5', 'sdfdsfds', 'fdsfdsfdsf', '', '2024-09-28 15:40:39', NULL, NULL, '4'),
 ('4', 'Point IT', 'บริษัทพอทไอที คอนซัลทิ่งจำกัด', '', '2024-09-26 03:35:50', NULL, '2024-09-26 17:01:02', '2'),
+('57f01f39-e202-457a-ab86-28e3686e8404', 'fsdfsd', 'ฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤฤ', '', '2024-09-28 15:40:20', '3', '2024-09-29 16:48:56', '49279c96-4158-48c7-a1c2-a996e867ad34'),
+('744d485a-3e6d-49c4-9ef2-85dc205a325c', 'hhhhhh', 'hhhhhhhhh', '3', '2024-09-29 16:03:18', '3', '2024-09-29 16:48:40', '5'),
+('9b8d39c3-f4b2-41f6-8dc4-204b597793a6', 'sdfdsfsdf', 'sdfdsfsdfdsfds', '', '2024-09-28 15:41:00', NULL, NULL, '3'),
+('9eb239ca-4d37-44d3-93c6-470876954830', 'หน่วยซีลด', 'ปติบัติการลับด', '3', '2024-09-29 16:02:58', NULL, NULL, '12'),
+('a835ad81-565c-4938-bfb8-1f84b1c495ae', 'ฟหกดฟหกดฟกหด', 'ฟหกดฟกหดฟหด', '3', '2024-09-28 17:08:22', NULL, NULL, '12'),
+('d51c6aaf-86ab-4f0f-9644-f94cb593aeb7', 'sfsdfsdf', 'dsfdsfsdfsdfsdfdssdff', '', '2024-09-28 15:40:49', NULL, NULL, '5'),
 ('f45f81a4-7086-448b-b6a7-2e1862fb1eda', 'Pataya', 'ทีมฝ่ายขายของพัทยา', '', '2024-09-26 16:57:10', NULL, '2024-09-26 17:01:13', '2');
 
 -- --------------------------------------------------------
@@ -222,6 +303,19 @@ INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, 
 --
 
 --
+-- Indexes for table `category`
+--
+ALTER TABLE `category`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_category_image` (`image_id`);
+
+--
+-- Indexes for table `category_image`
+--
+ALTER TABLE `category_image`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `customers`
 --
 ALTER TABLE `customers`
@@ -261,6 +355,12 @@ ALTER TABLE `users`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `category`
+--
+ALTER TABLE `category`
+  ADD CONSTRAINT `fk_category_image` FOREIGN KEY (`image_id`) REFERENCES `category_image` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `products`
