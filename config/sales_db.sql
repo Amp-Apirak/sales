@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 05, 2024 at 10:37 AM
+-- Generation Time: Oct 06, 2024 at 02:19 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -46,7 +46,7 @@ CREATE TABLE `category` (
 --
 
 INSERT INTO `category` (`id`, `service_category`, `category`, `sub_category`, `problems`, `cases`, `resolve`, `image_id`, `created_at`, `updated_at`, `created_by`) VALUES
-('', 'เครือข่าย', 'การเชื่อมต่อเครือข่าย', 'LAN', 'การเชื่อมต่อล้มเหลว', 'ผู้ใช้ไม่สามารถเข้าถึงอินเทอร์เน็ต', 'ตรวจสอบการตั้งค่า IP และรีสตาร์ทอุปกรณ์', NULL, '2024-10-04 18:35:54', '2024-10-04 18:35:54', NULL);
+('cHErWjdqY25XRjhoQmhxREpSVnJ3QT09', 'เครือข่าย', 'การเชื่อมต่อเครือข่าย', 'LAN', 'การเชื่อมต่อล้มเหลว', 'ผู้ใช้ไม่สามารถเข้าถึงอินเทอร์เน็ต', 'ตรวจสอบการตั้งค่า IP และรีสตาร์ทอุปกรณ์', NULL, '2024-10-04 18:35:54', '2024-10-06 11:49:40', '2');
 
 --
 -- Triggers `category`
@@ -74,8 +74,16 @@ CREATE TABLE `category_image` (
   `file_type` varchar(50) DEFAULT NULL COMMENT 'ประเภทไฟล์',
   `file_size` int(11) DEFAULT NULL COMMENT 'ขนาดไฟล์',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่อัปโหลด',
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตล่าสุด'
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตล่าสุด',
+  `category_id` char(36) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `category_image`
+--
+
+INSERT INTO `category_image` (`id`, `file_name`, `file_path`, `file_type`, `file_size`, `created_at`, `updated_at`, `category_id`) VALUES
+('b16fcce8-0615-cf73-2ccc-270919ad597f', '67027cd979b2f.png', '../../uploads/category_images/67027cd979b2f.png', 'image/png', 241422, '2024-10-06 12:04:41', '2024-10-06 12:04:41', 'cHErWjdqY25XRjhoQmhxREpSVnJ3QT09');
 
 --
 -- Triggers `category_image`

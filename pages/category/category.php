@@ -81,6 +81,28 @@ $query_categories = $stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Category Management</title>
     <?php include  '../../include/header.php'; ?>
+
+    <!-- /* ใช้ฟอนต์ Noto Sans Thai กับ label */ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
+        th,h1 {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 700;
+            /* ปรับระดับน้ำหนักของฟอนต์ */
+            font-size: 14px;
+            color: #333;
+        }
+
+        /* tr {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            color: #333;
+        } */
+    </style>
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -209,7 +231,10 @@ $query_categories = $stmt->fetchAll();
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($category['resolve']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($category['first_name'] . ' ' . $category['last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($category['created_at']); ?></td>
-                                                    <td>
+                                                    <td class="text-nowrap">
+                                                        <a href="view_category.php?category_id=<?php echo urlencode(encryptUserId($category['id'])); ?>" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
                                                         <a href="edit_category.php?category_id=<?php echo urlencode(encryptUserId($category['id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
                                                         <a href="javascript:void(0);" onclick="confirmDelete('<?php echo urlencode(encryptUserId($category['id'])); ?>')" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                                     </td>
@@ -231,9 +256,12 @@ $query_categories = $stmt->fetchAll();
     <script>
         $(function() {
             $("#example1").DataTable({
-                "responsive": true,
+                "responsive": false,
                 "lengthChange": false,
                 "autoWidth": false,
+                "scrollX": true,
+                "scrollCollapse": true,
+                "paging": true,
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
