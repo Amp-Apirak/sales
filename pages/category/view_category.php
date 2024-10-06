@@ -250,38 +250,27 @@ $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 var category_id = '<?php echo $category_id; ?>';
                 formData.append('category_id', category_id);
 
-                console.log('Category ID being sent:', category_id); // สำหรับ debug
-
                 $.ajax({
                     url: 'upload_image.php',
                     type: 'POST',
                     data: formData,
                     contentType: false,
                     processData: false,
+                    dataType: 'json', // เพิ่มบรรทัดนี้
                     success: function(response) {
-                        try {
-                            var result = JSON.parse(response);
-                            if (result.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'สำเร็จ',
-                                    text: result.message
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'เกิดข้อผิดพลาด',
-                                    text: result.message
-                                });
-                            }
-                        } catch (e) {
-                            console.error('Error parsing JSON:', response);
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'สำเร็จ',
+                                text: response.message
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'เกิดข้อผิดพลาด',
-                                text: 'ไม่สามารถประมวลผลการตอบกลับจากเซิร์ฟเวอร์ได้'
+                                text: response.message
                             });
                         }
                     },

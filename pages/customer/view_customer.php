@@ -59,6 +59,16 @@ try {
             border-radius: 50%;
             border: 3px solid #3c8dbc;
         }
+
+        /* ปุ่มแก้ไข */
+        .btn-edit {
+            transition: all 0.3s;
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 
@@ -100,6 +110,14 @@ try {
                         <div class="col-md-8">
                             <div class="card card-primary card-outline h-100">
                                 <div class="card-body p-0 box-profile ">
+
+                                    <!-- เพิ่มปุ่ม Edit ตรงนี้ -->
+                                    <div class="text-right p-3">
+                                        <a href="edit_customer.php?customer_id=<?php echo urlencode($_GET['id']); ?>" class="btn btn-primary btn-sm btn-edit">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </div>
+
                                     <ul class="list-group list-group-flush">
                                         <li class="list-group-item">
                                             <div class="d-flex w-100 justify-content-between">
