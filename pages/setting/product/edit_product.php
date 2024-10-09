@@ -1,68 +1,73 @@
 <?php
-// เริ่มต้น session
+// เริ่มต้น session และเชื่อมต่อฐานข้อมูล
 session_start();
-
-// เชื่อมต่อฐานข้อมูล
 include('../../../config/condb.php');
 
-// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
-if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
-    header("Location: " . BASE_URL . "login.php");  // Redirect ไปยังหน้า login.php
-    exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
+// เปิดการแสดงข้อผิดพลาดทั้งหมด
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// ตรวจสอบการเชื่อมต่อฐานข้อมูล
+try {
+    $condb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // echo "Connected successfully"; // ถ้าต้องการตรวจสอบการเชื่อมต่อ ให้เอา comment ออก
+} catch(PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
 }
 
-// สร้างหรือดึง CSRF Token สำหรับป้องกันการโจมตี CSRF
+// ตรวจสอบการตั้งค่า Session
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    header("Location: " . BASE_URL . "login.php");
+    exit;
+}
+
+// สร้างหรือดึง CSRF Token
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 $csrf_token = $_SESSION['csrf_token'];
 
 // ฟังก์ชันทำความสะอาดข้อมูล input
-function clean_input($data)
-{
+function clean_input($data) {
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
 // ดึงข้อมูลจาก session
 $user_id = $_SESSION['user_id'];
-$updated_by = $user_id; // ตั้งค่าตัวแปร $updated_by จาก user_id ของผู้ใช้งานปัจจุบัน
+$updated_by = $user_id;
 
 // ตรวจสอบว่ามีการส่ง product_id มาหรือไม่
 if (isset($_GET['product_id'])) {
     $encrypted_product_id = urldecode($_GET['product_id']);
     $product_id = decryptUserId($encrypted_product_id);
 
-    // ตรวจสอบว่าถอดรหัสสำเร็จหรือไม่
     if ($product_id !== false) {
         // ดึงข้อมูลสินค้าจากฐานข้อมูล
         $sql = "SELECT * FROM products WHERE product_id = :product_id";
         $stmt = $condb->prepare($sql);
         $stmt->bindParam(':product_id', $product_id, PDO::PARAM_STR);
         $stmt->execute();
-        $product = $stmt->fetch();
+        $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // ตรวจสอบว่ามีข้อมูลสินค้าหรือไม่
         if (!$product) {
-            echo "ไม่พบข้อมูลสินค้า";
-            exit;
+            die("ไม่พบข้อมูลสินค้า");
         }
     } else {
-        echo "รหัสสินค้าไม่ถูกต้อง";
-        exit;
+        die("รหัสสินค้าไม่ถูกต้อง");
     }
 } else {
-    echo "ไม่มีการส่งรหัสสินค้ามา";
-    exit;
+    die("ไม่มีการส่งรหัสสินค้ามา");
 }
 
 // ตรวจสอบว่าผู้ใช้กดปุ่ม "แก้ไขข้อมูลสินค้า" หรือไม่
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
     // ตรวจสอบ CSRF Token
-    if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
         die("Invalid CSRF token");
     }
 
-    // รับข้อมูลจากฟอร์มและล้างข้อมูลด้วย htmlspecialchars เพื่อป้องกัน XSS
+    // รับข้อมูลจากฟอร์มและล้างข้อมูล
     $product_name = clean_input($_POST['product_name']);
     $product_description = clean_input($_POST['product_description']);
 
@@ -75,32 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $existing_product = $stmt->fetch();
 
     if ($existing_product) {
-        echo "<script>
-                setTimeout(function() {
-                    Swal.fire({
-                        title: 'เกิดข้อผิดพลาด',
-                        text: 'ชื่อสินค้านี้ถูกใช้ไปแล้ว!',
-                        icon: 'error',
-                        confirmButtonText: 'ตกลง'
-                    });
-                }, 100);
-              </script>";
-    } else if (
-        $product_name == $product['product_name'] &&
-        $product_description == $product['product_description']
-    ) {
-        // ถ้าไม่มีการเปลี่ยนแปลงข้อมูล แสดง SweetAlert
-        echo  '<script>
-            setTimeout(function() {
-                Swal.fire({
-                    title: "Opp..",
-                    text: "ไม่มีการแก้ไขข้อมูล!",
-                    icon: "error"
-                }).then(function() {
-                    window.location = "product.php"; //หน้าที่ต้องการให้กระโดดไป
-                });
-            }, 1000);
-            </script>';
+        $error_message = "ชื่อสินค้านี้ถูกใช้ไปแล้ว!";
+    } else if (empty($product_name) || empty($product_description)) {
+        $error_message = "กรุณากรอกข้อมูลให้ครบถ้วน!";
     } else {
         try {
             // แก้ไขข้อมูลสินค้า
@@ -110,23 +92,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bindParam(':product_description', $product_description, PDO::PARAM_STR);
             $stmt->bindParam(':product_id', $product_id, PDO::PARAM_STR);
             $stmt->bindParam(':updated_by', $updated_by, PDO::PARAM_INT);
-            $stmt->execute();
+            $result = $stmt->execute();
 
-            // แสดงข้อความเมื่อแก้ไขสำเร็จด้วย SweetAlert
-            echo "<script>
-                setTimeout(function() {
-                    Swal.fire({
-                        title: 'สำเร็จ!',
-                        text: 'แก้ไขข้อมูลสินค้าสำเร็จแล้ว!',
-                        icon: 'success',
-                        confirmButtonText: 'ตกลง'
-                    }).then(function() {
-                        window.location.href = 'product.php';
-                    });
-                }, 100);
-              </script>";
+            if ($result) {
+                $rowsAffected = $stmt->rowCount();
+                if ($rowsAffected > 0) {
+                    $success_message = "แก้ไขข้อมูลสินค้าสำเร็จแล้ว!";
+                } else {
+                    $info_message = "ไม่มีการเปลี่ยนแปลงข้อมูล";
+                }
+            } else {
+                $error_message = "ไม่สามารถอัพเดทข้อมูลได้!";
+            }
         } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
+            $error_message = "Error: " . $e->getMessage();
         }
     }
 }
@@ -135,26 +114,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <?php $menu = "product"; ?>
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Edit Product</title>
     <?php include '../../../include/header.php'; ?>
-    <!-- SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
     <div class="wrapper">
-
-        <!-- Navbar -->
         <?php include '../../../include/navbar.php'; ?>
-        <!-- /.navbar -->
-
-        <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
-            <!-- Content Header (Page header) -->
             <div class="content-header">
                 <div class="container-fluid">
                     <div class="row mb-2">
@@ -170,25 +140,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
             </div>
-            <!-- /.content-header -->
-
-            <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-12">
-                            <!-- ฟอร์มแก้ไขข้อมูลสินค้า -->
                             <div class="card card-primary h-100" style="min-height: 700px;">
                                 <div class="card-header">
                                     <h3 class="card-title">Product Information</h3>
                                 </div>
                                 <div class="card-body">
-                                    <form action="#" method="POST">
-                                        <!-- CSRF Token -->
+                                    <form action="" method="POST">
                                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                         <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product['product_id']); ?>">
-
-                                        <!-- Product Name -->
                                         <div class="form-group">
                                             <label for="product_name">Product Name<span class="text-danger">*</span></label>
                                             <div class="input-group">
@@ -198,8 +161,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <input type="text" name="product_name" class="form-control" id="product_name" value="<?php echo htmlspecialchars($product['product_name']); ?>" required>
                                             </div>
                                         </div>
-
-                                        <!-- Description -->
                                         <div class="form-group">
                                             <label for="product_description">Description</label>
                                             <div class="input-group">
@@ -209,11 +170,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <textarea name="product_description" class="form-control" id="product_description" rows="4" placeholder="Description"><?php echo htmlspecialchars($product['product_description']); ?></textarea>
                                             </div>
                                         </div>
-
-
-                                        <!-- Submit Button -->
                                         <div class="form-group">
-                                            <button type="submit" class="btn btn-sm btn-success w-15" style="width: 120px;">Save</button>
+                                            <button type="submit" name="submit" class="btn btn-sm btn-success w-15" style="width: 120px;">Save</button>
                                         </div>
                                     </form>
                                 </div>
@@ -223,9 +181,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </section>
         </div>
-        <!-- Footer -->
         <?php include '../../../include/footer.php'; ?>
     </div>
-</body>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        <?php
+        if (isset($success_message)) {
+            echo "Swal.fire({
+                title: 'สำเร็จ!',
+                text: '$success_message',
+                icon: 'success',
+                confirmButtonText: 'ตกลง'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'product.php';
+                }
+            });";
+        } elseif (isset($error_message)) {
+            echo "Swal.fire({
+                title: 'เกิดข้อผิดพลาด',
+                text: '$error_message',
+                icon: 'error',
+                confirmButtonText: 'ตกลง'
+            });";
+        } elseif (isset($info_message)) {
+            echo "Swal.fire({
+                title: 'แจ้งเตือน',
+                text: '$info_message',
+                icon: 'info',
+                confirmButtonText: 'ตกลง'
+            });";
+        }
+        ?>
+    });
+    </script>
+</body>
 </html>

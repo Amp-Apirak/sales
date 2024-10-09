@@ -11,7 +11,7 @@ $user_id = $_SESSION['user_id'];  // user_id ของผู้ใช้
 $search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) : '';
 
 // Query พื้นฐานในการดึงข้อมูลลูกค้าทั้งหมด
-$sql_customers = "SELECT DISTINCT  c.*, u.first_name, u.last_name, t.team_name 
+$sql_customers = "SELECT DISTINCT c.*, u.first_name, u.last_name, t.team_name 
                   FROM customers c
                   LEFT JOIN users u ON c.created_by = u.user_id
                   LEFT JOIN teams t ON u.team_id = t.team_id

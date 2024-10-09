@@ -35,104 +35,159 @@ function generateUUID()
 }
 
 $alert = ''; // ตัวแปรสำหรับแสดงข้อความแจ้งเตือน
+// ตัวแปรสำหรับเก็บข้อความแจ้งเตือนและข้อผิดพลาด
+$error_messages = [];
 
 // ตรวจสอบว่ามีการส่งฟอร์มหรือไม่
+// ตรวจสอบว่ามีการส่งข้อมูลแบบ POST หรือไม่
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // ตรวจสอบ CSRF Token
-    if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("Invalid CSRF token");
-    }
+    // ตรวจสอบว่าเป็นการร้องขอแบบ AJAX หรือไม่
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
 
-    // สร้าง UUID สำหรับ project_id
-    $project_id = generateUUID();
+        // ตรวจสอบ CSRF Token
+        if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            die("Invalid CSRF token");
+        }
 
-    // ทำความสะอาดข้อมูลที่ได้จากฟอร์ม
-    $project_name = clean_input($_POST['project_name']);
-    $sales_date = clean_input($_POST['sales_date']);
-    $date_start = clean_input($_POST['date_start']);
-    $date_end = clean_input($_POST['date_end']);
-    $status = clean_input($_POST['status']);
-    $contract_no = clean_input($_POST['con_number']);
-    $product_id = filter_var($_POST['product_id'], FILTER_VALIDATE_INT);
-    $customer_id = filter_var($_POST['customer_id'], FILTER_VALIDATE_INT);
-    $sale_vat = filter_var(str_replace(',', '', $_POST['sale_vat']), FILTER_VALIDATE_FLOAT);
-    $sale_no_vat = filter_var(str_replace(',', '', $_POST['sale_no_vat']), FILTER_VALIDATE_FLOAT);
-    $cost_vat = filter_var(str_replace(',', '', $_POST['cost_vat']), FILTER_VALIDATE_FLOAT);
-    $cost_no_vat = filter_var(str_replace(',', '', $_POST['cost_no_vat']), FILTER_VALIDATE_FLOAT);
-    $gross_profit = filter_var(str_replace(',', '', $_POST['gross_profit']), FILTER_VALIDATE_FLOAT);
-    $potential = filter_var(str_replace('%', '', $_POST['potential']), FILTER_VALIDATE_FLOAT);
-    $es_sale_no_vat = filter_var(str_replace(',', '', $_POST['es_sale_no_vat']), FILTER_VALIDATE_FLOAT);
-    $es_cost_no_vat = filter_var(str_replace(',', '', $_POST['es_cost_no_vat']), FILTER_VALIDATE_FLOAT);
-    $es_gp_no_vat = filter_var(str_replace(',', '', $_POST['es_gp_no_vat']), FILTER_VALIDATE_FLOAT);
-    $remark = clean_input($_POST['remark']);
-    $vat = filter_var($_POST['vat'], FILTER_VALIDATE_FLOAT);
+        // สร้าง UUID สำหรับ project_id
+        $project_id = generateUUID();
 
-    // ตรวจสอบข้อมูลที่จำเป็น
-    if (empty($project_name) || empty($status) || !$product_id || !is_numeric($product_id)) {
-        $alert = "error|กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน ประกอบด้วย ชื่อโครงการ, สถานะ, ชื่อสินค้าที่ขาย";
-    } else {
-        try {
-            // เริ่ม transaction
-            $condb->beginTransaction();
+        // ทำความสะอาดข้อมูลที่ได้จากฟอร์ม
+        $project_name = clean_input($_POST['project_name']);
+        $sales_date = clean_input($_POST['sales_date']);
+        $date_start = clean_input($_POST['date_start']);
+        $date_end = clean_input($_POST['date_end']);
+        $status = clean_input($_POST['status']);
+        $contract_no = clean_input($_POST['con_number']);
+        $product_id = clean_input($_POST['product_id']);
+        $customer_id = clean_input($_POST['customer_id']);
+        $sale_vat = filter_var(str_replace(',', '', $_POST['sale_vat']), FILTER_VALIDATE_FLOAT);
+        $sale_no_vat = filter_var(str_replace(',', '', $_POST['sale_no_vat']), FILTER_VALIDATE_FLOAT);
+        $cost_vat = filter_var(str_replace(',', '', $_POST['cost_vat']), FILTER_VALIDATE_FLOAT);
+        $cost_no_vat = filter_var(str_replace(',', '', $_POST['cost_no_vat']), FILTER_VALIDATE_FLOAT);
+        $gross_profit = filter_var(str_replace(',', '', $_POST['gross_profit']), FILTER_VALIDATE_FLOAT);
+        $potential = filter_var(str_replace('%', '', $_POST['potential']), FILTER_VALIDATE_FLOAT);
+        $es_sale_no_vat = filter_var(str_replace(',', '', $_POST['es_sale_no_vat']), FILTER_VALIDATE_FLOAT);
+        $es_cost_no_vat = filter_var(str_replace(',', '', $_POST['es_cost_no_vat']), FILTER_VALIDATE_FLOAT);
+        $es_gp_no_vat = filter_var(str_replace(',', '', $_POST['es_gp_no_vat']), FILTER_VALIDATE_FLOAT);
+        $remark = clean_input($_POST['remark']);
+        $vat = filter_var($_POST['vat'], FILTER_VALIDATE_FLOAT);
 
-            // ตรวจสอบว่ามีโครงการชื่อซ้ำหรือไม่
-            $stmt = $condb->prepare("SELECT COUNT(*) FROM projects WHERE project_name = :project_name");
-            $stmt->bindParam(':project_name', $project_name, PDO::PARAM_STR);
-            $stmt->execute();
-            if ($stmt->fetchColumn() > 0) {
-                throw new Exception("มีโครงการชื่อนี้อยู่แล้ว");
-            }
+        // ตรวจสอบข้อมูลที่จำเป็น
+        if (empty($project_name)) {
+            $error_messages[] = "กรุณากรอกชื่อโครงการ";
+        }
+        if (empty($status) || $status === "Select") {
+            $error_messages[] = "กรุณาเลือกสถานะโครงการ";
+        }
+        if (empty($product_id)) {
+            $error_messages[] = "กรุณาเลือกสินค้าที่ขาย";
+        }
 
-            // เตรียม SQL สำหรับการเพิ่มข้อมูลโดยใช้ UUID สำหรับ project_id
-            $sql = "INSERT INTO projects (project_id, project_name, start_date, end_date, status, contract_no, product_id, customer_id, 
+        // ถ้าไม่มีข้อผิดพลาด ดำเนินการบันทึกข้อมูล
+        // ถ้าไม่มีข้อผิดพลาด ดำเนินการบันทึกข้อมูล
+        if (empty($error_messages)) {
+            try {
+                // เริ่ม transaction
+                $condb->beginTransaction();
+
+                // ตรวจสอบว่ามีโครงการชื่อซ้ำหรือไม่
+                $stmt = $condb->prepare("SELECT COUNT(*) FROM projects WHERE project_name = :project_name");
+                $stmt->bindParam(':project_name', $project_name, PDO::PARAM_STR);
+                $stmt->execute();
+                if ($stmt->fetchColumn() > 0) {
+                    throw new Exception("มีโครงการชื่อนี้อยู่แล้ว");
+                }
+
+                // เตรียม SQL สำหรับการเพิ่มข้อมูลโดยใช้ UUID สำหรับ project_id
+                $sql = "INSERT INTO projects (project_id, project_name, start_date, end_date, status, contract_no, product_id, customer_id, 
             sale_vat, sale_no_vat, cost_vat, cost_no_vat, gross_profit, potential, sales_date,
             es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at, seller) 
             VALUES (:project_id, :project_name, :start_date, :end_date, :status, :contract_no, :product_id, :customer_id, 
             :sale_vat, :sale_no_vat, :cost_vat, :cost_no_vat, :gross_profit, :potential, :sales_date,
             :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW(), :seller)";
 
-            $stmt = $condb->prepare($sql);
-            $stmt->execute([
-                ':project_id' => $project_id,
-                ':project_name' => $project_name,
-                ':start_date' => $date_start,
-                ':end_date' => $date_end,
-                ':status' => $status,
-                ':contract_no' => $contract_no,
-                ':product_id' => $product_id,
-                ':customer_id' => $customer_id ?: null, // ใส่ null หากไม่มี customer_id
-                ':sale_vat' => $sale_vat,
-                ':sale_no_vat' => $sale_no_vat,
-                ':cost_vat' => $cost_vat,
-                ':cost_no_vat' => $cost_no_vat,
-                ':gross_profit' => $gross_profit,
-                ':potential' => $potential,
-                ':sales_date' => $sales_date,
-                ':es_sale_no_vat' => $es_sale_no_vat,
-                ':es_cost_no_vat' => $es_cost_no_vat,
-                ':es_gp_no_vat' => $es_gp_no_vat,
-                ':remark' => $remark,
-                ':vat' => $vat,
-                ':created_by' => $created_by,
-                ':seller' => $created_by
-            ]);
+                $stmt = $condb->prepare($sql);
+                $stmt->execute([
+                    ':project_id' => $project_id,
+                    ':project_name' => $project_name,
+                    ':start_date' => $date_start,
+                    ':end_date' => $date_end,
+                    ':status' => $status,
+                    ':contract_no' => $contract_no,
+                    ':product_id' => $product_id,
+                    ':customer_id' => $customer_id ?: null, // ใส่ null หากไม่มี customer_id
+                    ':sale_vat' => $sale_vat,
+                    ':sale_no_vat' => $sale_no_vat,
+                    ':cost_vat' => $cost_vat,
+                    ':cost_no_vat' => $cost_no_vat,
+                    ':gross_profit' => $gross_profit,
+                    ':potential' => $potential,
+                    ':sales_date' => $sales_date,
+                    ':es_sale_no_vat' => $es_sale_no_vat,
+                    ':es_cost_no_vat' => $es_cost_no_vat,
+                    ':es_gp_no_vat' => $es_gp_no_vat,
+                    ':remark' => $remark,
+                    ':vat' => $vat,
+                    ':created_by' => $created_by,
+                    ':seller' => $created_by
+                ]);
 
-            // Commit transaction
-            $condb->commit();
-            $alert = "success|บันทึกข้อมูลโครงการเรียบร้อยแล้ว";
-        } catch (Exception $e) {
-            // Rollback transaction ในกรณีที่เกิดข้อผิดพลาด
-            $condb->rollBack();
-            $alert = "error|" . $e->getMessage();
+                // Commit transaction
+                $condb->commit();
+                $alert = "success|บันทึกข้อมูลโครงการเรียบร้อยแล้ว";
+            } catch (Exception $e) {
+                // Rollback transaction ในกรณีที่เกิดข้อผิดพลาด
+                $condb->rollBack();
+                $alert = "error|" . $e->getMessage();
+            }
         }
+
+        // เตรียมข้อมูลสำหรับส่งกลับ
+        $response = [
+            'success' => empty($error_messages),
+            'errors' => $error_messages,
+            'message' => empty($error_messages) ? 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว' : ''
+        ];
+
+        // ส่งการตอบกลับเป็น JSON
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
     }
 }
+
 
 // ดึงข้อมูลสำหรับ dropdowns
 $stmt = $condb->query("SELECT product_id, product_name FROM products");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$stmt = $condb->query("SELECT * FROM customers");
+// เตรียม query สำหรับดึงข้อมูลลูกค้า
+$customer_query = "SELECT DISTINCT c.* FROM customers c";
+
+// สร้างเงื่อนไขตามบทบาทของผู้ใช้
+if ($role == 'Executive') {
+    // Executive สามารถเห็นลูกค้าทั้งหมด
+    $customer_query .= " ORDER BY c.customer_name";
+} elseif ($role == 'Sale Supervisor') {
+    // Sale Supervisor เห็นลูกค้าในทีมของตนเอง
+    $customer_query .= " INNER JOIN users u ON c.created_by = u.user_id
+                         WHERE u.team_id = :team_id
+                         ORDER BY c.customer_name";
+} else {
+    // Seller และ Engineer เห็นเฉพาะลูกค้าของตนเอง
+    $customer_query .= " WHERE c.created_by = :user_id
+                         ORDER BY c.customer_name";
+}
+
+// เตรียม statement และ execute query
+$stmt = $condb->prepare($customer_query);
+if ($role == 'Sale Supervisor') {
+    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
+} elseif ($role == 'Seller' || $role == 'Engineer') {
+    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+}
+$stmt->execute();
 $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
@@ -218,7 +273,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <!-- /.col (left) -->
                                 <div class="col-md-6">
                                     <!-- /.Pipeline descriptions ----------------------------------------------------------------------->
-                                    <form action="#" method="POST" enctype="multipart/form-data">
+                                    <form id="addProjectForm" action="#" method="POST" enctype="multipart/form-data">
                                         <!-- Include the CSRF token as a hidden input -->
                                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                         <!-- /.card -->
@@ -327,10 +382,10 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="form-group">
                                                             <label>ข้อมูลลูกค้า</label>
                                                             <select name="customer_id" class="form-control select2">
-                                                                <option value="">Select Customer</option>
+                                                                <option value="">เลือกลูกค้า</option>
                                                                 <?php foreach ($customers as $customer): ?>
                                                                     <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>">
-                                                                        <?php echo htmlspecialchars($customer['customer_name']); ?> , <?php echo htmlspecialchars($customer['company']); ?>
+                                                                        <?php echo htmlspecialchars($customer['customer_name'] . ' - ' . $customer['company']); ?>
                                                                     </option>
                                                                 <?php endforeach; ?>
                                                             </select>
@@ -504,6 +559,66 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             ";
         }
         ?>
+    </script>
+    <!-- เพิ่ม script นี้ก่อนปิด tag </body> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#addProjectForm').on('submit', function(e) {
+                e.preventDefault();
+
+                // แสดง loading indicator
+                Swal.fire({
+                    title: 'กำลังบันทึกข้อมูล...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    },
+                });
+
+                $.ajax({
+                    type: 'POST',
+                    url: 'add_project.php',
+                    data: $(this).serialize(),
+                    dataType: 'json',
+                    success: function(response) {
+                        Swal.close(); // ปิด loading indicator
+
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'บันทึกสำเร็จ',
+                                text: response.message,
+                                confirmButtonText: 'ตกลง'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = 'project.php';
+                                }
+                            });
+                        } else {
+                            var errorMessage = response.errors.join('<br>');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                html: errorMessage,
+                                confirmButtonText: 'ตกลง'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.close(); // ปิด loading indicator
+                        console.error(xhr.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
+                            confirmButtonText: 'ตกลง'
+                        });
+                    }
+                });
+            });
+        });
     </script>
 </body>
 

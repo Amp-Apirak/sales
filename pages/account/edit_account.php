@@ -111,20 +111,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt_update->execute();
 
-            echo '<script>
-                    Swal.fire({
-                        title: "Success",
-                        text: "ข้อมูลได้รับการอัปเดตเรียบร้อยแล้ว",
-                        icon: "success"
-                    }).then(function() {
-                        window.location = "account.php"; 
-                    });
-                </script>';
+            echo  '<script>
+            setTimeout(function() {
+                Swal.fire({
+                    title: "Success",
+                    text: "User information updated successfully.",
+                    icon: "success"
+                }).then(function() {
+                    window.location = "account.php"; //หน้าที่ต้องการให้กระโดดไป
+                });
+            }, 1000);
+            </script>';
         } catch (Exception $e) {
             echo '<script>
                     Swal.fire({
                         title: "Error",
-                        text: "เกิดข้อผิดพลาดในการอัปเดตข้อมูล: ' . $e->getMessage() . '",
+                        text: "An error occurred while updating:' . $e->getMessage() . '",
                         icon: "error"
                     }).then(function() {
                         window.location = "account.php"; 

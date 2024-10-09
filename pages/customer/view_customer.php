@@ -12,12 +12,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 // ถอดรหัส id
 $customer_id = decryptUserId($_GET['id']);
 
-// ตรวจสอบว่า $customer_id เป็นตัวเลขหรือไม่
-if (!is_numeric($customer_id)) {
-    // ถ้าไม่ใช่ตัวเลข ให้ redirect กลับไปหน้า customer.php
-    header("Location: customer.php");
-    exit();
-}
+
 
 // ดึงข้อมูลลูกค้าจากฐานข้อมูล
 try {

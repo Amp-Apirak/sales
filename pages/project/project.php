@@ -29,8 +29,6 @@ $search_team = clean_input($_POST['team'] ?? '');
 $where_clause_dropdown = "";
 $params_dropdown = array();
 
-
-// role sale ssupervisor lookup team only
 if ($role == 'Sale Supervisor') {
     $where_clause_dropdown = " WHERE p.created_by IN (SELECT user_id FROM users WHERE team_id = :team_id)";
     $params_dropdown[':team_id'] = $team_id;
@@ -39,64 +37,29 @@ if ($role == 'Sale Supervisor') {
     $params_dropdown[':created_by'] = $created_by;
 }
 
-// Product Dropdown
-$stmt = $condb->prepare("
-    SELECT DISTINCT p.product_id, pr.product_name 
-    FROM projects p
-    JOIN products pr ON p.product_id = pr.product_id
-    $where_clause_dropdown
-");
-$stmt->execute($params_dropdown);
-$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// ฟังก์ชันสำหรับดึงข้อมูล dropdown
+function getDropdownData($condb, $sql, $params)
+{
+    $stmt = $condb->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
-// Status Dropdown
-$stmt = $condb->prepare("SELECT DISTINCT status FROM projects p $where_clause_dropdown");
-$stmt->execute($params_dropdown);
-$statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Creator Dropdown
-$stmt = $condb->prepare("
-    SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name 
-    FROM users u 
-    INNER JOIN projects p ON u.user_id = p.created_by 
-    $where_clause_dropdown
-");
-$stmt->execute($params_dropdown);
-$creators = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Customer Dropdown
-$stmt = $condb->prepare("
-    SELECT DISTINCT c.customer_id, c.customer_name 
-    FROM customers c
-    INNER JOIN projects p ON c.customer_id = p.customer_id 
-    $where_clause_dropdown
-");
-$stmt->execute($params_dropdown);
-$customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Year Dropdown
-$stmt = $condb->prepare("SELECT DISTINCT YEAR(created_at) AS year FROM projects p $where_clause_dropdown");
-$stmt->execute($params_dropdown);
-$years = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// ดึงข้อมูลสำหรับ dropdowns
+$products = getDropdownData($condb, "SELECT DISTINCT p.product_id, pr.product_name FROM projects p JOIN products pr ON p.product_id = pr.product_id $where_clause_dropdown", $params_dropdown);
+$statuses = getDropdownData($condb, "SELECT DISTINCT status FROM projects p $where_clause_dropdown", $params_dropdown);
+$creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name FROM users u INNER JOIN projects p ON u.user_id = p.created_by $where_clause_dropdown", $params_dropdown);
+$customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_name FROM customers c INNER JOIN projects p ON c.customer_id = p.customer_id $where_clause_dropdown", $params_dropdown);
+// ปรับปรุงการดึงข้อมูลปีจาก sales_date
+$years = getDropdownData($condb, "SELECT DISTINCT YEAR(sales_date) AS year FROM projects p $where_clause_dropdown ORDER BY year DESC", $params_dropdown);
 
 // Team Dropdown (เฉพาะ Executive หรือ Sale Supervisor)
 if ($role == 'Executive' || $role == 'Sale Supervisor') {
     $team_query = ($role == 'Sale Supervisor') ? "WHERE team_id = :team_id" : "";
-    $stmt = $condb->prepare("SELECT DISTINCT team_id, team_name FROM teams $team_query");
-    if ($role == 'Sale Supervisor') {
-        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-    }
-    $stmt->execute();
-    $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $teams = getDropdownData($condb, "SELECT DISTINCT team_id, team_name FROM teams $team_query", $role == 'Sale Supervisor' ? [':team_id' => $team_id] : []);
 }
 
-
-$stmt->execute($params_dropdown);
-$teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
-
-// กำหนด where clause ตามบทบาทผู้ใช้
+// กำหนด where clause ตามบทบาทผู้ใช้และเงื่อนไขการค้นหา
 $where_clause = "WHERE 1=1";
 $params = array();
 
@@ -106,12 +69,6 @@ if ($role == 'Sale Supervisor') {
 } elseif ($role != 'Executive') {
     $where_clause .= " AND p.created_by = :created_by";
     $params[':created_by'] = $created_by;
-}
-
-// เพิ่มเงื่อนไขการค้นหาทีม
-if (($role == 'Executive' || $role == 'Sale Supervisor') && !empty($search_team)) {
-    $where_clause .= " AND t.team_name = :search_team";
-    $params[':search_team'] = $search_team;
 }
 
 // เพิ่มเงื่อนไขการค้นหา
@@ -140,18 +97,21 @@ if (!empty($search_customer)) {
     $params[':search_customer'] = $search_customer;
 }
 if (!empty($search_year)) {
-    $where_clause .= " AND YEAR(p.created_at) = :search_year";
+    $where_clause .= " AND YEAR(p.sales_date) = :search_year";
     $params[':search_year'] = $search_year;
 }
 
-// SQL query สำหรับดึงข้อมูลโปรเจกต์ พร้อม team_name
+// SQL query สำหรับดึงข้อมูลโปรเจกต์
 $sql_projects = "
-    SELECT p.*, u.first_name, u.last_name, c.customer_name, c.company, c.address, c.phone, c.email, t.team_name, pr.product_name
+    SELECT p.*, u.first_name, u.last_name, c.customer_name, c.company, c.address, c.phone, c.email, t.team_name, pr.product_name,
+           seller.first_name AS seller_first_name, seller.last_name AS seller_last_name,
+           YEAR(p.sales_date) AS sales_year
     FROM projects p
     LEFT JOIN customers c ON p.customer_id = c.customer_id
     LEFT JOIN users u ON p.created_by = u.user_id
     LEFT JOIN teams t ON u.team_id = t.team_id
     LEFT JOIN products pr ON p.product_id = pr.product_id
+    LEFT JOIN users seller ON p.seller = seller.user_id
     $where_clause
     ORDER BY p.project_id DESC 
 ";
@@ -160,18 +120,33 @@ $stmt_projects = $condb->prepare($sql_projects);
 $stmt_projects->execute($params);
 $projects = $stmt_projects->fetchAll(PDO::FETCH_ASSOC);
 
-
 // คำนวณสถิติต่างๆ
 $total_projects = count($projects);
 $total_cost = 0;
 $total_sale = 0;
 $unique_creators = array();
 foreach ($projects as $project) {
-    $total_cost += $project['cost_no_vat'];
-    $total_sale += $project['sale_no_vat'];
+    $total_cost += $project['cost_vat'];
+    $total_sale += $project['sale_vat'];
     $unique_creators[$project['created_by']] = true;
 }
 $total_creators = count($unique_creators);
+
+// ฟังก์ชันสำหรับแสดงข้อมูลหรือ "ไม่ระบุข้อมูล" ถ้าไม่มีข้อมูล
+function displayData($data, $format = null)
+{
+    if (isset($data) && $data !== '') {
+        if ($format === 'number') {
+            return number_format($data, 2);
+        } elseif ($format === 'percentage') {
+            return $data . '%';
+        } else {
+            return htmlspecialchars($data);
+        }
+    } else {
+        return 'ไม่ระบุข้อมูล';
+    }
+}
 
 ?>
 
@@ -451,7 +426,7 @@ $total_creators = count($unique_creators);
                                     <table id="example1" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
-                                                <th class="text-nowrap text-center">Action</th>ฆ
+                                                <th class="text-nowrap text-center">Action</th>
                                                 <th class="text-nowrap text-center">Contact No.</th>
                                                 <th class="text-nowrap text-center">Sales Date</th>
                                                 <th class="text-nowrap text-center">Start Date</th>
@@ -492,7 +467,7 @@ $total_creators = count($unique_creators);
                                                         <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
                                                         <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                                     </td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']) ? htmlspecialchars($project['contract_no']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['end_date']); ?></td>
@@ -524,21 +499,21 @@ $total_creators = count($unique_creators);
                                                     <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
                                                     <td class="text-nowrap "><?php echo number_format($project['sale_no_vat'], 2); ?></td>
-                                                    <td class="text-nowrap "><?php echo number_format($project['sale_vat'], 2); ?></td>
-                                                    <td class="text-nowrap"><?php echo number_format($project['gross_profit'], 2); ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($project['potential']) ? htmlspecialchars($project['potential']) . '%' : ''; ?></td>
+                                                    <td class="text-nowrap" ><?php echo number_format($project['sale_vat'], 2); ?></td>
+                                                    <td class="text-nowrap" style="color: Green; font-weight: bold;" ><?php echo number_format($project['gross_profit'], 2); ?></td>
+                                                    <td class="text-nowrap" style="color: Green; font-weight: bold;" ><?php echo !empty($project['potential']) ? htmlspecialchars($project['potential']) . '%' : ''; ?></td>
                                                     <td class="text-nowrap"><?php echo number_format($project['vat'], 2); ?>%</td>
                                                     <td class="text-nowrap"><?php echo number_format($project['es_cost_no_vat'], 2); ?></td>
                                                     <td class="text-nowrap"><?php echo number_format($project['es_sale_no_vat'], 2); ?></td>
                                                     <td class="text-nowrap"><?php echo number_format($project['es_gp_no_vat'], 2); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['seller']); ?></td>
+                                                    <td class="text-nowrap"><?php echo displayData($project['seller_first_name'] . ' ' . $project['seller_last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['team_name']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']); ?></td>
-                                                    <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo isset($project['address']) ? htmlspecialchars($project['address']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่มีข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']) ? htmlspecialchars($project['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['address']) ? htmlspecialchars($project['address']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']) ? htmlspecialchars($project['remark']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
 

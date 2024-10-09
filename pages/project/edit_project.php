@@ -69,8 +69,8 @@ if (isset($_GET['project_id'])) {
         $date_end = clean_input($_POST['date_end']);
         $status = clean_input($_POST['status']);
         $contract_no = clean_input($_POST['con_number']);
-        $product_id = filter_var($_POST['product_id'], FILTER_VALIDATE_INT);
-        $customer_id = filter_var($_POST['customer_id'], FILTER_VALIDATE_INT);
+        $product_id = clean_input($_POST['product_id']);
+        $customer_id = clean_input($_POST['customer_id']);
         $sale_vat = filter_var(str_replace(',', '', $_POST['sale_vat']), FILTER_VALIDATE_FLOAT);
         $sale_no_vat = filter_var(str_replace(',', '', $_POST['sale_no_vat']), FILTER_VALIDATE_FLOAT);
         $cost_vat = filter_var(str_replace(',', '', $_POST['cost_vat']), FILTER_VALIDATE_FLOAT);
@@ -92,7 +92,7 @@ if (isset($_GET['project_id'])) {
 
 
         // ตรวจสอบข้อมูลที่จำเป็น
-        if (empty($project_name) || empty($status) || !$product_id || !is_numeric($product_id)) {
+        if (empty($project_name) || empty($status) || empty($product_id)) {
             $alert = "error|กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน ประกอบด้วย ชื่อโครงการ, สถานะ, ชื่อสินค้าที่ขาย";
         } else {
             try {
