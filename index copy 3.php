@@ -1,71 +1,51 @@
 <?php
-// เริ่มต้น session และเชื่อมต่อฐานข้อมูล
 session_start();
 require_once 'config/condb.php';
 
-// ตรวจสอบการล็อกอิน
 if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
     header("Location: " . BASE_URL . "login.php");
     exit;
 }
 
-// กำหนดตัวแปรจาก session
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];
 $user_id = $_SESSION['user_id'];
 
-// กำหนดสิทธิ์การเข้าถึงข้อมูล
-$can_view_all = false;  // สิทธิ์ในการเห็นข้อมูลทั้งหมด (สำหรับ Executive)
-$can_view_team = false; // สิทธิ์ในการเห็นข้อมูลทีม (สำหรับ Sale Supervisor)
-$can_view_own = false;  // สิทธิ์ในการเห็นข้อมูลที่ตัวเองสร้าง (สำหรับ Seller และ Engineer)
-$can_view_financial = true; // สิทธิ์ในการเห็นข้อมูลทางการเงิน (สำหรับทุกบทบาทยกเว้น Engineer)
+$can_view_all = false;
+$can_view_team = false;
+$can_view_own = false;
+$can_view_financial = true;
 
-// ตรวจสอบบทบาทของผู้ใช้ และกำหนดสิทธิ์การเข้าถึง
 switch ($role) {
     case 'Executive':
-        // ถ้าเป็น Executive สามารถเห็นข้อมูลทั้งหมด
         $can_view_all = true;
         break;
-
     case 'Sale Supervisor':
-        // ถ้าเป็น Sale Supervisor สามารถเห็นข้อมูลของทีมตัวเอง
         $can_view_team = true;
-        $filter_team_id = $team_id; // กำหนดทีมที่สามารถดูข้อมูลได้
+        $filter_team_id = $team_id;
         break;
-
     case 'Seller':
-        // ถ้าเป็น Seller สามารถเห็นข้อมูลที่ตัวเองสร้างขึ้นเท่านั้น
         $can_view_own = true;
-        $filter_user_id = $user_id; // กำหนดผู้ใช้ที่สามารถดูข้อมูลได้
+        $filter_user_id = $user_id;
         break;
-
     case 'Engineer':
-        // ถ้าเป็น Engineer สามารถเห็นข้อมูลที่ตัวเองสร้างขึ้น แต่ไม่สามารถเห็นข้อมูลทางการเงิน
         $can_view_own = true;
-        $can_view_financial = false; // ปิดการเข้าถึงข้อมูลทางการเงิน
-        $filter_user_id = $user_id; // กำหนดผู้ใช้ที่สามารถดูข้อมูลได้
+        $can_view_financial = false;
+        $filter_user_id = $user_id;
         break;
 }
 
-// กำหนดค่าเริ่มต้นสำหรับการกรองข้อมูล เช่น ช่วงเวลาที่จะแสดง
-$current_year = date('Y'); // ปีปัจจุบัน
-$current_date = date('Y-m-d'); // วันที่ปัจจุบัน
-$filter_date_range = ["$current_year-01-01", $current_date]; // ช่วงเวลาที่จะแสดง (เริ่มต้นตั้งแต่ต้นปีถึงปัจจุบัน)
-$filter_team_id = $filter_team_id ?? ''; // ทีมที่ต้องการกรอง (ถ้ามี)
-$filter_user_id = $filter_user_id ?? ''; // ผู้ใช้ที่ต้องการกรอง (ถ้ามี)
+$current_year = date('Y');
+$current_date = date('Y-m-d');
+$filter_date_range = ["$current_year-01-01", $current_date];
+$filter_team_id = $filter_team_id ?? '';
+$filter_user_id = $filter_user_id ?? '';
 
-// รับค่าจากฟอร์มค้นหา
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // รับค่าจากตัวเลือกทีม
     $filter_team_id = $_POST['team_id'] ?? $filter_team_id;
-
-    // รับค่าจากตัวเลือกผู้ใช้
     $filter_user_id = $_POST['user_id'] ?? $filter_user_id;
-
-    // รับค่าช่วงเวลาที่เลือก
     $filter_date_range_input = $_POST['date_range'] ?? '';
 
-    // ถ้าผู้ใช้เลือกช่วงเวลาจากฟอร์ม
     if (!empty($filter_date_range_input)) {
         $date_parts = explode(' - ', $filter_date_range_input);
         if (count($date_parts) == 2) {
@@ -77,18 +57,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// ดึงข้อมูลทีมและพนักงานขาย
 $teams = [];
 $team_members = [];
 
 if ($can_view_all) {
-    // ดึงข้อมูลทีมทั้งหมดสำหรับ Executive
     $team_query = "SELECT team_id, team_name FROM teams";
     $stmt = $condb->prepare($team_query);
     $stmt->execute();
     $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // ดึงข้อมูลพนักงานขายทั้งหมด
     $user_query = "SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name, team_id 
                    FROM users 
                    WHERE role IN ('Seller', 'Sale Supervisor', 'Executive')";
@@ -96,7 +73,6 @@ if ($can_view_all) {
     $stmt->execute();
     $team_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } elseif ($can_view_team) {
-    // ดึงข้อมูลพนักงานขายในทีมสำหรับ Sale Supervisor
     $user_query = "SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name
                    FROM users 
                    WHERE team_id = :team_id AND role IN ('Seller', 'Sale Supervisor', 'Executive')";
@@ -106,7 +82,6 @@ if ($can_view_all) {
     $team_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// ฟังก์ชันสำหรับดึงข้อมูลตามเงื่อนไข
 function getFilteredData($condb, $query, $params)
 {
     $stmt = $condb->prepare($query);
@@ -114,14 +89,11 @@ function getFilteredData($condb, $query, $params)
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-// ดึงข้อมูลสำหรับ Dashboard
 try {
-    // จำนวนสินค้าทั้งหมด
     $product_query = "SELECT COUNT(*) as total_products FROM products";
     $result = getFilteredData($condb, $product_query, []);
     $total_products = $result['total_products'];
 
-    // จำนวนโครงการทั้งหมด
     $project_query = "SELECT COUNT(*) as total_projects FROM projects p
                       LEFT JOIN users u ON p.created_by = u.user_id
                       WHERE p.sales_date BETWEEN :start_date AND :end_date";
@@ -130,7 +102,6 @@ try {
         ':end_date' => $filter_date_range[1]
     ];
 
-    // กำหนดเงื่อนไขเพิ่มเติมสำหรับทีมและผู้ใช้
     if ($filter_team_id && $can_view_all) {
         $project_query .= " AND u.team_id = :team_id";
         $project_params[':team_id'] = $filter_team_id;
@@ -150,61 +121,57 @@ try {
     $result = getFilteredData($condb, $project_query, $project_params);
     $total_projects = $result['total_projects'];
 
-    // ข้อมูลทางการเงิน (ต้นทุนรวมและยอดขายรวม)
-    $total_cost = 0; // ค่าเริ่มต้นของต้นทุนรวม
-    $total_sales = 0; // ค่าเริ่มต้นของยอดขายรวม
+    $total_cost = 0;
+    $total_sales = 0;
 
-    // ดึงข้อมูลทางการเงิน
     if ($can_view_financial) {
         $query = "SELECT SUM(p.cost_vat) as total_cost, SUM(p.sale_vat) as total_sales 
-              FROM projects p
-              LEFT JOIN users u ON p.created_by = u.user_id
-              WHERE p.sales_date BETWEEN :start_date AND :end_date";
+                  FROM projects p
+                  LEFT JOIN users u ON p.created_by = u.user_id
+                  WHERE p.sales_date BETWEEN :start_date AND :end_date";
         $params = [
             ':start_date' => $filter_date_range[0],
             ':end_date' => $filter_date_range[1]
         ];
 
-        // กำหนดเงื่อนไขเพิ่มเติมสำหรับทีมและผู้ใช้
-        if ($filter_team_id) {
+        if ($filter_team_id && $can_view_all) {
             $query .= " AND u.team_id = :team_id";
             $params[':team_id'] = $filter_team_id;
+        } elseif ($can_view_team) {
+            $query .= " AND u.team_id = :team_id";
+            $params[':team_id'] = $team_id;
         }
+
         if ($filter_user_id) {
             $query .= " AND p.created_by = :user_id";
             $params[':user_id'] = $filter_user_id;
+        } elseif ($can_view_own) {
+            $query .= " AND p.created_by = :user_id";
+            $params[':user_id'] = $user_id;
         }
 
-        $stmt = $condb->prepare($query);
-        $stmt->execute($params);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $result = getFilteredData($condb, $query, $params);
         $total_cost = $result['total_cost'] ?? 0;
         $total_sales = $result['total_sales'] ?? 0;
     }
+
+    $total_teams = 0;
+    $total_team_members = 0;
+    $team_query = "SELECT COUNT(*) as total_teams FROM teams";
+    $result = getFilteredData($condb, $team_query, []);
+    $total_teams = $result['total_teams'];
+
+    $member_query = "SELECT COUNT(*) as total_members FROM users WHERE role IN ('Seller', 'Sale Supervisor', 'Executive')";
+    $result = getFilteredData($condb, $member_query, []);
+    $total_team_members = $result['total_members'];
+
+    $total_profit = $total_sales - $total_cost;
+    $profit_percentage = ($total_sales > 0) ? ($total_profit / $total_sales) * 100 : 0;
 } catch (PDOException $e) {
     error_log("Database query error: " . $e->getMessage());
 }
 
-// Debugging information (สำหรับตรวจสอบความถูกต้องของโค้ดในระหว่างการพัฒนา)
-// echo "<pre>";
-// echo "Debug Information:\n";
-// echo "Role: " . $role . "\n";
-// echo "Team ID: " . $team_id . "\n";
-// echo "User ID: " . $user_id . "\n";
-// echo "Can View Financial: " . ($can_view_financial ? 'Yes' : 'No') . "\n";
-// echo "Filter Team ID: " . $filter_team_id . "\n";
-// echo "Filter User ID: " . $filter_user_id . "\n";
-// echo "Filter Date Range: " . implode(' - ', $filter_date_range) . "\n";
-// echo "Query: " . $query . "\n";
-// echo "Params: ";
-// echo "Total Cost: " . $total_cost . "\n";
-// echo "Total Sales: " . $total_sales . "\n";
-// print_r($params);
-// echo "</pre>";
-
-// ส่วนของ HTML และ JavaScript ยังคงเหมือนเดิม
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -220,7 +187,7 @@ try {
             border-radius: 0.25rem;
             box-shadow: 0 0 1px rgba(0, 0, 0, .125), 0 1px 3px rgba(0, 0, 0, .2);
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 20px;
             position: relative;
         }
 
@@ -335,7 +302,6 @@ try {
                             <form method="POST" action="">
                                 <div class="row align-items-center">
                                     <?php if ($can_view_all): ?>
-                                        <!-- ตัวเลือกทีม (สำหรับ Executive) -->
                                         <div class="col-md-3">
                                             <div class="input-group input-group-sm">
                                                 <div class="input-group-prepend">
@@ -354,7 +320,6 @@ try {
                                         </div>
                                     <?php endif; ?>
 
-                                    <!-- ตัวเลือกช่วงเวลา -->
                                     <div class="col-md-4">
                                         <div class="input-group input-group-sm">
                                             <div class="input-group-prepend">
@@ -368,7 +333,6 @@ try {
                                     </div>
 
                                     <?php if ($can_view_all || $can_view_team): ?>
-                                        <!-- ตัวเลือกพนักงานขาย -->
                                         <div class="col-md-3">
                                             <div class="input-group input-group-sm">
                                                 <div class="input-group-prepend">
@@ -387,7 +351,6 @@ try {
                                         </div>
                                     <?php endif; ?>
 
-                                    <!-- ปุ่มค้นหา -->
                                     <div class="col-md-2">
                                         <button type="submit" class="btn btn-primary btn-sm btn-block">ค้นหา</button>
                                     </div>
@@ -398,11 +361,32 @@ try {
 
                     <!-- ส่วนแสดงผล KPIs -->
                     <div class="row px-2">
-                        <!-- จำนวน Product ทั้งหมด -->
                         <div class="col-lg-3 col-md-6 mb-2">
                             <div class="small-box bg-info rounded shadow-sm">
                                 <div class="inner py-3">
-                                    <h4 id="total-products" class="mb-0"><?php echo number_format($total_products); ?></h4>
+                                    <h4 class="mb-0"><?php echo number_format($total_teams); ?></h4>
+                                    <p class="mb-0">จำนวนทีมทั้งหมด</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-2">
+                            <div class="small-box bg-success rounded shadow-sm">
+                                <div class="inner py-3">
+                                    <h4 class="mb-0"><?php echo number_format($total_team_members); ?></h4>
+                                    <p class="mb-0">จำนวนคนในทีมทั้งหมด</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-user-friends"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-2">
+                            <div class="small-box bg-warning rounded shadow-sm">
+                                <div class="inner py-3">
+                                    <h4 class="mb-0"><?php echo number_format($total_products); ?></h4>
                                     <p class="mb-0">จำนวน Product ทั้งหมด</p>
                                 </div>
                                 <div class="icon">
@@ -410,12 +394,10 @@ try {
                                 </div>
                             </div>
                         </div>
-
-                        <!-- จำนวน Project ทั้งหมด -->
                         <div class="col-lg-3 col-md-6 mb-2">
-                            <div class="small-box bg-success rounded shadow-sm">
+                            <div class="small-box bg-danger rounded shadow-sm">
                                 <div class="inner py-3">
-                                    <h4 id="total-projects" class="mb-0"><?php echo number_format($total_projects); ?></h4>
+                                    <h4 class="mb-0"><?php echo number_format($total_projects); ?></h4>
                                     <p class="mb-0">จำนวน Project ทั้งหมด</p>
                                 </div>
                                 <div class="icon">
@@ -426,9 +408,9 @@ try {
 
                         <?php if ($can_view_financial): ?>
                             <div class="col-lg-3 col-md-6 mb-2">
-                                <div class="small-box bg-warning rounded shadow-sm">
+                                <div class="small-box bg-primary rounded shadow-sm">
                                     <div class="inner py-3">
-                                        <h4 id="total-cost" class="mb-0">฿<?php echo number_format($total_cost, 2); ?></h4>
+                                        <h4 class="mb-0">฿<?php echo number_format($total_cost, 2); ?></h4>
                                         <p class="mb-0">ต้นทุนรวม Vat ทั้งหมด</p>
                                     </div>
                                     <div class="icon">
@@ -437,13 +419,35 @@ try {
                                 </div>
                             </div>
                             <div class="col-lg-3 col-md-6 mb-2">
-                                <div class="small-box bg-danger rounded shadow-sm">
+                                <div class="small-box bg-secondary rounded shadow-sm">
                                     <div class="inner py-3">
-                                        <h4 id="total-sales" class="mb-0">฿<?php echo number_format($total_sales, 2); ?></h4>
+                                        <h4 class="mb-0">฿<?php echo number_format($total_sales, 2); ?></h4>
                                         <p class="mb-0">ยอดขายรวม Vat ทั้งหมด</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-chart-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-2">
+                                <div class="small-box bg-success rounded shadow-sm">
+                                    <div class="inner py-3">
+                                        <h4 class="mb-0">฿<?php echo number_format($total_profit, 2); ?></h4>
+                                        <p class="mb-0">กำไรทั้งสิ้น</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-coins"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-2">
+                                <div class="small-box bg-info rounded shadow-sm">
+                                    <div class="inner py-3">
+                                        <h4 class="mb-0"><?php echo number_format($profit_percentage, 2); ?>%</h4>
+                                        <p class="mb-0">กำไรคิดเป็นเปอร์เซ็นต์</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-percentage"></i>
                                     </div>
                                 </div>
                             </div>
