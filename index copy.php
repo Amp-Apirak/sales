@@ -1,647 +1,606 @@
 <?php
-// เริ่มต้น session
+// เริ่มการทำงานของเซสชัน
 session_start();
 
-// เชื่อมต่อฐานข้อมูล
-include('config/condb.php');
+// นำเข้าไฟล์ config สำหรับการเชื่อมต่อฐานข้อมูล
+require_once 'config/condb.php';
 
-
-// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
+// ตรวจสอบสิทธิ์การเข้าถึงโดยตรวจสอบว่ามีการตั้งค่า role, team_id, user_id หรือไม่
 if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
-    // กรณีไม่มีการตั้งค่า Session หรือล็อกอิน
-    header("Location: login.php"); // Redirect ไปยังหน้า login.php
-    exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
+    header("Location: " . BASE_URL . "login.php"); // เปลี่ยนเส้นทางไปที่หน้า login ถ้าไม่มีการกำหนดค่าเหล่านี้
+    exit; // หยุดการทำงานของสคริปต์
+}
+
+// ดึงค่าที่เก็บในเซสชันมาใช้งาน
+$role = $_SESSION['role'];
+$team_id = $_SESSION['team_id'];
+$user_id = $_SESSION['user_id'];
+
+// กำหนดสิทธิ์เริ่มต้นสำหรับการดูข้อมูล
+$can_view_all = false;
+$can_view_team = false;
+$can_view_own = false;
+$can_view_financial = true; // สามารถดูข้อมูลการเงินได้ทุกตำแหน่ง ยกเว้น Engineer
+
+// ตั้งค่าการกำหนดสิทธิ์ตาม role ที่ได้รับ
+switch ($role) {
+    case 'Executive':
+        $can_view_all = true; // Executive สามารถดูข้อมูลทั้งหมด
+        break;
+    case 'Sale Supervisor':
+        $can_view_team = true; // Sale Supervisor สามารถดูข้อมูลทีม
+        $filter_team_id = $team_id;
+        break;
+    case 'Seller':
+        $can_view_own = true; // Seller ดูได้เฉพาะข้อมูลของตัวเอง
+        $filter_user_id = $user_id;
+        break;
+    case 'Engineer':
+        $can_view_own = true; // Engineer ดูได้เฉพาะข้อมูลของตัวเอง แต่ไม่สามารถดูข้อมูลการเงิน
+        $can_view_financial = false;
+        $filter_user_id = $user_id;
+        break;
+}
+
+// กำหนดช่วงเวลาเริ่มต้นในการกรองข้อมูล
+$current_year = date('Y');
+$current_date = date('Y-m-d');
+$filter_date_range = ["$current_year-01-01", $current_date]; // กรองข้อมูลตั้งแต่ต้นปีจนถึงวันที่ปัจจุบัน
+$filter_team_id = $filter_team_id ?? ''; // ถ้าไม่มีการกำหนดค่า $filter_team_id ให้กำหนดเป็นค่าว่าง
+$filter_user_id = $filter_user_id ?? ''; // ถ้าไม่มีการกำหนดค่า $filter_user_id ให้กำหนดเป็นค่าว่าง
+
+// ตรวจสอบการส่งข้อมูลผ่าน POST สำหรับการกรองข้อมูลเพิ่มเติม
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $filter_team_id = $_POST['team_id'] ?? $filter_team_id;
+    $filter_user_id = $_POST['user_id'] ?? $filter_user_id;
+    $filter_date_range_input = $_POST['date_range'] ?? '';
+
+    // ตรวจสอบและแปลงวันที่ที่ได้รับจากการกรอง
+    if (!empty($filter_date_range_input)) {
+        $date_parts = explode(' - ', $filter_date_range_input);
+        if (count($date_parts) == 2) {
+            $filter_date_range = [
+                DateTime::createFromFormat('d/m/Y', trim($date_parts[0]))->format('Y-m-d'),
+                DateTime::createFromFormat('d/m/Y', trim($date_parts[1]))->format('Y-m-d')
+            ];
+        }
+    }
+}
+
+// สร้างตัวแปรเก็บข้อมูลทีมและสมาชิกในทีม
+$teams = [];
+$team_members = [];
+
+// ถ้าสามารถดูข้อมูลทั้งหมดได้
+if ($can_view_all) {
+    // ดึงข้อมูลทีมทั้งหมดจากฐานข้อมูล
+    $team_query = "SELECT team_id, team_name FROM teams";
+    $stmt = $condb->prepare($team_query);
+    $stmt->execute();
+    $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // ดึงข้อมูลผู้ใช้งานทั้งหมดในบทบาทที่เกี่ยวข้อง
+    $user_query = "SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name, team_id 
+                   FROM users 
+                   WHERE role IN ('Seller', 'Sale Supervisor', 'Executive')";
+    $stmt = $condb->prepare($user_query);
+    $stmt->execute();
+    $team_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+// ถ้าสามารถดูข้อมูลเฉพาะทีมได้
+elseif ($can_view_team) {
+    // ดึงข้อมูลสมาชิกในทีมตาม team_id ที่เลือก
+    $user_query = "SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name
+                   FROM users 
+                   WHERE team_id = :team_id AND role IN ('Seller', 'Sale Supervisor', 'Executive')";
+    $stmt = $condb->prepare($user_query);
+    $stmt->bindParam(':team_id', $team_id);
+    $stmt->execute();
+    $team_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ฟังก์ชันสำหรับดึงข้อมูลที่ผ่านการกรองจากฐานข้อมูล
+function getFilteredData($condb, $query, $params)
+{
+    $stmt = $condb->prepare($query);
+    $stmt->execute($params);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+// ฟังก์ชันสำหรับนับจำนวนทีม
+function getTeamCount($condb, $role, $team_id, $filter_team_id = null)
+{
+    if ($role === 'Executive' && $filter_team_id) {
+        $query = "SELECT COUNT(*) as total FROM teams WHERE team_id = :team_id";
+        $stmt = $condb->prepare($query);
+        $stmt->bindParam(':team_id', $filter_team_id, PDO::PARAM_STR);
+    } elseif ($role === 'Executive') {
+        $query = "SELECT COUNT(*) as total FROM teams";
+        $stmt = $condb->prepare($query);
+    } else {
+        $query = "SELECT COUNT(*) as total FROM teams WHERE team_id = :team_id";
+        $stmt = $condb->prepare($query);
+        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+    }
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+}
+
+// ฟังก์ชันสำหรับนับจำนวนสมาชิกในทีม
+function getTeamMemberCount($condb, $role, $team_id, $user_id, $filter_team_id = null, $filter_user_id = null)
+{
+    if ($role === 'Executive' && $filter_team_id) {
+        $query = "SELECT COUNT(*) as total FROM users WHERE team_id = :team_id";
+        $stmt = $condb->prepare($query);
+        $stmt->bindParam(':team_id', $filter_team_id, PDO::PARAM_STR);
+    } elseif ($role === 'Executive' && $filter_user_id) {
+        $query = "SELECT COUNT(*) as total FROM users WHERE user_id = :user_id";
+        $stmt = $condb->prepare($query);
+        $stmt->bindParam(':user_id', $filter_user_id, PDO::PARAM_STR);
+    } elseif ($role === 'Executive') {
+        $query = "SELECT COUNT(*) as total FROM users";
+        $stmt = $condb->prepare($query);
+    } elseif ($role === 'Sale Supervisor' && $filter_user_id) {
+        $query = "SELECT COUNT(*) as total FROM users WHERE team_id = :team_id AND user_id = :user_id";
+        $stmt = $condb->prepare($query);
+        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+        $stmt->bindParam(':user_id', $filter_user_id, PDO::PARAM_STR);
+    } elseif ($role === 'Sale Supervisor') {
+        $query = "SELECT COUNT(*) as total FROM users WHERE team_id = :team_id";
+        $stmt = $condb->prepare($query);
+        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+    } else {
+        $query = "SELECT COUNT(*) as total FROM users WHERE user_id = :user_id";
+        $stmt = $condb->prepare($query);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
+    }
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+}
+
+try {
+    // นับจำนวน Product ทั้งหมด
+    $product_query = "SELECT COUNT(*) as total_products FROM products";
+    $result = getFilteredData($condb, $product_query, []);
+    $total_products = $result['total_products'];
+
+    // นับจำนวน Project ตามช่วงเวลาที่กรอง
+    $project_query = "SELECT COUNT(*) as total_projects FROM projects p
+                      LEFT JOIN users u ON p.created_by = u.user_id
+                      WHERE p.sales_date BETWEEN :start_date AND :end_date";
+    $project_params = [
+        ':start_date' => $filter_date_range[0],
+        ':end_date' => $filter_date_range[1]
+    ];
+
+    // กรองข้อมูลตาม team_id ถ้าดูข้อมูลทั้งหมดได้
+    if ($filter_team_id && $can_view_all) {
+        $project_query .= " AND u.team_id = :team_id";
+        $project_params[':team_id'] = $filter_team_id;
+    }
+    // กรองข้อมูลตาม team_id ถ้าดูข้อมูลเฉพาะทีมได้
+    elseif ($can_view_team) {
+        $project_query .= " AND u.team_id = :team_id";
+        $project_params[':team_id'] = $team_id;
+    }
+
+    // กรองข้อมูลตาม user_id ถ้าดูข้อมูลเฉพาะผู้ใช้งานเอง
+    if ($filter_user_id) {
+        $project_query .= " AND p.created_by = :user_id";
+        $project_params[':user_id'] = $filter_user_id;
+    } elseif ($can_view_own) {
+        $project_query .= " AND p.created_by = :user_id";
+        $project_params[':user_id'] = $user_id;
+    }
+
+    $result = getFilteredData($condb, $project_query, $project_params);
+    $total_projects = $result['total_projects'];
+
+    // กำหนดตัวแปรเริ่มต้นสำหรับค่าใช้จ่ายและยอดขาย
+    $total_cost = 0;
+    $total_sales = 0;
+
+    // ถ้าสามารถดูข้อมูลการเงินได้
+    if ($can_view_financial) {
+        $query = "SELECT SUM(p.cost_vat) as total_cost, SUM(p.sale_vat) as total_sales 
+                  FROM projects p
+                  LEFT JOIN users u ON p.created_by = u.user_id
+                  WHERE p.sales_date BETWEEN :start_date AND :end_date";
+        $params = [
+            ':start_date' => $filter_date_range[0],
+            ':end_date' => $filter_date_range[1]
+        ];
+
+        // กรองข้อมูลตาม team_id ถ้าดูข้อมูลทั้งหมดได้
+        if ($filter_team_id && $can_view_all) {
+            $query .= " AND u.team_id = :team_id";
+            $params[':team_id'] = $filter_team_id;
+        }
+        // กรองข้อมูลตาม team_id ถ้าดูข้อมูลเฉพาะทีมได้
+        elseif ($can_view_team) {
+            $query .= " AND u.team_id = :team_id";
+            $params[':team_id'] = $team_id;
+        }
+
+        // กรองข้อมูลตาม user_id ถ้าดูข้อมูลเฉพาะผู้ใช้งานเอง
+        if ($filter_user_id) {
+            $query .= " AND p.created_by = :user_id";
+            $params[':user_id'] = $filter_user_id;
+        } elseif ($can_view_own) {
+            $query .= " AND p.created_by = :user_id";
+            $params[':user_id'] = $user_id;
+        }
+
+        // ดึงข้อมูลยอดขายและค่าใช้จ่าย
+        $result = getFilteredData($condb, $query, $params);
+        $total_cost = $result['total_cost'] ?? 0;
+        $total_sales = $result['total_sales'] ?? 0;
+    }
+
+    // นับจำนวนทีมและสมาชิกทีมตามเงื่อนไข
+    $total_teams = getTeamCount($condb, $role, $team_id, $filter_team_id);
+    $total_team_members = getTeamMemberCount($condb, $role, $team_id, $user_id, $filter_team_id, $filter_user_id);
+
+    // คำนวณกำไรและเปอร์เซ็นต์กำไร
+    $total_profit = $total_sales - $total_cost;
+    $profit_percentage = ($total_sales > 0) ? ($total_profit / $total_sales) * 100 : 0;
+
+    // ปรับข้อความแสดงผลตาม Role
+    $team_label = ($role === 'Executive') ? "จำนวนทีมทั้งหมด" : "จำนวนทีมที่ฉันอยู่";
+    $member_label = ($role === 'Executive' || $role === 'Sale Supervisor') ? "จำนวนคนในทีมทั้งหมด" : "จำนวนคนในทีมของฉัน";
+} catch (PDOException $e) {
+    // บันทึกข้อผิดพลาดถ้ามีปัญหาในการดึงข้อมูล
+    error_log("Database query error: " . $e->getMessage());
+    // อาจจะต้องจัดการข้อผิดพลาดเพิ่มเติม เช่น แสดงข้อความแจ้งเตือนผู้ใช้
 }
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
-<?php $menu = "index"; ?>
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Dashboard</title>
     <?php include 'include/header.php' ?>
+
+    <style>
+        .small-box {
+            border-radius: 0.25rem;
+            box-shadow: 0 0 1px rgba(0, 0, 0, .125), 0 1px 3px rgba(0, 0, 0, .2);
+            display: block;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .small-box>.inner {
+            padding: 10px;
+        }
+
+        .small-box h4 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            padding: 0;
+            white-space: nowrap;
+        }
+
+        .small-box p {
+            font-size: 1rem;
+        }
+
+        .small-box .icon {
+            color: rgba(0, 0, 0, .15);
+            z-index: 0;
+        }
+
+        .small-box .icon>i {
+            font-size: 70px;
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            transition: transform .3s linear;
+        }
+
+        .small-box:hover .icon>i {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 767.98px) {
+            .small-box {
+                text-align: center;
+            }
+
+            .small-box .icon {
+                display: none;
+            }
+
+            .small-box p {
+                font-size: 12px;
+            }
+        }
+
+        .card-body {
+            padding: 0.5rem;
+        }
+
+        .form-label {
+            margin-bottom: 0;
+            font-size: 0.875rem;
+        }
+
+        .form-select-sm,
+        .form-control-sm {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 767.98px) {
+            .row>div {
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+
+    <!-- เพิ่ม CSS สำหรับ Date Range Picker -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/daterangepicker/3.1.0/daterangepicker.min.css" />
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
     <div class="wrapper">
-
-        <!-- Navbar -->
-        <!-- Main Sidebar Container -->
+        <!-- Navbar และ Sidebar -->
         <?php include 'include/navbar.php' ?>
-        <!-- /.navbar -->
 
-        <!-- Content Wrapper. Contains page content -->
+        <!-- เนื้อหาหลัก -->
         <div class="content-wrapper">
-            <!-- Content Header (Page header) -->
+            <!-- ส่วนหัวของหน้า -->
             <div class="content-header">
                 <div class="container-fluid">
                     <div class="row mb-2">
                         <div class="col-sm-6">
                             <h1 class="m-0">Dashboard</h1>
-                        </div><!-- /.col -->
+                        </div>
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
-                                <li class="breadcrumb-item"><a href="#">Home</a></li>
-                                <li class="breadcrumb-item active">Dashboard v1</li>
+                                <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">หน้าหลัก</a></li>
+                                <li class="breadcrumb-item active">Dashboard</li>
                             </ol>
-                        </div><!-- /.col -->
-                    </div><!-- /.row -->
-                </div><!-- /.container-fluid -->
+                        </div>
+                    </div>
+                </div>
             </div>
-            <!-- /.content-header -->
 
-            <!-- Main content -->
+            <!-- เนื้อหาหลัก -->
             <section class="content">
                 <div class="container-fluid">
-                    <!-- Small boxes (Stat box) -->
+                    <!-- ส่วนฟอร์มค้นหาและกรองข้อมูล -->
+                    <div class="card mb-3">
+                        <div class="card-body p-2">
+                            <form method="POST" action="">
+                                <div class="row align-items-center">
+                                    <?php if ($can_view_all): ?>
+                                        <div class="col-md-3">
+                                            <div class="input-group input-group-sm">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">ทีม:</span>
+                                                </div>
+                                                <select class="form-control form-control-sm" id="team_select" name="team_id">
+                                                    <option value="">ทั้งหมด</option>
+                                                    <?php foreach ($teams as $team): ?>
+                                                        <option value="<?php echo htmlspecialchars($team['team_id']); ?>"
+                                                            <?php echo ($team['team_id'] == $filter_team_id) ? 'selected' : ''; ?>>
+                                                            <?php echo htmlspecialchars($team['team_name']); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <div class="col-md-4">
+                                        <div class="input-group input-group-sm">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">ช่วงเวลา:</span>
+                                            </div>
+                                            <input type="text" class="form-control form-control-sm" id="date_range" name="date_range"
+                                                value="<?php echo htmlspecialchars(implode(' - ', array_map(function ($date) {
+                                                            return date('d/m/Y', strtotime($date));
+                                                        }, $filter_date_range))); ?>">
+                                        </div>
+                                    </div>
+
+                                    <?php if ($can_view_all || $can_view_team): ?>
+                                        <div class="col-md-3">
+                                            <div class="input-group input-group-sm">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">พนักงานขาย:</span>
+                                                </div>
+                                                <select class="form-control form-control-sm" id="user_select" name="user_id">
+                                                    <option value="">ทั้งหมด</option>
+                                                    <?php foreach ($team_members as $member): ?>
+                                                        <option value="<?php echo htmlspecialchars($member['user_id']); ?>"
+                                                            <?php echo ($member['user_id'] == $filter_user_id) ? 'selected' : ''; ?>>
+                                                            <?php echo htmlspecialchars($member['full_name']); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-primary btn-sm btn-block">ค้นหา</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- ส่วนแสดงผล KPIs -->
                     <div class="row">
                         <div class="col-lg-3 col-6">
-                            <!-- small box -->
                             <div class="small-box bg-info">
                                 <div class="inner">
-                                    <h3>150</h3>
-
-                                    <p>New Orders</p>
+                                    <h3><?php echo number_format($total_teams); ?></h3>
+                                    <p><?php echo $team_label; ?></p>
                                 </div>
                                 <div class="icon">
-                                    <i class="ion ion-bag"></i>
+                                    <i class="fas fa-users"></i>
                                 </div>
-                                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
                             </div>
                         </div>
-                        <!-- ./col -->
                         <div class="col-lg-3 col-6">
-                            <!-- small box -->
                             <div class="small-box bg-success">
                                 <div class="inner">
-                                    <h3>53<sup style="font-size: 20px">%</sup></h3>
-
-                                    <p>Bounce Rate</p>
+                                    <h3><?php echo number_format($total_team_members); ?></h3>
+                                    <p><?php echo $member_label; ?></p>
                                 </div>
                                 <div class="icon">
-                                    <i class="ion ion-stats-bars"></i>
+                                    <i class="fas fa-user-friends"></i>
                                 </div>
-                                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
                             </div>
                         </div>
-                        <!-- ./col -->
                         <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-warning">
-                                <div class="inner">
-                                    <h3>44</h3>
-
-                                    <p>User Registrations</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-person-add"></i>
-                                </div>
-                                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-                            </div>
-                        </div>
-                        <!-- ./col -->
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
                             <div class="small-box bg-danger">
                                 <div class="inner">
-                                    <h3>65</h3>
-
-                                    <p>Unique Visitors</p>
+                                    <h3><?php echo number_format($total_projects); ?></h3>
+                                    <p>จำนวน Project ของทีม</p>
                                 </div>
                                 <div class="icon">
-                                    <i class="ion ion-pie-graph"></i>
+                                    <i class="fas fa-project-diagram"></i>
                                 </div>
-                                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
                             </div>
                         </div>
-                        <!-- ./col -->
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3><?php echo number_format($total_products); ?></h3>
+                                    <p>จำนวน Product ทั้งหมดของบริษัท</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <!-- /.row -->
-                    <!-- Main row -->
-                    <div class="row">
-                        <!-- Left col -->
-                        <section class="col-lg-7 connectedSortable">
-                            <!-- Custom tabs (Charts with tabs)-->
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">
-                                        <i class="fas fa-chart-pie mr-1"></i>
-                                        Sales
-                                    </h3>
-                                    <div class="card-tools">
-                                        <ul class="nav nav-pills ml-auto">
-                                            <li class="nav-item">
-                                                <a class="nav-link active" href="#revenue-chart" data-toggle="tab">Area</a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" href="#sales-chart" data-toggle="tab">Donut</a>
-                                            </li>
-                                        </ul>
+
+                    <?php if ($can_view_financial): ?>
+                        <!-- ส่วนแสดงข้อมูลทางการเงิน -->
+                        <div class="row">
+                            <div class="col-lg-3 col-6">
+                                <div class="small-box bg-primary">
+                                    <div class="inner">
+                                        <h3>฿<?php echo number_format($total_cost, 2); ?></h3>
+                                        <p>ต้นทุนรวม Vat ทั้งหมด</p>
                                     </div>
-                                </div><!-- /.card-header -->
-                                <div class="card-body">
-                                    <div class="tab-content p-0">
-                                        <!-- Morris chart - Sales -->
-                                        <div class="chart tab-pane active" id="revenue-chart"
-                                            style="position: relative; height: 300px;">
-                                            <canvas id="revenue-chart-canvas" height="300" style="height: 300px;"></canvas>
-                                        </div>
-                                        <div class="chart tab-pane" id="sales-chart" style="position: relative; height: 300px;">
-                                            <canvas id="sales-chart-canvas" height="300" style="height: 300px;"></canvas>
-                                        </div>
+                                    <div class="icon">
+                                        <i class="fas fa-money-bill"></i>
                                     </div>
-                                </div><!-- /.card-body -->
-                            </div>
-                            <!-- /.card -->
-
-                            <!-- DIRECT CHAT -->
-                            <div class="card direct-chat direct-chat-primary">
-                                <div class="card-header">
-                                    <h3 class="card-title">Direct Chat</h3>
-
-                                    <div class="card-tools">
-                                        <span title="3 New Messages" class="badge badge-primary">3</span>
-                                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                            <i class="fas fa-minus"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-tool" title="Contacts" data-widget="chat-pane-toggle">
-                                            <i class="fas fa-comments"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-tool" data-card-widget="remove">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <!-- /.card-header -->
-                                <div class="card-body">
-                                    <!-- Conversations are loaded here -->
-                                    <div class="direct-chat-messages">
-                                        <!-- Message. Default to the left -->
-                                        <div class="direct-chat-msg">
-                                            <div class="direct-chat-infos clearfix">
-                                                <span class="direct-chat-name float-left">Alexander Pierce</span>
-                                                <span class="direct-chat-timestamp float-right">23 Jan 2:00 pm</span>
-                                            </div>
-                                            <!-- /.direct-chat-infos -->
-                                            <img class="direct-chat-img" src="assets/img/user1-128x128.jpg" alt="message user image">
-                                            <!-- /.direct-chat-img -->
-                                            <div class="direct-chat-text">
-                                                Is this template really for free? That's unbelievable!
-                                            </div>
-                                            <!-- /.direct-chat-text -->
-                                        </div>
-                                        <!-- /.direct-chat-msg -->
-
-                                        <!-- Message to the right -->
-                                        <div class="direct-chat-msg right">
-                                            <div class="direct-chat-infos clearfix">
-                                                <span class="direct-chat-name float-right">Sarah Bullock</span>
-                                                <span class="direct-chat-timestamp float-left">23 Jan 2:05 pm</span>
-                                            </div>
-                                            <!-- /.direct-chat-infos -->
-                                            <img class="direct-chat-img" src="assets/img/user3-128x128.jpg" alt="message user image">
-                                            <!-- /.direct-chat-img -->
-                                            <div class="direct-chat-text">
-                                                You better believe it!
-                                            </div>
-                                            <!-- /.direct-chat-text -->
-                                        </div>
-                                        <!-- /.direct-chat-msg -->
-
-                                        <!-- Message. Default to the left -->
-                                        <div class="direct-chat-msg">
-                                            <div class="direct-chat-infos clearfix">
-                                                <span class="direct-chat-name float-left">Alexander Pierce</span>
-                                                <span class="direct-chat-timestamp float-right">23 Jan 5:37 pm</span>
-                                            </div>
-                                            <!-- /.direct-chat-infos -->
-                                            <img class="direct-chat-img" src="assets/img/user1-128x128.jpg" alt="message user image">
-                                            <!-- /.direct-chat-img -->
-                                            <div class="direct-chat-text">
-                                                Working with AdminLTE on a great new app! Wanna join?
-                                            </div>
-                                            <!-- /.direct-chat-text -->
-                                        </div>
-                                        <!-- /.direct-chat-msg -->
-
-                                        <!-- Message to the right -->
-                                        <div class="direct-chat-msg right">
-                                            <div class="direct-chat-infos clearfix">
-                                                <span class="direct-chat-name float-right">Sarah Bullock</span>
-                                                <span class="direct-chat-timestamp float-left">23 Jan 6:10 pm</span>
-                                            </div>
-                                            <!-- /.direct-chat-infos -->
-                                            <img class="direct-chat-img" src="assets/img/user3-128x128.jpg" alt="message user image">
-                                            <!-- /.direct-chat-img -->
-                                            <div class="direct-chat-text">
-                                                I would love to.
-                                            </div>
-                                            <!-- /.direct-chat-text -->
-                                        </div>
-                                        <!-- /.direct-chat-msg -->
-
-                                    </div>
-                                    <!--/.direct-chat-messages-->
-
-                                    <!-- Contacts are loaded here -->
-                                    <div class="direct-chat-contacts">
-                                        <ul class="contacts-list">
-                                            <li>
-                                                <a href="#">
-                                                    <img class="contacts-list-img" src="assets/img/user1-128x128.jpg" alt="User Avatar">
-
-                                                    <div class="contacts-list-info">
-                                                        <span class="contacts-list-name">
-                                                            Count Dracula
-                                                            <small class="contacts-list-date float-right">2/28/2015</small>
-                                                        </span>
-                                                        <span class="contacts-list-msg">How have you been? I was...</span>
-                                                    </div>
-                                                    <!-- /.contacts-list-info -->
-                                                </a>
-                                            </li>
-                                            <!-- End Contact Item -->
-                                            <li>
-                                                <a href="#">
-                                                    <img class="contacts-list-img" src="assets/img/user7-128x128.jpg" alt="User Avatar">
-
-                                                    <div class="contacts-list-info">
-                                                        <span class="contacts-list-name">
-                                                            Sarah Doe
-                                                            <small class="contacts-list-date float-right">2/23/2015</small>
-                                                        </span>
-                                                        <span class="contacts-list-msg">I will be waiting for...</span>
-                                                    </div>
-                                                    <!-- /.contacts-list-info -->
-                                                </a>
-                                            </li>
-                                            <!-- End Contact Item -->
-                                            <li>
-                                                <a href="#">
-                                                    <img class="contacts-list-img" src="assets/img/user3-128x128.jpg" alt="User Avatar">
-
-                                                    <div class="contacts-list-info">
-                                                        <span class="contacts-list-name">
-                                                            Nadia Jolie
-                                                            <small class="contacts-list-date float-right">2/20/2015</small>
-                                                        </span>
-                                                        <span class="contacts-list-msg">I'll call you back at...</span>
-                                                    </div>
-                                                    <!-- /.contacts-list-info -->
-                                                </a>
-                                            </li>
-                                            <!-- End Contact Item -->
-                                            <li>
-                                                <a href="#">
-                                                    <img class="contacts-list-img" src="assets/img/user5-128x128.jpg" alt="User Avatar">
-
-                                                    <div class="contacts-list-info">
-                                                        <span class="contacts-list-name">
-                                                            Nora S. Vans
-                                                            <small class="contacts-list-date float-right">2/10/2015</small>
-                                                        </span>
-                                                        <span class="contacts-list-msg">Where is your new...</span>
-                                                    </div>
-                                                    <!-- /.contacts-list-info -->
-                                                </a>
-                                            </li>
-                                            <!-- End Contact Item -->
-                                            <li>
-                                                <a href="#">
-                                                    <img class="contacts-list-img" src="assets/img/user6-128x128.jpg" alt="User Avatar">
-
-                                                    <div class="contacts-list-info">
-                                                        <span class="contacts-list-name">
-                                                            John K.
-                                                            <small class="contacts-list-date float-right">1/27/2015</small>
-                                                        </span>
-                                                        <span class="contacts-list-msg">Can I take a look at...</span>
-                                                    </div>
-                                                    <!-- /.contacts-list-info -->
-                                                </a>
-                                            </li>
-                                            <!-- End Contact Item -->
-                                            <li>
-                                                <a href="#">
-                                                    <img class="contacts-list-img" src="assets/img/user8-128x128.jpg" alt="User Avatar">
-
-                                                    <div class="contacts-list-info">
-                                                        <span class="contacts-list-name">
-                                                            Kenneth M.
-                                                            <small class="contacts-list-date float-right">1/4/2015</small>
-                                                        </span>
-                                                        <span class="contacts-list-msg">Never mind I found...</span>
-                                                    </div>
-                                                    <!-- /.contacts-list-info -->
-                                                </a>
-                                            </li>
-                                            <!-- End Contact Item -->
-                                        </ul>
-                                        <!-- /.contacts-list -->
-                                    </div>
-                                    <!-- /.direct-chat-pane -->
-                                </div>
-                                <!-- /.card-body -->
-                                <div class="card-footer">
-                                    <form action="#" method="post">
-                                        <div class="input-group">
-                                            <input type="text" name="message" placeholder="Type Message ..." class="form-control">
-                                            <span class="input-group-append">
-                                                <button type="button" class="btn btn-primary">Send</button>
-                                            </span>
-                                        </div>
-                                    </form>
-                                </div>
-                                <!-- /.card-footer-->
-                            </div>
-                            <!--/.direct-chat -->
-
-                            <!-- TO DO List -->
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">
-                                        <i class="ion ion-clipboard mr-1"></i>
-                                        To Do List
-                                    </h3>
-
-                                    <div class="card-tools">
-                                        <ul class="pagination pagination-sm">
-                                            <li class="page-item"><a href="#" class="page-link">&laquo;</a></li>
-                                            <li class="page-item"><a href="#" class="page-link">1</a></li>
-                                            <li class="page-item"><a href="#" class="page-link">2</a></li>
-                                            <li class="page-item"><a href="#" class="page-link">3</a></li>
-                                            <li class="page-item"><a href="#" class="page-link">&raquo;</a></li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- /.card-header -->
-                                <div class="card-body">
-                                    <ul class="todo-list" data-widget="todo-list">
-                                        <li>
-                                            <!-- drag handle -->
-                                            <span class="handle">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </span>
-                                            <!-- checkbox -->
-                                            <div class="icheck-primary d-inline ml-2">
-                                                <input type="checkbox" value="" name="todo1" id="todoCheck1">
-                                                <label for="todoCheck1"></label>
-                                            </div>
-                                            <!-- todo text -->
-                                            <span class="text">Design a nice theme</span>
-                                            <!-- Emphasis label -->
-                                            <small class="badge badge-danger"><i class="far fa-clock"></i> 2 mins</small>
-                                            <!-- General tools such as edit or delete-->
-                                            <div class="tools">
-                                                <i class="fas fa-edit"></i>
-                                                <i class="fas fa-trash-o"></i>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <span class="handle">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </span>
-                                            <div class="icheck-primary d-inline ml-2">
-                                                <input type="checkbox" value="" name="todo2" id="todoCheck2" checked>
-                                                <label for="todoCheck2"></label>
-                                            </div>
-                                            <span class="text">Make the theme responsive</span>
-                                            <small class="badge badge-info"><i class="far fa-clock"></i> 4 hours</small>
-                                            <div class="tools">
-                                                <i class="fas fa-edit"></i>
-                                                <i class="fas fa-trash-o"></i>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <span class="handle">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </span>
-                                            <div class="icheck-primary d-inline ml-2">
-                                                <input type="checkbox" value="" name="todo3" id="todoCheck3">
-                                                <label for="todoCheck3"></label>
-                                            </div>
-                                            <span class="text">Let theme shine like a star</span>
-                                            <small class="badge badge-warning"><i class="far fa-clock"></i> 1 day</small>
-                                            <div class="tools">
-                                                <i class="fas fa-edit"></i>
-                                                <i class="fas fa-trash-o"></i>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <span class="handle">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </span>
-                                            <div class="icheck-primary d-inline ml-2">
-                                                <input type="checkbox" value="" name="todo4" id="todoCheck4">
-                                                <label for="todoCheck4"></label>
-                                            </div>
-                                            <span class="text">Let theme shine like a star</span>
-                                            <small class="badge badge-success"><i class="far fa-clock"></i> 3 days</small>
-                                            <div class="tools">
-                                                <i class="fas fa-edit"></i>
-                                                <i class="fas fa-trash-o"></i>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <span class="handle">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </span>
-                                            <div class="icheck-primary d-inline ml-2">
-                                                <input type="checkbox" value="" name="todo5" id="todoCheck5">
-                                                <label for="todoCheck5"></label>
-                                            </div>
-                                            <span class="text">Check your messages and notifications</span>
-                                            <small class="badge badge-primary"><i class="far fa-clock"></i> 1 week</small>
-                                            <div class="tools">
-                                                <i class="fas fa-edit"></i>
-                                                <i class="fas fa-trash-o"></i>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <span class="handle">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </span>
-                                            <div class="icheck-primary d-inline ml-2">
-                                                <input type="checkbox" value="" name="todo6" id="todoCheck6">
-                                                <label for="todoCheck6"></label>
-                                            </div>
-                                            <span class="text">Let theme shine like a star</span>
-                                            <small class="badge badge-secondary"><i class="far fa-clock"></i> 1 month</small>
-                                            <div class="tools">
-                                                <i class="fas fa-edit"></i>
-                                                <i class="fas fa-trash-o"></i>
-                                            </div>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <!-- /.card-body -->
-                                <div class="card-footer clearfix">
-                                    <button type="button" class="btn btn-primary float-right"><i class="fas fa-plus"></i> Add item</button>
                                 </div>
                             </div>
-                            <!-- /.card -->
-                        </section>
-                        <!-- /.Left col -->
-                        <!-- right col (We are only adding the ID to make the widgets sortable)-->
-                        <section class="col-lg-5 connectedSortable">
-
-                            <!-- Map card -->
-                            <div class="card bg-gradient-primary">
-                                <div class="card-header border-0">
-                                    <h3 class="card-title">
-                                        <i class="fas fa-map-marker-alt mr-1"></i>
-                                        Visitors
-                                    </h3>
-                                    <!-- card tools -->
-                                    <div class="card-tools">
-                                        <button type="button" class="btn btn-primary btn-sm daterange" title="Date range">
-                                            <i class="far fa-calendar-alt"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-primary btn-sm" data-card-widget="collapse" title="Collapse">
-                                            <i class="fas fa-minus"></i>
-                                        </button>
+                            <div class="col-lg-3 col-6">
+                                <div class="small-box bg-secondary">
+                                    <div class="inner">
+                                        <h3>฿<?php echo number_format($total_sales, 2); ?></h3>
+                                        <p>ยอดขายรวม Vat ทั้งหมด</p>
                                     </div>
-                                    <!-- /.card-tools -->
-                                </div>
-                                <div class="card-body">
-                                    <div id="world-map" style="height: 250px; width: 100%;"></div>
-                                </div>
-                                <!-- /.card-body-->
-                                <div class="card-footer bg-transparent">
-                                    <div class="row">
-                                        <div class="col-4 text-center">
-                                            <div id="sparkline-1"></div>
-                                            <div class="text-white">Visitors</div>
-                                        </div>
-                                        <!-- ./col -->
-                                        <div class="col-4 text-center">
-                                            <div id="sparkline-2"></div>
-                                            <div class="text-white">Online</div>
-                                        </div>
-                                        <!-- ./col -->
-                                        <div class="col-4 text-center">
-                                            <div id="sparkline-3"></div>
-                                            <div class="text-white">Sales</div>
-                                        </div>
-                                        <!-- ./col -->
+                                    <div class="icon">
+                                        <i class="fas fa-chart-line"></i>
                                     </div>
-                                    <!-- /.row -->
                                 </div>
                             </div>
-                            <!-- /.card -->
-
-                            <!-- solid sales graph -->
-                            <div class="card bg-gradient-info">
-                                <div class="card-header border-0">
-                                    <h3 class="card-title">
-                                        <i class="fas fa-th mr-1"></i>
-                                        Sales Graph
-                                    </h3>
-
-                                    <div class="card-tools">
-                                        <button type="button" class="btn bg-info btn-sm" data-card-widget="collapse">
-                                            <i class="fas fa-minus"></i>
-                                        </button>
-                                        <button type="button" class="btn bg-info btn-sm" data-card-widget="remove">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                            <div class="col-lg-3 col-6">
+                                <div class="small-box bg-info">
+                                    <div class="inner">
+                                        <h3>฿<?php echo number_format($total_profit, 2); ?></h3>
+                                        <p>กำไรทั้งสิ้น</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-coins"></i>
                                     </div>
                                 </div>
-                                <div class="card-body">
-                                    <canvas class="chart" id="line-chart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
-                                </div>
-                                <!-- /.card-body -->
-                                <div class="card-footer bg-transparent">
-                                    <div class="row">
-                                        <div class="col-4 text-center">
-                                            <input type="text" class="knob" data-readonly="true" value="20" data-width="60" data-height="60"
-                                                data-fgColor="#39CCCC">
-
-                                            <div class="text-white">Mail-Orders</div>
-                                        </div>
-                                        <!-- ./col -->
-                                        <div class="col-4 text-center">
-                                            <input type="text" class="knob" data-readonly="true" value="50" data-width="60" data-height="60"
-                                                data-fgColor="#39CCCC">
-
-                                            <div class="text-white">Online</div>
-                                        </div>
-                                        <!-- ./col -->
-                                        <div class="col-4 text-center">
-                                            <input type="text" class="knob" data-readonly="true" value="30" data-width="60" data-height="60"
-                                                data-fgColor="#39CCCC">
-
-                                            <div class="text-white">In-Store</div>
-                                        </div>
-                                        <!-- ./col -->
-                                    </div>
-                                    <!-- /.row -->
-                                </div>
-                                <!-- /.card-footer -->
                             </div>
-                            <!-- /.card -->
-
-                            <!-- Calendar -->
-                            <div class="card bg-gradient-success">
-                                <div class="card-header border-0">
-
-                                    <h3 class="card-title">
-                                        <i class="far fa-calendar-alt"></i>
-                                        Calendar
-                                    </h3>
-                                    <!-- tools card -->
-                                    <div class="card-tools">
-                                        <!-- button with a dropdown -->
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" data-offset="-52">
-                                                <i class="fas fa-bars"></i>
-                                            </button>
-                                            <div class="dropdown-menu" role="menu">
-                                                <a href="#" class="dropdown-item">Add new event</a>
-                                                <a href="#" class="dropdown-item">Clear events</a>
-                                                <div class="dropdown-divider"></div>
-                                                <a href="#" class="dropdown-item">View calendar</a>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn btn-success btn-sm" data-card-widget="collapse">
-                                            <i class="fas fa-minus"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-success btn-sm" data-card-widget="remove">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                            <div class="col-lg-3 col-6">
+                                <div class="small-box bg-light">
+                                    <div class="inner">
+                                        <h3><?php echo number_format($profit_percentage, 2); ?>%</h3>
+                                        <p>กำไรคิดเป็นเปอร์เซ็นต์</p>
                                     </div>
-                                    <!-- /. tools -->
+                                    <div class="icon">
+                                        <i class="fas fa-percentage"></i>
+                                    </div>
                                 </div>
-                                <!-- /.card-header -->
-                                <div class="card-body pt-0">
-                                    <!--The calendar -->
-                                    <div id="calendar" style="width: 100%"></div>
-                                </div>
-                                <!-- /.card-body -->
                             </div>
-                            <!-- /.card -->
-                        </section>
-                        <!-- right col -->
-                    </div>
-                    <!-- /.row (main row) -->
-                </div><!-- /.container-fluid -->
-            </section>
-            <!-- /.content -->
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- ส่วนสำหรับเพิ่มกราฟหรือตารางข้อมูลเพิ่มเติม -->
+                <!-- เพิ่มส่วนนี้ตามความต้องการ -->
+
         </div>
-        <!-- /.content-wrapper -->
-
-        <!-- // include footer -->
-        <?php include('include/footer.php'); ?>
+        </section>
     </div>
-    <!-- ./wrapper -->
+
+    <!-- Footer -->
+    <?php include('include/footer.php'); ?>
+    </div>
+
+    <!-- JavaScript ที่จำเป็น -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/th.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/daterangepicker/3.1.0/daterangepicker.min.js"></script>
+    <script>
+        $(function() {
+            // ตั้งค่าภาษาไทยสำหรับ moment.js
+            moment.locale('th');
+
+            // ตั้งค่า DateRangePicker
+            $('#date_range').daterangepicker({
+                opens: 'right',
+                drops: 'down',
+                autoApply: true,
+                locale: {
+                    format: 'DD/MM/YYYY',
+                    applyLabel: 'ตกลง',
+                    cancelLabel: 'ยกเลิก',
+                    fromLabel: 'จาก',
+                    toLabel: 'ถึง',
+                    customRangeLabel: 'กำหนดเอง',
+                    daysOfWeek: ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'],
+                    monthNames: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'],
+                    firstDay: 1
+                },
+                startDate: moment("<?php echo $filter_date_range[0]; ?>"),
+                endDate: moment("<?php echo $filter_date_range[1]; ?>")
+            });
+
+            // ฟังก์ชันสำหรับกรองพนักงานขายตามทีมที่เลือก
+            $('#team_select').change(function() {
+                var selectedTeam = $(this).val();
+                var userSelect = $('#user_select');
+                userSelect.empty();
+                userSelect.append('<option value="">ทั้งหมด</option>');
+
+                <?php if ($can_view_all): ?>
+                    <?php foreach ($team_members as $member): ?>
+                        if (selectedTeam == '' || selectedTeam == '<?php echo $member['team_id']; ?>') {
+                            userSelect.append('<option value="<?php echo $member['user_id']; ?>"><?php echo $member['full_name']; ?></option>');
+                        }
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            });
+
+            // ทริกเกอร์การเปลี่ยนแปลงทีมเมื่อโหลดหน้า
+            $('#team_select').trigger('change');
+        });
+    </script>
+</body>
 
 </html>

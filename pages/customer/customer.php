@@ -21,8 +21,11 @@ $sql_customers = "SELECT DISTINCT c.*, u.first_name, u.last_name, t.team_name
 if ($role == 'Sale Supervisor') {
     // ผู้จัดการทีม เห็นลูกค้าของทีมตัวเอง
     $sql_customers .= " AND u.team_id = :team_id";
+} elseif ($role == 'Seller') {
+    // ผู้ใช้ทั่วไป (Seller) เห็นเฉพาะลูกค้าที่ตัวเองสร้าง
+    $sql_customers .= " AND c.created_by = :user_id";
 } elseif ($role != 'Executive') {
-    // ผู้ใช้ทั่วไป เห็นเฉพาะลูกค้าที่ตัวเองสร้าง
+    // กรณีที่เป็นบทบาทอื่นๆ ที่ไม่ใช่ Executive
     $sql_customers .= " AND c.created_by = :user_id";
 }
 
@@ -36,9 +39,9 @@ $stmt = $condb->prepare($sql_customers);
 
 // ผูกค่า team_id และ user_id ตามบทบาทของผู้ใช้
 if ($role == 'Sale Supervisor') {
-    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-} elseif ($role != 'Executive') {
-    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR); // เปลี่ยนเป็น PDO::PARAM_STR เพราะ team_id เป็น CHAR(36)
+} elseif ($role == 'Seller' || $role != 'Executive') {
+    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR); // เปลี่ยนเป็น PDO::PARAM_STR เพราะ user_id เป็น CHAR(36)
 }
 
 // ผูกค่าการค้นหากับ statement
@@ -228,7 +231,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </section>
             <!-- /.content -->
         </div><!-- /.container-fluid -->
-        
+
         <!-- /.content-wrapper -->
         <!-- Footer -->
         <?php include '../../include/footer.php'; ?>

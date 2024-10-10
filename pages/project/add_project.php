@@ -371,14 +371,6 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <div class="card-body">
                                                 <div class="row">
                                                     <div class="col col-12">
-                                                        <?php
-                                                        // ดึงข้อมูลลูกค้าทั้งหมดจากตาราง customers โดยใช้ prepared statement
-                                                        $query = "SELECT * FROM customers";
-                                                        $stmt = $condb->prepare($query);
-                                                        $stmt->execute();
-                                                        $customers = $stmt->fetchAll(PDO::FETCH_ASSOC); // ดึงข้อมูลทั้งหมดมาเก็บในตัวแปร $customers
-                                                        ?>
-
                                                         <div class="form-group">
                                                             <label>ข้อมูลลูกค้า</label>
                                                             <select name="customer_id" class="form-control select2">
