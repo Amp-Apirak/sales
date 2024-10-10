@@ -153,7 +153,7 @@ if (isset($_SESSION['user_id'])) {
                         <div class="col-md-8 mx-auto">
                             <div class="profile-card">
                                 <div class="profile-header">
-                                    <img src="../../assets/img/ad.jpg" alt="Profile Picture" class="profile-img">
+                                    <img src="../../assets/img/add.jpg" alt="Profile Picture" class="profile-img">
                                     <h2 class="profile-name"><?php echo htmlspecialchars($fullName); ?></h2>
                                     <p class="profile-role"><?php echo htmlspecialchars($role); ?></p>
                                 </div>
