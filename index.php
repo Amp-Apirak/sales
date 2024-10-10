@@ -307,6 +307,60 @@ if ($filter_team_id && $can_view_all) {
 }
 $stmt->execute();
 $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// -----------------------------------------------------------------------------------
+// ดึงข้อมูลยอดขายแต่ละปี
+$yearly_sales_query = "SELECT YEAR(sales_date) as year, SUM(sale_vat) as total_sales 
+                       FROM projects 
+                       WHERE sales_date BETWEEN :start_date AND :end_date ";
+if ($filter_team_id && $can_view_all) {
+    $yearly_sales_query .= "AND created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+} elseif ($can_view_team) {
+    $yearly_sales_query .= "AND created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+} elseif ($can_view_own) {
+    $yearly_sales_query .= "AND created_by = :user_id ";
+}
+$yearly_sales_query .= "GROUP BY YEAR(sales_date) ORDER BY year";
+
+$stmt = $condb->prepare($yearly_sales_query);
+$stmt->bindParam(':start_date', $filter_date_range[0]);
+$stmt->bindParam(':end_date', $filter_date_range[1]);
+if ($filter_team_id && $can_view_all) {
+    $stmt->bindParam(':team_id', $filter_team_id);
+} elseif ($can_view_team) {
+    $stmt->bindParam(':team_id', $team_id);
+} elseif ($can_view_own) {
+    $stmt->bindParam(':user_id', $user_id);
+}
+$stmt->execute();
+$yearly_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ดึงข้อมูลยอดขายของพนักงานแต่ละคน
+$employee_sales_query = "SELECT u.first_name, u.last_name, SUM(p.sale_vat) as total_sales 
+                         FROM projects p
+                         JOIN users u ON p.created_by = u.user_id
+                         WHERE p.sales_date BETWEEN :start_date AND :end_date ";
+if ($filter_team_id && $can_view_all) {
+    $employee_sales_query .= "AND u.team_id = :team_id ";
+} elseif ($can_view_team) {
+    $employee_sales_query .= "AND u.team_id = :team_id ";
+} elseif ($can_view_own) {
+    $employee_sales_query .= "AND p.created_by = :user_id ";
+}
+$employee_sales_query .= "GROUP BY p.created_by ORDER BY total_sales DESC LIMIT 10";
+
+$stmt = $condb->prepare($employee_sales_query);
+$stmt->bindParam(':start_date', $filter_date_range[0]);
+$stmt->bindParam(':end_date', $filter_date_range[1]);
+if ($filter_team_id && $can_view_all) {
+    $stmt->bindParam(':team_id', $filter_team_id);
+} elseif ($can_view_team) {
+    $stmt->bindParam(':team_id', $team_id);
+} elseif ($can_view_own) {
+    $stmt->bindParam(':user_id', $user_id);
+}
+$stmt->execute();
+$employee_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 
@@ -320,7 +374,7 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php include 'include/header.php' ?>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    
+
     <style>
         .small-box {
             border-radius: 0.25rem;
@@ -413,7 +467,7 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- Navbar และ Sidebar -->
         <?php include 'include/navbar.php' ?>
 
-        <!-- เนื้อหาหลัก -->
+        <!-- เนื้อหา -->
         <div class="content-wrapper">
             <!-- ส่วนหัวของหน้า -->
             <div class="content-header">
@@ -501,46 +555,86 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <!-- ส่วนแสดงผล KPIs -->
                     <div class="row">
                         <div class="col-lg-3 col-6">
-                            <div class="small-box bg-info">
-                                <div class="inner">
+                            <div class="card card-primary">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-users mr-1"></i>
+                                        <?php echo $team_label; ?>
+                                    </h3>
+                                    <div class="card-tools">
+                                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
                                     <h3><?php echo number_format($total_teams); ?></h3>
-                                    <p><?php echo $team_label; ?></p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-users"></i>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-3 col-6">
-                            <div class="small-box bg-success">
-                                <div class="inner">
+                            <div class="card card-success">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-user-friends mr-1"></i>
+                                        <?php echo $member_label; ?>
+                                    </h3>
+                                    <div class="card-tools">
+                                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
                                     <h3><?php echo number_format($total_team_members); ?></h3>
-                                    <p><?php echo $member_label; ?></p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-user-friends"></i>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-3 col-6">
-                            <div class="small-box bg-danger">
-                                <div class="inner">
+                            <div class="card card-danger">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-project-diagram mr-1"></i>
+                                        จำนวน Project ของทีม
+                                    </h3>
+                                    <div class="card-tools">
+                                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
                                     <h3><?php echo number_format($total_projects); ?></h3>
-                                    <p>จำนวน Project ของทีม</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-project-diagram"></i>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-3 col-6">
-                            <div class="small-box bg-warning">
-                                <div class="inner">
-                                    <h3><?php echo number_format($total_products); ?></h3>
-                                    <p>จำนวน Product ทั้งหมดของบริษัท</p>
+                            <div class="card card-warning">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-box mr-1"></i>
+                                        จำนวน Product ทั้งหมดของบริษัท
+                                    </h3>
+                                    <div class="card-tools">
+                                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="icon">
-                                    <i class="fas fa-box"></i>
+                                <div class="card-body">
+                                    <h3><?php echo number_format($total_products); ?></h3>
                                 </div>
                             </div>
                         </div>
@@ -550,46 +644,86 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <!-- ส่วนแสดงข้อมูลทางการเงิน -->
                         <div class="row">
                             <div class="col-lg-3 col-6">
-                                <div class="small-box bg-primary">
-                                    <div class="inner">
+                                <div class="card bg-info">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-money-bill mr-1"></i>
+                                            ต้นทุนรวม Vat ทั้งหมด
+                                        </h3>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
                                         <h3>฿<?php echo number_format($total_cost, 2); ?></h3>
-                                        <p>ต้นทุนรวม Vat ทั้งหมด</p>
-                                    </div>
-                                    <div class="icon">
-                                        <i class="fas fa-money-bill"></i>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-lg-3 col-6">
-                                <div class="small-box bg-secondary">
-                                    <div class="inner">
+                                <div class="card bg-secondary">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-chart-line mr-1"></i>
+                                            ยอดขายรวม Vat ทั้งหมด
+                                        </h3>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
                                         <h3>฿<?php echo number_format($total_sales, 2); ?></h3>
-                                        <p>ยอดขายรวม Vat ทั้งหมด</p>
-                                    </div>
-                                    <div class="icon">
-                                        <i class="fas fa-chart-line"></i>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-lg-3 col-6">
-                                <div class="small-box bg-info">
-                                    <div class="inner">
+                                <div class="card bg-success">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-coins mr-1"></i>
+                                            กำไรทั้งสิ้น
+                                        </h3>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
                                         <h3>฿<?php echo number_format($total_profit, 2); ?></h3>
-                                        <p>กำไรทั้งสิ้น</p>
-                                    </div>
-                                    <div class="icon">
-                                        <i class="fas fa-coins"></i>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-lg-3 col-6">
-                                <div class="small-box bg-light">
-                                    <div class="inner">
-                                        <h3><?php echo number_format($profit_percentage, 2); ?>%</h3>
-                                        <p>กำไรคิดเป็นเปอร์เซ็นต์</p>
+                                <div class="card bg-light">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-percentage mr-1"></i>
+                                            กำไรคิดเป็นเปอร์เซ็นต์
+                                        </h3>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="icon">
-                                        <i class="fas fa-percentage"></i>
+                                    <div class="card-body">
+                                        <h3><?php echo number_format($profit_percentage, 2); ?>%</h3>
                                     </div>
                                 </div>
                             </div>
@@ -600,9 +734,20 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <!-- หลังจากส่วนแสดงข้อมูลทางการเงิน -->
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card card-primary">
                             <div class="card-header">
-                                <h3 class="card-title">สถานะโครงการ</h3>
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-pie mr-1"></i>
+                                    สถานะโครงการ
+                                </h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <canvas id="projectStatusChart"></canvas>
@@ -610,12 +755,69 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card card-success">
                             <div class="card-header">
-                                <h3 class="card-title">Product ที่ขายดีที่สุด</h3>
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-bar mr-1"></i>
+                                    Product ที่ขายดีที่สุด
+                                </h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <canvas id="topProductsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- หลังจากส่วนแสดงข้อมูลยอดขายราบปี และรายบุคคล  -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card card-info">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-line mr-1"></i>
+                                    ยอดขายรายปี
+                                </h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="yearlySalesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card card-success">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-user-chart mr-1"></i>
+                                    ยอดขายของพนักงาน (Top 10)
+                                </h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="employeeSalesChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -684,7 +886,6 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 <script>
-    // เพิ่มต่อจาก script ที่มีอยู่แล้ว
     document.addEventListener('DOMContentLoaded', function() {
         // สร้าง Pie chart สำหรับสถานะโครงการ
         var ctxStatus = document.getElementById('projectStatusChart').getContext('2d');
@@ -710,13 +911,13 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
                     legend: {
-                        position: 'top',
+                        position: 'bottom',
                     },
                     title: {
-                        display: true,
-                        text: 'สถานะโครงการ'
+                        display: true
                     }
                 }
             }
@@ -743,13 +944,125 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             options: {
                 indexAxis: 'y',
                 responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
                     legend: {
-                        position: 'top',
+                        display: true,
+                    },
+                    title: {
+                        display: true
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<!-- แสดงข้อมูลยอดขายรายปี และแต่ละบุคคล -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (โค้ดเดิมสำหรับกราฟอื่นๆ) ...
+
+        // กราฟแท่งแสดงยอดขายแต่ละปี
+        var ctxYearlySales = document.getElementById('yearlySalesChart').getContext('2d');
+        var yearlySalesData = <?php echo json_encode($yearly_sales_data); ?>;
+        var years = yearlySalesData.map(item => item.year);
+        var salesData = yearlySalesData.map(item => item.total_sales);
+
+        // สร้างชุดสีสำหรับแต่ละแท่ง
+        var colors = [
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+            'rgba(255, 159, 64, 0.8)',
+            'rgba(199, 199, 199, 0.8)',
+            'rgba(83, 102, 255, 0.8)',
+            'rgba(40, 159, 64, 0.8)',
+            'rgba(210, 105, 30, 0.8)'
+        ];
+
+        new Chart(ctxYearlySales, {
+            type: 'bar',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: 'ยอดขายรวม',
+                    data: salesData,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '฿' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
                     },
                     title: {
                         display: true,
-                        text: 'Product ที่ขายดีที่สุด'
+                        text: 'ยอดขายรายปี'
+                    }
+                }
+            }
+        });
+
+        // กราฟแสดงยอดขายของพนักงานแต่ละคน
+        var ctxEmployeeSales = document.getElementById('employeeSalesChart').getContext('2d');
+        var employeeSalesData = <?php echo json_encode($employee_sales_data); ?>;
+        var employees = employeeSalesData.map(item => item.first_name + ' ' + item.last_name);
+        var employeeSales = employeeSalesData.map(item => item.total_sales);
+
+        new Chart(ctxEmployeeSales, {
+            type: 'horizontalBar',
+            data: {
+                labels: employees,
+                datasets: [{
+                    label: 'ยอดขาย',
+                    data: employeeSales,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '฿' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    title: {
+                        display: true,
+                        text: 'ยอดขายของพนักงาน (Top 10)'
                     }
                 }
             }
