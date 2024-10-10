@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 09, 2024 at 12:05 PM
+-- Generation Time: Oct 10, 2024 at 12:45 PM
 -- Server version: 10.4.27-MariaDB
 -- PHP Version: 8.1.12
 
@@ -121,6 +121,7 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`customer_id`, `customer_name`, `company`, `address`, `phone`, `email`, `remark`, `created_by`, `created_at`) VALUES
+('3c14caaa-7cee-4bc9-842a-56740cd0d932', 'Apirak Bangpuk', 'Point IT Consulting Co. Ltd', 'เลขที่ 111/1 ธนพงษ์แมนชั่น ห้อง. 302 ซ. สันนิบาตเทศบาล แขวง จันทรเกษม', '0839595800', 'apirak.ba@gmail.com', '', '2', '2024-10-10 03:01:53'),
 ('9c4b87ca-3e3e-454d-ab77-b1ddd4a1f20b', 'คุณภัทราอร อมรโอภาคุณ', 'บริษัท พอยท์ ไอที คอนซัลทิ่ง จำกัด', 'พอยท์ ไอที คอนซัลทิ่ง จำกัด บริษัท พอยท์ ไอที คอนซัลทิ่ง จำกัด ซอย สุภาพงษ์ 1 แยก 6 แขวงหนองบอน เขต ประเวศ กรุงเทพมหานคร', '0619522111', 'phattraorn@pointit.co.th', '', 'c3f5b615-4b91-407a-80d7-ff6ef1995b10', '2024-10-09 06:44:09'),
 ('d1cef52a-afe7-42de-94b3-a18951ad9c9c', 'นายสิรวิชฐ์ อำไพวงษ์ (ท่านนายก)', 'องค์การบริหารส่วนตำบลบ่อวิน', 'องค์การบริหารส่วนตำบลบ่อวิน เลขที่ 1 หมู่ที่ 6 ตำบลบ่อวิน อำเภอศรีราชา จังหวัดชลบุรี 20230 โทรศัพท์ 0-3834-5949 ,0-3834-5918 โทรสาร 0-3834-6116 สายด่วนร้องทุกข์ 24 ชม. 08-1949-7771 นายกเทศบาลตาบลบ่อวิน องค์การบริหารส่วนตำบลบ่อวิน', '038345949', 'admin@bowin.go.th', '', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '2024-10-09 09:53:27');
 
@@ -189,7 +190,9 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`project_id`, `project_name`, `start_date`, `end_date`, `status`, `contract_no`, `remark`, `sales_date`, `seller`, `sale_no_vat`, `sale_vat`, `cost_no_vat`, `cost_vat`, `gross_profit`, `potential`, `es_sale_no_vat`, `es_cost_no_vat`, `es_gp_no_vat`, `customer_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `product_id`, `vat`) VALUES
+('509706fd-0ecc-40b7-adea-0f9e8f5a731c', 'โครงการการจ้างพัฒนาระบบ Sale Innovation', '2024-10-22', '2026-06-10', 'Bidding', 'QT-000000809', '', '2024-10-06', '5030882f-2a6b-4160-b9e4-f6e3757f9b4e', '3200000.00', '3424000.00', '100000.00', '107000.00', '3100000.00', '96.88', '1600000.00', '50000.00', '1550000.00', '9c4b87ca-3e3e-454d-ab77-b1ddd4a1f20b', '2024-10-10 02:16:31', '5030882f-2a6b-4160-b9e4-f6e3757f9b4e', '2024-10-10 02:16:31', NULL, '2', '7.00'),
 ('56340abb-864b-43e0-9772-f369491aa609', 'โครงการ บ่อวิน สมาร์ท ซิตี้ ดูแลสุขภาพแบบอัจฉริยะ (Smart Health Care) สำหรับผู้สูงอายุ ประจำปีงบประมาณ 2567', '2023-10-02', '2024-09-02', 'Win', '1/2567', '', '2023-09-15', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '670000.00', '716900.00', '200000.00', '214000.00', '470000.00', '70.15', '670000.00', '200000.00', '470000.00', NULL, '2024-10-09 09:51:12', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '2024-10-09 09:51:12', NULL, '10', '7.00'),
+('56876473-1fc0-4441-8267-7d3fab48e3fe', 'โครงการการจ้างพัฒนาระบบ Phisuit โปร่งโสภา', '2024-10-30', '2025-12-26', 'Negotiation', 'ศธ 5305.2/468', '', '2024-10-10', 'cb4e50d1-c62f-488c-97c6-8e049ea3ac58', '1401869.16', '1500000.00', '255000.00', '272850.00', '1146869.16', '81.81', '420560.75', '76500.00', '344060.75', '9c4b87ca-3e3e-454d-ab77-b1ddd4a1f20b', '2024-10-10 01:54:48', 'cb4e50d1-c62f-488c-97c6-8e049ea3ac58', '2024-10-10 01:54:48', NULL, '10492a04-64ce-46c9-8ec1-89cd99c12fa5', '7.00'),
 ('b3bd007c-998f-457c-a1ba-cd479d89898d', 'โครงการการจ้างพัฒนาระบบการจัดซื้อจัดจ้าง กบข.', '2023-10-20', '2024-10-20', 'Win', '', 'ชำระงวดเงิน 4 งวด แบ่งเป็น 15% , 20%,35%,30%', '2023-10-15', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '3200000.00', '3424000.00', '2550000.00', '2728500.00', '650000.00', '20.31', '3200000.00', '2550000.00', '650000.00', '9c4b87ca-3e3e-454d-ab77-b1ddd4a1f20b', '2024-10-09 09:39:56', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '2024-10-09 09:39:56', NULL, '10492a04-64ce-46c9-8ec1-89cd99c12fa5', '7.00');
 
 -- --------------------------------------------------------
@@ -248,6 +251,7 @@ INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, 
 ('056adbd1-a6fc-46ac-b531-ef4aecb955d4', 'ภัทราอร', 'อมรโอภาคุณ', 'Phattraorn', 'phattraorn@pointit.co.th', 'Sale Supervisor', '1', 'Product Sale', '0619522111', '$2y$10$BbGPBP99Xy0i5dT8Gx.YMui1BQlXTwVoXF/UK.354QNv93VEQFJhq', 'Point IT Consulting Co. Ltd', '2024-10-09 06:09:06', '2'),
 ('1', 'Systems', 'Admin', 'Systems', 'Systems@gmail.com', 'Executive', '4', 'Systems Admin', '0811111111', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', NULL),
 ('2', 'Apirak', 'Bangpuk', 'Admin', 'Apirak@gmail.com', 'Executive', '1', 'IT Service Management', '0839595800', '$2y$10$jcmTr.I9CthXOrWFC78XjuOjwPoZlbvF80M4RKow4RvnNbm1Ej8dO', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', NULL),
+('5030882f-2a6b-4160-b9e4-f6e3757f9b4e', 'Sales', 'Innovation Team', 'sale', 'Innovation@gmail.com', 'Seller', '1', 'Sale', '0839595333', '$2y$10$7E3AiExAzLe9WzSPFz9QCus8nzvhif.kEIQZkQfaVrd1WCanQUM.6', 'Point IT Consulting Co. Ltd', '2024-10-10 02:14:16', '56'),
 ('80b63cce-54ad-49e9-975e-c8f0ca40f576', 'ธนาคม', 'อ่องสถาน', 'Tanacom', 'Tanacom@pointit.co.th', 'Engineer', '3', 'Tecnical Support', '0897771155', '$2y$10$36cNexS8GlB0/7Rl2a4qRe3SPFFYZW5blfdpPC5f0cPDwaVyX29hC', 'Point IT Consulting Co. Ltd', '2024-10-09 06:15:11', '2'),
 ('c3f5b615-4b91-407a-80d7-ff6ef1995b10', 'ผาณิต', 'เผ่าพันธ์', 'Panit', 'panit@pointit.co.th', 'Executive', '4', 'Executive Director', '0869958396', '$2y$10$jhrhk3ciz1w6RVpRYprAyuFX9ugLqmejoRHDGBg8udNHA23aVl5DG', 'Point IT Consulting Co. Ltd', '2024-10-09 06:10:25', '2'),
 ('cb4e50d1-c62f-488c-97c6-8e049ea3ac58', 'พิสุทธ์', 'วงศ์โสภา', 'Phisuit', 'Service@pointit.co.th', 'Seller', '3', 'Tecnical Support', '0915450988', '$2y$10$EwDRqvGY.ZSbMxyAIwMmxuWJfqtDyIkLeQ/sB3g2UhdlVxuotw..u', 'Point IT Consulting Co. Ltd', '2024-10-09 06:13:59', '2');
