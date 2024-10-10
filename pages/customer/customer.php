@@ -11,7 +11,7 @@ $user_id = $_SESSION['user_id'];  // user_id ของผู้ใช้
 $search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) : '';
 
 // Query พื้นฐานในการดึงข้อมูลลูกค้าทั้งหมด
-$sql_customers = "SELECT DISTINCT  c.*, u.first_name, u.last_name, t.team_name 
+$sql_customers = "SELECT DISTINCT c.*, u.first_name, u.last_name, t.team_name 
                   FROM customers c
                   LEFT JOIN users u ON c.created_by = u.user_id
                   LEFT JOIN teams t ON u.team_id = t.team_id
@@ -21,8 +21,11 @@ $sql_customers = "SELECT DISTINCT  c.*, u.first_name, u.last_name, t.team_name
 if ($role == 'Sale Supervisor') {
     // ผู้จัดการทีม เห็นลูกค้าของทีมตัวเอง
     $sql_customers .= " AND u.team_id = :team_id";
+} elseif ($role == 'Seller') {
+    // ผู้ใช้ทั่วไป (Seller) เห็นเฉพาะลูกค้าที่ตัวเองสร้าง
+    $sql_customers .= " AND c.created_by = :user_id";
 } elseif ($role != 'Executive') {
-    // ผู้ใช้ทั่วไป เห็นเฉพาะลูกค้าที่ตัวเองสร้าง
+    // กรณีที่เป็นบทบาทอื่นๆ ที่ไม่ใช่ Executive
     $sql_customers .= " AND c.created_by = :user_id";
 }
 
@@ -36,9 +39,9 @@ $stmt = $condb->prepare($sql_customers);
 
 // ผูกค่า team_id และ user_id ตามบทบาทของผู้ใช้
 if ($role == 'Sale Supervisor') {
-    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-} elseif ($role != 'Executive') {
-    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR); // เปลี่ยนเป็น PDO::PARAM_STR เพราะ team_id เป็น CHAR(36)
+} elseif ($role == 'Seller' || $role != 'Executive') {
+    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR); // เปลี่ยนเป็น PDO::PARAM_STR เพราะ user_id เป็น CHAR(36)
 }
 
 // ผูกค่าการค้นหากับ statement
@@ -72,9 +75,9 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         th,
         h1 {
             font-family: 'Noto Sans Thai', sans-serif;
-            font-weight: 700;
+            font-weight: 600;
             /* ปรับระดับน้ำหนักของฟอนต์ */
-            font-size: 16px;
+            font-size: 14px;
             color: #333;
         }
 
@@ -176,26 +179,26 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <table id="example1" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Customer Name</th>
-                                                <th>Phone</th>
-                                                <th>Email</th>
-                                                <th>Company</th>
-                                                <th>Created By</th>
-                                                <th>Created At</th>
-                                                <th>Action</th>
+                                                <th class="text-nowrap text-center">Customer Name</th>
+                                                <th class="text-nowrap text-center">Phone</th>
+                                                <th class="text-nowrap text-center">Email</th>
+                                                <th class="text-nowrap text-center">Company</th>
+                                                <th class="text-nowrap text-center">Created By</th>
+                                                <th class="text-nowrap text-center">Created At</th>
+                                                <th class="text-nowrap text-center">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <!-- แสดงข้อมูลลูกค้า -->
                                             <?php foreach ($customers as $customer) { ?>
                                                 <tr>
-                                                    <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['phone']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['email']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['company']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($customer['created_at']); ?></td>
-                                                    <td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['phone']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['email']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['company']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['created_at']); ?></td>
+                                                    <td class="text-nowrap">
                                                         <a href="view_customer.php?id=<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>" class="btn btn-sm btn-primary">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
@@ -228,7 +231,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </section>
             <!-- /.content -->
         </div><!-- /.container-fluid -->
-        
+
         <!-- /.content-wrapper -->
         <!-- Footer -->
         <?php include '../../include/footer.php'; ?>

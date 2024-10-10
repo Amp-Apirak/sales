@@ -29,8 +29,6 @@ $search_team = clean_input($_POST['team'] ?? '');
 $where_clause_dropdown = "";
 $params_dropdown = array();
 
-
-// role sale ssupervisor lookup team only
 if ($role == 'Sale Supervisor') {
     $where_clause_dropdown = " WHERE p.created_by IN (SELECT user_id FROM users WHERE team_id = :team_id)";
     $params_dropdown[':team_id'] = $team_id;
@@ -39,64 +37,29 @@ if ($role == 'Sale Supervisor') {
     $params_dropdown[':created_by'] = $created_by;
 }
 
-// Product Dropdown
-$stmt = $condb->prepare("
-    SELECT DISTINCT p.product_id, pr.product_name 
-    FROM projects p
-    JOIN products pr ON p.product_id = pr.product_id
-    $where_clause_dropdown
-");
-$stmt->execute($params_dropdown);
-$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// ฟังก์ชันสำหรับดึงข้อมูล dropdown
+function getDropdownData($condb, $sql, $params)
+{
+    $stmt = $condb->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
-// Status Dropdown
-$stmt = $condb->prepare("SELECT DISTINCT status FROM projects p $where_clause_dropdown");
-$stmt->execute($params_dropdown);
-$statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Creator Dropdown
-$stmt = $condb->prepare("
-    SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name 
-    FROM users u 
-    INNER JOIN projects p ON u.user_id = p.created_by 
-    $where_clause_dropdown
-");
-$stmt->execute($params_dropdown);
-$creators = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Customer Dropdown
-$stmt = $condb->prepare("
-    SELECT DISTINCT c.customer_id, c.customer_name 
-    FROM customers c
-    INNER JOIN projects p ON c.customer_id = p.customer_id 
-    $where_clause_dropdown
-");
-$stmt->execute($params_dropdown);
-$customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Year Dropdown
-$stmt = $condb->prepare("SELECT DISTINCT YEAR(created_at) AS year FROM projects p $where_clause_dropdown");
-$stmt->execute($params_dropdown);
-$years = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// ดึงข้อมูลสำหรับ dropdowns
+$products = getDropdownData($condb, "SELECT DISTINCT p.product_id, pr.product_name FROM projects p JOIN products pr ON p.product_id = pr.product_id $where_clause_dropdown", $params_dropdown);
+$statuses = getDropdownData($condb, "SELECT DISTINCT status FROM projects p $where_clause_dropdown", $params_dropdown);
+$creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name FROM users u INNER JOIN projects p ON u.user_id = p.created_by $where_clause_dropdown", $params_dropdown);
+$customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_name FROM customers c INNER JOIN projects p ON c.customer_id = p.customer_id $where_clause_dropdown", $params_dropdown);
+// ปรับปรุงการดึงข้อมูลปีจาก sales_date
+$years = getDropdownData($condb, "SELECT DISTINCT YEAR(sales_date) AS year FROM projects p $where_clause_dropdown ORDER BY year DESC", $params_dropdown);
 
 // Team Dropdown (เฉพาะ Executive หรือ Sale Supervisor)
 if ($role == 'Executive' || $role == 'Sale Supervisor') {
     $team_query = ($role == 'Sale Supervisor') ? "WHERE team_id = :team_id" : "";
-    $stmt = $condb->prepare("SELECT DISTINCT team_id, team_name FROM teams $team_query");
-    if ($role == 'Sale Supervisor') {
-        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-    }
-    $stmt->execute();
-    $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $teams = getDropdownData($condb, "SELECT DISTINCT team_id, team_name FROM teams $team_query", $role == 'Sale Supervisor' ? [':team_id' => $team_id] : []);
 }
 
-
-$stmt->execute($params_dropdown);
-$teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
-
-// กำหนด where clause ตามบทบาทผู้ใช้
+// กำหนด where clause ตามบทบาทผู้ใช้และเงื่อนไขการค้นหา
 $where_clause = "WHERE 1=1";
 $params = array();
 
@@ -106,12 +69,6 @@ if ($role == 'Sale Supervisor') {
 } elseif ($role != 'Executive') {
     $where_clause .= " AND p.created_by = :created_by";
     $params[':created_by'] = $created_by;
-}
-
-// เพิ่มเงื่อนไขการค้นหาทีม
-if (($role == 'Executive' || $role == 'Sale Supervisor') && !empty($search_team)) {
-    $where_clause .= " AND t.team_name = :search_team";
-    $params[':search_team'] = $search_team;
 }
 
 // เพิ่มเงื่อนไขการค้นหา
@@ -140,26 +97,28 @@ if (!empty($search_customer)) {
     $params[':search_customer'] = $search_customer;
 }
 if (!empty($search_year)) {
-    $where_clause .= " AND YEAR(p.created_at) = :search_year";
+    $where_clause .= " AND YEAR(p.sales_date) = :search_year";
     $params[':search_year'] = $search_year;
 }
 
-// SQL query สำหรับดึงข้อมูลโปรเจกต์ พร้อม team_name
+// SQL query สำหรับดึงข้อมูลโปรเจกต์
 $sql_projects = "
-    SELECT p.*, u.first_name, u.last_name, c.customer_name, t.team_name, pr.product_name
+    SELECT p.*, u.first_name, u.last_name, c.customer_name, c.company, c.address, c.phone, c.email, t.team_name, pr.product_name,
+           seller.first_name AS seller_first_name, seller.last_name AS seller_last_name,
+           YEAR(p.sales_date) AS sales_year
     FROM projects p
     LEFT JOIN customers c ON p.customer_id = c.customer_id
     LEFT JOIN users u ON p.created_by = u.user_id
     LEFT JOIN teams t ON u.team_id = t.team_id
     LEFT JOIN products pr ON p.product_id = pr.product_id
+    LEFT JOIN users seller ON p.seller = seller.user_id
     $where_clause
-    ORDER BY p.project_id DESC
+    ORDER BY p.project_id DESC 
 ";
 
 $stmt_projects = $condb->prepare($sql_projects);
 $stmt_projects->execute($params);
 $projects = $stmt_projects->fetchAll(PDO::FETCH_ASSOC);
-
 
 // คำนวณสถิติต่างๆ
 $total_projects = count($projects);
@@ -167,11 +126,27 @@ $total_cost = 0;
 $total_sale = 0;
 $unique_creators = array();
 foreach ($projects as $project) {
-    $total_cost += $project['cost_no_vat'];
-    $total_sale += $project['sale_no_vat'];
+    $total_cost += $project['cost_vat'];
+    $total_sale += $project['sale_vat'];
     $unique_creators[$project['created_by']] = true;
 }
 $total_creators = count($unique_creators);
+
+// ฟังก์ชันสำหรับแสดงข้อมูลหรือ "ไม่ระบุข้อมูล" ถ้าไม่มีข้อมูล
+function displayData($data, $format = null)
+{
+    if (isset($data) && $data !== '') {
+        if ($format === 'number') {
+            return number_format($data, 2);
+        } elseif ($format === 'percentage') {
+            return $data . '%';
+        } else {
+            return htmlspecialchars($data);
+        }
+    } else {
+        return 'ไม่ระบุข้อมูล';
+    }
+}
 
 ?>
 
@@ -196,7 +171,7 @@ $total_creators = count($unique_creators);
             font-family: 'Noto Sans Thai', sans-serif;
             font-weight: 700;
             /* ปรับระดับน้ำหนักของฟอนต์ */
-            font-size: 16px;
+            font-size: 14px;
             color: #333;
         }
 
@@ -451,27 +426,52 @@ $total_creators = count($unique_creators);
                                     <table id="example1" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Contact No.</th>
-                                                <th>Product</th>
-                                                <th>Project Name</th>
-                                                <th>Status</th>
-                                                <th>Sale Price (Vat)</th>
-                                                <th>Cost Price (Vat)</th>
-                                                <th>(% GP)</th>
-                                                <th>Create By</th>
-                                                <th>Create Date</th>
-                                                <th>team</th>
-                                                <th>Action</th>
+                                                <th class="text-nowrap text-center">Action</th>
+                                                <th class="text-nowrap text-center">Contact No.</th>
+                                                <th class="text-nowrap text-center">Sales Date</th>
+                                                <th class="text-nowrap text-center">Start Date</th>
+                                                <th class="text-nowrap text-center">End Date</th>
+                                                <th class="text-nowrap text-center">Status</th>
+                                                <th class="text-nowrap text-center">Product</th>
+                                                <th class="text-nowrap text-center">Project Name</th>
+                                                <th class="text-nowrap text-center">Cost Price</th>
+                                                <th class="text-nowrap text-center">Cost Price (Vat)</th>
+                                                <th class="text-nowrap text-center">Sale Price</th>
+                                                <th class="text-nowrap text-center">Sale Price (Vat)</th>
+                                                <th class="text-nowrap text-center">Gross Profit</th>
+                                                <th class="text-nowrap text-center">(% GP)</th>
+                                                <th class="text-nowrap text-center">Vat (%)</th>
+                                                <th class="text-nowrap text-center">Estimate Cost</th>
+                                                <th class="text-nowrap text-center">Estimate Sale</th>
+                                                <th class="text-nowrap text-center">Estimate GP</th>
+                                                <th class="text-nowrap text-center">Seller</th>
+                                                <th class="text-nowrap text-center">Team</th>
+                                                <th class="text-nowrap text-center">Customer Name</th>
+                                                <th class="text-nowrap text-center">Customer Company</th>
+                                                <th class="text-nowrap text-center">Customer Address</th>
+                                                <th class="text-nowrap text-center">Customer Phone</th>
+                                                <th class="text-nowrap text-center">Customer Email</th>
+                                                <th class="text-nowrap text-center">Remark</th>
+                                                <th class="text-nowrap text-center">Create By</th>
+                                                <th class="text-nowrap text-center">Create Date</th>
+
                                             </tr>
                                         </thead>
-
                                         <tbody>
-                                            <?php foreach ($projects as $project) { ?>
-                                                <tr id="myTable">
-                                                    <td><?php echo htmlspecialchars($project['contract_no']); ?></td>
-                                                    <td><?php echo htmlspecialchars($project['product_name']); ?></td>
-                                                    <td style="width: 500px; word-wrap: break-word;"><?php echo htmlspecialchars($project['project_name']); ?></td>
-                                                    <td>
+                                            <?php foreach ($projects as $project) : ?>
+                                                <tr>
+                                                    <td class="text-nowrap">
+                                                        <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                        <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                    </td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']) ? htmlspecialchars($project['contract_no']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['end_date']); ?></td>
+                                                    <td class="text-nowrap text-center">
                                                         <?php
                                                         if (strcasecmp($project["status"], 'Waiting for approve') == 0) {
                                                             echo "<span class='badge badge-primary'>{$project['status']}</span>";
@@ -487,53 +487,39 @@ $total_creators = count($unique_creators);
                                                             echo "<span class='badge badge-success'>{$project['status']}</span>";
                                                         } elseif (strcasecmp($project["status"], 'Lost') == 0) {
                                                             echo "<span class='badge badge-danger'>{$project['status']}</span>";
-                                                        } elseif (strcasecmp($project["status"], 'Cancelled') == 0) {  // เพิ่มสถานะ Cancelled
-                                                            echo "<span class='badge badge-secondary'>{$project['status']}</span>"; // ใช้สีเทาหรือสีอื่นที่คุณต้องการ
+                                                        } elseif (strcasecmp($project["status"], 'Cancelled') == 0) {
+                                                            echo "<span class='badge badge-secondary'>{$project['status']}</span>";
                                                         } else {
                                                             echo "<span class='badge badge-secondary'>{$project['status']}</span>";
                                                         }
                                                         ?>
+                                                    </td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['project_name']); ?></td>
+                                                    <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
+                                                    <td class="text-nowrap "><?php echo number_format($project['sale_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap" ><?php echo number_format($project['sale_vat'], 2); ?></td>
+                                                    <td class="text-nowrap" style="color: Green; font-weight: bold;" ><?php echo number_format($project['gross_profit'], 2); ?></td>
+                                                    <td class="text-nowrap" style="color: Green; font-weight: bold;" ><?php echo !empty($project['potential']) ? htmlspecialchars($project['potential']) . '%' : ''; ?></td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['vat'], 2); ?>%</td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['es_cost_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['es_sale_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap"><?php echo number_format($project['es_gp_no_vat'], 2); ?></td>
+                                                    <td class="text-nowrap"><?php echo displayData($project['seller_first_name'] . ' ' . $project['seller_last_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['team_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']) ? htmlspecialchars($project['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['address']) ? htmlspecialchars($project['address']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']) ? htmlspecialchars($project['remark']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
 
-                                                    </td>
-                                                    <td><?php echo number_format($project['sale_no_vat'], 2); ?></td>
-                                                    <td><?php echo number_format($project['cost_no_vat'], 2); ?></td>
-                                                    <td>
-                                                        <?php
-                                                        if (!empty($project['potential'])) {
-                                                            echo htmlspecialchars($project['potential']) . '%';
-                                                        } else {
-                                                            echo ''; // แสดงค่าว่างหากไม่มีข้อมูล
-                                                        }
-                                                        ?>
-                                                    </td>
-                                                    <td><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($project['created_at']); ?></td>
-                                                    <td><?php echo htmlspecialchars($project['team_name']); ?></td>
-                                                    <td>
-                                                        <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                        <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                    </td>
                                                 </tr>
-                                            <?php } ?>
+                                            <?php endforeach; ?>
                                         </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <th>Contact No.</th>
-                                                <th>Product</th>
-                                                <th>Project Name</th>
-                                                <th>Status</th>
-                                                <th>Sale Price (Vat)</th>
-                                                <th>Cost Price (Vat)</th>
-                                                <th>(% GP)</th>
-                                                <th>Create By</th>
-                                                <th>Create Date</th>
-                                                <th>team</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </tfoot>
                                     </table>
                                 </div>
                                 <!-- /.card-body -->
@@ -551,24 +537,65 @@ $total_creators = count($unique_creators);
         <!-- // include footer -->
         <?php include  '../../include/footer.php'; ?>
     </div>
-    <!-- ./wrapper -->
     <script>
         $(function() {
             $("#example1").DataTable({
-                "responsive": true,
+                "responsive": false,
                 "lengthChange": false,
                 "autoWidth": false,
-                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-            $('#example2').DataTable({
+                "scrollX": true,
+                "scrollCollapse": true,
                 "paging": true,
-                "lengthChange": false,
-                "searching": false,
-                "ordering": true,
-                "info": true,
-                "autoWidth": false,
-                "responsive": true,
-            });
+                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
+                "columnDefs": [{
+                        "width": "80px",
+                        "targets": [0, 1, 2, 3]
+                    }, // Contact No., Dates
+                    {
+                        "width": "100px",
+                        "targets": [4, 5]
+                    }, // Status, Product
+                    {
+                        "width": "700px",
+                        "targets": 6
+                    }, // Project Name
+                    {
+                        "width": "100px",
+                        "targets": [7, 8, 9, 10, 11]
+                    }, // Prices
+                    {
+                        "width": "60px",
+                        "targets": [12, 13]
+                    }, // GP%, VAT%
+                    {
+                        "width": "100px",
+                        "targets": [14, 15, 16]
+                    }, // Estimates
+                    {
+                        "width": "100px",
+                        "targets": [17, 18]
+                    }, // Seller, Team
+                    {
+                        "width": "150px",
+                        "targets": [19, 20, 21, 22, 23]
+                    }, // Customer info
+                    {
+                        "width": "500px",
+                        "targets": 24
+                    }, // Remark
+                    {
+                        "width": "120px",
+                        "targets": [25, 26]
+                    }, // Create By, Create Date
+                    {
+                        "width": "100px",
+                        "targets": 27
+                    } // Action
+                ],
+                "fixedColumns": {
+                    leftColumns: 2 // ตรึง 2 คอลัมน์ซ้าย
+                }
+            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>
     <script>

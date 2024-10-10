@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
             $stmt->bindParam(':email', $email, PDO::PARAM_STR);
             $stmt->bindParam(':remark', $remark, PDO::PARAM_STR);
-            $stmt->bindParam(':created_by', $created_by, PDO::PARAM_INT);
+            $stmt->bindParam(':created_by', $created_by, PDO::PARAM_STR);
             $stmt->execute();
 
             // แสดงข้อความเมื่อเพิ่มลูกค้าสำเร็จด้วย SweetAlert

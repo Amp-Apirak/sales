@@ -251,7 +251,7 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
 
         <div class="user-panel">
             <div class="image">
-                <img src="<?php echo BASE_URL; ?>assets/img/ad.jpg" alt="User Image">
+                <img src="<?php echo BASE_URL; ?>assets/img/add.jpg" alt="User Image">
             </div>
             <div class="info">
                 <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-name"><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>

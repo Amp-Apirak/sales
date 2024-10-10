@@ -174,6 +174,53 @@ try {
             color: #27ae60;
             font-size: 18px;
         }
+
+        /* เพิ่มสไตล์นี้ต่อจากสไตล์ที่มีอยู่แล้ว */
+        .edit-button {
+            float: right;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .edit-button:hover {
+            background-color: #2980b9;
+        }
+
+        .info-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .edit-button {
+            float: right;
+            background-color: transparent;
+            color: #6a11cb;
+            /* สีม่วงเข้มตามธีมของเว็บ */
+            border: none;
+            padding: 2px 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            font-size: 14px;
+        }
+
+        .edit-button:hover {
+            background-color: #6a11cb;
+            color: white;
+        }
+
+        .info-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+        }
     </style>
 </head>
 
@@ -191,7 +238,10 @@ try {
 
                     <div class="info-card">
                         <div class="info-card-header">
-                            <i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ
+                            <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ</span>
+                            <button class="edit-button" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
+                                <i class="fas fa-edit"></i> แก้ไข
+                            </button>
                         </div>
                         <div class="info-card-body">
                             <div class="row">
@@ -234,8 +284,9 @@ try {
                     <div class="row">
                         <div class="col-md-6">
                             <div class="info-card">
+                                <!-- ส่วนข้อมูลลูกค้า -->
                                 <div class="info-card-header">
-                                    <i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า
+                                    <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า</span>
                                 </div>
                                 <div class="info-card-body">
                                     <div class="info-item">

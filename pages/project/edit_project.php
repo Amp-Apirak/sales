@@ -69,8 +69,8 @@ if (isset($_GET['project_id'])) {
         $date_end = clean_input($_POST['date_end']);
         $status = clean_input($_POST['status']);
         $contract_no = clean_input($_POST['con_number']);
-        $product_id = filter_var($_POST['product_id'], FILTER_VALIDATE_INT);
-        $customer_id = filter_var($_POST['customer_id'], FILTER_VALIDATE_INT);
+        $product_id = clean_input($_POST['product_id']);
+        $customer_id = clean_input($_POST['customer_id']);
         $sale_vat = filter_var(str_replace(',', '', $_POST['sale_vat']), FILTER_VALIDATE_FLOAT);
         $sale_no_vat = filter_var(str_replace(',', '', $_POST['sale_no_vat']), FILTER_VALIDATE_FLOAT);
         $cost_vat = filter_var(str_replace(',', '', $_POST['cost_vat']), FILTER_VALIDATE_FLOAT);
@@ -92,7 +92,7 @@ if (isset($_GET['project_id'])) {
 
 
         // ตรวจสอบข้อมูลที่จำเป็น
-        if (empty($project_name) || empty($status) || !$product_id || !is_numeric($product_id)) {
+        if (empty($project_name) || empty($status) || empty($product_id)) {
             $alert = "error|กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน ประกอบด้วย ชื่อโครงการ, สถานะ, ชื่อสินค้าที่ขาย";
         } else {
             try {
@@ -694,31 +694,38 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             recalculateEstimate(); // คำนวณ Estimate Potential
         });
 
-        // เมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม
+        // แก้ไขฟังก์ชันสำหรับช่อง ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
+        $("#cost_no_vat").on("input", function() {
+            var costNoVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
+            var vat = parseFloat($("#vat").val()) || 0;
+
+            var costVat = calculateWithVatPrice(costNoVat, vat);
+            $("#cost_vat").val(formatNumber(costVat.toFixed(2)));
+
+            calculateGrossProfit();
+            recalculateEstimate();
+        });
+
+        // แก้ไขฟังก์ชันสำหรับช่อง ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม
         $("#cost_vat").on("input", function() {
             var costVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
             var vat = parseFloat($("#vat").val()) || 0;
 
-            var costNoVat = calculateNoVatPrice(costVat, vat); // คำนวณราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
-            $("#cost_no_vat").val(formatNumber(costNoVat.toFixed(2))); // แสดงราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
+            var costNoVat = calculateNoVatPrice(costVat, vat);
+            $("#cost_no_vat").val(formatNumber(costNoVat.toFixed(2)));
 
-            calculateGrossProfit(); // คำนวณกำไรขั้นต้น
-            recalculateEstimate(); // คำนวณ Estimate Potential
+            calculateGrossProfit();
+            recalculateEstimate();
         });
 
-        // เมื่อกรอกข้อมูลในช่อง ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม
-        $("#cost_no_vat").on("input", function() {
-            calculateGrossProfit(); // คำนวณกำไรขั้นต้น
-            recalculateEstimate(); // คำนวณ Estimate Potential
-        });
-
-        // เมื่อมีการเปลี่ยนค่า VAT
+        // เพิ่มการทริกเกอร์การคำนวณเมื่อมีการเปลี่ยนค่า VAT
         $("#vat").on("change", function() {
-            $("#sale_vat").trigger("input"); // เรียกคำนวณใหม่
+            $("#sale_vat").trigger("input");
             $("#sale_no_vat").trigger("input");
             $("#cost_vat").trigger("input");
             $("#cost_no_vat").trigger("input");
         });
+
 
         // เมื่อมีการเปลี่ยนสถานะโครงการ
         $("#status").on("change", function() {

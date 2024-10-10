@@ -1,164 +1,156 @@
 <?php
-//session_start and Config DB
-include  '../../include/Add_session.php';
+// เริ่ม session และเชื่อมต่อฐานข้อมูล
+include '../../include/Add_session.php';
 
 // ตรวจสอบสิทธิ์การเข้าถึง
-$role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
-$team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
-$created_by = $_SESSION['user_id']; // ดึง user_id ของผู้สร้างจาก session
+$role = $_SESSION['role'];  // บทบาทของผู้ใช้จาก session
+$team_id = $_SESSION['team_id'];  // team_id ของผู้ใช้จาก session
+$created_by = $_SESSION['user_id'];  // user_id ของผู้สร้างจาก session
 
-// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
 if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
     header("Location: unauthorized.php");
     exit();
 }
 
-// ดึงข้อมูลทีมจากฐานข้อมูล
-if ($role === 'Sale Supervisor') {
-    $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
-    $stmt_teams = $condb->prepare($sql_teams);
-    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_INT); // ระบุว่าเป็น integer
-    $stmt_teams->execute();
-    $query_teams = $stmt_teams->fetchAll();
-} else {
-    $sql_teams = "SELECT team_id, team_name FROM teams";
-    $stmt_teams = $condb->prepare($sql_teams);
-    $stmt_teams->execute();
-    $query_teams = $stmt_teams->fetchAll();
-}
-
-// สร้างหรือดึง CSRF Token สำหรับป้องกันการโจมตี CSRF
+// สร้างหรือดึง CSRF Token เพื่อป้องกันการโจมตีแบบ CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 $csrf_token = $_SESSION['csrf_token'];
 
-// ฟังก์ชันทำความสะอาดข้อมูล input
+// ฟังก์ชันทำความสะอาดข้อมูล input เพื่อป้องกันการโจมตีแบบ XSS
 function clean_input($data)
 {
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
-// ฟังก์ชันสำหรับสร้าง UUID
+// ฟังก์ชันสำหรับสร้าง UUID สำหรับ user_id ใหม่
 function generateUUID()
 {
     $data = random_bytes(16);
-    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // เวอร์ชัน 4 UUID
-    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // UUID variant
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // กำหนดเวอร์ชัน 4 ของ UUID
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // กำหนด UUID variant
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
-// ตรวจสอบการส่งฟอร์ม
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // ตรวจสอบ CSRF Token
+// ดึงข้อมูลทีมจากฐานข้อมูลตามบทบาทของผู้ใช้
+if ($role === 'Sale Supervisor') {
+    // Sale Supervisor จะเห็นเฉพาะทีมของตนเอง
+    $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
+    $stmt_teams = $condb->prepare($sql_teams);
+    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+    $stmt_teams->execute();
+} else {
+    // Executive และผู้ที่มีสิทธิ์สูงกว่า สามารถเห็นทีมทั้งหมด
+    $sql_teams = "SELECT team_id, team_name FROM teams";
+    $stmt_teams = $condb->prepare($sql_teams);
+    $stmt_teams->execute();
+}
+$query_teams = $stmt_teams->fetchAll();
+
+// ตัวแปรเก็บข้อความแจ้งเตือนสำหรับการตรวจสอบข้อมูล
+$error_messages = [];
+
+// ตรวจสอบการส่งฟอร์มแบบ AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+    // ตรวจสอบ CSRF Token ว่าถูกต้องหรือไม่
     if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("Invalid CSRF token");
+        die(json_encode(['success' => false, 'errors' => ['Invalid CSRF token']]));
     }
 
-    // สร้าง UUID สำหรับ user_id
-    $user_id = generateUUID();
-
-    // รับข้อมูลจากฟอร์มและทำความสะอาดข้อมูล
+    // ทำความสะอาดและรับข้อมูลจากฟอร์ม
+    $user_id = generateUUID();  // สร้าง user_id ใหม่แบบ UUID
     $first_name = clean_input($_POST['first_name']);
     $last_name = clean_input($_POST['last_name']);
     $username = clean_input($_POST['username']);
     $email = clean_input($_POST['email']);
     $phone = clean_input($_POST['phone']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // เข้ารหัสรหัสผ่าน
+    $password = $_POST['password'];
     $position = clean_input($_POST['position']);
-    $team_id_new = $_POST['team_id'];
-    $role_new = $_POST['role'];
-    $company = clean_input($_POST['company']);  // รับข้อมูลบริษัทจากฟอร์ม
+    $team_id_new = !empty($_POST['team_id']) ? clean_input($_POST['team_id']) : null;
+    $role_new = clean_input($_POST['role']);
+    $company = clean_input($_POST['company']);
 
-    // ตรวจสอบสิทธิ์ Sale Supervisor
-    if ($role === 'Sale Supervisor') {
-        if ($role_new === 'Executive') {
-            echo "<script>alert('คุณไม่มีสิทธิ์สร้างผู้ใช้งานที่มีบทบาทเป็น Executive'); window.location.href = 'add_user.php';</script>";
-            exit;
-        }
+    // ตรวจสอบข้อมูลที่จำเป็นว่าถูกกรอกครบถ้วนหรือไม่
+    if (empty($first_name)) $error_messages[] = "กรุณากรอกชื่อ";
+    if (empty($last_name)) $error_messages[] = "กรุณากรอกนามสกุล";
+    if (empty($username)) $error_messages[] = "กรุณากรอกชื่อผู้ใช้";
+    if (empty($email)) $error_messages[] = "กรุณากรอกอีเมล";
+    if (empty($password)) $error_messages[] = "กรุณากรอกรหัสผ่าน";
+    if (empty($team_id_new)) $error_messages[] = "กรุณาเลือกทีม";
+    if (empty($role_new)) $error_messages[] = "กรุณาเลือกบทบาท";
 
-        if ($team_id_new != $team_id) {
-            echo "<script>alert('คุณสามารถสร้างผู้ใช้งานได้เฉพาะทีมของคุณเท่านั้น'); window.location.href = 'add_user.php';</script>";
-            exit;
-        }
+    // ตรวจสอบความถูกต้องของรูปแบบอีเมล
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง";
     }
 
-    // ตรวจสอบว่ามีชื่อผู้ใช้งานซ้ำหรือไม่
-    $checkusername_sql = "SELECT * FROM users WHERE username = :username";
-    $stmt = $condb->prepare($checkusername_sql);
-    $stmt->bindParam(':username', $username, PDO::PARAM_STR);
-    $stmt->execute();
-    $existing_user = $stmt->fetch();
+    // ถ้าไม่มีข้อผิดพลาด ดำเนินการบันทึกข้อมูลผู้ใช้ใหม่
+    if (empty($error_messages)) {
+        try {
+            // ตรวจสอบชื่อผู้ใช้ซ้ำในฐานข้อมูล
+            $stmt = $condb->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
+            $stmt->execute([':username' => $username]);
+            if ($stmt->fetchColumn() > 0) {
+                throw new Exception("ชื่อผู้ใช้นี้มีอยู่แล้ว");
+            }
 
-    if ($existing_user) {
-        echo "<script>setTimeout(function() {
-                    Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ชื่อผู้ใช้งานนี้ถูกใช้ไปแล้ว!', icon: 'error', confirmButtonText: 'ตกลง' });
-                }, 100);</script>";
-    } else {
-        // ตรวจสอบอีเมลที่ซ้ำ
-        $checkemail_sql = "SELECT * FROM users WHERE email = :email";
-        $stmt = $condb->prepare($checkemail_sql);
-        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-        $stmt->execute();
-        $existing_user = $stmt->fetch();
+            // ตรวจสอบอีเมลซ้ำในฐานข้อมูล
+            $stmt = $condb->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
+            $stmt->execute([':email' => $email]);
+            if ($stmt->fetchColumn() > 0) {
+                throw new Exception("อีเมลนี้มีอยู่แล้ว");
+            }
 
-        if ($existing_user) {
-            echo "<script>setTimeout(function() {
-                        Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'อีเมลนี้ถูกใช้ไปแล้ว!', icon: 'error', confirmButtonText: 'ตกลง' });
-                    }, 100);</script>";
-        } else {
-            // ตรวจสอบเบอร์โทรที่ซ้ำ
-            $checkphone_sql = "SELECT * FROM users WHERE phone = :phone";
-            $stmt = $condb->prepare($checkphone_sql);
-            $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
-            $stmt->execute();
-            $existing_user = $stmt->fetch();
-
-            if ($existing_user) {
-                echo "<script>setTimeout(function() {
-                            Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'เบอร์โทรนี้ถูกใช้ไปแล้ว!', icon: 'error', confirmButtonText: 'ตกลง' });
-                        }, 100);</script>";
-            } else {
-                // เพิ่มข้อมูลผู้ใช้ลงฐานข้อมูล
-                try {
-                    $sql = "INSERT INTO users (user_id,first_name, last_name, username, email, phone, password, position, team_id, role, company, created_by)
-                    VALUES (:user_id, :first_name, :last_name, :username, :email, :phone, :password, :position, :team_id, :role, :company, :created_by)";
-                    $stmt = $condb->prepare($sql);
-                    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
-                    $stmt->bindParam(':first_name', $first_name, PDO::PARAM_STR);
-                    $stmt->bindParam(':last_name', $last_name, PDO::PARAM_STR);
-                    $stmt->bindParam(':username', $username, PDO::PARAM_STR);
-                    $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-                    $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
-                    $stmt->bindParam(':password', $password, PDO::PARAM_STR);
-                    $stmt->bindParam(':position', $position, PDO::PARAM_STR);
-                    $stmt->bindParam(':team_id', $team_id_new, PDO::PARAM_INT);
-                    $stmt->bindParam(':role', $role_new, PDO::PARAM_STR);
-                    $stmt->bindParam(':company', $company, PDO::PARAM_STR);
-                    $stmt->bindParam(':created_by', $created_by, PDO::PARAM_INT);
-                    $stmt->execute();
-
-                    // แสดงข้อความสำเร็จ
-                    echo "<script>
-                        setTimeout(function() {
-                            Swal.fire({
-                                title: 'สำเร็จ!',
-                                text: 'เพิ่มผู้ใช้งานเรียบร้อยแล้ว!',
-                                icon: 'success',
-                                confirmButtonText: 'ตกลง'
-                            }).then(function() {
-                                window.location.href = 'account.php'; // เปลี่ยนเส้นทางไปยังหน้า account
-                            });
-                        }, 100);
-                    </script>";
-                } catch (PDOException $e) {
-                    echo "Error: " . $e->getMessage();
+            // ตรวจสอบเบอร์โทรศัพท์ซ้ำในฐานข้อมูล
+            if (!empty($phone)) {
+                $stmt = $condb->prepare("SELECT COUNT(*) FROM users WHERE phone = :phone");
+                $stmt->execute([':phone' => $phone]);
+                if ($stmt->fetchColumn() > 0) {
+                    throw new Exception("เบอร์โทรศัพท์นี้มีอยู่แล้ว");
                 }
             }
+
+            // เข้ารหัสรหัสผ่านของผู้ใช้ใหม่
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+            // เตรียม SQL สำหรับการเพิ่มข้อมูลผู้ใช้ใหม่
+            $sql = "INSERT INTO users (user_id, first_name, last_name, username, email, phone, password, position, team_id, role, company, created_by) 
+                    VALUES (:user_id, :first_name, :last_name, :username, :email, :phone, :password, :position, :team_id, :role, :company, :created_by)";
+
+            $stmt = $condb->prepare($sql);
+            $stmt->execute([
+                ':user_id' => $user_id,
+                ':first_name' => $first_name,
+                ':last_name' => $last_name,
+                ':username' => $username,
+                ':email' => $email,
+                ':phone' => $phone,
+                ':password' => $hashed_password,
+                ':position' => $position,
+                ':team_id' => $team_id_new,
+                ':role' => $role_new,
+                ':company' => $company,
+                ':created_by' => $created_by
+            ]);
+
+            // ส่งข้อมูลกลับเป็น JSON เมื่อบันทึกข้อมูลสำเร็จ
+            echo json_encode(['success' => true, 'message' => 'บันทึกข้อมูลผู้ใช้เรียบร้อยแล้ว']);
+            exit;
+        } catch (Exception $e) {
+            // ส่งข้อความข้อผิดพลาดกลับเป็น JSON
+            echo json_encode(['success' => false, 'errors' => [$e->getMessage()]]);
+            exit;
         }
+    } else {
+        // ส่งข้อความข้อผิดพลาดกลับเป็น JSON
+        echo json_encode(['success' => false, 'errors' => $error_messages]);
+        exit;
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -208,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <h3 class="card-title">Account Descriptions</h3>
                                         </div>
                                         <div class="card-body">
-                                            <form action="#" method="POST" enctype="multipart/form-data">
+                                            <form id="addUserForm" action="#" method="POST" enctype="multipart/form-data">
                                                 <!-- CSRF Token -->
                                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
@@ -219,7 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text"><i class="fas fa-address-book"></i></span>
                                                         </div>
-                                                        <input type="text" name="first_name" class="form-control" id="first_name" placeholder="" required>
+                                                        <input type="text" name="first_name" class="form-control" id="first_name" placeholder="">
                                                     </div>
                                                 </div>
 
@@ -230,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text"><i class="fas fa-address-book"></i></span>
                                                         </div>
-                                                        <input type="text" name="last_name" class="form-control" id="last_name" placeholder="" required>
+                                                        <input type="text" name="last_name" class="form-control" id="last_name" placeholder="">
                                                     </div>
                                                 </div>
 
@@ -241,7 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text"><i class="fas fa-phone"></i></span>
                                                         </div>
-                                                        <input type="text" class="form-control" name="phone" id="phone" required>
+                                                        <input type="text" class="form-control" name="phone" id="phone">
                                                     </div>
                                                 </div>
 
@@ -275,10 +267,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                             <span class="input-group-text"><i class="fas fa-users"></i></span>
                                                         </div>
                                                         <select class="form-control select2" id="team_id" name="team_id" required>
-                                                            <option value="">Select Team</option>
-                                                            <?php foreach ($query_teams as $team) { ?>
-                                                                <option value="<?php echo $team['team_id']; ?>"><?php echo $team['team_name']; ?></option>
-                                                            <?php } ?>
+                                                            <option value="">เลือกทีม</option>
+                                                            <?php foreach ($query_teams as $team): ?>
+                                                                <option value="<?php echo $team['team_id']; ?>" <?php echo ($team['team_id'] == $team_id) ? 'selected' : ''; ?>>
+                                                                    <?php echo $team['team_name']; ?>
+                                                                </option>
+                                                            <?php endforeach; ?>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -290,7 +284,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text"><i class="fas fa-building"></i></span>
                                                         </div>
-                                                        <input type="text" name="company" class="form-control" id="company" placeholder="" required>
+                                                        <input type="text" name="company" class="form-control" id="company" placeholder="">
                                                     </div>
                                                 </div>
                                         </div>
@@ -312,7 +306,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text"><i class="fas fa-key"></i></span>
                                                     </div>
-                                                    <select class="form-control select2" id="role" name="role" required>
+                                                    <select class="form-control select2" id="role" name="role">
                                                         <option value="">Select Role</option>
                                                         <?php if ($role === 'Executive') { ?>
                                                             <option value="Executive">Executive</option>
@@ -335,7 +329,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text"><i class="fas fa-user"></i></span>
                                                     </div>
-                                                    <input type="text" name="username" class="form-control" id="username" placeholder="Username" required>
+                                                    <input type="text" name="username" class="form-control" id="username" placeholder="Username">
                                                 </div>
                                             </div>
 
@@ -346,7 +340,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text"><i class="fa fa-unlock"></i></span>
                                                     </div>
-                                                    <input type="password" name="password" class="form-control" id="password" placeholder="Password" required>
+                                                    <input type="password" name="password" class="form-control" id="password" placeholder="Password">
                                                 </div>
                                             </div>
 
@@ -370,17 +364,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php include '../../include/footer.php'; ?>
     </div>
 
-    <!-- JS for Dropdown Select2 -->
     <script>
         $(function() {
             $('.select2').select2();
         });
-    </script>
-    <script>
-        // ป้องกันการรีเฟรชหน้าเมื่อกด submit
-        document.getElementById("myForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            // ตรวจสอบและแสดง SweetAlert
+
+        $('#addUserForm').on('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล...',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+
+            $.ajax({
+                type: 'POST',
+                url: 'add_account.php',
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    Swal.close();
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'บันทึกสำเร็จ',
+                            text: response.message,
+                            confirmButtonText: 'ตกลง'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = 'account.php';
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            html: response.errors.join('<br>'),
+                            confirmButtonText: 'ตกลง'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.close();
+                    console.error(xhr.responseText);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
+                        confirmButtonText: 'ตกลง'
+                    });
+                }
+            });
         });
     </script>
 </body>

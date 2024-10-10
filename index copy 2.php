@@ -5,13 +5,10 @@ session_start();
 // นำเข้าไฟล์ config สำหรับการเชื่อมต่อฐานข้อมูล
 require_once 'config/condb.php';
 
-// ส่วนที่ 1: การตรวจสอบสิทธิ์และการกำหนดค่าเริ่มต้น
-// -------------------------------------------------
-
-// ตรวจสอบสิทธิ์การเข้าถึง
+// ตรวจสอบสิทธิ์การเข้าถึงโดยตรวจสอบว่ามีการตั้งค่า role, team_id, user_id หรือไม่
 if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
-    header("Location: " . BASE_URL . "login.php");
-    exit;
+    header("Location: " . BASE_URL . "login.php"); // เปลี่ยนเส้นทางไปที่หน้า login ถ้าไม่มีการกำหนดค่าเหล่านี้
+    exit; // หยุดการทำงานของสคริปต์
 }
 
 // ดึงค่าที่เก็บในเซสชันมาใช้งาน
@@ -23,37 +20,34 @@ $user_id = $_SESSION['user_id'];
 $can_view_all = false;
 $can_view_team = false;
 $can_view_own = false;
-$can_view_financial = true;
+$can_view_financial = true; // สามารถดูข้อมูลการเงินได้ทุกตำแหน่ง ยกเว้น Engineer
 
-// ตั้งค่าการกำหนดสิทธิ์ตาม role
+// ตั้งค่าการกำหนดสิทธิ์ตาม role ที่ได้รับ
 switch ($role) {
     case 'Executive':
-        $can_view_all = true;
+        $can_view_all = true; // Executive สามารถดูข้อมูลทั้งหมด
         break;
     case 'Sale Supervisor':
-        $can_view_team = true;
+        $can_view_team = true; // Sale Supervisor สามารถดูข้อมูลทีม
         $filter_team_id = $team_id;
         break;
     case 'Seller':
-        $can_view_own = true;
+        $can_view_own = true; // Seller ดูได้เฉพาะข้อมูลของตัวเอง
         $filter_user_id = $user_id;
         break;
     case 'Engineer':
-        $can_view_own = true;
+        $can_view_own = true; // Engineer ดูได้เฉพาะข้อมูลของตัวเอง แต่ไม่สามารถดูข้อมูลการเงิน
         $can_view_financial = false;
         $filter_user_id = $user_id;
         break;
 }
 
-// ส่วนที่ 2: การกำหนดช่วงเวลาและการกรองข้อมูล
-// ------------------------------------------
-
 // กำหนดช่วงเวลาเริ่มต้นในการกรองข้อมูล
 $current_year = date('Y');
 $current_date = date('Y-m-d');
-$filter_date_range = ["$current_year-01-01", $current_date];
-$filter_team_id = $filter_team_id ?? '';
-$filter_user_id = $filter_user_id ?? '';
+$filter_date_range = ["$current_year-01-01", $current_date]; // กรองข้อมูลตั้งแต่ต้นปีจนถึงวันที่ปัจจุบัน
+$filter_team_id = $filter_team_id ?? ''; // ถ้าไม่มีการกำหนดค่า $filter_team_id ให้กำหนดเป็นค่าว่าง
+$filter_user_id = $filter_user_id ?? ''; // ถ้าไม่มีการกำหนดค่า $filter_user_id ให้กำหนดเป็นค่าว่าง
 
 // ตรวจสอบการส่งข้อมูลผ่าน POST สำหรับการกรองข้อมูลเพิ่มเติม
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -61,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $filter_user_id = $_POST['user_id'] ?? $filter_user_id;
     $filter_date_range_input = $_POST['date_range'] ?? '';
 
-    // แปลงวันที่ที่ได้รับจากการกรอง
+    // ตรวจสอบและแปลงวันที่ที่ได้รับจากการกรอง
     if (!empty($filter_date_range_input)) {
         $date_parts = explode(' - ', $filter_date_range_input);
         if (count($date_parts) == 2) {
@@ -73,14 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// ส่วนที่ 3: การดึงข้อมูลทีมและสมาชิกในทีม
-// --------------------------------------
-
+// สร้างตัวแปรเก็บข้อมูลทีมและสมาชิกในทีม
 $teams = [];
 $team_members = [];
 
+// ถ้าสามารถดูข้อมูลทั้งหมดได้
 if ($can_view_all) {
-    // ดึงข้อมูลทีมทั้งหมด
+    // ดึงข้อมูลทีมทั้งหมดจากฐานข้อมูล
     $team_query = "SELECT team_id, team_name FROM teams";
     $stmt = $condb->prepare($team_query);
     $stmt->execute();
@@ -93,7 +86,9 @@ if ($can_view_all) {
     $stmt = $condb->prepare($user_query);
     $stmt->execute();
     $team_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} elseif ($can_view_team) {
+}
+// ถ้าสามารถดูข้อมูลเฉพาะทีมได้
+elseif ($can_view_team) {
     // ดึงข้อมูลสมาชิกในทีมตาม team_id ที่เลือก
     $user_query = "SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name
                    FROM users 
@@ -103,9 +98,6 @@ if ($can_view_all) {
     $stmt->execute();
     $team_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
-
-// ส่วนที่ 4: ฟังก์ชันสำหรับการดึงและประมวลผลข้อมูล
-// ----------------------------------------------
 
 // ฟังก์ชันสำหรับดึงข้อมูลที่ผ่านการกรองจากฐานข้อมูล
 function getFilteredData($condb, $query, $params)
@@ -166,9 +158,6 @@ function getTeamMemberCount($condb, $role, $team_id, $user_id, $filter_team_id =
     return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 }
 
-// ส่วนที่ 5: การดึงและประมวลผลข้อมูลหลัก
-// -------------------------------------
-
 try {
     // นับจำนวน Product ทั้งหมด
     $product_query = "SELECT COUNT(*) as total_products FROM products";
@@ -184,15 +173,18 @@ try {
         ':end_date' => $filter_date_range[1]
     ];
 
-    // กรองข้อมูลตาม team_id และ user_id
+    // กรองข้อมูลตาม team_id ถ้าดูข้อมูลทั้งหมดได้
     if ($filter_team_id && $can_view_all) {
         $project_query .= " AND u.team_id = :team_id";
         $project_params[':team_id'] = $filter_team_id;
-    } elseif ($can_view_team) {
+    }
+    // กรองข้อมูลตาม team_id ถ้าดูข้อมูลเฉพาะทีมได้
+    elseif ($can_view_team) {
         $project_query .= " AND u.team_id = :team_id";
         $project_params[':team_id'] = $team_id;
     }
 
+    // กรองข้อมูลตาม user_id ถ้าดูข้อมูลเฉพาะผู้ใช้งานเอง
     if ($filter_user_id) {
         $project_query .= " AND p.created_by = :user_id";
         $project_params[':user_id'] = $filter_user_id;
@@ -204,9 +196,11 @@ try {
     $result = getFilteredData($condb, $project_query, $project_params);
     $total_projects = $result['total_projects'];
 
-    // ดึงข้อมูลการเงิน (ถ้ามีสิทธิ์)
+    // กำหนดตัวแปรเริ่มต้นสำหรับค่าใช้จ่ายและยอดขาย
     $total_cost = 0;
     $total_sales = 0;
+
+    // ถ้าสามารถดูข้อมูลการเงินได้
     if ($can_view_financial) {
         $query = "SELECT SUM(p.cost_vat) as total_cost, SUM(p.sale_vat) as total_sales 
                   FROM projects p
@@ -217,15 +211,18 @@ try {
             ':end_date' => $filter_date_range[1]
         ];
 
-        // เพิ่มเงื่อนไขการกรองข้อมูลตาม team_id และ user_id
+        // กรองข้อมูลตาม team_id ถ้าดูข้อมูลทั้งหมดได้
         if ($filter_team_id && $can_view_all) {
             $query .= " AND u.team_id = :team_id";
             $params[':team_id'] = $filter_team_id;
-        } elseif ($can_view_team) {
+        }
+        // กรองข้อมูลตาม team_id ถ้าดูข้อมูลเฉพาะทีมได้
+        elseif ($can_view_team) {
             $query .= " AND u.team_id = :team_id";
             $params[':team_id'] = $team_id;
         }
 
+        // กรองข้อมูลตาม user_id ถ้าดูข้อมูลเฉพาะผู้ใช้งานเอง
         if ($filter_user_id) {
             $query .= " AND p.created_by = :user_id";
             $params[':user_id'] = $filter_user_id;
@@ -234,12 +231,13 @@ try {
             $params[':user_id'] = $user_id;
         }
 
+        // ดึงข้อมูลยอดขายและค่าใช้จ่าย
         $result = getFilteredData($condb, $query, $params);
         $total_cost = $result['total_cost'] ?? 0;
         $total_sales = $result['total_sales'] ?? 0;
     }
 
-    // นับจำนวนทีมและสมาชิกทีม
+    // นับจำนวนทีมและสมาชิกทีมตามเงื่อนไข
     $total_teams = getTeamCount($condb, $role, $team_id, $filter_team_id);
     $total_team_members = getTeamMemberCount($condb, $role, $team_id, $user_id, $filter_team_id, $filter_user_id);
 
@@ -256,12 +254,12 @@ try {
     // อาจจะต้องจัดการข้อผิดพลาดเพิ่มเติม เช่น แสดงข้อความแจ้งเตือนผู้ใช้
 }
 
-// ส่วนที่ 6: การดึงข้อมูลเพิ่มเติมสำหรับกราฟและการวิเคราะห์
-// --------------------------------------------------------
+// /--------------------------------------------------------------/
+// ในส่วนของ PHP ก่อน HTML
 
 // ดึงข้อมูลสถานะโครงการ
-$project_status_query = "SELECT status, COUNT(*) as count FROM projects 
-                         WHERE sales_date BETWEEN :start_date AND :end_date ";
+$project_status_query = "SELECT status, COUNT(*) as count FROM projects ";
+$project_status_query .= "WHERE sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
     $project_status_query .= "AND created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
 } elseif ($can_view_team) {
@@ -285,9 +283,9 @@ $stmt->execute();
 $project_status_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ดึงข้อมูล Product ที่ขายดีที่สุด
-$top_products_query = "SELECT p.product_name, COUNT(*) as count FROM projects pr 
-                       JOIN products p ON pr.product_id = p.product_id 
-                       WHERE pr.sales_date BETWEEN :start_date AND :end_date ";
+$top_products_query = "SELECT p.product_name, COUNT(*) as count FROM projects pr ";
+$top_products_query .= "JOIN products p ON pr.product_id = p.product_id ";
+$top_products_query .= "WHERE pr.sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
     $top_products_query .= "AND pr.created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
 } elseif ($can_view_team) {
@@ -310,6 +308,7 @@ if ($filter_team_id && $can_view_all) {
 $stmt->execute();
 $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// -----------------------------------------------------------------------------------
 // ดึงข้อมูลยอดขายแต่ละปี
 $yearly_sales_query = "SELECT YEAR(sales_date) as year, SUM(sale_vat) as total_sales 
                        FROM projects 
@@ -363,6 +362,7 @@ if ($filter_team_id && $can_view_all) {
 $stmt->execute();
 $employee_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// ---------------------------------------------------------------------
 // ดึงข้อมูลยอดขายรายเดือน
 $monthly_sales_query = "SELECT DATE_FORMAT(sales_date, '%Y-%m') as month, SUM(sale_vat) as total_sales 
                         FROM projects 
@@ -414,7 +414,6 @@ $stmt->execute();
 $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
-
 
 
 <!DOCTYPE html>
@@ -563,31 +562,6 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .bg-warning {
             background: linear-gradient(45deg, #ffb64d, #ffcb80);
         }
-
-        .card-primary.card-outline {
-            border-top: 3px solid #007bff;
-        }
-
-        .card-success.card-outline {
-            border-top: 3px solid #28a745;
-        }
-
-        .card-header {
-            background-color: rgba(0, 0, 0, .03);
-            border-bottom: 1px solid rgba(0, 0, 0, .125);
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 400;
-            margin: 0;
-        }
-
-        .chart-container {
-            position: relative;
-            margin: auto;
-            height: 300px;
-        }
     </style>
 
     <!-- เพิ่ม CSS สำหรับ Date Range Picker -->
@@ -599,7 +573,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- Navbar และ Sidebar -->
         <?php include 'include/navbar.php' ?>
 
-        <!-- เนื้อหาหลัก -->
+        <!-- เนื้อหา -->
         <div class="content-wrapper">
             <!-- ส่วนหัวของหน้า -->
             <div class="content-header">
@@ -684,6 +658,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     </div>
 
+                    <!-- ส่วนแสดงผล KPIs -->
                     <!-- ส่วนแสดงผล KPIs -->
                     <div class="row">
                         <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
@@ -838,7 +813,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <!-- หลังจากส่วนแสดงข้อมูลยอดขายราบปี และรายบุคคล  -->
                 <div class="row">
-                    <div class="col-lg-6 col-md-12">
+                    <div class="col-md-6">
                         <div class="card card-primary">
                             <div class="card-header">
                                 <h3 class="card-title">
@@ -859,7 +834,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-12">
+                    <div class="col-md-6">
                         <div class="card card-primary">
                             <div class="card-header">
                                 <h3 class="card-title">
