@@ -426,7 +426,9 @@ function displayData($data, $format = null)
                                     <table id="example1" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
-                                                <th class="text-nowrap text-center">Action</th>
+                                                <?php if ($role != 'Engineer'): ?>
+                                                    <th class="text-nowrap text-center">Action</th>
+                                                <?php endif; ?>
                                                 <th class="text-nowrap text-center">Contact No.</th>
                                                 <th class="text-nowrap text-center">Sales Date</th>
                                                 <th class="text-nowrap text-center">Start Date</th>
@@ -434,16 +436,18 @@ function displayData($data, $format = null)
                                                 <th class="text-nowrap text-center">Status</th>
                                                 <th class="text-nowrap text-center">Product</th>
                                                 <th class="text-nowrap text-center">Project Name</th>
-                                                <th class="text-nowrap text-center">Cost Price</th>
-                                                <th class="text-nowrap text-center">Cost Price (Vat)</th>
-                                                <th class="text-nowrap text-center">Sale Price</th>
-                                                <th class="text-nowrap text-center">Sale Price (Vat)</th>
-                                                <th class="text-nowrap text-center">Gross Profit</th>
-                                                <th class="text-nowrap text-center">(% GP)</th>
-                                                <th class="text-nowrap text-center">Vat (%)</th>
-                                                <th class="text-nowrap text-center">Estimate Cost</th>
-                                                <th class="text-nowrap text-center">Estimate Sale</th>
-                                                <th class="text-nowrap text-center">Estimate GP</th>
+                                                <?php if ($role != 'Engineer'): ?>
+                                                    <th class="text-nowrap text-center">Cost Price</th>
+                                                    <th class="text-nowrap text-center">Cost Price (Vat)</th>
+                                                    <th class="text-nowrap text-center">Sale Price</th>
+                                                    <th class="text-nowrap text-center">Sale Price (Vat)</th>
+                                                    <th class="text-nowrap text-center">Gross Profit</th>
+                                                    <th class="text-nowrap text-center">(% GP)</th>
+                                                    <th class="text-nowrap text-center">Vat (%)</th>
+                                                    <th class="text-nowrap text-center">Estimate Cost</th>
+                                                    <th class="text-nowrap text-center">Estimate Sale</th>
+                                                    <th class="text-nowrap text-center">Estimate GP</th>
+                                                <?php endif; ?>
                                                 <th class="text-nowrap text-center">Seller</th>
                                                 <th class="text-nowrap text-center">Team</th>
                                                 <th class="text-nowrap text-center">Customer Name</th>
@@ -454,19 +458,20 @@ function displayData($data, $format = null)
                                                 <th class="text-nowrap text-center">Remark</th>
                                                 <th class="text-nowrap text-center">Create By</th>
                                                 <th class="text-nowrap text-center">Create Date</th>
-
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php foreach ($projects as $project) : ?>
+                                            <?php foreach ($projects as $project): ?>
                                                 <tr>
-                                                    <td class="text-nowrap">
-                                                        <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                        <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                    </td>
+                                                    <?php if ($role != 'Engineer'): ?>
+                                                        <td class="text-nowrap">
+                                                            <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                            <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                        </td>
+                                                    <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']) ? htmlspecialchars($project['contract_no']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
@@ -496,16 +501,18 @@ function displayData($data, $format = null)
                                                     </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['project_name']); ?></td>
-                                                    <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
-                                                    <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
-                                                    <td class="text-nowrap "><?php echo number_format($project['sale_no_vat'], 2); ?></td>
-                                                    <td class="text-nowrap" ><?php echo number_format($project['sale_vat'], 2); ?></td>
-                                                    <td class="text-nowrap" style="color: Green; font-weight: bold;" ><?php echo number_format($project['gross_profit'], 2); ?></td>
-                                                    <td class="text-nowrap" style="color: Green; font-weight: bold;" ><?php echo !empty($project['potential']) ? htmlspecialchars($project['potential']) . '%' : ''; ?></td>
-                                                    <td class="text-nowrap"><?php echo number_format($project['vat'], 2); ?>%</td>
-                                                    <td class="text-nowrap"><?php echo number_format($project['es_cost_no_vat'], 2); ?></td>
-                                                    <td class="text-nowrap"><?php echo number_format($project['es_sale_no_vat'], 2); ?></td>
-                                                    <td class="text-nowrap"><?php echo number_format($project['es_gp_no_vat'], 2); ?></td>
+                                                    <?php if ($role != 'Engineer'): ?>
+                                                        <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
+                                                        <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
+                                                        <td class="text-nowrap "><?php echo number_format($project['sale_no_vat'], 2); ?></td>
+                                                        <td class="text-nowrap"><?php echo number_format($project['sale_vat'], 2); ?></td>
+                                                        <td class="text-nowrap" style="color: Green; font-weight: bold;"><?php echo number_format($project['gross_profit'], 2); ?></td>
+                                                        <td class="text-nowrap" style="color: Green; font-weight: bold;"><?php echo !empty($project['potential']) ? htmlspecialchars($project['potential']) . '%' : ''; ?></td>
+                                                        <td class="text-nowrap"><?php echo number_format($project['vat'], 2); ?>%</td>
+                                                        <td class="text-nowrap"><?php echo number_format($project['es_cost_no_vat'], 2); ?></td>
+                                                        <td class="text-nowrap"><?php echo number_format($project['es_sale_no_vat'], 2); ?></td>
+                                                        <td class="text-nowrap"><?php echo number_format($project['es_gp_no_vat'], 2); ?></td>
+                                                    <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo displayData($project['seller_first_name'] . ' ' . $project['seller_last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['team_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']) ? htmlspecialchars($project['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
@@ -516,7 +523,6 @@ function displayData($data, $format = null)
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']) ? htmlspecialchars($project['remark']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
-
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
@@ -547,51 +553,7 @@ function displayData($data, $format = null)
                 "scrollCollapse": true,
                 "paging": true,
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
-                "columnDefs": [{
-                        "width": "80px",
-                        "targets": [0, 1, 2, 3]
-                    }, // Contact No., Dates
-                    {
-                        "width": "100px",
-                        "targets": [4, 5]
-                    }, // Status, Product
-                    {
-                        "width": "700px",
-                        "targets": 6
-                    }, // Project Name
-                    {
-                        "width": "100px",
-                        "targets": [7, 8, 9, 10, 11]
-                    }, // Prices
-                    {
-                        "width": "60px",
-                        "targets": [12, 13]
-                    }, // GP%, VAT%
-                    {
-                        "width": "100px",
-                        "targets": [14, 15, 16]
-                    }, // Estimates
-                    {
-                        "width": "100px",
-                        "targets": [17, 18]
-                    }, // Seller, Team
-                    {
-                        "width": "150px",
-                        "targets": [19, 20, 21, 22, 23]
-                    }, // Customer info
-                    {
-                        "width": "500px",
-                        "targets": 24
-                    }, // Remark
-                    {
-                        "width": "120px",
-                        "targets": [25, 26]
-                    }, // Create By, Create Date
-                    {
-                        "width": "100px",
-                        "targets": 27
-                    } // Action
-                ],
+
                 "fixedColumns": {
                     leftColumns: 2 // ตรึง 2 คอลัมน์ซ้าย
                 }
