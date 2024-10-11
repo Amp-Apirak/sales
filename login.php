@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['team_id'] = $user['team_id'];
         $_SESSION['first_name'] = $user['first_name'];
         $_SESSION['last_name'] = $user['last_name'];
+        $_SESSION['profile_image'] = $user['profile_image'];
 
         // แสดง SweetAlert เมื่อเข้าสู่ระบบสำเร็จ
         echo "<script>

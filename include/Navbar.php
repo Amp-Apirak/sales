@@ -5,6 +5,7 @@ $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช�
 $user_id = $_SESSION['user_id'];  // ดึง user_id ของผู้ใช้จาก session
 $first_name = $_SESSION['first_name']; // ดึง first_name ของผู้ใช้จาก session
 $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใช้จาก session
+$profile_image = $_SESSION['profile_image']; // ดึง profile_image ของผู้ใช้จาก session
 
 ?>
 
@@ -251,7 +252,11 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
 
         <div class="user-panel">
             <div class="image">
-                <img src="<?php echo BASE_URL; ?>assets/img/add.jpg" alt="User Image">
+                <?php
+                // ตรวจสอบว่ามี profile image หรือไม่ หากไม่มีให้ใช้ภาพเริ่มต้น
+                $profile_image = !empty($_SESSION['profile_image']) ? BASE_URL . 'uploads/profile_images/' . htmlspecialchars($_SESSION['profile_image']) : BASE_URL . 'assets/img/add.jpg';
+                ?>
+                <img src="<?php echo $profile_image; ?>" alt="User Image">
             </div>
             <div class="info">
                 <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-name"><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>
@@ -261,6 +266,7 @@ $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใ
                 <i class="fas fa-sign-out-alt"></i> Logout
             </a>
         </div>
+
 
         <!-- SidebarSearch Form -->
         <!-- <div class="form-inline">
