@@ -8,6 +8,20 @@ function clean_input($data)
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
+
+// ฟังก์ชันสร้าง CSRF token ที่ปลอดภัยขึ้น
+function generate_csrf_token()
+{
+    return bin2hex(random_bytes(32));
+}
+
+// ฟังก์ชันตรวจสอบ CSRF token
+function verify_csrf_token($token)
+{
+    return hash_equals($_SESSION['csrf_token'], $token);
+}
+
+
 // ฟังก์ชันตรวจสอบความซับซ้อนของรหัสผ่าน
 function isPasswordValid($password)
 {
@@ -200,6 +214,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
                 if (!in_array($ext, $allowed)) {
                     throw new Exception("รูปแบบไฟล์ไม่ถูกต้อง กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น");
+                }
+
+                // ตรวจสอบ MIME type
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, $_FILES['profile_image']['tmp_name']);
+                finfo_close($finfo);
+
+                if (!in_array($mime, ['image/jpeg', 'image/png', 'image/gif'])) {
+                    throw new Exception("รูปแบบไฟล์ไม่ถูกต้อง");
                 }
 
                 if ($filesize > 5242880) {
