@@ -35,7 +35,6 @@ $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];
 $created_by = $_SESSION['user_id'];
 
-// ตรวจสอบสิทธิ์การเข้าถึงหน้านี้
 if (!in_array($role, ['Executive', 'Sale Supervisor'])) {
     header("Location: unauthorized.php");
     exit();
@@ -66,28 +65,9 @@ if (isset($_GET['user_id'])) {
         die("ไม่พบข้อมูลผู้ใช้");
     }
 
-
     // ตรวจสอบสิทธิ์ในการแก้ไขข้อมูล
-    if ($role === 'Sale Supervisor' && ($user['team_id'] != $team_id || $user['role'] !== 'Seller')) {
-        $error_message = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลนี้";
-?>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'ไม่มีสิทธิ์เข้าถึง',
-                    text: '<?php echo $error_message; ?>',
-                    confirmButtonText: 'ตกลง'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = 'account.php';
-                    }
-                });
-            });
-        </script>
-<?php
-        exit();
+    if ($role === 'Sale Supervisor' && ($user['team_id'] != $team_id || $user['role'] === 'Sale Supervisor')) {
+        die("คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลนี้");
     }
 } else {
     die("ไม่มีรหัสผู้ใช้ที่ต้องการแก้ไข");
@@ -99,7 +79,7 @@ if ($role === 'Sale Supervisor') {
     $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams WHERE team_id = :team_id");
     $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_INT);
 } else {
-    // Executive จะเห็นทุกทีม
+    // Executive และ Seller จะเห็นทุกทีม
     $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams");
 }
 $stmt_teams->execute();
@@ -128,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // เพิ่มการตรวจสอบสิทธิ์ก่อนการอัปเดตข้อมูล
     if ($role === 'Sale Supervisor') {
         // Sale Supervisor สามารถแก้ไขได้เฉพาะ Seller ในทีมของตนเอง
-        if ($team_id_new != $team_id || $role_new !== 'Seller') {
+        if ($_POST['team_id'] != $team_id || $_POST['role'] !== 'Seller') {
             $error_messages[] = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลนี้";
         }
     }
@@ -136,13 +116,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ตรวจสอบข้อมูลที่จำเป็น
     if (empty($first_name)) $error_messages[] = "กรุณากรอกชื่อ";
     if (empty($last_name)) $error_messages[] = "กรุณากรอกนามสกุล";
-    if (empty($email)) {
-        $error_messages[] = "กรุณากรอกอีเมล";
-    } elseif (!isValidEmail($email)) {
-        $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง";
-    }
+    if (empty($email)) $error_messages[] = "กรุณากรอกอีเมล";
     if (empty($team_id_new)) $error_messages[] = "กรุณาเลือกทีม";
     if (empty($role_new)) $error_messages[] = "กรุณาเลือกบทบาท";
+
+    // ตรวจสอบความถูกต้องของรูปแบบอีเมล
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง";
+    }
 
     // ตรวจสอบความซับซ้อนของรหัสผ่าน (ถ้ามีการเปลี่ยนแปลง)
     if (!empty($password) && !isPasswordValid($password)) {
@@ -234,6 +215,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// ดึงข้อมูลทีมจากฐานข้อมูล
+$stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams");
+$stmt_teams->execute();
+$teams = $stmt_teams->fetchAll(PDO::FETCH_ASSOC);
+
+
+
+
+
 ?>
 
 <!DOCTYPE html>
@@ -252,7 +243,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- เพิ่มลิงก์ฟอนต์ Noto Sans Thai -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
     <style>
-        /* CSS styles ... */
+        body,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p,
+        label,
+        input,
+        select,
+        textarea,
+        button {
+            font-family: 'Noto Sans Thai', sans-serif;
+        }
+
+        .card {
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .form-control,
+        .input-group-text {
+            border-radius: 5px;
+        }
+
+        .btn-sm {
+            border-radius: 5px;
+        }
+
+        .select2-container .select2-selection--single {
+            height: calc(2.25rem + 2px);
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: calc(2.25rem + 2px);
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: calc(2.25rem + 2px);
+        }
     </style>
 </head>
 
@@ -266,7 +297,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="content-wrapper">
             <!-- Content Header (Page header) -->
             <section class="content-header">
-                <!-- ... -->
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>Edit Account</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">Home</a></li>
+                                <li class="breadcrumb-item"><a href="account.php">Account</a></li>
+                                <li class="breadcrumb-item active">Edit Account</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div><!-- /.container-fluid -->
             </section>
 
             <!-- Main content -->
@@ -301,16 +345,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="profile_image">รูปโปรไฟล์</label>
+                                                    <label for="profile_image">Profile Image</label>
                                                     <div class="input-group">
                                                         <div class="custom-file">
                                                             <input type="file" class="custom-file-input" id="profile_image" name="profile_image">
-                                                            <label class="custom-file-label" for="profile_image">เลือกไฟล์</label>
+                                                            <label class="custom-file-label" for="profile_image">Choose file</label>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <?php if (!empty($user['profile_image'])): ?>
-                                                    <img src="../../uploads/profile_images/<?php echo htmlspecialchars($user['profile_image']); ?>" alt="รูปโปรไฟล์ปัจจุบัน" class="img-thumbnail mb-3" style="max-width: 200px;">
+                                                    <img src="../../uploads/profile_images/<?php echo htmlspecialchars($user['profile_image']); ?>" alt="Current Profile Image" class="img-thumbnail mb-3" style="max-width: 200px;">
                                                 <?php endif; ?>
                                             </div>
                                         </div>
@@ -318,14 +362,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="first_name">ชื่อ<span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                                                    <label for="first_name">First Name<span class="text-danger">*</span></label>
+                                                    <input type="text" class="form-control" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>">
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="last_name">นามสกุล<span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
+                                                    <label for="last_name">Last Name<span class="text-danger">*</span></label>
+                                                    <input type="text" class="form-control" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>">
                                                 </div>
                                             </div>
                                         </div>
@@ -333,13 +377,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="email">อีเมล<span class="text-danger">*</span></label>
-                                                    <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                                                    <label for="email">Email<span class="text-danger">*</span></label>
+                                                    <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>">
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="phone">เบอร์โทรศัพท์</label>
+                                                    <label for="phone">Phone Number</label>
                                                     <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone']); ?>">
                                                 </div>
                                             </div>
@@ -348,13 +392,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="position">ตำแหน่ง</label>
+                                                    <label for="position">Position</label>
                                                     <input type="text" class="form-control" id="position" name="position" value="<?php echo htmlspecialchars($user['position']); ?>">
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="team_id">ทีม<span class="text-danger">*</span></label>
+                                                    <label for="team_id">Team<span class="text-danger">*</span></label>
                                                     <select class="form-control select2" id="team_id" name="team_id" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
                                                         <?php foreach ($teams as $team): ?>
                                                             <option value="<?php echo $team['team_id']; ?>" <?php echo ($team['team_id'] == $user['team_id']) ? 'selected' : ''; ?>>
@@ -372,25 +416,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="role">บทบาท<span class="text-danger">*</span></label>
-                                                    <select class="form-control select2" id="role" name="role" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
+                                                    <label for="role">Role<span class="text-danger">*</span></label>
+                                                    <select class="form-control select2" id="role" name="role">
+                                                        <option value="">Select Role</option>
                                                         <?php if ($role === 'Executive'): ?>
-                                                            <option value="Executive" <?php echo ($user['role'] == 'Executive') ? 'selected' : ''; ?>>Executive</option>
-                                                            <option value="Sale Supervisor" <?php echo ($user['role'] == 'Sale Supervisor') ? 'selected' : ''; ?>>Sale Supervisor</option>
-                                                            <option value="Seller" <?php echo ($user['role'] == 'Seller') ? 'selected' : ''; ?>>Seller</option>
-                                                            <option value="Engineer" <?php echo ($user['role'] == 'Engineer') ? 'selected' : ''; ?>>Engineer</option>
+                                                            <option value="Executive" <?php echo htmlspecialchars($user['role'] == 'Executive') ? 'selected' : ''; ?>>Executive</option>
+                                                            <option value="Sale Supervisor" <?php echo htmlspecialchars($user['role'] == 'Sale Supervisor') ? 'selected' : ''; ?>>Sale Supervisor</option>
+                                                            <option value="Seller" <?php echo htmlspecialchars($user['role'] == 'Seller') ? 'selected' : ''; ?>>Seller</option>
+                                                            <option value="Engineer" <?php echo htmlspecialchars($user['role'] == 'Engineer') ? 'selected' : ''; ?>>Engineer</option>
                                                         <?php elseif ($role === 'Sale Supervisor'): ?>
-                                                            <option value="Seller" selected>Seller</option>
+                                                            <option value="Seller" <?php echo htmlspecialchars($user['role'] == 'Seller') ? 'selected' : ''; ?>>Seller</option>
                                                         <?php endif; ?>
                                                     </select>
-                                                    <?php if ($role === 'Sale Supervisor'): ?>
-                                                        <input type="hidden" name="role" value="Seller">
-                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="company">บริษัท</label>
+                                                    <label for="company">Company</label>
                                                     <input type="text" class="form-control" id="company" name="company" value="<?php echo htmlspecialchars($user['company']); ?>">
                                                 </div>
                                             </div>
@@ -399,7 +441,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label for="password">รหัสผ่านใหม่ (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</label>
+                                                    <label for="password">New Password (leave blank to keep current password)</label>
                                                     <input type="password" class="form-control" id="password" name="password">
                                                 </div>
                                             </div>
@@ -407,7 +449,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                         <div class="row">
                                             <div class="col-12">
-                                                <button type="submit" class="btn btn-primary">อัปเดตข้อมูล</button>
+                                                <button type="submit" class="btn btn-primary">Update Account</button>
                                             </div>
                                         </div>
                                     </form>
@@ -424,6 +466,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <!-- Scripts -->
+
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
     <script>
@@ -440,7 +483,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if (isset($success_message)): ?>
                 Swal.fire({
                     icon: 'success',
-                    title: 'สำเร็จ',
+                    title: 'Success',
                     text: '<?php echo $success_message; ?>',
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -452,47 +495,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if (!empty($error_messages)): ?>
                 Swal.fire({
                     icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
+                    title: 'Error',
                     html: '<?php echo implode("<br>", $error_messages); ?>',
                 });
             <?php endif; ?>
-
-            // เพิ่มการตรวจสอบฟอร์มก่อนส่ง
-            $('#editUserForm').on('submit', function(e) {
-                var isValid = true;
-                var errorMessage = '';
-
-                // ตรวจสอบฟิลด์ที่จำเป็น
-                if ($('#first_name').val().trim() === '') {
-                    isValid = false;
-                    errorMessage += 'กรุณากรอกชื่อ<br>';
-                }
-                if ($('#last_name').val().trim() === '') {
-                    isValid = false;
-                    errorMessage += 'กรุณากรอกนามสกุล<br>';
-                }
-                if ($('#email').val().trim() === '') {
-                    isValid = false;
-                    errorMessage += 'กรุณากรอกอีเมล<br>';
-                }
-                if ($('#team_id').val() === '') {
-                    isValid = false;
-                    errorMessage += 'กรุณาเลือกทีม<br>';
-                }
-                if ($('#role').val() === '') {
-                    isValid = false;
-                    errorMessage += 'กรุณาเลือกบทบาท<br>';
-                }
-
-                if (!isValid) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'กรุณากรอกข้อมูลให้ครบถ้วน',
-                        html: errorMessage,
-                    });
-                }
-            });
         });
     </script>
 </body>
