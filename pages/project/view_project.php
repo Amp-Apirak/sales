@@ -8,12 +8,14 @@ $team_id = $_SESSION['team_id'] ?? 0;
 $created_by = $_SESSION['user_id'] ?? 0;
 
 // ตรวจสอบสิทธิ์การเข้าถึง
+// ตรวจสอบว่าสิทธิ์การเข้าถึงของผู้ใช้งานมีอยู่ในกลุ่มที่กำหนด (Executive, Sale Supervisor, Seller) หากไม่มีสิทธิ์จะเปลี่ยนไปยังหน้า unauthorized.php
 if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
     header("Location: unauthorized.php");
     exit();
 }
 
 // ตรวจสอบว่า project_id ถูกส่งมาจาก URL หรือไม่
+// หากไม่มี project_id จะหยุดการทำงานและแสดงข้อความว่าไม่พบข้อมูลโครงการ
 if (!isset($_GET['project_id']) || empty($_GET['project_id'])) {
     echo "ไม่พบข้อมูลโครงการ";
     exit;
@@ -42,18 +44,42 @@ try {
     LEFT JOIN users updater ON p.updated_by = updater.user_id
     WHERE p.project_id = :project_id";
 
+    // เตรียม statement เพื่อทำการ query ข้อมูลโครงการจากฐานข้อมูล
     $stmt = $condb->prepare($sql);
     $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
     $stmt->execute();
     $project = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // ตรวจสอบว่าพบข้อมูลโครงการหรือไม่ หากไม่พบให้แสดงข้อความและหยุดการทำงาน
     if (!$project) {
         echo "ไม่พบโครงการที่ต้องการแสดง";
         exit;
     }
 } catch (PDOException $e) {
+    // หากเกิดข้อผิดพลาดในการดึงข้อมูล ให้แสดงข้อความ error และหยุดการทำงาน
     echo "Error: " . $e->getMessage();
     exit;
+}
+
+// ดึงข้อมูลการชำระเงินของโครงการจากฐานข้อมูล
+$sql_payments = "SELECT * FROM project_payments WHERE project_id = :project_id ORDER BY payment_number";
+$stmt_payments = $condb->prepare($sql_payments);
+$stmt_payments->bindParam(':project_id', $project_id, PDO::PARAM_STR);
+$stmt_payments->execute();
+$payments = $stmt_payments->fetchAll(PDO::FETCH_ASSOC);
+
+function getStatusClass($status)
+{
+    switch ($status) {
+        case 'Paid':
+            return 'text-success';
+        case 'Pending':
+            return 'text-warning';
+        case 'Overdue':
+            return 'text-danger';
+        default:
+            return '';
+    }
 }
 ?>
 
@@ -69,6 +95,7 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
+        /* การกำหนดรูปแบบการแสดงผลของหน้าเว็บ */
         body {
             font-family: 'Noto Sans Thai', sans-serif;
             background-color: #f8f9fa;
@@ -175,33 +202,11 @@ try {
             font-size: 18px;
         }
 
-        /* เพิ่มสไตล์นี้ต่อจากสไตล์ที่มีอยู่แล้ว */
-        .edit-button {
-            float: right;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .edit-button:hover {
-            background-color: #2980b9;
-        }
-
-        .info-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        /* สไตล์ปุ่มแก้ไข */
         .edit-button {
             float: right;
             background-color: transparent;
             color: #6a11cb;
-            /* สีม่วงเข้มตามธีมของเว็บ */
             border: none;
             padding: 2px 5px;
             border-radius: 3px;
@@ -215,11 +220,76 @@ try {
             color: white;
         }
 
-        .info-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
+        .table {
+            width: 100%;
+            margin-bottom: 1rem;
+            color: #212529;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            vertical-align: top;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .text-success {
+            color: #28a745 !important;
+        }
+
+        .text-warning {
+            color: #ffc107 !important;
+        }
+
+        .text-danger {
+            color: #dc3545 !important;
+        }
+
+        .btn-sm {
+            padding: .25rem .5rem;
+            font-size: .875rem;
+            line-height: 1.5;
+            border-radius: .2rem;
+        }
+
+        .mr-1 {
+            margin-right: .25rem !important;
+        }
+
+        @media (max-width: 768px) {
+            .table-responsive {
+                overflow-x: auto;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .payment-card .card {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+            }
+
+            .payment-card .card-body {
+                padding: 15px;
+            }
+
+            .payment-card .card-title {
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+
+            .payment-card .card-text {
+                font-size: 14px;
+                margin-bottom: 15px;
+            }
+
+            .payment-card .btn-group {
+                display: flex;
+                justify-content: space-between;
+            }
         }
     </style>
 </head>
@@ -230,12 +300,14 @@ try {
         <div class="content-wrapper">
             <section class="content">
                 <div class="container-fluid">
+                    <!-- ส่วนหัวของโปรเจค -->
                     <div class="project-header">
                         <div class="project-title"><?php echo htmlspecialchars($project['project_name']); ?></div>
                         <span class="project-status"><?php echo htmlspecialchars($project['status']); ?></span>
                         <div class="project-date"><i class="far fa-calendar-alt mr-2"></i><?php echo htmlspecialchars($project['start_date']) . ' - ' . htmlspecialchars($project['end_date']); ?></div>
                     </div>
 
+                    <!-- ข้อมูลโครงการ -->
                     <div class="info-card">
                         <div class="info-card-header">
                             <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ</span>
@@ -281,10 +353,10 @@ try {
                         </div>
                     </div>
 
+                    <!-- ข้อมูลลูกค้า -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="info-card">
-                                <!-- ส่วนข้อมูลลูกค้า -->
                                 <div class="info-card-header">
                                     <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า</span>
                                 </div>
@@ -312,6 +384,7 @@ try {
                                 </div>
                             </div>
                         </div>
+                        <!-- ข้อมูลผู้ขาย -->
                         <div class="col-md-6">
                             <div class="info-card">
                                 <div class="info-card-header">
@@ -351,6 +424,7 @@ try {
                         </div>
                     </div>
 
+                    <!-- ข้อมูลทางการเงิน -->
                     <div class="info-card">
                         <div class="info-card-header">
                             <i class="fas fa-chart-bar mr-2"></i>ข้อมูลทางการเงิน
@@ -390,6 +464,102 @@ try {
                             </div>
                         </div>
                     </div>
+
+                    <!-- ข้อมูลการชำระเงิน -->
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลการชำระเงิน</span>
+                            <button class="edit-button btn-sm" onclick="openAddPaymentModal()">
+                                <i class="fas fa-plus"></i> เพิ่ม
+                            </button>
+                        </div>
+                        <div class="info-card-body">
+                            <div class="payment-info">
+                                <div class="table-view d-none d-md-block">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>งวดที่</th>
+                                                <th>จำนวนเงิน</th>
+                                                <th>คิดเป็นเปอร์เซนต์</th>
+                                                <th>วันครบกำหนด</th>
+                                                <th>สถานะ</th>
+                                                <th>วันที่ชำระ</th>
+                                                <th>จำนวนเงินที่ชำระแล้ว</th>
+                                                <th>การดำเนินการ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($payments as $payment): ?>
+                                                <tr>
+                                                    <td><?php echo htmlspecialchars($payment['payment_number']); ?></td>
+                                                    <td><?php echo number_format($payment['amount'], 2); ?> บาท</td>
+                                                    <td><?php echo htmlspecialchars($payment['payment_percentage']); ?></td>
+                                                    <td><?php echo htmlspecialchars($payment['due_date']); ?></td>
+                                                    <td>
+                                                        <span class="<?php echo getStatusClass($payment['status']); ?>">
+                                                            <?php echo htmlspecialchars($payment['status']); ?>
+                                                        </span>
+                                                    </td>
+                                                    <td><?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?></td>
+                                                    <td><?php echo number_format($payment['amount_paid'], 2); ?> บาท</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="card-view d-md-none">
+                                    <?php foreach ($payments as $payment): ?>
+                                        <div class="payment-card mb-3">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">งวดที่ <?php echo htmlspecialchars($payment['payment_number']); ?></h5>
+                                                    <p class="card-text">
+                                                        <strong>จำนวนเงิน:</strong> <?php echo number_format($payment['amount'], 2); ?> บาท<br>
+                                                        <strong>คิดเป็นเปอร์เซนต์:</strong> <?php echo htmlspecialchars($payment['payment_percentage']); ?><br>
+                                                        <strong>วันครบกำหนด:</strong> <?php echo htmlspecialchars($payment['due_date']); ?><br>
+                                                        <strong>สถานะ:</strong> <span class="<?php echo getStatusClass($payment['status']); ?>"><?php echo htmlspecialchars($payment['status']); ?></span><br>
+                                                        <strong>วันที่ชำระ:</strong> <?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?><br>
+                                                        <strong>จำนวนเงินที่ชำระแล้ว:</strong> <?php echo number_format($payment['amount_paid'], 2); ?> บาท
+                                                    </p>
+                                                    <div class="btn-group" role="group">
+                                                        <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
+                                                            <i class="fas fa-edit"></i> แก้ไข
+                                                        </button>
+                                                        <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
+                                                            <i class="fas fa-trash"></i> ลบ
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <!-- สรุปข้อมูลการชำระเงิน -->
+                            <div class="mt-3">
+                                <strong>สรุปการชำระเงิน:</strong>
+                                <?php
+                                $total_amount = array_sum(array_column($payments, 'amount'));
+                                $total_paid = array_sum(array_column($payments, 'amount_paid'));
+                                $remaining = $total_amount - $total_paid;
+                                ?>
+                                <p>จำนวนเงินทั้งหมด: <?php echo number_format($total_amount, 2); ?> บาท</p>
+                                <p>จำนวนเงินที่ชำระแล้ว: <?php echo number_format($total_paid, 2); ?> บาท</p>
+                                <p>จำนวนเงินคงเหลือ: <?php echo number_format($remaining, 2); ?> บาท</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
@@ -398,3 +568,279 @@ try {
 </body>
 
 </html>
+
+<!-- Modal สำหรับเพิ่ม/แก้ไขการชำระเงิน -->
+<div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentModalLabel">เพิ่มการชำระเงิน</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <input type="hidden" id="paymentId">
+                    <div class="form-group">
+                        <label for="paymentNumber">งวดที่</label>
+                        <input type="number" class="form-control" id="paymentNumber" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentPercentage">เปอร์เซ็นต์การชำระ (%)</label>
+                        <input type="text" class="form-control" id="paymentPercentage" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">จำนวนเงิน (บาท)</label>
+                        <input type="text" class="form-control" id="amount">
+                    </div>
+                    <div class="form-group">
+                        <label for="dueDate">วันครบกำหนด</label>
+                        <input type="date" class="form-control" id="dueDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="status">สถานะ</label>
+                        <select class="form-control" id="status" required>
+                            <option value="Pending">รอชำระ</option>
+                            <option value="Paid">ชำระแล้ว</option>
+                            <option value="Overdue">เกินกำหนด</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentDate">วันที่ชำระ</label>
+                        <input type="date" class="form-control" id="paymentDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="amountPaid">จำนวนเงินที่ชำระแล้ว (บาท)</label>
+                        <input type="text" class="form-control" id="amountPaid" readonly>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="savePayment()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ตัวแปรสำหรับเก็บข้อมูลการชำระเงินทั้งหมด
+    let payments = <?php echo json_encode($payments); ?>;
+    let totalSaleAmount = <?php echo $project['sale_vat']; ?>; // ราคาขาย (รวมภาษี)
+
+    // ฟังก์ชันสำหรับฟอร์แมตตัวเลขให้มีคอมม่าและทศนิยม 2 ตำแหน่ง
+    function formatNumber(num) {
+        return parseFloat(num).toLocaleString('th-TH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    // ฟังก์ชันสำหรับแปลงข้อความที่มีคอมม่าเป็นตัวเลข
+    function parseFormattedNumber(str) {
+        return parseFloat(str.replace(/,/g, '')) || 0;
+    }
+    // ฟังก์ชันสำหรับคำนวณจำนวนเงินจากเปอร์เซ็นต์
+    function calculateAmountFromPercentage() {
+        const percentage = parseFloat(document.getElementById('paymentPercentage').value) || 0;
+        const amount = (percentage / 100) * totalSaleAmount;
+        document.getElementById('amount').value = formatNumber(amount);
+        updateAmountPaid();
+    }
+
+
+    // ฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์จากจำนวนเงิน
+    function calculatePercentageFromAmount() {
+        const amount = parseFormattedNumber(document.getElementById('amount').value);
+        const percentage = (amount / totalSaleAmount) * 100;
+        document.getElementById('paymentPercentage').value = percentage.toFixed(2);
+        updateAmountPaid();
+    }
+
+    // ฟังก์ชันสำหรับอัปเดตจำนวนเงินที่ชำระแล้วตามสถานะการชำระเงิน
+    function updateAmountPaid() {
+        const status = document.getElementById('status').value;
+        const amount = parseFormattedNumber(document.getElementById('amount').value);
+        if (status === 'Paid') {
+            document.getElementById('amountPaid').value = formatNumber(amount);
+        } else {
+            document.getElementById('amountPaid').value = formatNumber(0);
+        }
+    }
+
+    // ฟังก์ชันเปิด Modal สำหรับเพิ่มการชำระเงิน
+    function openAddPaymentModal() {
+        document.getElementById('paymentModalLabel').textContent = 'เพิ่มการชำระเงิน';
+        document.getElementById('paymentForm').reset();
+        document.getElementById('paymentId').value = '';
+        document.getElementById('paymentNumber').value = payments.length + 1;
+        $('#paymentModal').modal('show');
+    }
+
+    // ฟังก์ชันเปิด Modal สำหรับแก้ไขการชำระเงิน
+    function editPayment(paymentId) {
+        const payment = payments.find(p => p.payment_id === paymentId);
+        if (payment) {
+            document.getElementById('paymentModalLabel').textContent = 'แก้ไขการชำระเงิน';
+            document.getElementById('paymentId').value = payment.payment_id;
+            document.getElementById('paymentNumber').value = payment.payment_number;
+            document.getElementById('paymentPercentage').value = ((payment.amount / totalSaleAmount) * 100).toFixed(2);
+            document.getElementById('amount').value = formatNumber(payment.amount);
+            document.getElementById('dueDate').value = payment.due_date;
+            document.getElementById('status').value = payment.status;
+            document.getElementById('paymentDate').value = payment.payment_date || '';
+            document.getElementById('amountPaid').value = formatNumber(payment.amount_paid);
+            $('#paymentModal').modal('show');
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'ไม่พบข้อมูล',
+                text: 'ไม่พบข้อมูลการชำระเงินที่ต้องการแก้ไข',
+                confirmButtonText: 'ตกลง'
+            });
+        }
+    }
+
+    // ฟังก์ชันสำหรับบันทึกข้อมูลการชำระเงิน (เพิ่มหรือแก้ไข)
+    function savePayment() {
+        const paymentData = {
+            payment_id: document.getElementById('paymentId').value,
+            project_id: '<?php echo $project_id; ?>',
+            payment_number: document.getElementById('paymentNumber').value,
+            amount: parseFormattedNumber(document.getElementById('amount').value),
+            payment_percentage: parseFloat(document.getElementById('paymentPercentage').value),
+            due_date: document.getElementById('dueDate').value,
+            status: document.getElementById('status').value,
+            payment_date: document.getElementById('paymentDate').value,
+            amount_paid: parseFormattedNumber(document.getElementById('amountPaid').value)
+        };
+
+        // คำนวณเปอร์เซ็นต์รวมของการชำระเงินทั้งหมด
+        let totalPercentage = payments.reduce((total, payment) => {
+            return total + parseFloat(payment.payment_percentage);
+        }, 0);
+
+        // เพิ่มเปอร์เซ็นต์ของการชำระเงินใหม่
+        totalPercentage += parseFloat(paymentData.payment_percentage);
+
+        if (totalPercentage > 100) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'เกินขีดจำกัด',
+                text: 'เปอร์เซ็นต์รวมของการชำระเงินเกิน 100% ของราคาขาย',
+                confirmButtonText: 'ตกลง'
+            });
+            return;
+        }
+
+        $.ajax({
+            url: 'save_payment.php',
+            type: 'POST',
+            data: paymentData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'สำเร็จ',
+                        text: 'บันทึกข้อมูลสำเร็จ',
+                        confirmButtonText: 'ตกลง'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            location.reload();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: response.message,
+                        confirmButtonText: 'ตกลง'
+                    });
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('AJAX Error:', textStatus, errorThrown);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + textStatus,
+                    confirmButtonText: 'ตกลง'
+                });
+            }
+        });
+    }
+
+    // ฟังก์ชันสำหรับลบข้อมูลการชำระเงิน
+    function deletePayment(paymentId) {
+        Swal.fire({
+            title: 'คุณแน่ใจหรือไม่?',
+            text: "คุณต้องการลบรายการชำระเงินนี้ใช่หรือไม่?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'ใช่, ลบเลย!',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'delete_payment.php',
+                    type: 'POST',
+                    data: {
+                        payment_id: paymentId
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Raw response:', response);
+                        if (response && response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'ลบสำเร็จ',
+                                text: response.message || 'ลบข้อมูลสำเร็จ',
+                                confirmButtonText: 'ตกลง'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: (response && response.message) ? response.message : 'ไม่สามารถลบข้อมูลได้',
+                                confirmButtonText: 'ตกลง'
+                            });
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error('AJAX Error:', textStatus, errorThrown);
+                        console.log('Response Text:', jqXHR.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + textStatus,
+                            confirmButtonText: 'ตกลง'
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    // เพิ่ม Event Listeners
+    document.getElementById('paymentPercentage').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/[^0-9.]/g, '');
+        e.target.value = value;
+        calculateAmountFromPercentage();
+    });
+
+    document.getElementById('amount').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/[^0-9.]/g, '');
+        e.target.value = formatNumber(value);
+        calculatePercentageFromAmount();
+    });
+
+    document.getElementById('status').addEventListener('change', updateAmountPaid);
+</script>
