@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 10, 2024 at 12:45 PM
--- Server version: 10.4.27-MariaDB
--- PHP Version: 8.1.12
+-- Generation Time: Oct 12, 2024 at 11:48 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -46,7 +46,8 @@ CREATE TABLE `category` (
 --
 
 INSERT INTO `category` (`id`, `service_category`, `category`, `sub_category`, `problems`, `cases`, `resolve`, `image_id`, `created_at`, `updated_at`, `created_by`) VALUES
-('cHErWjdqY25XRjhoQmhxREpSVnJ3QT09', 'เครือข่าย', 'การเชื่อมต่อเครือข่าย', 'LAN', 'การเชื่อมต่อล้มเหลว', 'ผู้ใช้ไม่สามารถเข้าถึงอินเทอร์เน็ต', 'ตรวจสอบการตั้งค่า IP และรีสตาร์ทอุปกรณ์', NULL, '2024-10-04 18:35:54', '2024-10-06 11:49:40', '2');
+('86c853e966365809ea11581594569399', 'Notebook', 'Monitor', 'Edit', 'จอแตก', 'ตกแตก', 'เครม', NULL, '2024-10-06 17:01:49', '2024-10-06 17:07:06', '2'),
+('cHErWjdqY25XRjhoQmhxREpSVnJ3QT09', 'เครือข่าย', 'การเชื่อมต่อเครือข่าย', 'LAN', 'การเชื่อมต่อล้มเหลว ', 'ผู้ใช้ไม่สามารถเข้าถึงอินเทอร์เน็ต', 'ตรวจสอบการตั้งค่า IP และรีสตาร์ทอุปกรณ์', NULL, '2024-10-04 18:35:54', '2024-10-06 16:54:39', '2');
 
 --
 -- Triggers `category`
@@ -75,15 +76,10 @@ CREATE TABLE `category_image` (
   `file_size` int(11) DEFAULT NULL COMMENT 'ขนาดไฟล์',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่อัปโหลด',
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตล่าสุด',
-  `category_id` char(36) DEFAULT NULL
+  `category_id` char(36) DEFAULT NULL,
+  `created_by` char(36) DEFAULT NULL,
+  `upload_path` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `category_image`
---
-
-INSERT INTO `category_image` (`id`, `file_name`, `file_path`, `file_type`, `file_size`, `created_at`, `updated_at`, `category_id`) VALUES
-('b16fcce8-0615-cf73-2ccc-270919ad597f', '67027cd979b2f.png', '../../uploads/category_images/67027cd979b2f.png', 'image/png', 241422, '2024-10-06 12:04:41', '2024-10-06 12:04:41', 'cHErWjdqY25XRjhoQmhxREpSVnJ3QT09');
 
 --
 -- Triggers `category_image`
@@ -105,15 +101,15 @@ DELIMITER ;
 --
 
 CREATE TABLE `customers` (
-  `customer_id` char(36) NOT NULL COMMENT 'รหัสลูกค้า (UUID)',
-  `customer_name` varchar(255) NOT NULL COMMENT 'ชื่อลูกค้า',
-  `company` varchar(255) DEFAULT NULL COMMENT 'ชื่อบริษัท',
-  `address` text DEFAULT NULL COMMENT 'ที่อยู่',
-  `phone` varchar(20) DEFAULT NULL COMMENT 'เบอร์โทรศัพท์',
-  `email` varchar(255) DEFAULT NULL COMMENT 'อีเมล',
-  `remark` text DEFAULT NULL COMMENT 'หมายเหตุ',
-  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างข้อมูล',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล'
+  `customer_id` char(36) NOT NULL,
+  `customer_name` varchar(255) NOT NULL,
+  `company` varchar(255) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `remark` text DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -121,9 +117,8 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`customer_id`, `customer_name`, `company`, `address`, `phone`, `email`, `remark`, `created_by`, `created_at`) VALUES
-('3c14caaa-7cee-4bc9-842a-56740cd0d932', 'Apirak Bangpuk', 'Point IT Consulting Co. Ltd', 'เลขที่ 111/1 ธนพงษ์แมนชั่น ห้อง. 302 ซ. สันนิบาตเทศบาล แขวง จันทรเกษม', '0839595800', 'apirak.ba@gmail.com', '', '2', '2024-10-10 03:01:53'),
-('9c4b87ca-3e3e-454d-ab77-b1ddd4a1f20b', 'คุณภัทราอร อมรโอภาคุณ', 'บริษัท พอยท์ ไอที คอนซัลทิ่ง จำกัด', 'พอยท์ ไอที คอนซัลทิ่ง จำกัด บริษัท พอยท์ ไอที คอนซัลทิ่ง จำกัด ซอย สุภาพงษ์ 1 แยก 6 แขวงหนองบอน เขต ประเวศ กรุงเทพมหานคร', '0619522111', 'phattraorn@pointit.co.th', '', 'c3f5b615-4b91-407a-80d7-ff6ef1995b10', '2024-10-09 06:44:09'),
-('d1cef52a-afe7-42de-94b3-a18951ad9c9c', 'นายสิรวิชฐ์ อำไพวงษ์ (ท่านนายก)', 'องค์การบริหารส่วนตำบลบ่อวิน', 'องค์การบริหารส่วนตำบลบ่อวิน เลขที่ 1 หมู่ที่ 6 ตำบลบ่อวิน อำเภอศรีราชา จังหวัดชลบุรี 20230 โทรศัพท์ 0-3834-5949 ,0-3834-5918 โทรสาร 0-3834-6116 สายด่วนร้องทุกข์ 24 ชม. 08-1949-7771 นายกเทศบาลตาบลบ่อวิน องค์การบริหารส่วนตำบลบ่อวิน', '038345949', 'admin@bowin.go.th', '', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '2024-10-09 09:53:27');
+('32104ee7-4b28-400b-bb7b-1ab55e1cf19d', 'นายสิรวิชฐ์ อำไพวงษ์ (ท่านนายก)', 'องค์การบริหารส่วนตำบลบ่อวิน', 'องค์การบริหารส่วนตำบลบ่อวิน เลขที่ 1 หมู่ที่ 6 ตำบลบ่อวิน อำเภอศรีราชา จังหวัดชลบุรี 20230 โทรศัพท์ 0-3834-5949 ,0-3834-5918 โทรสาร 0-3834-6116 สายด่วนร้องทุกข์ 24 ชม. 08-1949-7771 นายกเทศบาลตาบลบ่อวิน องค์การบริหารส่วนตำบลบ่อวิน', '038345949', 'admin@bowin.go.th', '', 2, '2024-10-12 06:26:14'),
+('5e2a838a-110f-48bc-9518-f01a7066955b', 'นายอิทธิกร เล่นวารี  (นายกเทศมนตรีตำบลปากท่อ)', 'สำนักงานเทศบาลตำบลปากท่อ จ. ราชบุรี', '39 หมู่ที่ 7 ต.ปากท่อ อ.ปากท่อ จ. ราชบุรี 70140 โทรศัพท์ 032-281-266 โทรสาร 032-282-564', '0806508585', 'pakthocity@hotmail.com', 'http://www.pakthomunic.go.th/office.php', 2, '2024-10-12 06:24:53');
 
 -- --------------------------------------------------------
 
@@ -132,24 +127,25 @@ INSERT INTO `customers` (`customer_id`, `customer_name`, `company`, `address`, `
 --
 
 CREATE TABLE `products` (
-  `product_id` char(36) NOT NULL COMMENT 'รหัสสินค้า (UUID)',
-  `product_name` varchar(255) NOT NULL COMMENT 'ชื่อสินค้า',
-  `product_description` text DEFAULT NULL COMMENT 'รายละเอียดสินค้า',
-  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างข้อมูล',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล',
-  `updated_by` char(36) DEFAULT NULL COMMENT 'ผู้อัพเดทข้อมูลล่าสุด'
+  `product_id` char(36) NOT NULL,
+  `product_name` varchar(255) NOT NULL,
+  `product_description` text DEFAULT NULL,
+  `created_by` char(36) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_by` int(11) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Dumping data for table `products`
 --
 
-INSERT INTO `products` (`product_id`, `product_name`, `product_description`, `created_by`, `created_at`, `updated_by`) VALUES
-('1', 'Health Care', 'ชุดกระเป๋า (Health Kit Set) สำหรับตรวจสุขคัดกรอกสถานะสุขภาพเคลื่อนที่ เก็บค่าข้อมูลเข้าระบบ โดยการตรวจวัดค่าจากอุปกรณ์เชื่อมต่อเข้ากับระบบ', '2', '2024-09-24 15:46:16', '2'),
-('10', 'Emergency', 'ระบบเฝ้าระวังเหตุฉุกเฉิน', '2', '2024-09-24 15:46:16', '2'),
-('10492a04-64ce-46c9-8ec1-89cd99c12fa5', 'Software Deerlopment', 'การพัฒนาระบบตามความต้องการของลูกค้า', 'c3f5b615-4b91-407a-80d7-ff6ef1995b10', '2024-10-09 06:41:03', NULL),
-('2', 'BioIDM Face Scan', 'ระบบยืนยันตัวตน ผ่านการเปรียบเทียบใบหน้า บัตรประจำตัวประชาชน และอื่นๆ', '2', '2024-09-24 15:46:16', '2'),
-('3', 'IBOC', 'มหาวิทยาลัยขอนแก่น', '2', '2024-09-24 15:46:16', '2');
+INSERT INTO `products` (`product_id`, `product_name`, `product_description`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
+('075afde8-650f-4d75-b73d-f41242854682', 'Software Devlopment', 'การพัฒนาระบบตามความต้องการของลูกค้า', '2', '2024-10-12 06:18:35', 3, '2024-10-12 09:47:45'),
+('3224e7a4-44ee-40ad-a6ac-22305c2b01eb', 'Smart Healthcare', 'ชุดกระเป๋า (Health Kit Set) สำหรับตรวจสุขคัดกรอกสถานะสุขภาพเคลื่อนที่ เก็บค่าข้อมูลเข้าระบบ โดยการตรวจวัดค่าจากอุปกรณ์เชื่อมต่อเข้ากับระบบ', '2', '2024-10-12 05:58:23', NULL, '2024-10-12 06:52:54'),
+('4c85d842-54f3-4f06-87e6-553f81488234', 'Smart Emergency', 'ระบบเฝ้าระวังเหตุฉุกเฉิน', '2', '2024-10-12 06:18:20', NULL, '2024-10-12 06:52:54'),
+('7defdc10-75d8-4433-8b4f-0eeba38b674f', 'BioIDM Face Scan', 'ระบบยืนยันตัวตน ผ่านการเปรียบเทียบใบหน้า บัตรประจำตัวประชาชน และอื่นๆ', '2', '2024-10-12 06:18:48', NULL, '2024-10-12 06:52:54'),
+('b9fcda13-e694-4e04-a8df-fdf27ee08979', 'IBOC', 'มหาวิทยาลัยขอนแก่น', '2', '2024-10-12 06:19:12', 3, '2024-10-12 06:54:16');
 
 -- --------------------------------------------------------
 
@@ -158,30 +154,30 @@ INSERT INTO `products` (`product_id`, `product_name`, `product_description`, `cr
 --
 
 CREATE TABLE `projects` (
-  `project_id` char(36) NOT NULL COMMENT 'รหัสโปรเจกต์ (UUID)',
-  `project_name` varchar(255) NOT NULL COMMENT 'ชื่อโปรเจกต์',
-  `start_date` date DEFAULT NULL COMMENT 'วันที่เริ่มโปรเจกต์',
-  `end_date` date DEFAULT NULL COMMENT 'วันที่สิ้นสุดโปรเจกต์',
-  `status` varchar(50) DEFAULT NULL COMMENT 'สถานะของโปรเจกต์',
-  `contract_no` varchar(50) DEFAULT NULL COMMENT 'หมายเลขสัญญา',
-  `remark` text DEFAULT NULL COMMENT 'หมายเหตุ',
-  `sales_date` date DEFAULT NULL COMMENT 'วันที่เสนอขาย',
-  `seller` char(36) DEFAULT NULL COMMENT 'รหัสผู้ขาย',
-  `sale_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'ยอดขายไม่รวมภาษี',
-  `sale_vat` decimal(10,2) DEFAULT NULL COMMENT 'ยอดขายรวมภาษี',
-  `cost_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'ต้นทุนไม่รวมภาษี',
-  `cost_vat` decimal(10,2) DEFAULT NULL COMMENT 'ต้นทุนรวมภาษี',
-  `gross_profit` decimal(10,2) DEFAULT NULL COMMENT 'กำไรขั้นต้น',
+  `project_id` char(36) NOT NULL,
+  `project_name` varchar(255) NOT NULL,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `status` varchar(50) DEFAULT NULL,
+  `contract_no` varchar(50) DEFAULT NULL,
+  `remark` text DEFAULT NULL,
+  `sales_date` date DEFAULT NULL,
+  `seller` char(36) DEFAULT NULL,
+  `sale_no_vat` decimal(10,2) DEFAULT NULL,
+  `sale_vat` decimal(10,2) DEFAULT NULL,
+  `cost_no_vat` decimal(10,2) DEFAULT NULL,
+  `cost_vat` decimal(10,2) DEFAULT NULL,
+  `gross_profit` decimal(10,2) DEFAULT NULL,
   `potential` decimal(5,2) NOT NULL COMMENT 'กำไรขั้นต้นแบบเปอร์เซ็นต์',
-  `es_sale_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'ยอดขายที่คาดการณ์ (ไม่รวมภาษี)',
-  `es_cost_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'ต้นทุนที่คาดการณ์ (ไม่รวมภาษี)',
-  `es_gp_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'กำไรที่คาดการณ์ (ไม่รวมภาษี)',
-  `customer_id` char(36) DEFAULT NULL COMMENT 'รหัสลูกค้า (เชื่อมโยงกับตาราง customers)',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล',
-  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างข้อมูล',
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตข้อมูลล่าสุด',
-  `updated_by` varchar(36) DEFAULT NULL COMMENT 'รหัสผู้ที่อัปเดตข้อมูล',
-  `product_id` char(36) DEFAULT NULL COMMENT 'รหัสสินค้า (เชื่อมโยงกับตาราง products)',
+  `es_sale_no_vat` decimal(10,2) DEFAULT NULL,
+  `es_cost_no_vat` decimal(10,2) DEFAULT NULL,
+  `es_gp_no_vat` decimal(10,2) DEFAULT NULL,
+  `customer_id` char(36) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by` char(36) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_by` int(11) DEFAULT NULL,
+  `product_id` char(36) DEFAULT NULL,
   `vat` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'ภาษีมูลค่าเพิ่ม'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -190,10 +186,7 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`project_id`, `project_name`, `start_date`, `end_date`, `status`, `contract_no`, `remark`, `sales_date`, `seller`, `sale_no_vat`, `sale_vat`, `cost_no_vat`, `cost_vat`, `gross_profit`, `potential`, `es_sale_no_vat`, `es_cost_no_vat`, `es_gp_no_vat`, `customer_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `product_id`, `vat`) VALUES
-('509706fd-0ecc-40b7-adea-0f9e8f5a731c', 'โครงการการจ้างพัฒนาระบบ Sale Innovation', '2024-10-22', '2026-06-10', 'Bidding', 'QT-000000809', '', '2024-10-06', '5030882f-2a6b-4160-b9e4-f6e3757f9b4e', '3200000.00', '3424000.00', '100000.00', '107000.00', '3100000.00', '96.88', '1600000.00', '50000.00', '1550000.00', '9c4b87ca-3e3e-454d-ab77-b1ddd4a1f20b', '2024-10-10 02:16:31', '5030882f-2a6b-4160-b9e4-f6e3757f9b4e', '2024-10-10 02:16:31', NULL, '2', '7.00'),
-('56340abb-864b-43e0-9772-f369491aa609', 'โครงการ บ่อวิน สมาร์ท ซิตี้ ดูแลสุขภาพแบบอัจฉริยะ (Smart Health Care) สำหรับผู้สูงอายุ ประจำปีงบประมาณ 2567', '2023-10-02', '2024-09-02', 'Win', '1/2567', '', '2023-09-15', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '670000.00', '716900.00', '200000.00', '214000.00', '470000.00', '70.15', '670000.00', '200000.00', '470000.00', NULL, '2024-10-09 09:51:12', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '2024-10-09 09:51:12', NULL, '10', '7.00'),
-('56876473-1fc0-4441-8267-7d3fab48e3fe', 'โครงการการจ้างพัฒนาระบบ Phisuit โปร่งโสภา', '2024-10-30', '2025-12-26', 'Negotiation', 'ศธ 5305.2/468', '', '2024-10-10', 'cb4e50d1-c62f-488c-97c6-8e049ea3ac58', '1401869.16', '1500000.00', '255000.00', '272850.00', '1146869.16', '81.81', '420560.75', '76500.00', '344060.75', '9c4b87ca-3e3e-454d-ab77-b1ddd4a1f20b', '2024-10-10 01:54:48', 'cb4e50d1-c62f-488c-97c6-8e049ea3ac58', '2024-10-10 01:54:48', NULL, '10492a04-64ce-46c9-8ec1-89cd99c12fa5', '7.00'),
-('b3bd007c-998f-457c-a1ba-cd479d89898d', 'โครงการการจ้างพัฒนาระบบการจัดซื้อจัดจ้าง กบข.', '2023-10-20', '2024-10-20', 'Win', '', 'ชำระงวดเงิน 4 งวด แบ่งเป็น 15% , 20%,35%,30%', '2023-10-15', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '3200000.00', '3424000.00', '2550000.00', '2728500.00', '650000.00', '20.31', '3200000.00', '2550000.00', '650000.00', '9c4b87ca-3e3e-454d-ab77-b1ddd4a1f20b', '2024-10-09 09:39:56', '056adbd1-a6fc-46ac-b531-ef4aecb955d4', '2024-10-09 09:39:56', NULL, '10492a04-64ce-46c9-8ec1-89cd99c12fa5', '7.00');
+('7c67ce7e-ee05-487f-a763-4627899516bb', 'โครงการ บ่อวิน สมาร์ท ซิตี้ ดูแลสุขภาพแบบอัจฉริยะ (Smart Health Care) สำหรับผู้สูงอายุ ประจำปีงบประมาณ 2567', '2023-09-02', '2024-09-02', 'Win', '1/2567', '', '2023-09-15', '3', 670000.00, 716900.00, 200000.00, 214000.00, 470000.00, 70.15, 670000.00, 200000.00, 470000.00, '32104ee7-4b28-400b-bb7b-1ab55e1cf19d', '2024-10-12 06:29:28', '3', '2024-10-12 06:29:28', NULL, '4c85d842-54f3-4f06-87e6-553f81488234', 7.00);
 
 -- --------------------------------------------------------
 
@@ -202,14 +195,14 @@ INSERT INTO `projects` (`project_id`, `project_name`, `start_date`, `end_date`, 
 --
 
 CREATE TABLE `teams` (
-  `team_id` char(36) NOT NULL COMMENT 'รหัสทีม (UUID)',
-  `team_name` varchar(255) NOT NULL COMMENT 'ชื่อทีม',
-  `team_description` text DEFAULT NULL COMMENT 'รายละเอียดของทีม',
-  `created_by` char(36) NOT NULL COMMENT 'รหัสผู้สร้างข้อมูล',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล',
-  `updated_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้ที่อัปเดตข้อมูล',
-  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตข้อมูลล่าสุด',
-  `team_leader` char(36) DEFAULT NULL COMMENT 'รหัสหัวหน้าทีม'
+  `team_id` char(36) NOT NULL,
+  `team_name` varchar(255) NOT NULL,
+  `team_description` text DEFAULT NULL,
+  `created_by` char(36) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_by` char(36) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
+  `team_leader` char(36) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -217,9 +210,10 @@ CREATE TABLE `teams` (
 --
 
 INSERT INTO `teams` (`team_id`, `team_name`, `team_description`, `created_by`, `created_at`, `updated_by`, `updated_at`, `team_leader`) VALUES
-('1', 'Innovation', 'ทีม Product ', '', '2024-09-26 03:35:50', NULL, '2024-09-26 17:00:17', '1'),
-('3', 'Service', 'ทีมให้บริการ', '', '2024-09-26 03:35:50', NULL, '2024-09-26 17:00:41', '2'),
-('4', 'Point IT', 'บริษัทพอทไอที คอนซัลทิ่งจำกัด', '', '2024-09-26 03:35:50', NULL, '2024-09-26 17:01:02', '2');
+('1', 'Innovation', 'Product  Solution Teams', '2', '2024-09-26 03:35:50', '2', '2024-10-12 06:17:10', '5'),
+('2', 'Sales A', 'Internal Sales Teams', '2', '2024-09-26 03:35:50', '2', '2024-10-12 06:17:11', '2'),
+('3', 'Service', 'Internal Service', '2', '2024-09-26 03:35:50', '2', '2024-10-12 06:17:13', '2'),
+('4', 'Point IT', 'Point IT Consulting Co. Ltd.', '2', '2024-09-26 03:35:50', '3', '2024-10-12 06:32:13', '2');
 
 -- --------------------------------------------------------
 
@@ -228,33 +222,55 @@ INSERT INTO `teams` (`team_id`, `team_name`, `team_description`, `created_by`, `
 --
 
 CREATE TABLE `users` (
-  `user_id` char(36) NOT NULL COMMENT 'รหัสผู้ใช้ (UUID)',
-  `first_name` varchar(255) NOT NULL COMMENT 'ชื่อผู้ใช้',
-  `last_name` varchar(255) NOT NULL COMMENT 'นามสกุลผู้ใช้',
-  `username` varchar(255) NOT NULL COMMENT 'ชื่อผู้ใช้สำหรับล็อกอิน',
-  `email` varchar(255) NOT NULL COMMENT 'อีเมล',
-  `role` enum('Executive','Sale Supervisor','Seller','Engineer') NOT NULL COMMENT 'บทบาท (เช่น Executive, Sale Supervisor)',
-  `team_id` char(36) DEFAULT NULL COMMENT 'รหัสทีม (เชื่อมโยงกับตาราง teams)',
-  `position` varchar(255) NOT NULL COMMENT 'ตำแหน่งงาน',
-  `phone` varchar(20) DEFAULT NULL COMMENT 'เบอร์โทรศัพท์',
-  `password` varchar(255) NOT NULL COMMENT 'รหัสผ่าน',
-  `company` varchar(255) DEFAULT NULL COMMENT 'ชื่อบริษัท',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล',
-  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างข้อมูล'
+  `user_id` char(36) NOT NULL,
+  `first_name` varchar(255) NOT NULL,
+  `last_name` varchar(255) NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `role` enum('Executive','Sale Supervisor','Seller','Engineer') NOT NULL,
+  `team_id` char(36) DEFAULT NULL,
+  `position` varchar(255) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
+  `company` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by` int(11) DEFAULT NULL,
+  `profile_image` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, `role`, `team_id`, `position`, `phone`, `password`, `company`, `created_at`, `created_by`) VALUES
-('056adbd1-a6fc-46ac-b531-ef4aecb955d4', 'ภัทราอร', 'อมรโอภาคุณ', 'Phattraorn', 'phattraorn@pointit.co.th', 'Sale Supervisor', '1', 'Product Sale', '0619522111', '$2y$10$BbGPBP99Xy0i5dT8Gx.YMui1BQlXTwVoXF/UK.354QNv93VEQFJhq', 'Point IT Consulting Co. Ltd', '2024-10-09 06:09:06', '2'),
-('1', 'Systems', 'Admin', 'Systems', 'Systems@gmail.com', 'Executive', '4', 'Systems Admin', '0811111111', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', NULL),
-('2', 'Apirak', 'Bangpuk', 'Admin', 'Apirak@gmail.com', 'Executive', '1', 'IT Service Management', '0839595800', '$2y$10$jcmTr.I9CthXOrWFC78XjuOjwPoZlbvF80M4RKow4RvnNbm1Ej8dO', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', NULL),
-('5030882f-2a6b-4160-b9e4-f6e3757f9b4e', 'Sales', 'Innovation Team', 'sale', 'Innovation@gmail.com', 'Seller', '1', 'Sale', '0839595333', '$2y$10$7E3AiExAzLe9WzSPFz9QCus8nzvhif.kEIQZkQfaVrd1WCanQUM.6', 'Point IT Consulting Co. Ltd', '2024-10-10 02:14:16', '56'),
-('80b63cce-54ad-49e9-975e-c8f0ca40f576', 'ธนาคม', 'อ่องสถาน', 'Tanacom', 'Tanacom@pointit.co.th', 'Engineer', '3', 'Tecnical Support', '0897771155', '$2y$10$36cNexS8GlB0/7Rl2a4qRe3SPFFYZW5blfdpPC5f0cPDwaVyX29hC', 'Point IT Consulting Co. Ltd', '2024-10-09 06:15:11', '2'),
-('c3f5b615-4b91-407a-80d7-ff6ef1995b10', 'ผาณิต', 'เผ่าพันธ์', 'Panit', 'panit@pointit.co.th', 'Executive', '4', 'Executive Director', '0869958396', '$2y$10$jhrhk3ciz1w6RVpRYprAyuFX9ugLqmejoRHDGBg8udNHA23aVl5DG', 'Point IT Consulting Co. Ltd', '2024-10-09 06:10:25', '2'),
-('cb4e50d1-c62f-488c-97c6-8e049ea3ac58', 'พิสุทธ์', 'วงศ์โสภา', 'Phisuit', 'Service@pointit.co.th', 'Seller', '3', 'Tecnical Support', '0915450988', '$2y$10$EwDRqvGY.ZSbMxyAIwMmxuWJfqtDyIkLeQ/sB3g2UhdlVxuotw..u', 'Point IT Consulting Co. Ltd', '2024-10-09 06:13:59', '2');
+INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, `role`, `team_id`, `position`, `phone`, `password`, `company`, `created_at`, `created_by`, `profile_image`) VALUES
+('1', 'Parichart', 'Thonsuk', 'Sale', 'Parichart@gmail.com', 'Seller', '1', 'Sales', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', 2, ''),
+('2', 'Systems', 'Admin', 'Admin', 'Systems_admin@gmail.com', 'Executive', '1', 'Systems Admin', '0839595800', '$2y$10$jcmTr.I9CthXOrWFC78XjuOjwPoZlbvF80M4RKow4RvnNbm1Ej8dO', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', 2, '670a138b6529d.jpg'),
+('3', 'Apirak', 'Bangpuk', 'Supervisor', 'apirak.ba@gmail.com', 'Sale Supervisor', '1', 'Sale Supervisor', '0839595811', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', 2, NULL),
+('4', 'Phisuit', 'PongSopa', 'Support', 'Phisuit@gmail.com', 'Engineer', '1', 'Tecnical Support', '0839595811', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:55:43', 2, NULL),
+('5', 'Panit', 'Poapun', 'Panit', 'Panit@poinitit.co.th', 'Executive', '4', 'Executive Director', '0839595822', '$2y$10$eAar02e4iaTG6bhKs2XLfua7ck.2co.8dkla8VX0tVCC5cnQfc/E6', 'Point IT Consulting Co. Ltd', '2024-09-17 15:15:37', 2, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_creation_logs`
+--
+
+CREATE TABLE `user_creation_logs` (
+  `id` int(11) NOT NULL,
+  `creator_id` varchar(255) NOT NULL,
+  `new_user_id` varchar(255) NOT NULL,
+  `new_user_role` varchar(50) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `user_creation_logs`
+--
+
+INSERT INTO `user_creation_logs` (`id`, `creator_id`, `new_user_id`, `new_user_role`, `created_at`) VALUES
+(1, '3', '1537eabd-0014-4f80-9116-9800cc8df26f', 'Seller', '2024-10-10 16:15:03'),
+(2, '2', 'a0c895d7-3730-4b11-827d-8a7423d81761', 'Seller', '2024-10-11 14:34:01'),
+(3, '3', '0a9fec94-57d3-4f65-aeaa-052cba2c3b62', 'Seller', '2024-10-11 16:18:12');
 
 --
 -- Indexes for dumped tables
@@ -309,6 +325,22 @@ ALTER TABLE `teams`
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
   ADD KEY `users_team_fk` (`team_id`);
+
+--
+-- Indexes for table `user_creation_logs`
+--
+ALTER TABLE `user_creation_logs`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `user_creation_logs`
+--
+ALTER TABLE `user_creation_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables

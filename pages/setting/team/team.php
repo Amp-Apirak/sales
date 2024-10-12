@@ -127,7 +127,8 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <div class="row">
                                                         <div class="col-sm-3">
                                                             <div class="form-group">
-                                                                <input type="text" class="form-control" id="searchservice" name="searchservice" value="" placeholder="ค้นหา...">
+                                                                <input type="text" class="form-control" id="searchservice" name="searchservice" value="<?php echo htmlspecialchars($search_service, ENT_QUOTES, 'UTF-8'); ?>" placeholder="ค้นหา...">
+
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-3">
@@ -150,7 +151,7 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <!-- //Section Search -->
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
-                            <?php if ($role == 'Executive' || $role == 'Sale Supervisor') : ?>
+                            <?php if ($role == 'Executive') : ?>
                                 <div class="col-md-12 pb-3">
                                     <a href="add_team.php" class="btn btn-success btn-sm float-right" data-toggle="modal" data-target="#addbtn">เพิ่มข้อมูล<i class=""></i></a>
                                     <!-- Add Team -->
@@ -181,26 +182,28 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php foreach ($teams as $index => $team) { ?>
+                                            <?php if (count($teams) > 0): ?>
+                                                <?php foreach ($teams as $index => $team) { ?>
+                                                    <tr>
+                                                        <td><?php echo $index + 1; ?></td>
+                                                        <td><?php echo htmlspecialchars($team['team_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                        <td><?php echo htmlspecialchars($team['team_description'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                        <td><?php echo htmlspecialchars($team['leader_first_name'] . " " . $team['leader_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                        <td><?php echo htmlspecialchars($team['creator_first_name'] . " " . $team['creator_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                        <td><?php echo htmlspecialchars($team['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                        <td>
+                                                            <?php if ($role == 'Executive' || $role == 'Sale Supervisor') : ?>
+                                                                <a href="edit_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                                <a href="delete_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                    </tr>
+                                                <?php } ?>
+                                            <?php else: ?>
                                                 <tr>
-                                                    <td><?php echo $index + 1; ?></td>
-                                                    <td><?php echo htmlspecialchars($team['team_name'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td><?php echo htmlspecialchars($team['team_description'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td><?php echo htmlspecialchars($team['leader_first_name'] . " " . $team['leader_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td><?php echo htmlspecialchars($team['creator_first_name'] . " " . $team['creator_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td><?php echo htmlspecialchars($team['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
-
-                                                    <td>
-                                                        <?php if ($role == 'Executive' || $role == 'Sale Supervisor') : ?>
-                                                            <a href="edit_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                            <a href="delete_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                        <?php endif; ?>
-                                                    </td>
-
+                                                    <td colspan="7" class="text-center">ไม่มีข้อมูลทีม</td>
                                                 </tr>
-
-                                            <?php } ?>
-
+                                            <?php endif; ?>
                                         </tbody>
                                     </table>
                                 </div>

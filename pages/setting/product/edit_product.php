@@ -10,7 +10,19 @@ include('../../../config/condb.php');
 
 // ตรวจสอบการตั้งค่า Session
 if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
-    header("Location: " . BASE_URL . "login.php");
+    echo "<script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>";
+    echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่อนุญาต',
+                    text: 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้',
+                    confirmButtonText: 'ตกลง'
+                }).then(function() {
+                    window.location.href = 'login.php'; // กลับไปยังหน้า 
+                });
+            }, 100);
+          </script>";
     exit;
 }
 

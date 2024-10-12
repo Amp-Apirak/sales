@@ -5,12 +5,6 @@ session_start();
 // เชื่อมต่อฐานข้อมูล
 include('../../../config/condb.php');
 
-// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
-if (!in_array($role, ['Executive', 'Sale Supervisor'])) {
-    header("Location: unauthorized.php");
-    exit();
-}
-
 
 // ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
 if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
@@ -35,6 +29,27 @@ $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];
 $user_id = $_SESSION['user_id'];
 $updated_by = $user_id; // ตั้งค่าตัวแปร $updated_by จาก user_id ของผู้ใช้งานปัจจุบัน
+
+
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น (Executive หรือ Sale Supervisor)
+if (!in_array($role, ['Executive'])) {
+    echo "<script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>";
+    echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่อนุญาต',
+                    text: 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้',
+                    confirmButtonText: 'ตกลง'
+                }).then(function() {
+                    window.location.href = 'team.php'; // กลับไปยังหน้า team.php
+                });
+            }, 100);
+          </script>";
+    exit();
+}
+
 
 // ตรวจสอบว่ามีการส่ง team_id มาหรือไม่
 if (isset($_GET['team_id'])) {

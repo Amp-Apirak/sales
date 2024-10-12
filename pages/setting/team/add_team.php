@@ -2,7 +2,7 @@
 
 
 // จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
-if (!in_array($role, ['Executive', 'Sale Supervisor'])) {
+if (!in_array($role, ['Executive'])) {
     header("Location: unauthorized.php");
     exit();
 }
@@ -39,6 +39,26 @@ function generateUUID()
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
 $created_by = $_SESSION['user_id']; // ดึง user_id ของผู้สร้างจาก session
+
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น (Executive หรือ Sale Supervisor)
+if (!in_array($role, ['Executive'])) {
+    echo "<script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>";
+    echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่อนุญาต',
+                    text: 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้',
+                    confirmButtonText: 'ตกลง'
+                }).then(function() {
+                    window.location.href = 'team.php'; // กลับไปยังหน้า team.php
+                });
+            }, 100);
+          </script>";
+    exit();
+}
+
 
 // ดึงข้อมูล users สำหรับเลือกหัวหน้าทีม
 $sql_users = "SELECT user_id, first_name, last_name FROM users";

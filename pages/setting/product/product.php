@@ -129,7 +129,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <div class="row">
                                                         <div class="col-sm-3">
                                                             <div class="form-group">
-                                                                <input type="text" class="form-control" id="searchservice" name="searchservice" value="" placeholder="ค้นหา...">
+                                                            <input type="text" class="form-control" id="searchservice" name="searchservice" value="<?php echo htmlspecialchars($search_service, ENT_QUOTES, 'UTF-8'); ?>" placeholder="ค้นหา...">
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-3">
