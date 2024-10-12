@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 12, 2024 at 11:48 AM
+-- Generation Time: Oct 12, 2024 at 01:12 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -101,15 +101,15 @@ DELIMITER ;
 --
 
 CREATE TABLE `customers` (
-  `customer_id` char(36) NOT NULL,
-  `customer_name` varchar(255) NOT NULL,
-  `company` varchar(255) DEFAULT NULL,
-  `address` text DEFAULT NULL,
-  `phone` varchar(20) DEFAULT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `remark` text DEFAULT NULL,
-  `created_by` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `customer_id` char(36) NOT NULL COMMENT '\r\nรหัสลูกค้า (UUID',
+  `customer_name` varchar(255) NOT NULL COMMENT 'ชื่อลูกค้า',
+  `company` varchar(255) DEFAULT NULL COMMENT 'ชื่อบริษัท',
+  `address` text DEFAULT NULL COMMENT 'ที่อยู่',
+  `phone` varchar(20) DEFAULT NULL COMMENT 'เบอร์โทรศัพท์',
+  `email` varchar(255) DEFAULT NULL COMMENT 'อีเมล',
+  `remark` text DEFAULT NULL COMMENT 'หมายเหตุ',
+  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างข้อมูล',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -117,8 +117,8 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`customer_id`, `customer_name`, `company`, `address`, `phone`, `email`, `remark`, `created_by`, `created_at`) VALUES
-('32104ee7-4b28-400b-bb7b-1ab55e1cf19d', 'นายสิรวิชฐ์ อำไพวงษ์ (ท่านนายก)', 'องค์การบริหารส่วนตำบลบ่อวิน', 'องค์การบริหารส่วนตำบลบ่อวิน เลขที่ 1 หมู่ที่ 6 ตำบลบ่อวิน อำเภอศรีราชา จังหวัดชลบุรี 20230 โทรศัพท์ 0-3834-5949 ,0-3834-5918 โทรสาร 0-3834-6116 สายด่วนร้องทุกข์ 24 ชม. 08-1949-7771 นายกเทศบาลตาบลบ่อวิน องค์การบริหารส่วนตำบลบ่อวิน', '038345949', 'admin@bowin.go.th', '', 2, '2024-10-12 06:26:14'),
-('5e2a838a-110f-48bc-9518-f01a7066955b', 'นายอิทธิกร เล่นวารี  (นายกเทศมนตรีตำบลปากท่อ)', 'สำนักงานเทศบาลตำบลปากท่อ จ. ราชบุรี', '39 หมู่ที่ 7 ต.ปากท่อ อ.ปากท่อ จ. ราชบุรี 70140 โทรศัพท์ 032-281-266 โทรสาร 032-282-564', '0806508585', 'pakthocity@hotmail.com', 'http://www.pakthomunic.go.th/office.php', 2, '2024-10-12 06:24:53');
+('32104ee7-4b28-400b-bb7b-1ab55e1cf19d', 'นายสิรวิชฐ์ อำไพวงษ์ (ท่านนายก)', 'องค์การบริหารส่วนตำบลบ่อวิน', 'องค์การบริหารส่วนตำบลบ่อวิน เลขที่ 1 หมู่ที่ 6 ตำบลบ่อวิน อำเภอศรีราชา จังหวัดชลบุรี 20230 โทรศัพท์ 0-3834-5949 ,0-3834-5918 โทรสาร 0-3834-6116 สายด่วนร้องทุกข์ 24 ชม. 08-1949-7771 นายกเทศบาลตาบลบ่อวิน องค์การบริหารส่วนตำบลบ่อวิน', '038345949', 'admin@bowin.go.th', '', '2', '2024-10-12 06:26:14'),
+('5e2a838a-110f-48bc-9518-f01a7066955b', 'นายอิทธิกร เล่นวารี  (นายกเทศมนตรีตำบลปากท่อ)', 'สำนักงานเทศบาลตำบลปากท่อ จ. ราชบุรี', '39 หมู่ที่ 7 ต.ปากท่อ อ.ปากท่อ จ. ราชบุรี 70140 โทรศัพท์ 032-281-266 โทรสาร 032-282-564', '0806508585', 'pakthocity@hotmail.com', 'http://www.pakthomunic.go.th/office.php', '2', '2024-10-12 06:24:53');
 
 -- --------------------------------------------------------
 
@@ -127,13 +127,13 @@ INSERT INTO `customers` (`customer_id`, `customer_name`, `company`, `address`, `
 --
 
 CREATE TABLE `products` (
-  `product_id` char(36) NOT NULL,
-  `product_name` varchar(255) NOT NULL,
-  `product_description` text DEFAULT NULL,
-  `created_by` char(36) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_by` int(11) DEFAULT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `product_id` char(36) NOT NULL COMMENT 'รหัสสินค้า (UUID)',
+  `product_name` varchar(255) NOT NULL COMMENT 'ชื่อสินค้า',
+  `product_description` text DEFAULT NULL COMMENT 'รายละเอียดสินค้า',
+  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างข้อมูล',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล',
+  `updated_by` int(11) DEFAULT NULL COMMENT 'ผู้อัพเดทข้อมูลล่าสุด',
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันอัพเดทข้อมูลล่าสุด'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -154,30 +154,30 @@ INSERT INTO `products` (`product_id`, `product_name`, `product_description`, `cr
 --
 
 CREATE TABLE `projects` (
-  `project_id` char(36) NOT NULL,
-  `project_name` varchar(255) NOT NULL,
-  `start_date` date DEFAULT NULL,
-  `end_date` date DEFAULT NULL,
-  `status` varchar(50) DEFAULT NULL,
-  `contract_no` varchar(50) DEFAULT NULL,
-  `remark` text DEFAULT NULL,
-  `sales_date` date DEFAULT NULL,
-  `seller` char(36) DEFAULT NULL,
-  `sale_no_vat` decimal(10,2) DEFAULT NULL,
-  `sale_vat` decimal(10,2) DEFAULT NULL,
-  `cost_no_vat` decimal(10,2) DEFAULT NULL,
-  `cost_vat` decimal(10,2) DEFAULT NULL,
-  `gross_profit` decimal(10,2) DEFAULT NULL,
+  `project_id` char(36) NOT NULL COMMENT 'รหัสโปรเจกต์ (UUID)',
+  `project_name` varchar(255) NOT NULL COMMENT 'ชื่อโปรเจกต์',
+  `start_date` date DEFAULT NULL COMMENT 'วันที่เริ่มโปรเจกต์',
+  `end_date` date DEFAULT NULL COMMENT 'วันที่สิ้นสุดโปรเจกต์',
+  `status` varchar(50) DEFAULT NULL COMMENT 'สถานะของโปรเจกต์',
+  `contract_no` varchar(50) DEFAULT NULL COMMENT 'หมายเลขสัญญา',
+  `remark` text DEFAULT NULL COMMENT 'หมายเหตุ',
+  `sales_date` date DEFAULT NULL COMMENT 'วันที่เสนอขาย',
+  `seller` char(36) DEFAULT NULL COMMENT 'รหัสผู้ขาย',
+  `sale_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'ยอดขายไม่รวมภาษี',
+  `sale_vat` decimal(10,2) DEFAULT NULL COMMENT 'ยอดขายรวมภาษี',
+  `cost_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'ต้นทุนไม่รวมภาษี',
+  `cost_vat` decimal(10,2) DEFAULT NULL COMMENT 'ต้นทุนรวมภาษี',
+  `gross_profit` decimal(10,2) DEFAULT NULL COMMENT 'กำไรขั้นต้น',
   `potential` decimal(5,2) NOT NULL COMMENT 'กำไรขั้นต้นแบบเปอร์เซ็นต์',
-  `es_sale_no_vat` decimal(10,2) DEFAULT NULL,
-  `es_cost_no_vat` decimal(10,2) DEFAULT NULL,
-  `es_gp_no_vat` decimal(10,2) DEFAULT NULL,
-  `customer_id` char(36) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by` char(36) DEFAULT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `updated_by` int(11) DEFAULT NULL,
-  `product_id` char(36) DEFAULT NULL,
+  `es_sale_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'ยอดขายที่คาดการณ์ (ไม่รวมภาษี)',
+  `es_cost_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'ต้นทุนที่คาดการณ์ (ไม่รวมภาษี)',
+  `es_gp_no_vat` decimal(10,2) DEFAULT NULL COMMENT 'กำไรที่คาดการณ์ (ไม่รวมภาษี)',
+  `customer_id` char(36) DEFAULT NULL COMMENT 'รหัสลูกค้า (เชื่อมโยงกับตาราง customers)',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล',
+  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างข้อมูล',
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตข้อมูลล่าสุด',
+  `updated_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้ที่อัปเดตข้อมูล',
+  `product_id` char(36) DEFAULT NULL COMMENT 'รหัสสินค้า (เชื่อมโยงกับตาราง products)',
   `vat` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'ภาษีมูลค่าเพิ่ม'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -191,18 +191,79 @@ INSERT INTO `projects` (`project_id`, `project_name`, `start_date`, `end_date`, 
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `project_documents`
+--
+
+CREATE TABLE `project_documents` (
+  `document_id` char(36) NOT NULL COMMENT 'รหัสเอกสาร (UUID)',
+  `project_id` char(36) NOT NULL COMMENT 'รหัสโครงการ (เชื่อมโยงกับตาราง projects)',
+  `document_name` varchar(255) NOT NULL COMMENT 'ชื่อเอกสาร',
+  `document_type` varchar(50) NOT NULL COMMENT 'ประเภทเอกสาร',
+  `file_path` varchar(255) NOT NULL COMMENT 'ที่อยู่ไฟล์',
+  `file_size` int(11) DEFAULT NULL COMMENT 'ขนาดไฟล์ (หน่วยเป็นไบต์)',
+  `upload_date` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่อัปโหลด',
+  `uploaded_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้อัปโหลด (เชื่อมโยงกับตาราง users)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `project_images`
+--
+
+CREATE TABLE `project_images` (
+  `image_id` char(36) NOT NULL COMMENT 'รหัสรูปภาพ (UUID)',
+  `project_id` char(36) NOT NULL COMMENT 'รหัสโครงการ (เชื่อมโยงกับตาราง projects)',
+  `image_name` varchar(255) NOT NULL COMMENT 'ชื่อรูปภาพ',
+  `file_path` varchar(255) NOT NULL COMMENT 'ที่อยู่ไฟล์',
+  `file_type` varchar(50) DEFAULT NULL COMMENT 'ประเภทไฟล์',
+  `file_size` int(11) DEFAULT NULL COMMENT 'ขนาดไฟล์ (หน่วยเป็นไบต์)',
+  `upload_date` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่อัปโหลด',
+  `uploaded_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้อัปโหลด (เชื่อมโยงกับตาราง users)',
+  `description` text DEFAULT NULL COMMENT 'คำอธิบายรูปภาพ'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `project_payments`
+--
+
+CREATE TABLE `project_payments` (
+  `payment_id` char(36) NOT NULL COMMENT 'รหัสการชำระเงิน (UUID)',
+  `project_id` char(36) NOT NULL COMMENT 'รหัสโครงการ (เชื่อมโยงกับตาราง projects)',
+  `payment_number` int(11) NOT NULL COMMENT 'งวดที่',
+  `amount` decimal(10,2) NOT NULL COMMENT 'จำนวนเงินที่ต้องชำระ',
+  `payment_percentage` decimal(5,2) NOT NULL COMMENT 'เปอร์เซ็นต์การชำระต่องวด',
+  `amount_paid` decimal(10,2) DEFAULT 0.00 COMMENT 'จำนวนเงินที่ชำระแล้ว',
+  `remaining_amount` decimal(10,2) GENERATED ALWAYS AS (`amount` - `amount_paid`) STORED COMMENT 'จำนวนเงินคงเหลือ',
+  `payment_progress` decimal(5,2) GENERATED ALWAYS AS (`amount_paid` / `amount` * 100) STORED COMMENT 'ความคืบหน้าการชำระ (%)',
+  `payment_date` date DEFAULT NULL COMMENT 'วันที่ชำระ',
+  `due_date` date DEFAULT NULL COMMENT 'วันครบกำหนดชำระ',
+  `status` enum('Pending','Partial','Paid','Overdue') DEFAULT 'Pending' COMMENT 'สถานะการชำระ',
+  `payment_method` varchar(50) DEFAULT NULL COMMENT 'วิธีการชำระเงิน',
+  `transaction_id` varchar(100) DEFAULT NULL COMMENT 'รหัสอ้างอิงการทำธุรกรรม',
+  `remark` text DEFAULT NULL COMMENT 'หมายเหตุ',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างรายการ',
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตล่าสุด',
+  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างรายการ (เชื่อมโยงกับตาราง users)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `teams`
 --
 
 CREATE TABLE `teams` (
-  `team_id` char(36) NOT NULL,
-  `team_name` varchar(255) NOT NULL,
-  `team_description` text DEFAULT NULL,
-  `created_by` char(36) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_by` char(36) DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
-  `team_leader` char(36) DEFAULT NULL
+  `team_id` char(36) NOT NULL COMMENT 'รหัสทีม (UUID)',
+  `team_name` varchar(255) NOT NULL COMMENT 'ชื่อทีม',
+  `team_description` text DEFAULT NULL COMMENT 'รายละเอียดของทีม',
+  `created_by` char(36) NOT NULL COMMENT 'รหัสผู้สร้างข้อมูล',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล',
+  `updated_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้ที่อัปเดตข้อมูล',
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตข้อมูลล่าสุด',
+  `team_leader` char(36) DEFAULT NULL COMMENT 'รหัสหัวหน้าทีม'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -222,20 +283,20 @@ INSERT INTO `teams` (`team_id`, `team_name`, `team_description`, `created_by`, `
 --
 
 CREATE TABLE `users` (
-  `user_id` char(36) NOT NULL,
-  `first_name` varchar(255) NOT NULL,
-  `last_name` varchar(255) NOT NULL,
-  `username` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `role` enum('Executive','Sale Supervisor','Seller','Engineer') NOT NULL,
-  `team_id` char(36) DEFAULT NULL,
-  `position` varchar(255) NOT NULL,
-  `phone` varchar(20) DEFAULT NULL,
-  `password` varchar(255) NOT NULL,
-  `company` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by` int(11) DEFAULT NULL,
-  `profile_image` varchar(255) DEFAULT NULL
+  `user_id` char(36) NOT NULL COMMENT 'รหัสผู้ใช้ (UUID)',
+  `first_name` varchar(255) NOT NULL COMMENT 'ชื่อผู้ใช้',
+  `last_name` varchar(255) NOT NULL COMMENT 'นามสกุลผู้ใช้',
+  `username` varchar(255) NOT NULL COMMENT 'ชื่อผู้ใช้สำหรับล็อกอิน',
+  `email` varchar(255) NOT NULL COMMENT 'อีเมล',
+  `role` enum('Executive','Sale Supervisor','Seller','Engineer') NOT NULL COMMENT 'บทบาท (เช่น Executive, Sale Supervisor)',
+  `team_id` char(36) DEFAULT NULL COMMENT 'รหัสทีม (เชื่อมโยงกับตาราง teams)',
+  `position` varchar(255) NOT NULL COMMENT 'ตำแหน่งงาน',
+  `phone` varchar(20) DEFAULT NULL COMMENT 'เบอร์โทรศัพท์',
+  `password` varchar(255) NOT NULL COMMENT 'รหัสผ่าน',
+  `company` varchar(255) DEFAULT NULL COMMENT 'ชื่อบริษัท',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างข้อมูล',
+  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างข้อมูล',
+  `profile_image` varchar(255) DEFAULT NULL COMMENT 'รูปภาพ'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -243,11 +304,11 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, `role`, `team_id`, `position`, `phone`, `password`, `company`, `created_at`, `created_by`, `profile_image`) VALUES
-('1', 'Parichart', 'Thonsuk', 'Sale', 'Parichart@gmail.com', 'Seller', '1', 'Sales', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', 2, ''),
-('2', 'Systems', 'Admin', 'Admin', 'Systems_admin@gmail.com', 'Executive', '1', 'Systems Admin', '0839595800', '$2y$10$jcmTr.I9CthXOrWFC78XjuOjwPoZlbvF80M4RKow4RvnNbm1Ej8dO', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', 2, '670a138b6529d.jpg'),
-('3', 'Apirak', 'Bangpuk', 'Supervisor', 'apirak.ba@gmail.com', 'Sale Supervisor', '1', 'Sale Supervisor', '0839595811', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', 2, NULL),
-('4', 'Phisuit', 'PongSopa', 'Support', 'Phisuit@gmail.com', 'Engineer', '1', 'Tecnical Support', '0839595811', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:55:43', 2, NULL),
-('5', 'Panit', 'Poapun', 'Panit', 'Panit@poinitit.co.th', 'Executive', '4', 'Executive Director', '0839595822', '$2y$10$eAar02e4iaTG6bhKs2XLfua7ck.2co.8dkla8VX0tVCC5cnQfc/E6', 'Point IT Consulting Co. Ltd', '2024-09-17 15:15:37', 2, NULL);
+('1', 'Parichart', 'Thonsuk', 'Sale', 'Parichart@gmail.com', 'Seller', '1', 'Sales', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', '2', ''),
+('2', 'Systems', 'Admin', 'Admin', 'Systems_admin@gmail.com', 'Executive', '1', 'Systems Admin', '0839595800', '$2y$10$jcmTr.I9CthXOrWFC78XjuOjwPoZlbvF80M4RKow4RvnNbm1Ej8dO', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', '2', '670a138b6529d.jpg'),
+('3', 'Apirak', 'Bangpuk', 'Supervisor', 'apirak.ba@gmail.com', 'Sale Supervisor', '1', 'Sale Supervisor', '0839595811', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:43:58', '2', NULL),
+('4', 'Phisuit', 'PongSopa', 'Support', 'Phisuit@gmail.com', 'Engineer', '1', 'Tecnical Support', '0839595811', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co. Ltd', '2024-09-15 16:55:43', '2', NULL),
+('5', 'Panit', 'Poapun', 'Panit', 'Panit@poinitit.co.th', 'Executive', '4', 'Executive Director', '0839595822', '$2y$10$eAar02e4iaTG6bhKs2XLfua7ck.2co.8dkla8VX0tVCC5cnQfc/E6', 'Point IT Consulting Co. Ltd', '2024-09-17 15:15:37', '2', NULL);
 
 -- --------------------------------------------------------
 
@@ -309,8 +370,32 @@ ALTER TABLE `projects`
   ADD PRIMARY KEY (`project_id`),
   ADD KEY `projects_ibfk_2` (`created_by`),
   ADD KEY `projects_ibfk_3` (`seller`),
-  ADD KEY `projects_product_fk` (`product_id`),
-  ADD KEY `projects_customer_fk` (`customer_id`);
+  ADD KEY `projects_customer_fk` (`customer_id`),
+  ADD KEY `projects_product_fk` (`product_id`) USING BTREE;
+
+--
+-- Indexes for table `project_documents`
+--
+ALTER TABLE `project_documents`
+  ADD PRIMARY KEY (`document_id`),
+  ADD UNIQUE KEY `fk_project_documents_project` (`project_id`),
+  ADD KEY `fk_project_documents_user` (`uploaded_by`);
+
+--
+-- Indexes for table `project_images`
+--
+ALTER TABLE `project_images`
+  ADD PRIMARY KEY (`image_id`),
+  ADD KEY `fk_project_images_project` (`project_id`),
+  ADD KEY `fk_project_images_user` (`uploaded_by`);
+
+--
+-- Indexes for table `project_payments`
+--
+ALTER TABLE `project_payments`
+  ADD PRIMARY KEY (`payment_id`),
+  ADD KEY `fk_project_payments_project` (`project_id`),
+  ADD KEY `fk_project_payments_user` (`created_by`);
 
 --
 -- Indexes for table `teams`
