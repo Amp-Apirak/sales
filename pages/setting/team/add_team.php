@@ -1,4 +1,20 @@
 <?php
+
+
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
+if (!in_array($role, ['Executive', 'Sale Supervisor'])) {
+    header("Location: unauthorized.php");
+    exit();
+}
+
+// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    // กรณีไม่มีการตั้งค่า Session หรือล็อกอิน
+    header("Location: " . BASE_URL . "login.php");  // Redirect ไปยังหน้า login.php
+    exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
+}
+
+
 // สร้างหรือดึง CSRF Token สำหรับป้องกันการโจมตี CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));

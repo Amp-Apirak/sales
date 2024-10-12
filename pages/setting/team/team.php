@@ -12,6 +12,7 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSIO
     exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
 }
 
+
 // ดึงข้อมูลจาก session
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];
@@ -149,12 +150,14 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <!-- //Section Search -->
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
-                            <div class="col-md-12 pb-3">
-                                <a href="add_team.php" class="btn btn-success btn-sm float-right" data-toggle="modal" data-target="#addbtn">เพิ่มข้อมูล<i class=""></i></a>
-                                <!-- Add Team -->
-                                <?php include 'add_team.php'; ?>
-                                <!-- Add Team -->
-                            </div><br>
+                            <?php if ($role == 'Executive' || $role == 'Sale Supervisor') : ?>
+                                <div class="col-md-12 pb-3">
+                                    <a href="add_team.php" class="btn btn-success btn-sm float-right" data-toggle="modal" data-target="#addbtn">เพิ่มข้อมูล<i class=""></i></a>
+                                    <!-- Add Team -->
+                                    <?php include 'add_team.php'; ?>
+                                    <!-- Add Team -->
+                                </div><br>
+                            <?php endif; ?>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
 
                             <!-- Section ตารางแสดงผล -->
@@ -188,8 +191,10 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <td><?php echo htmlspecialchars($team['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
 
                                                     <td>
-                                                        <a href="edit_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                        <a href="delete_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                        <?php if ($role == 'Executive' || $role == 'Sale Supervisor') : ?>
+                                                            <a href="edit_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                            <a href="delete_team.php?team_id=<?php echo urlencode(encryptUserId($team['team_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                        <?php endif; ?>
                                                     </td>
 
                                                 </tr>
@@ -219,7 +224,7 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $('.select2').select2();
         });
     </script>
-    
+
 
     <!-- DataTables -->
     <script>
