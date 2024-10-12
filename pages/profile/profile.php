@@ -2,6 +2,15 @@
 //session_start and Config DB
 include  '../../include/Add_session.php';
 
+
+$role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
+$team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
+$user_id = $_SESSION['user_id'];  // ดึง user_id ของผู้ใช้จาก session
+$first_name = $_SESSION['first_name']; // ดึง first_name ของผู้ใช้จาก session
+$lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใช้จาก session
+$profile_image = $_SESSION['profile_image']; // ดึง profile_image ของผู้ใช้จาก session
+
+
 // ตรวจสอบว่ามี user_id ใน session หรือไม่
 if (isset($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
@@ -66,7 +75,9 @@ if (isset($_SESSION['user_id'])) {
             height: 100px;
             border-radius: 50%;
             border: 3px solid white;
-            margin-bottom: 10px;
+            margin: 0 auto 10px;
+            display: block;
+            object-fit: cover;
         }
 
         .profile-name {
@@ -153,7 +164,11 @@ if (isset($_SESSION['user_id'])) {
                         <div class="col-md-8 mx-auto">
                             <div class="profile-card">
                                 <div class="profile-header">
-                                    <img src="../../assets/img/add.jpg" alt="Profile Picture" class="profile-img">
+                                    <?php
+                                    // ตรวจสอบว่ามี profile image หรือไม่ หากไม่มีให้ใช้ภาพเริ่มต้น
+                                    $profile_image = !empty($_SESSION['profile_image']) ? BASE_URL . 'uploads/profile_images/' . htmlspecialchars($_SESSION['profile_image']) : BASE_URL . 'assets/img/add.jpg';
+                                    ?>
+                                    <img src="<?php echo $profile_image; ?>" alt="User Image" class="profile-img">
                                     <h2 class="profile-name"><?php echo htmlspecialchars($fullName); ?></h2>
                                     <p class="profile-role"><?php echo htmlspecialchars($role); ?></p>
                                 </div>

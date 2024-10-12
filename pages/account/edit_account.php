@@ -8,7 +8,6 @@ function clean_input($data)
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
-
 // ฟังก์ชันสร้าง CSRF token ที่ปลอดภัยขึ้น
 function generate_csrf_token()
 {
@@ -20,7 +19,6 @@ function verify_csrf_token($token)
 {
     return hash_equals($_SESSION['csrf_token'], $token);
 }
-
 
 // ฟังก์ชันตรวจสอบความซับซ้อนของรหัสผ่าน
 function isPasswordValid($password)
@@ -50,14 +48,14 @@ $team_id = $_SESSION['team_id'];
 $created_by = $_SESSION['user_id'];
 
 // ตรวจสอบสิทธิ์การเข้าถึงหน้านี้
-if (!in_array($role, ['Executive', 'Sale Supervisor'])) {
-    header("Location: unauthorized.php");
-    exit();
-}
+// if (!in_array($role, ['Executive', 'Sale Supervisor'])) {
+//     header("Location: unauthorized.php");
+//     exit();
+// }
 
 // สร้างหรือดึง CSRF Token
 if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_SESSION['csrf_token'] = generate_csrf_token();
 }
 $csrf_token = $_SESSION['csrf_token'];
 
@@ -80,10 +78,31 @@ if (isset($_GET['user_id'])) {
         die("ไม่พบข้อมูลผู้ใช้");
     }
 
-
     // ตรวจสอบสิทธิ์ในการแก้ไขข้อมูล
-    if ($role === 'Sale Supervisor' && ($user['team_id'] != $team_id || $user['role'] !== 'Seller')) {
+    if ($role === 'Sale Supervisor') {
+        if ($user['user_id'] === $_SESSION['user_id']) {
+            // Sale Supervisor สามารถแก้ไขบัญชีของตัวเองได้
+        } elseif ($user['role'] === 'Sale Supervisor' || $user['role'] === 'Executive') {
+            // Sale Supervisor ไม่สามารถแก้ไขบัญชีของ Sale Supervisor คนอื่นหรือ Executive ได้
+            $error_message = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลของ " . $user['role'];
+        } elseif ($user['role'] === 'Seller' && $user['team_id'] != $team_id) {
+            // Sale Supervisor ไม่สามารถแก้ไขบัญชี Seller ที่ไม่ได้อยู่ในทีมของตัวเอง
+            $error_message = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลของ Seller ที่ไม่ได้อยู่ในทีมของคุณ";
+        }
+    } elseif ($role === 'Executive') {
+        // Executive สามารถแก้ไขได้ทุกบัญชี ไม่ต้องมีการตรวจสอบเพิ่มเติม
+    } elseif ($role === 'Seller' || $role === 'Engineer') {
+        if ($user['user_id'] !== $_SESSION['user_id']) {
+            // Seller และ Engineer สามารถแก้ไขได้เฉพาะบัญชีของตัวเองเท่านั้น
+            $error_message = "คุณสามารถแก้ไขได้เฉพาะข้อมูลของตัวเองเท่านั้น";
+        }
+    } else {
+        // บทบาทอื่นๆ ไม่มีสิทธิ์แก้ไขข้อมูล
         $error_message = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลนี้";
+    }
+
+    // ถ้ามีข้อความแจ้งเตือนข้อผิดพลาด ให้แสดง SweetAlert และเด้งกลับไปหน้า account.php
+    if (isset($error_message)) {
 ?>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
@@ -124,7 +143,7 @@ $error_messages = [];
 // ตรวจสอบการส่งฟอร์มแบบ POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ตรวจสอบ CSRF Token
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
         die("CSRF token validation failed");
     }
 
@@ -137,15 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $team_id_new = !empty($_POST['team_id']) ? clean_input($_POST['team_id']) : null;
     $role_new = clean_input($_POST['role']);
     $company = clean_input($_POST['company']);
-    $password = $_POST['password']; // ไม่ต้องทำความสะอาดรหัสผ่าน เพราะจะถูกแฮชอยู่แล้ว
-
-    // เพิ่มการตรวจสอบสิทธิ์ก่อนการอัปเดตข้อมูล
-    if ($role === 'Sale Supervisor') {
-        // Sale Supervisor สามารถแก้ไขได้เฉพาะ Seller ในทีมของตนเอง
-        if ($team_id_new != $team_id || $role_new !== 'Seller') {
-            $error_messages[] = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลนี้";
-        }
-    }
+    $password = $_POST['password'];
 
     // ตรวจสอบข้อมูลที่จำเป็น
     if (empty($first_name)) $error_messages[] = "กรุณากรอกชื่อ";
@@ -233,11 +244,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $upload_path = '../../uploads/profile_images/' . $new_filename;
 
                 if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $upload_path)) {
-                    // อัปเดตชื่อไฟล์รูปโปรไฟล์ในฐานข้อมูล
                     $stmt = $condb->prepare("UPDATE users SET profile_image = :profile_image WHERE user_id = :user_id");
                     $stmt->execute([':profile_image' => $new_filename, ':user_id' => $user_id]);
 
-                    // ลบรูปเก่า (ถ้ามี)
                     if (!empty($user['profile_image'])) {
                         $old_image_path = '../../uploads/profile_images/' . $user['profile_image'];
                         if (file_exists($old_image_path)) {
@@ -250,7 +259,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // ล้าง CSRF token หลังจากอัปเดตสำเร็จ
             unset($_SESSION['csrf_token']);
 
-            // แสดงข้อความสำเร็จ
             $success_message = "อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว";
         } catch (Exception $e) {
             $error_messages[] = "เกิดข้อผิดพลาดในการอัปเดตข้อมูล: " . $e->getMessage();
@@ -265,41 +273,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SalePipeline | Edit Account</title>
+    <title>SalePipeline | แก้ไขบัญชีผู้ใช้</title>
     <?php include '../../include/header.php'; ?>
-    <!-- เพิ่ม CSS สำหรับ Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
-    <!-- เพิ่ม SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
-    <!-- เพิ่มลิงก์ฟอนต์ Noto Sans Thai -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
     <style>
-        /* CSS styles ... */
+        body,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p,
+        label,
+        input,
+        select,
+        textarea,
+        button {
+            font-family: 'Noto Sans Thai', sans-serif;
+        }
     </style>
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
-
-        <!-- Navbar -->
         <?php include '../../include/navbar.php'; ?>
-
-        <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
-            <!-- Content Header (Page header) -->
             <section class="content-header">
-                <!-- ... -->
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>แก้ไขบัญชีผู้ใช้</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="#">หน้าหลัก</a></li>
+                                <li class="breadcrumb-item active">แก้ไขบัญชีผู้ใช้</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
             </section>
 
-            <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-header">
-                                    <h3 class="card-title">Edit Account Information</h3>
+                                    <h3 class="card-title">แก้ไขข้อมูลบัญชีผู้ใช้</h3>
                                 </div>
                                 <div class="card-body">
                                     <?php if (!empty($error_messages)): ?>
@@ -321,118 +346,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <form id="editUserForm" action="<?php echo $_SERVER['PHP_SELF'] . '?user_id=' . urlencode($encrypted_user_id); ?>" method="POST" enctype="multipart/form-data">
                                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="profile_image">รูปโปรไฟล์</label>
-                                                    <div class="input-group">
-                                                        <div class="custom-file">
-                                                            <input type="file" class="custom-file-input" id="profile_image" name="profile_image">
-                                                            <label class="custom-file-label" for="profile_image">เลือกไฟล์</label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <?php if (!empty($user['profile_image'])): ?>
-                                                    <img src="../../uploads/profile_images/<?php echo htmlspecialchars($user['profile_image']); ?>" alt="รูปโปรไฟล์ปัจจุบัน" class="img-thumbnail mb-3" style="max-width: 200px;">
+                                        <div class="form-group">
+                                            <label for="profile_image">รูปโปรไฟล์</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="profile_image" name="profile_image">
+                                                <label class="custom-file-label" for="profile_image">เลือกไฟล์</label>
+                                            </div>
+                                            <?php if (!empty($user['profile_image'])): ?>
+                                                <img src="../../uploads/profile_images/<?php echo htmlspecialchars($user['profile_image']); ?>" alt="รูปโปรไฟล์ปัจจุบัน" class="img-thumbnail mt-2" style="max-width: 200px;">
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="first_name">ชื่อ<span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="last_name">นามสกุล<span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="email">อีเมล<span class="text-danger">*</span></label>
+                                            <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="phone">เบอร์โทรศัพท์</label>
+                                            <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone']); ?>">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="position">ตำแหน่ง</label>
+                                            <input type="text" class="form-control" id="position" name="position" value="<?php echo htmlspecialchars($user['position']); ?>">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="team_id">ทีม<span class="text-danger">*</span></label>
+                                            <select class="form-control select2" id="team_id" name="team_id" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
+                                                <?php foreach ($teams as $team): ?>
+                                                    <option value="<?php echo $team['team_id']; ?>" <?php echo ($team['team_id'] == $user['team_id']) ? 'selected' : ''; ?>>
+                                                        <?php echo htmlspecialchars($team['team_name']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <?php if ($role === 'Sale Supervisor'): ?>
+                                                <input type="hidden" name="team_id" value="<?php echo $team_id; ?>">
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="role">บทบาท<span class="text-danger">*</span></label>
+                                            <select class="form-control select2" id="role" name="role" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
+                                                <?php if ($role === 'Executive'): ?>
+                                                    <option value="Executive" <?php echo ($user['role'] == 'Executive') ? 'selected' : ''; ?>>Executive</option>
+                                                    <option value="Sale Supervisor" <?php echo ($user['role'] == 'Sale Supervisor') ? 'selected' : ''; ?>>Sale Supervisor</option>
+                                                    <option value="Seller" <?php echo ($user['role'] == 'Seller') ? 'selected' : ''; ?>>Seller</option>
+                                                    <option value="Engineer" <?php echo ($user['role'] == 'Engineer') ? 'selected' : ''; ?>>Engineer</option>
+                                                <?php elseif ($role === 'Sale Supervisor'): ?>
+                                                    <option value="Seller" selected>Seller</option>
+                                                <?php elseif ($role === 'Seller'): ?>
+                                                    <option value="Seller" selected>Seller</option>
+                                                <?php elseif ($role === 'Engineer'): ?>
+                                                    <option value="Engineer" selected>Engineer</option>
+
                                                 <?php endif; ?>
-                                            </div>
+                                            </select>
+                                            <?php if ($role === 'Sale Supervisor'): ?>
+                                                <input type="hidden" name="role" value="Seller">
+                                            <?php endif; ?>
                                         </div>
 
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="first_name">ชื่อ<span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="last_name">นามสกุล<span class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
-                                                </div>
-                                            </div>
+                                        <div class="form-group">
+                                            <label for="company">บริษัท</label>
+                                            <input type="text" class="form-control" id="company" name="company" value="<?php echo htmlspecialchars($user['company']); ?>">
                                         </div>
 
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="email">อีเมล<span class="text-danger">*</span></label>
-                                                    <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="phone">เบอร์โทรศัพท์</label>
-                                                    <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone']); ?>">
-                                                </div>
-                                            </div>
+                                        <div class="form-group">
+                                            <label for="password">รหัสผ่านใหม่ (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</label>
+                                            <input type="password" class="form-control" id="password" name="password">
                                         </div>
 
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="position">ตำแหน่ง</label>
-                                                    <input type="text" class="form-control" id="position" name="position" value="<?php echo htmlspecialchars($user['position']); ?>">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="team_id">ทีม<span class="text-danger">*</span></label>
-                                                    <select class="form-control select2" id="team_id" name="team_id" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
-                                                        <?php foreach ($teams as $team): ?>
-                                                            <option value="<?php echo $team['team_id']; ?>" <?php echo ($team['team_id'] == $user['team_id']) ? 'selected' : ''; ?>>
-                                                                <?php echo htmlspecialchars($team['team_name']); ?>
-                                                            </option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                    <?php if ($role === 'Sale Supervisor'): ?>
-                                                        <input type="hidden" name="team_id" value="<?php echo $team_id; ?>">
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="role">บทบาท<span class="text-danger">*</span></label>
-                                                    <select class="form-control select2" id="role" name="role" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
-                                                        <?php if ($role === 'Executive'): ?>
-                                                            <option value="Executive" <?php echo ($user['role'] == 'Executive') ? 'selected' : ''; ?>>Executive</option>
-                                                            <option value="Sale Supervisor" <?php echo ($user['role'] == 'Sale Supervisor') ? 'selected' : ''; ?>>Sale Supervisor</option>
-                                                            <option value="Seller" <?php echo ($user['role'] == 'Seller') ? 'selected' : ''; ?>>Seller</option>
-                                                            <option value="Engineer" <?php echo ($user['role'] == 'Engineer') ? 'selected' : ''; ?>>Engineer</option>
-                                                        <?php elseif ($role === 'Sale Supervisor'): ?>
-                                                            <option value="Seller" selected>Seller</option>
-                                                        <?php endif; ?>
-                                                    </select>
-                                                    <?php if ($role === 'Sale Supervisor'): ?>
-                                                        <input type="hidden" name="role" value="Seller">
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="company">บริษัท</label>
-                                                    <input type="text" class="form-control" id="company" name="company" value="<?php echo htmlspecialchars($user['company']); ?>">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="password">รหัสผ่านใหม่ (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</label>
-                                                    <input type="password" class="form-control" id="password" name="password">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-12">
-                                                <button type="submit" class="btn btn-primary">อัปเดตข้อมูล</button>
-                                            </div>
-                                        </div>
+                                        <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
                                     </form>
                                 </div>
                             </div>
@@ -441,12 +437,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </section>
         </div>
-
-        <!-- Footer -->
         <?php include '../../include/footer.php'; ?>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
     <script>
@@ -480,12 +473,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             <?php endif; ?>
 
-            // เพิ่มการตรวจสอบฟอร์มก่อนส่ง
             $('#editUserForm').on('submit', function(e) {
                 var isValid = true;
                 var errorMessage = '';
 
-                // ตรวจสอบฟิลด์ที่จำเป็น
                 if ($('#first_name').val().trim() === '') {
                     isValid = false;
                     errorMessage += 'กรุณากรอกชื่อ<br>';

@@ -291,7 +291,18 @@ $query_users = $stmt->fetchAll();
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['email']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['created_at']); ?></td>
                                                     <td>
-                                                        <a href="edit_account.php?user_id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                        <?php
+                                                        // ตรวจสอบเงื่อนไขการแสดงปุ่มแก้ไข
+                                                        $showEditButton = true;
+                                                        if ($_SESSION['role'] === 'Sale Supervisor') {
+                                                            if ($user['role'] === 'Executive' || ($user['role'] === 'Sale Supervisor' && $user['user_id'] !== $_SESSION['user_id'])) {
+                                                                $showEditButton = false;
+                                                            }
+                                                        }
+                                                        if ($showEditButton):
+                                                        ?>
+                                                            <a href="edit_account.php?user_id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                        <?php endif; ?>
                                                         <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                                     </td>
                                                 </tr>
