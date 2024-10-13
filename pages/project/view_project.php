@@ -68,7 +68,7 @@ $stmt_payments->bindParam(':project_id', $project_id, PDO::PARAM_STR);
 $stmt_payments->execute();
 $payments = $stmt_payments->fetchAll(PDO::FETCH_ASSOC);
 
-// ฟังก์ชันช่วยเหลือ
+// ฟังก์ชันสำหรับกำหนดคลาส CSS ตามสถานะการชำระเงิน
 function getStatusClass($status)
 {
     switch ($status) {
@@ -174,6 +174,7 @@ function getStatusClass($status)
             color: #2c3e50;
         }
 
+        /* สไตล์สำหรับส่วนสรุปทางการเงิน */
         .financial-summary {
             background-color: #ecf0f1;
             border-radius: 10px;
@@ -221,6 +222,7 @@ function getStatusClass($status)
             color: white;
         }
 
+        /* สไตล์สำหรับตาราง */
         .table {
             width: 100%;
             margin-bottom: 1rem;
@@ -238,6 +240,7 @@ function getStatusClass($status)
             background-color: rgba(0, 0, 0, 0.05);
         }
 
+        /* สไตล์สำหรับสถานะการชำระเงิน */
         .text-success {
             color: #28a745 !important;
         }
@@ -250,6 +253,7 @@ function getStatusClass($status)
             color: #dc3545 !important;
         }
 
+        /* สไตล์สำหรับปุ่มขนาดเล็ก */
         .btn-sm {
             padding: .25rem .5rem;
             font-size: .875rem;
@@ -261,6 +265,7 @@ function getStatusClass($status)
             margin-right: .25rem !important;
         }
 
+        /* สไตล์สำหรับการแสดงผลบนอุปกรณ์มือถือ */
         @media (max-width: 768px) {
             .table-responsive {
                 overflow-x: auto;
@@ -293,6 +298,7 @@ function getStatusClass($status)
             }
         }
 
+        /* สไตล์สำหรับการจัดการความสูงของการ์ด */
         .equal-height-cards {
             display: flex;
             flex-wrap: wrap;
