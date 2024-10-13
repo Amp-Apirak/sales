@@ -68,6 +68,7 @@ $stmt_payments->bindParam(':project_id', $project_id, PDO::PARAM_STR);
 $stmt_payments->execute();
 $payments = $stmt_payments->fetchAll(PDO::FETCH_ASSOC);
 
+// ฟังก์ชันช่วยเหลือ
 function getStatusClass($status)
 {
     switch ($status) {
@@ -291,6 +292,114 @@ function getStatusClass($status)
                 justify-content: space-between;
             }
         }
+
+        .equal-height-cards {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .equal-height-cards>[class*='col-'] {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .equal-height-cards .info-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .equal-height-cards .info-card-body {
+            flex: 1;
+        }
+
+        .info-card {
+            min-height: 300px;
+            /* ปรับตามความเหมาะสม */
+        }
+
+        /* ตั้งค่าซ่อนปุ่มการพิมพ์ */
+        @media print {
+
+            .edit-button,
+            .btn-sm,
+            .btn-info,
+            .btn-danger,
+            .btn-group,
+            .no-print {
+                display: none !important;
+            }
+
+            .wrapper {
+                min-height: initial !important;
+                background-color: white !important;
+            }
+
+            .content-wrapper {
+                margin-left: 0 !important;
+                background-color: white !important;
+            }
+
+            .main-sidebar {
+                display: none !important;
+            }
+
+            .main-header {
+                display: none !important;
+            }
+
+            .main-footer {
+                display: none !important;
+            }
+
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            .container-fluid {
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+            .info-card {
+                break-inside: avoid;
+            }
+        }
+
+        /* ตั้งค่าให้การพิมพ์มีความสวยงามมากขึ้น */
+        @media print {
+            body {
+                font-size: 12pt;
+            }
+
+            .info-card {
+                page-break-inside: avoid;
+            }
+
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
+                page-break-after: avoid;
+            }
+
+            img {
+                max-width: 100% !important;
+            }
+
+            .table {
+                border-collapse: collapse !important;
+            }
+
+            .table td,
+            .table th {
+                background-color: #fff !important;
+            }
+        }
     </style>
 </head>
 
@@ -311,7 +420,7 @@ function getStatusClass($status)
                     <div class="info-card">
                         <div class="info-card-header">
                             <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ</span>
-                            <button class="edit-button" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
+                            <button class="edit-button no-print" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
                                 <i class="fas fa-edit"></i> แก้ไข
                             </button>
                         </div>
@@ -354,7 +463,7 @@ function getStatusClass($status)
                     </div>
 
                     <!-- ข้อมูลลูกค้า -->
-                    <div class="row">
+                    <div class="row equal-height-cards">
                         <div class="col-md-6">
                             <div class="info-card">
                                 <div class="info-card-header">
@@ -486,7 +595,7 @@ function getStatusClass($status)
                                                 <th>สถานะ</th>
                                                 <th>วันที่ชำระ</th>
                                                 <th>จำนวนเงินที่ชำระแล้ว</th>
-                                                <th>การดำเนินการ</th>
+                                                <th class="no-print">การดำเนินการ</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -631,10 +740,7 @@ function getStatusClass($status)
 
     // ฟังก์ชันสำหรับฟอร์แมตตัวเลขให้มีคอมม่าและทศนิยม 2 ตำแหน่ง
     function formatNumber(num) {
-        return parseFloat(num).toLocaleString('th-TH', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
+        return parseInt(num).toLocaleString('th-TH');
     }
 
     // ฟังก์ชันสำหรับแปลงข้อความที่มีคอมม่าเป็นตัวเลข

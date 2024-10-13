@@ -291,6 +291,114 @@ function getStatusClass($status)
                 justify-content: space-between;
             }
         }
+
+        .equal-height-cards {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .equal-height-cards>[class*='col-'] {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .equal-height-cards .info-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .equal-height-cards .info-card-body {
+            flex: 1;
+        }
+
+        .info-card {
+            min-height: 300px;
+            /* ปรับตามความเหมาะสม */
+        }
+
+        /* ตั้งค่าซ่อนปุ่มการพิมพ์ */
+        @media print {
+
+            .edit-button,
+            .btn-sm,
+            .btn-info,
+            .btn-danger,
+            .btn-group,
+            .no-print {
+                display: none !important;
+            }
+
+            .wrapper {
+                min-height: initial !important;
+                background-color: white !important;
+            }
+
+            .content-wrapper {
+                margin-left: 0 !important;
+                background-color: white !important;
+            }
+
+            .main-sidebar {
+                display: none !important;
+            }
+
+            .main-header {
+                display: none !important;
+            }
+
+            .main-footer {
+                display: none !important;
+            }
+
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            .container-fluid {
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+            .info-card {
+                break-inside: avoid;
+            }
+        }
+
+        /* ตั้งค่าให้การพิมพ์มีความสวยงามมากขึ้น */
+        @media print {
+            body {
+                font-size: 12pt;
+            }
+
+            .info-card {
+                page-break-inside: avoid;
+            }
+
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
+                page-break-after: avoid;
+            }
+
+            img {
+                max-width: 100% !important;
+            }
+
+            .table {
+                border-collapse: collapse !important;
+            }
+
+            .table td,
+            .table th {
+                background-color: #fff !important;
+            }
+        }
     </style>
 </head>
 
@@ -311,7 +419,7 @@ function getStatusClass($status)
                     <div class="info-card">
                         <div class="info-card-header">
                             <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ</span>
-                            <button class="edit-button" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
+                            <button class="edit-button no-print" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
                                 <i class="fas fa-edit"></i> แก้ไข
                             </button>
                         </div>
@@ -354,7 +462,7 @@ function getStatusClass($status)
                     </div>
 
                     <!-- ข้อมูลลูกค้า -->
-                    <div class="row">
+                    <div class="row equal-height-cards">
                         <div class="col-md-6">
                             <div class="info-card">
                                 <div class="info-card-header">
@@ -486,7 +594,7 @@ function getStatusClass($status)
                                                 <th>สถานะ</th>
                                                 <th>วันที่ชำระ</th>
                                                 <th>จำนวนเงินที่ชำระแล้ว</th>
-                                                <th>การดำเนินการ</th>
+                                                <th class="no-print">การดำเนินการ</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -631,37 +739,34 @@ function getStatusClass($status)
 
     // ฟังก์ชันสำหรับฟอร์แมตตัวเลขให้มีคอมม่าและทศนิยม 2 ตำแหน่ง
     function formatNumber(num) {
-        return new Intl.NumberFormat('th-TH', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(num);
+        return parseInt(num).toLocaleString('th-TH');
     }
 
     // ฟังก์ชันสำหรับแปลงข้อความที่มีคอมม่าเป็นตัวเลข
     function parseFormattedNumber(str) {
-        return parseFloat(str.replace(/,/g, ''));
+        return parseFloat(str.replace(/,/g, '')) || 0;
     }
-
     // ฟังก์ชันสำหรับคำนวณจำนวนเงินจากเปอร์เซ็นต์
     function calculateAmountFromPercentage() {
-        const percentage = parseFormattedNumber(document.getElementById('paymentPercentage').value) || 0;
+        const percentage = parseFloat(document.getElementById('paymentPercentage').value) || 0;
         const amount = (percentage / 100) * totalSaleAmount;
         document.getElementById('amount').value = formatNumber(amount);
         updateAmountPaid();
     }
 
+
     // ฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์จากจำนวนเงิน
     function calculatePercentageFromAmount() {
-        const amount = parseFormattedNumber(document.getElementById('amount').value) || 0;
+        const amount = parseFormattedNumber(document.getElementById('amount').value);
         const percentage = (amount / totalSaleAmount) * 100;
-        document.getElementById('paymentPercentage').value = formatNumber(percentage);
+        document.getElementById('paymentPercentage').value = percentage.toFixed(2);
         updateAmountPaid();
     }
 
     // ฟังก์ชันสำหรับอัปเดตจำนวนเงินที่ชำระแล้วตามสถานะการชำระเงิน
     function updateAmountPaid() {
         const status = document.getElementById('status').value;
-        const amount = parseFormattedNumber(document.getElementById('amount').value) || 0;
+        const amount = parseFormattedNumber(document.getElementById('amount').value);
         if (status === 'Paid') {
             document.getElementById('amountPaid').value = formatNumber(amount);
         } else {
@@ -685,7 +790,7 @@ function getStatusClass($status)
             document.getElementById('paymentModalLabel').textContent = 'แก้ไขการชำระเงิน';
             document.getElementById('paymentId').value = payment.payment_id;
             document.getElementById('paymentNumber').value = payment.payment_number;
-            document.getElementById('paymentPercentage').value = formatNumber((payment.amount / totalSaleAmount) * 100);
+            document.getElementById('paymentPercentage').value = ((payment.amount / totalSaleAmount) * 100).toFixed(2);
             document.getElementById('amount').value = formatNumber(payment.amount);
             document.getElementById('dueDate').value = payment.due_date;
             document.getElementById('status').value = payment.status;
@@ -709,7 +814,7 @@ function getStatusClass($status)
             project_id: '<?php echo $project_id; ?>',
             payment_number: document.getElementById('paymentNumber').value,
             amount: parseFormattedNumber(document.getElementById('amount').value),
-            payment_percentage: parseFormattedNumber(document.getElementById('paymentPercentage').value),
+            payment_percentage: parseFloat(document.getElementById('paymentPercentage').value),
             due_date: document.getElementById('dueDate').value,
             status: document.getElementById('status').value,
             payment_date: document.getElementById('paymentDate').value,
@@ -831,12 +936,14 @@ function getStatusClass($status)
 
     // เพิ่ม Event Listeners
     document.getElementById('paymentPercentage').addEventListener('input', function(e) {
-        e.target.value = formatNumber(parseFormattedNumber(e.target.value));
+        let value = e.target.value.replace(/[^0-9.]/g, '');
+        e.target.value = value;
         calculateAmountFromPercentage();
     });
 
     document.getElementById('amount').addEventListener('input', function(e) {
-        e.target.value = formatNumber(parseFormattedNumber(e.target.value));
+        let value = e.target.value.replace(/[^0-9.]/g, '');
+        e.target.value = formatNumber(value);
         calculatePercentageFromAmount();
     });
 
