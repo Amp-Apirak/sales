@@ -8,6 +8,18 @@ header('Content-Type: application/json');
 // ตรวจสอบว่ามีการส่งข้อมูลออกมาก่อนหน้านี้หรือไม่ และทำความสะอาด output buffer
 ob_clean();
 
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
+if (!in_array($_SESSION['role'] ?? '', ['Executive', 'Sale Supervisor', 'Seller'])) {
+    echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์เข้าถึง'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// ตรวจสอบ CSRF Token
+if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+    echo json_encode(['success' => false, 'message' => 'CSRF token ไม่ถูกต้อง'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // ตรวจสอบว่าเป็น POST request
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
@@ -61,6 +73,8 @@ try {
     echo json_encode(['success' => false, 'message' => 'An unexpected error occurred']);
 }
 
-// ตรวจสอบและทำความสะอาด output buffer อีกครั้งก่อนจบการทำงาน
-ob_end_flush();
-?>
+// ปิดการเชื่อมต่อฐานข้อมูล
+$condb = null;
+
+// จบการทำงาน
+exit;

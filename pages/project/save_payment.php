@@ -1,11 +1,22 @@
 <?php
+// เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
 header('Content-Type: application/json');
+
+// ตั้งค่าการรายงานข้อผิดพลาด
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    echo json_encode(['success' => false, 'message' => 'ไม่ได้รับอนุญาตให้เข้าถึง'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 // ดึงข้อมูลผู้ใช้จาก session
 $role = $_SESSION['role'] ?? '';
 $team_id = $_SESSION['team_id'] ?? 0;
-$created_by = $_SESSION['user_id'] ?? 0; // ดึง user_id จาก session
+$created_by = $_SESSION['user_id'] ?? 0;
 
 // ฟังก์ชันสำหรับสร้าง UUID
 function generateUUID()
@@ -21,6 +32,24 @@ function generateUUID()
         mt_rand(0, 0xffff),
         mt_rand(0, 0xffff)
     );
+}
+
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
+if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
+    echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์เข้าถึง'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// ตรวจสอบ CSRF Token
+if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+    echo json_encode(['success' => false, 'message' => 'CSRF token ไม่ถูกต้อง'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// ฟังก์ชันทำความสะอาดข้อมูล input
+function clean_input($data)
+{
+    return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -41,9 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง");
         }
 
+        // ตั้งค่า PDO เพื่อป้องกัน SQL Injection
+        $condb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $condb->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+
         // ดึงข้อมูลโครงการ
         $stmt = $condb->prepare("SELECT sale_vat FROM projects WHERE project_id = :project_id");
-        $stmt->execute([':project_id' => $project_id]);
+        $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
+        $stmt->execute();
         $project = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$project) {
@@ -100,9 +134,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // เพิ่มการชำระเงินใหม่
             $payment_id = generateUUID();
             $sql = "INSERT INTO project_payments 
-                    (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
-                    VALUES 
-                    (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())";
+            (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
+            VALUES 
+            (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())";
             $params = [
                 ':payment_id' => $payment_id,
                 ':project_id' => $project_id,
@@ -125,16 +159,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $condb->commit();
-        echo json_encode(['success' => true, 'message' => 'บันทึกข้อมูลสำเร็จ']);
+        echo json_encode(['success' => true, 'message' => 'บันทึกข้อมูลสำเร็จ'], JSON_UNESCAPED_UNICODE);
     } catch (PDOException $e) {
         $condb->rollBack();
         error_log("Database Error: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'เกิดข้อผิดพลาดในฐานข้อมูล: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'เกิดข้อผิดพลาดในฐานข้อมูล: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     } catch (Exception $e) {
         $condb->rollBack();
         error_log("General Error: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
     }
 } else {
-    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+    echo json_encode(['success' => false, 'message' => 'วิธีการร้องขอไม่ถูกต้อง'], JSON_UNESCAPED_UNICODE);
 }

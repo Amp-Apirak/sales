@@ -14,6 +14,19 @@ if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
     exit();
 }
 
+// สร้างหรือดึง CSRF Token สำหรับป้องกันการโจมตี CSRF
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
+
+// ฟังก์ชันทำความสะอาดข้อมูล input
+function clean_input($data)
+{
+    return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
+}
+
+
 // ตรวจสอบว่า project_id ถูกส่งมาจาก URL หรือไม่
 // หากไม่มี project_id จะหยุดการทำงานและแสดงข้อความว่าไม่พบข้อมูลโครงการ
 if (!isset($_GET['project_id']) || empty($_GET['project_id'])) {
@@ -696,6 +709,7 @@ function getStatusClass($status)
             </div>
             <div class="modal-body">
                 <form id="paymentForm">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                     <input type="hidden" id="paymentId">
                     <div class="form-group">
                         <label for="paymentNumber">งวดที่</label>
@@ -817,6 +831,7 @@ function getStatusClass($status)
     // ฟังก์ชันสำหรับบันทึกข้อมูลการชำระเงิน (เพิ่มหรือแก้ไข)
     function savePayment() {
         const paymentData = {
+            csrf_token: document.querySelector('input[name="csrf_token"]').value,
             payment_id: document.getElementById('paymentId').value,
             project_id: '<?php echo $project_id; ?>',
             payment_number: document.getElementById('paymentNumber').value,
@@ -901,6 +916,7 @@ function getStatusClass($status)
                     url: 'delete_payment.php',
                     type: 'POST',
                     data: {
+                        csrf_token: document.querySelector('input[name="csrf_token"]').value,
                         payment_id: paymentId
                     },
                     dataType: 'json',
