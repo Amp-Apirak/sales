@@ -4,17 +4,84 @@ include '../../include/Add_session.php';
 
 // ดึงข้อมูลผู้ใช้จาก session
 $role = $_SESSION['role'] ?? '';
-$team_id = $_SESSION['team_id'] ?? 0;
-$created_by = $_SESSION['user_id'] ?? 0;
+$user_id = $_SESSION['user_id'] ?? 0;
+$user_team_id = $_SESSION['team_id'] ?? 0;
 
-// ตรวจสอบสิทธิ์การเข้าถึง
-// ตรวจสอบว่าสิทธิ์การเข้าถึงของผู้ใช้งานมีอยู่ในกลุ่มที่กำหนด (Executive, Sale Supervisor, Seller) หากไม่มีสิทธิ์จะเปลี่ยนไปยังหน้า unauthorized.php
-if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
-    header("Location: unauthorized.php");
-    exit();
+// ตรวจสอบว่า project_id ถูกส่งมาจาก URL หรือไม่
+if (!isset($_GET['project_id']) || empty($_GET['project_id'])) {
+    echo "ไม่พบข้อมูลโครงการ";
+    exit;
 }
 
-// สร้างหรือดึง CSRF Token สำหรับป้องกันการโจมตี CSRF
+// รับ project_id จาก URL และทำการถอดรหัส
+$project_id = decryptUserId($_GET['project_id']);
+
+// ดึงข้อมูลโครงการและผู้สร้าง
+try {
+    $sql = "SELECT p.*, u.team_id as creator_team_id, 
+            u.first_name, u.last_name, u.email as seller_email, u.phone as seller_phone,
+            pr.product_name, pr.product_description,
+            c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
+            t.team_name,
+            tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
+            creator.first_name as creator_first_name, creator.last_name as creator_last_name,
+            updater.first_name as updater_first_name, updater.last_name as updater_last_name
+            FROM projects p 
+            LEFT JOIN users u ON p.seller = u.user_id 
+            LEFT JOIN products pr ON p.product_id = pr.product_id 
+            LEFT JOIN customers c ON p.customer_id = c.customer_id 
+            LEFT JOIN teams t ON u.team_id = t.team_id 
+            LEFT JOIN users tl ON t.team_leader = tl.user_id
+            LEFT JOIN users creator ON p.created_by = creator.user_id
+            LEFT JOIN users updater ON p.updated_by = updater.user_id
+            WHERE p.project_id = :project_id";
+
+    $stmt = $condb->prepare($sql);
+    $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
+    $stmt->execute();
+    $project = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$project) {
+        echo "ไม่พบโครงการที่ต้องการแสดง";
+        exit;
+    }
+
+    // ตรวจสอบสิทธิ์การเข้าถึง
+    $hasAccess = false;
+
+    switch ($role) {
+        case 'Executive':
+            $hasAccess = true;
+            break;
+        case 'Sale Supervisor':
+            if ($user_team_id == $project['creator_team_id']) {
+                $hasAccess = true;
+            }
+            break;
+        case 'Seller':
+            if ($user_id == $project['created_by']) {
+                $hasAccess = true;
+            }
+            break;
+    }
+
+    if (!$hasAccess) {
+        echo "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
+        exit;
+    }
+
+    // ดึงข้อมูลการชำระเงินของโครงการ
+    $sql_payments = "SELECT * FROM project_payments WHERE project_id = :project_id ORDER BY payment_number";
+    $stmt_payments = $condb->prepare($sql_payments);
+    $stmt_payments->bindParam(':project_id', $project_id, PDO::PARAM_STR);
+    $stmt_payments->execute();
+    $payments = $stmt_payments->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    echo "Error: " . $e->getMessage();
+    exit;
+}
+
+// สร้างหรือดึง CSRF Token
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -25,61 +92,6 @@ function clean_input($data)
 {
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
-
-
-// ตรวจสอบว่า project_id ถูกส่งมาจาก URL หรือไม่
-// หากไม่มี project_id จะหยุดการทำงานและแสดงข้อความว่าไม่พบข้อมูลโครงการ
-if (!isset($_GET['project_id']) || empty($_GET['project_id'])) {
-    echo "ไม่พบข้อมูลโครงการ";
-    exit;
-}
-
-// รับ project_id จาก URL และทำการถอดรหัส
-$project_id = decryptUserId($_GET['project_id']);
-
-// ดึงข้อมูลโครงการที่ต้องการแสดงจากฐานข้อมูล
-try {
-    $sql = "SELECT p.*, 
-    u.first_name, u.last_name, u.email as seller_email, u.phone as seller_phone,
-    pr.product_name, pr.product_description,
-    c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
-    t.team_name,
-    tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
-    creator.first_name as creator_first_name, creator.last_name as creator_last_name,
-    updater.first_name as updater_first_name, updater.last_name as updater_last_name
-    FROM projects p 
-    LEFT JOIN users u ON p.seller = u.user_id 
-    LEFT JOIN products pr ON p.product_id = pr.product_id 
-    LEFT JOIN customers c ON p.customer_id = c.customer_id 
-    LEFT JOIN teams t ON u.team_id = t.team_id 
-    LEFT JOIN users tl ON t.team_leader = tl.user_id
-    LEFT JOIN users creator ON p.created_by = creator.user_id
-    LEFT JOIN users updater ON p.updated_by = updater.user_id
-    WHERE p.project_id = :project_id";
-
-    // เตรียม statement เพื่อทำการ query ข้อมูลโครงการจากฐานข้อมูล
-    $stmt = $condb->prepare($sql);
-    $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
-    $stmt->execute();
-    $project = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    // ตรวจสอบว่าพบข้อมูลโครงการหรือไม่ หากไม่พบให้แสดงข้อความและหยุดการทำงาน
-    if (!$project) {
-        echo "ไม่พบโครงการที่ต้องการแสดง";
-        exit;
-    }
-} catch (PDOException $e) {
-    // หากเกิดข้อผิดพลาดในการดึงข้อมูล ให้แสดงข้อความ error และหยุดการทำงาน
-    echo "Error: " . $e->getMessage();
-    exit;
-}
-
-// ดึงข้อมูลการชำระเงินของโครงการจากฐานข้อมูล
-$sql_payments = "SELECT * FROM project_payments WHERE project_id = :project_id ORDER BY payment_number";
-$stmt_payments = $condb->prepare($sql_payments);
-$stmt_payments->bindParam(':project_id', $project_id, PDO::PARAM_STR);
-$stmt_payments->execute();
-$payments = $stmt_payments->fetchAll(PDO::FETCH_ASSOC);
 
 // ฟังก์ชันสำหรับกำหนดคลาส CSS ตามสถานะการชำระเงิน
 function getStatusClass($status)
