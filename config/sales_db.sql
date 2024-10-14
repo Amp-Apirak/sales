@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 12, 2024 at 01:12 PM
+-- Generation Time: Oct 14, 2024 at 06:59 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -246,8 +246,17 @@ CREATE TABLE `project_payments` (
   `remark` text DEFAULT NULL COMMENT 'หมายเหตุ',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่สร้างรายการ',
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันที่อัปเดตล่าสุด',
-  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างรายการ (เชื่อมโยงกับตาราง users)'
+  `created_by` char(36) DEFAULT NULL COMMENT 'รหัสผู้สร้างรายการ (เชื่อมโยงกับตาราง users)',
+  `updated_by` char(36) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `project_payments`
+--
+
+INSERT INTO `project_payments` (`payment_id`, `project_id`, `payment_number`, `amount`, `payment_percentage`, `amount_paid`, `payment_date`, `due_date`, `status`, `payment_method`, `transaction_id`, `remark`, `created_at`, `updated_at`, `created_by`, `updated_by`) VALUES
+('b7b50966-c6d0-46ce-8e43-81052cb8e3ce', '7c67ce7e-ee05-487f-a763-4627899516bb', 1, 71690.00, 10.00, 0.00, NULL, '0000-00-00', 'Pending', NULL, NULL, NULL, '2024-10-14 11:59:13', '2024-10-14 16:54:16', '2', '3'),
+('c096b705-b4fe-43c0-9040-a6a2f298af77', '7c67ce7e-ee05-487f-a763-4627899516bb', 2, 55488.06, 7.74, 0.00, NULL, '0000-00-00', 'Pending', NULL, NULL, NULL, '2024-10-14 16:43:05', '2024-10-14 16:55:15', '3', '3');
 
 -- --------------------------------------------------------
 
