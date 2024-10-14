@@ -450,7 +450,6 @@ function getStatusClass($status)
                 </div>
                 <div class="card-body">
                     <div class="tab-content">
-                        <!-- แถบที่ 1 ตารางแสดงข้อมูลรวม -->
                         <div class="active tab-pane" id="project-info">
                             <section class="content">
                                 <div class="container-fluid">
@@ -717,7 +716,6 @@ function getStatusClass($status)
                                 </div>
                             </section>
                         </div>
-                        <!-- แถบที่ 2 ตารางแสดงไฟล์เอกสาร -->
                         <div class="tab-pane" id="documents">
                             <!-- ตารางแสดงเอกสารแนบ -->
                             <table class="table table-bordered table-striped">
@@ -743,7 +741,6 @@ function getStatusClass($status)
                                 </tbody>
                             </table>
                         </div>
-                        <!-- แถบที่ 3 ตารางแสดงภาพ -->
                         <div class="tab-pane" id="images">
                             <!-- แสดงรูปภาพ -->
                             <div class="row">
