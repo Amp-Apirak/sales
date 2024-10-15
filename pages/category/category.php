@@ -2,12 +2,6 @@
 //session_start and Config DB
 include  '../../include/Add_session.php';
 
-// ตรวจสอบว่า User ได้ login แล้วหรือยัง และตรวจสอบ Role
-if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor')) {
-    header("Location: " . BASE_URL . "index.php");
-    exit();
-}
-
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
 $user_id = $_SESSION['user_id'];  // ดึง user_id ของผู้ใช้จาก session

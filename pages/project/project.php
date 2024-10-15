@@ -63,7 +63,7 @@ if ($role == 'Executive' || $role == 'Sale Supervisor') {
 $where_clause = "WHERE 1=1";
 $params = array();
 
-if ($role == 'Sale Supervisor') {
+if ($role == 'Sale Supervisor' || $role == 'Engineer') {
     $where_clause .= " AND u.team_id = :team_id";
     $params[':team_id'] = $team_id;
 } elseif ($role != 'Executive') {
