@@ -115,7 +115,7 @@ function getStatusClass($status)
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SalePipeline | View Project</title>
     <?php include '../../include/header.php'; ?>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -537,6 +537,58 @@ function getStatusClass($status)
             font-weight: bold;
             cursor: pointer;
         }
+
+        /* สำหรับการพิมพ์ */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #printSection,
+            #printSection * {
+                visibility: visible;
+            }
+
+            #printSection {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
+
+        @media print {
+            body {
+                font-family: Arial, sans-serif;
+                color: #333;
+                line-height: 1.6;
+            }
+
+            h1,
+            h2 {
+                color: #2c3e50;
+            }
+
+            .info-item {
+                margin-bottom: 10px;
+            }
+
+            .info-label {
+                font-weight: bold;
+                color: #34495e;
+            }
+
+            .financial-summary {
+                background-color: #f8f9fa;
+                border-radius: 5px;
+                padding: 15px;
+                margin-top: 20px;
+            }
+
+            .profit-highlight {
+                color: #27ae60;
+                font-weight: bold;
+            }
+        }
     </style>
 </head>
 
@@ -573,6 +625,9 @@ function getStatusClass($status)
                                                 <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ</span>
                                                 <button class="edit-button no-print" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
                                                     <i class="fas fa-edit"></i> แก้ไข
+                                                </button>
+                                                <button class="edit-button no-print" onclick="printProjectPDF()">
+                                                    <i class="fas fa-file-pdf"></i> Print PDF
                                                 </button>
                                             </div>
                                             <div class="info-card-body">
@@ -1556,3 +1611,55 @@ function getStatusClass($status)
     }
 </script>
 <!-- การอัปโหลดและแสดงรูปภาพ -->
+
+<!-- function สำหรับการพิมพ์ PDF -->
+<script>
+    function printProjectPDF() {
+        // สร้าง HTML สำหรับ PDF
+        var printContent = `
+        <div style="font-family: 'Noto Sans Thai', Arial, sans-serif; max-width: 800px; margin: 0 auto; margin-top: 50px; padding-left: 50px;">
+            <h2 style="text-align: center; color: #2C3E50; font-weight: bold;">${document.querySelector('.project-title').textContent}</h2>
+            <p style="text-align: center; color: #7F8C8D; font-size: 14px; font-weight: 100;">
+                <span style="font-weight: 100;">สถานะ:</span> ${document.querySelector('.project-status').textContent} |
+                <span style="font-weight: 100;">วันที่:</span> ${document.querySelector('.project-date').textContent}
+            </p>
+            <hr style="border: 0.5px solid #BDC3C7;">
+            <h3 style="color: #34495E; font-weight: bold;">ข้อมูลโครงการ</h3>
+            <div style="margin-bottom: 20px; font-weight: 100;">
+                ${document.querySelector('.info-card-body').innerHTML}
+            </div>
+            <hr style="border: 0.5px solid #BDC3C7;">
+            <h3 style="color: #34495E; font-weight: bold;">ข้อมูลลูกค้า</h3>
+            <div style="margin-bottom: 20px; font-weight: 100;">
+                ${document.querySelectorAll('.info-card')[1].querySelector('.info-card-body').innerHTML}
+            </div>
+            <hr style="border: 0.5px solid #BDC3C7;">
+            <h3 style="color: #34495E; font-weight: bold;">ข้อมูลผู้ขาย</h3>
+            <div style="margin-bottom: 20px; font-weight: 100;">
+                ${document.querySelectorAll('.info-card')[2].querySelector('.info-card-body').innerHTML}
+            </div>
+            <hr style="border: 0.5px solid #BDC3C7;">
+            <h3 style="color: #34495E; font-weight: bold;">ข้อมูลทางการเงิน</h3>
+            <div style="margin-bottom: 20px; font-weight: 100;">
+                ${document.querySelectorAll('.info-card')[3].querySelector('.info-card-body').innerHTML}
+            </div>
+        </div>
+        `;
+
+        // สร้าง Blob จาก HTML
+        var blob = new Blob([printContent], {
+            type: 'text/html;charset=UTF-8'
+        });
+
+        // สร้าง URL สำหรับ Blob
+        var url = URL.createObjectURL(blob);
+
+        // เปิดหน้าต่างใหม่สำหรับพิมพ์
+        var printWindow = window.open(url, '_blank');
+        printWindow.onload = function() {
+            printWindow.print();
+            URL.revokeObjectURL(url);
+        };
+    }
+</script>
+<!-- function สำหรับการพิมพ์ PDF -->
