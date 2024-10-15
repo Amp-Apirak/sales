@@ -118,6 +118,9 @@ function getStatusClass($status)
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SalePipeline | View Project</title>
     <?php include '../../include/header.php'; ?>
+    <!-- PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+    <!-- PDF -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
@@ -537,58 +540,6 @@ function getStatusClass($status)
             font-weight: bold;
             cursor: pointer;
         }
-
-        /* สำหรับการพิมพ์ */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-
-            #printSection,
-            #printSection * {
-                visibility: visible;
-            }
-
-            #printSection {
-                position: absolute;
-                left: 0;
-                top: 0;
-            }
-        }
-
-        @media print {
-            body {
-                font-family: Arial, sans-serif;
-                color: #333;
-                line-height: 1.6;
-            }
-
-            h1,
-            h2 {
-                color: #2c3e50;
-            }
-
-            .info-item {
-                margin-bottom: 10px;
-            }
-
-            .info-label {
-                font-weight: bold;
-                color: #34495e;
-            }
-
-            .financial-summary {
-                background-color: #f8f9fa;
-                border-radius: 5px;
-                padding: 15px;
-                margin-top: 20px;
-            }
-
-            .profit-highlight {
-                color: #27ae60;
-                font-weight: bold;
-            }
-        }
     </style>
 </head>
 
@@ -626,8 +577,8 @@ function getStatusClass($status)
                                                 <button class="edit-button no-print" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
                                                     <i class="fas fa-edit"></i> แก้ไข
                                                 </button>
-                                                <button class="edit-button no-print" onclick="printProjectPDF()">
-                                                    <i class="fas fa-file-pdf"></i> Print PDF
+                                                <button class="edit-button no-print" onclick="generatePDF()">
+                                                    <i class="fas fa-file-pdf"></i> Save PDF
                                                 </button>
                                             </div>
                                             <div class="info-card-body">
@@ -670,7 +621,7 @@ function getStatusClass($status)
 
                                         <!-- ข้อมูลลูกค้า -->
                                         <div class="row equal-height-cards">
-                                            <div class="col-md-6">
+                                            <div class="col-md-12">
                                                 <div class="info-card">
                                                     <div class="info-card-header">
                                                         <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า</span>
@@ -699,8 +650,10 @@ function getStatusClass($status)
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- ข้อมูลผู้ขาย -->
-                                            <div class="col-md-6">
+                                        </div>
+                                        <!-- ข้อมูลผู้ขาย -->
+                                        <div class="row equal-height-cards">
+                                            <div class="col-md-12">
                                                 <div class="info-card">
                                                     <div class="info-card-header">
                                                         <i class="fas fa-user-tie mr-2"></i>ข้อมูลผู้ขาย
@@ -782,13 +735,13 @@ function getStatusClass($status)
 
                                         <!-- ข้อมูลการชำระเงิน -->
                                         <div class="info-card">
-                                            <div class="info-card-header">
+                                            <div class="info-card-header table-section">
                                                 <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลการชำระเงิน</span>
                                                 <button class="edit-button btn-sm" onclick="openAddPaymentModal()">
                                                     <i class="fas fa-plus"></i> เพิ่ม
                                                 </button>
                                             </div>
-                                            <div class="info-card-body">
+                                            <div class="info-card-body table-section ">
                                                 <div class="payment-info">
                                                     <div class="table-view d-none d-md-block">
                                                         <table class="table table-striped">
@@ -1613,53 +1566,150 @@ function getStatusClass($status)
 <!-- การอัปโหลดและแสดงรูปภาพ -->
 
 <!-- function สำหรับการพิมพ์ PDF -->
-<script>
-    function printProjectPDF() {
-        // สร้าง HTML สำหรับ PDF
-        var printContent = `
-        <div style="font-family: 'Noto Sans Thai', Arial, sans-serif; max-width: 800px; margin: 0 auto; margin-top: 50px; padding-left: 50px;">
-            <h2 style="text-align: center; color: #2C3E50; font-weight: bold;">${document.querySelector('.project-title').textContent}</h2>
-            <p style="text-align: center; color: #7F8C8D; font-size: 14px; font-weight: 100;">
-                <span style="font-weight: 100;">สถานะ:</span> ${document.querySelector('.project-status').textContent} |
-                <span style="font-weight: 100;">วันที่:</span> ${document.querySelector('.project-date').textContent}
-            </p>
-            <hr style="border: 0.5px solid #BDC3C7;">
-            <h3 style="color: #34495E; font-weight: bold;">ข้อมูลโครงการ</h3>
-            <div style="margin-bottom: 20px; font-weight: 100;">
-                ${document.querySelector('.info-card-body').innerHTML}
-            </div>
-            <hr style="border: 0.5px solid #BDC3C7;">
-            <h3 style="color: #34495E; font-weight: bold;">ข้อมูลลูกค้า</h3>
-            <div style="margin-bottom: 20px; font-weight: 100;">
-                ${document.querySelectorAll('.info-card')[1].querySelector('.info-card-body').innerHTML}
-            </div>
-            <hr style="border: 0.5px solid #BDC3C7;">
-            <h3 style="color: #34495E; font-weight: bold;">ข้อมูลผู้ขาย</h3>
-            <div style="margin-bottom: 20px; font-weight: 100;">
-                ${document.querySelectorAll('.info-card')[2].querySelector('.info-card-body').innerHTML}
-            </div>
-            <hr style="border: 0.5px solid #BDC3C7;">
-            <h3 style="color: #34495E; font-weight: bold;">ข้อมูลทางการเงิน</h3>
-            <div style="margin-bottom: 20px; font-weight: 100;">
-                ${document.querySelectorAll('.info-card')[3].querySelector('.info-card-body').innerHTML}
-            </div>
-        </div>
-        `;
+<!-- เพิ่ม CSS สำหรับ loading indicator -->
+<style>
+    #loading {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        text-align: center;
+        color: white;
+        padding-top: 200px;
+    }
+</style>
 
-        // สร้าง Blob จาก HTML
-        var blob = new Blob([printContent], {
-            type: 'text/html;charset=UTF-8'
+<!-- เพิ่ม loading indicator -->
+<div id="loading">
+    <h3>กำลังสร้าง PDF...</h3>
+</div>
+
+<!-- ปรับปรุงฟังก์ชัน generatePDF -->
+<script>
+    function generatePDF() {
+
+        // ซ่อนปุ่มก่อนสร้าง PDF
+        const buttons = document.querySelectorAll('.edit-button, .btn-sm');
+        buttons.forEach(button => button.style.display = 'none');
+
+        // แสดง loading indicator
+        document.getElementById('loading').style.display = 'block';
+
+        // เลือกเฉพาะส่วนที่ต้องการพิมพ์
+        const element = document.getElementById('project-info');
+
+        // คลี่ตารางที่ซ่อนอยู่ใน responsive container
+        const responsiveTables = element.querySelectorAll('.table-responsive');
+        responsiveTables.forEach(container => {
+            container.style.overflow = 'visible';
+            container.style.maxWidth = 'none';
         });
 
-        // สร้าง URL สำหรับ Blob
-        var url = URL.createObjectURL(blob);
-
-        // เปิดหน้าต่างใหม่สำหรับพิมพ์
-        var printWindow = window.open(url, '_blank');
-        printWindow.onload = function() {
-            printWindow.print();
-            URL.revokeObjectURL(url);
+        // กำหนดตัวเลือกสำหรับ html2pdf
+        const opt = {
+            margin: [20, 10, 10, 10],
+            filename: 'project-details.pdf',
+            image: {
+                type: 'jpeg',
+                quality: 0.98
+            },
+            html2canvas: {
+                scale: 2,
+                windowWidth: 1200 // กำหนดความกว้างของ viewport
+            },
+            jsPDF: {
+                unit: 'mm',
+                format: 'a4',
+                orientation: 'portrait'
+            },
+            pagebreak: {
+                mode: ['avoid-all', 'css', 'legacy']
+            }
         };
+
+        // สร้าง PDF
+        html2pdf().from(element).set(opt).save().then(() => {
+            // คืนค่าสไตล์เดิมให้กับตาราง
+            responsiveTables.forEach(container => {
+                container.style.overflow = '';
+                container.style.maxWidth = '';
+            });
+            // แสดงปุ่มกลับมาหลังสร้าง PDF เสร็จ
+            buttons.forEach(button => button.style.display = '');
+            document.getElementById('loading').style.display = 'none';
+        });
     }
 </script>
+
+<style>
+    /* CSS สำหรับ PDF */
+    @media print {
+        body {
+            font-size: 12pt;
+        }
+
+        .info-card {
+            page-break-inside: avoid;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .row {
+            display: block;
+            page-break-inside: avoid;
+            margin-bottom: 20px;
+        }
+
+        .col-md-12 {
+            width: 100%;
+            float: none;
+        }
+
+        .info-card-body {
+            padding: 15px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+            vertical-align: top;
+        }
+
+        .info-value {
+            display: inline-block;
+            width: calc(100% - 160px);
+        }
+
+        .table-responsive {
+            overflow-x: visible !important;
+        }
+
+        .table {
+            width: 100% !important;
+            table-layout: fixed;
+        }
+
+        .table th,
+        .table td {
+            word-wrap: break-word;
+            max-width: 100%;
+            white-space: normal;
+        }
+
+        .table-section {
+            page-break-inside: avoid;
+        }
+
+    }
+</style>
+
 <!-- function สำหรับการพิมพ์ PDF -->
