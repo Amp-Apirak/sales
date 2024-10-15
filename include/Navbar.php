@@ -330,17 +330,21 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                     </a>
                 </li>
                 <li class="nav-header text-primary">Service</li>
-                <li class="nav-item">
-                    <a href="<?php echo BASE_URL; ?>pages/category/category.php" class="nav-link <?php if ($menu == "category") {
-                                                                                                        echo "active";
-                                                                                                    } ?> ">
-                        <i class="nav-icon far fa-copy"></i>
-                        <p>
-                            Service Category
-                            <span class="right badge badge-danger">New</span>
-                        </p>
-                    </a>
-                </li>
+
+                <?php if ($role === 'Engineer'): ?>
+                    <li class="nav-item">
+                        <a href="<?php echo BASE_URL; ?>pages/category/category.php" class="nav-link <?php if ($menu == "category") {
+                                                                                                            echo "active";
+                                                                                                        } ?> ">
+                            <i class="nav-icon far fa-copy"></i>
+                            <p>
+                                Service Category
+                                <span class="right badge badge-danger">New</span>
+                            </p>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
                 <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>pages/service/service.php" class="nav-link <?php if ($menu == "service") {
                                                                                                     echo "active";
@@ -351,7 +355,7 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                         </p>
                     </a>
                 </li>
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>pages/inventory/inventory.php" class="nav-link <?php if ($menu == "inventory") {
                                                                                                         echo "active";
                                                                                                     } ?> ">
@@ -360,34 +364,38 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                             Inventory
                         </p>
                     </a>
-                </li>
+                </li> -->
                 <li class="nav-header text-primary">Setting</li>
-                <li class="nav-item">
-                    <a href="<?php echo BASE_URL; ?>pages/setting/product/product.php" class="nav-link <?php if ($menu == "product") {
+                <?php if ($role != 'Engineer'): ?>
+                    <li class="nav-item">
+                        <a href="<?php echo BASE_URL; ?>pages/setting/product/product.php" class="nav-link <?php if ($menu == "product") {
+                                                                                                                echo "active";
+                                                                                                            } ?> ">
+                            <i class="nav-icon fas fa-box-open"></i>
+                            <p>
+                                Product
+                            </p>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <?php if ($role === 'Executive'): ?>
+                    <li class="nav-item">
+                        <a href="<?php echo BASE_URL; ?>pages/setting/team/team.php" class="nav-link <?php if ($menu == "team") {
                                                                                                             echo "active";
                                                                                                         } ?> ">
-                        <i class="nav-icon fas fa-box-open"></i>
-                        <p>
-                            Product
-                        </p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="<?php echo BASE_URL; ?>pages/setting/team/team.php" class="nav-link <?php if ($menu == "team") {
-                                                                                                        echo "active";
-                                                                                                    } ?> ">
-                        <i class="nav-icon fas fa-users"></i>
-                        <p>
-                            Team
-                        </p>
-                    </a>
-                </li>
-                <li class="nav-item">
+                            <i class="nav-icon fas fa-users"></i>
+                            <p>
+                                Team
+                            </p>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <!-- <li class="nav-item">
                     <a href="https://adminlte.io/docs/3.1/" class="nav-link">
                         <i class="nav-icon fas fa-file"></i>
                         <p>Documentation</p>
                     </a>
-                </li>
+                </li> -->
                 <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="nav-link <?php if ($menu == "profile") {
                                                                                                     echo "active";

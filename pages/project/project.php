@@ -213,6 +213,7 @@ function displayData($data, $format = null)
             </div>
             <!-- /.content-header -->
 
+            <?php if ($role != 'Engineer'): ?>
             <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
@@ -281,6 +282,8 @@ function displayData($data, $format = null)
                 </div><!-- /.container-fluid -->
             </section>
             <!-- /.content -->
+            <?php endif; ?>
+
 
             <!-- Main content -->
             <section class="content">
