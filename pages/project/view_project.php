@@ -431,6 +431,32 @@ function getStatusClass($status)
                 background-color: #fff !important;
             }
         }
+
+        /* เพิ่ม CSS เพื่อสร้างเส้นใต้ให้กับ Tab */
+        .nav-pills {
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
+            /* margin-bottom: 20px; */
+        }
+
+        .nav-pills .nav-link {
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: transparent;
+            border-bottom: 3px solid #007bff;
+            color: #007bff;
+        }
+
+        /* .tab-content {
+            padding-top: 20px;
+        } */
+
+        .btn-sm {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
     </style>
 </head>
 
@@ -443,327 +469,325 @@ function getStatusClass($status)
             <div class="card">
                 <div class="card-header p-2">
                     <ul class="nav nav-pills">
-                        <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab">ข้อมูลโครงการ</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab">เอกสารแนบ</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab">รูปภาพ</a></li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    <div class="tab-content">
-                        <!-- แถบที่ 1 ตารางแสดงข้อมูลรวม -->
-                        <div class="active tab-pane" id="project-info">
-                            <section class="content">
-                                <div class="container-fluid">
-                                    <!-- ส่วนหัวของโปรเจค -->
-                                    <div class="project-header">
-                                        <div class="project-title"><?php echo htmlspecialchars($project['project_name']); ?></div>
-                                        <span class="project-status"><?php echo htmlspecialchars($project['status']); ?></span>
-                                        <div class="project-date"><i class="far fa-calendar-alt mr-2"></i><?php echo htmlspecialchars($project['start_date']) . ' - ' . htmlspecialchars($project['end_date']); ?></div>
-                                    </div>
+                        <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab" data-tab="documents">เอกสารแนบ</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
+                    </ul
+                        </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <!-- แถบที่ 1 ตารางแสดงข้อมูลรวม -->
+                            <div class="active tab-pane" id="project-info">
+                                <section class="content">
+                                    <div class="container-fluid">
+                                        <!-- ส่วนหัวของโปรเจค -->
+                                        <div class="project-header">
+                                            <div class="project-title"><?php echo htmlspecialchars($project['project_name']); ?></div>
+                                            <span class="project-status"><?php echo htmlspecialchars($project['status']); ?></span>
+                                            <div class="project-date"><i class="far fa-calendar-alt mr-2"></i><?php echo htmlspecialchars($project['start_date']) . ' - ' . htmlspecialchars($project['end_date']); ?></div>
+                                        </div>
 
-                                    <!-- ข้อมูลโครงการ -->
-                                    <div class="info-card">
-                                        <div class="info-card-header">
-                                            <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ</span>
-                                            <button class="edit-button no-print" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
-                                                <i class="fas fa-edit"></i> แก้ไข
-                                            </button>
-                                        </div>
-                                        <div class="info-card-body">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="info-item">
-                                                        <span class="info-label">เลขที่สัญญา:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['contract_no']); ?></span>
+                                        <!-- ข้อมูลโครงการ -->
+                                        <div class="info-card">
+                                            <div class="info-card-header">
+                                                <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ</span>
+                                                <button class="edit-button no-print" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
+                                                    <i class="fas fa-edit"></i> แก้ไข
+                                                </button>
+                                            </div>
+                                            <div class="info-card-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="info-item">
+                                                            <span class="info-label">เลขที่สัญญา:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['contract_no']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">สินค้า:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['product_name']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">รายละเอียดสินค้า:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['product_description']); ?></span>
+                                                        </div>
                                                     </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">สินค้า:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['product_name']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">รายละเอียดสินค้า:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['product_description']); ?></span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="info-item">
-                                                        <span class="info-label">ผู้สร้าง:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['creator_first_name'] . ' ' . $project['creator_last_name']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">วันที่แก้ไขล่าสุด:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['updated_at']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">ผู้แก้ไขล่าสุด:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['updater_first_name'] . ' ' . $project['updater_last_name']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">วันที่สร้าง:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['created_at']); ?></span>
+                                                    <div class="col-md-6">
+                                                        <div class="info-item">
+                                                            <span class="info-label">ผู้สร้าง:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['creator_first_name'] . ' ' . $project['creator_last_name']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">วันที่แก้ไขล่าสุด:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['updated_at']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">ผู้แก้ไขล่าสุด:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['updater_first_name'] . ' ' . $project['updater_last_name']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">วันที่สร้าง:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['created_at']); ?></span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <!-- ข้อมูลลูกค้า -->
-                                    <div class="row equal-height-cards">
-                                        <div class="col-md-6">
-                                            <div class="info-card">
-                                                <div class="info-card-header">
-                                                    <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า</span>
+                                        <!-- ข้อมูลลูกค้า -->
+                                        <div class="row equal-height-cards">
+                                            <div class="col-md-6">
+                                                <div class="info-card">
+                                                    <div class="info-card-header">
+                                                        <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า</span>
+                                                    </div>
+                                                    <div class="info-card-body">
+                                                        <div class="info-item">
+                                                            <span class="info-label">ชื่อลูกค้า:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['customer_name']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">บริษัท:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['company']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">ที่อยู่:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['address']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">โทรศัพท์:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['customer_phone']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">อีเมล:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['customer_email']); ?></span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div class="info-card-body">
-                                                    <div class="info-item">
-                                                        <span class="info-label">ชื่อลูกค้า:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['customer_name']); ?></span>
+                                            </div>
+                                            <!-- ข้อมูลผู้ขาย -->
+                                            <div class="col-md-6">
+                                                <div class="info-card">
+                                                    <div class="info-card-header">
+                                                        <i class="fas fa-user-tie mr-2"></i>ข้อมูลผู้ขาย
                                                     </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">บริษัท:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['company']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">ที่อยู่:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['address']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">โทรศัพท์:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['customer_phone']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">อีเมล:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['customer_email']); ?></span>
+                                                    <div class="info-card-body">
+                                                        <div class="info-item">
+                                                            <span class="info-label">ชื่อผู้ขาย:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">อีเมล:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['seller_email']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">โทรศัพท์:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['seller_phone']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">ทีม:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['team_name']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">หัวหน้าทีมฝ่ายขาย:</span>
+                                                            <span class="info-value">
+                                                                <?php
+                                                                if (isset($project['team_leader_first_name']) && isset($project['team_leader_last_name'])) {
+                                                                    echo htmlspecialchars($project['team_leader_first_name'] . ' ' . $project['team_leader_last_name']);
+                                                                } else {
+                                                                    echo 'ไม่ระบุ';
+                                                                }
+                                                                ?>
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <!-- ข้อมูลผู้ขาย -->
-                                        <div class="col-md-6">
-                                            <div class="info-card">
-                                                <div class="info-card-header">
-                                                    <i class="fas fa-user-tie mr-2"></i>ข้อมูลผู้ขาย
-                                                </div>
-                                                <div class="info-card-body">
-                                                    <div class="info-item">
-                                                        <span class="info-label">ชื่อผู้ขาย:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">อีเมล:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['seller_email']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">โทรศัพท์:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['seller_phone']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">ทีม:</span>
-                                                        <span class="info-value"><?php echo htmlspecialchars($project['team_name']); ?></span>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">หัวหน้าทีมฝ่ายขาย:</span>
-                                                        <span class="info-value">
-                                                            <?php
-                                                            if (isset($project['team_leader_first_name']) && isset($project['team_leader_last_name'])) {
-                                                                echo htmlspecialchars($project['team_leader_first_name'] . ' ' . $project['team_leader_last_name']);
-                                                            } else {
-                                                                echo 'ไม่ระบุ';
-                                                            }
-                                                            ?>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    <!-- ข้อมูลทางการเงิน -->
-                                    <div class="info-card">
-                                        <div class="info-card-header">
-                                            <i class="fas fa-chart-bar mr-2"></i>ข้อมูลทางการเงิน
-                                        </div>
-                                        <div class="info-card-body">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="info-item">
-                                                        <span class="info-label">ราคาขาย (รวมภาษี):</span>
-                                                        <span class="info-value"><?php echo number_format($project['sale_vat'], 2); ?> บาท</span>
+                                        <!-- ข้อมูลทางการเงิน -->
+                                        <div class="info-card">
+                                            <div class="info-card-header">
+                                                <i class="fas fa-chart-bar mr-2"></i>ข้อมูลทางการเงิน
+                                            </div>
+                                            <div class="info-card-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="info-item">
+                                                            <span class="info-label">ราคาขาย (รวมภาษี):</span>
+                                                            <span class="info-value"><?php echo number_format($project['sale_vat'], 2); ?> บาท</span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">ราคาขาย (ไม่รวมภาษี):</span>
+                                                            <span class="info-value"><?php echo number_format($project['sale_no_vat'], 2); ?> บาท</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">ราคาขาย (ไม่รวมภาษี):</span>
-                                                        <span class="info-value"><?php echo number_format($project['sale_no_vat'], 2); ?> บาท</span>
+                                                    <div class="col-md-6">
+                                                        <div class="info-item">
+                                                            <span class="info-label">ต้นทุน (รวมภาษี):</span>
+                                                            <span class="info-value"><?php echo number_format($project['cost_vat'], 2); ?> บาท</span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">ต้นทุน (ไม่รวมภาษี):</span>
+                                                            <span class="info-value"><?php echo number_format($project['cost_no_vat'], 2); ?> บาท</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6">
-                                                    <div class="info-item">
-                                                        <span class="info-label">ต้นทุน (รวมภาษี):</span>
-                                                        <span class="info-value"><?php echo number_format($project['cost_vat'], 2); ?> บาท</span>
+                                                <div class="financial-summary">
+                                                    <div class="financial-item">
+                                                        <span class="financial-label">กำไรขั้นต้น:</span>
+                                                        <span class="financial-value profit-highlight"><?php echo number_format($project['gross_profit'], 2); ?> บาท</span>
                                                     </div>
-                                                    <div class="info-item">
-                                                        <span class="info-label">ต้นทุน (ไม่รวมภาษี):</span>
-                                                        <span class="info-value"><?php echo number_format($project['cost_no_vat'], 2); ?> บาท</span>
+                                                    <div class="financial-item">
+                                                        <span class="financial-label">กำไรขั้นต้น (%):</span>
+                                                        <span class="financial-value profit-highlight"><?php echo number_format($project['potential'], 2); ?>%</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="financial-summary">
-                                                <div class="financial-item">
-                                                    <span class="financial-label">กำไรขั้นต้น:</span>
-                                                    <span class="financial-value profit-highlight"><?php echo number_format($project['gross_profit'], 2); ?> บาท</span>
-                                                </div>
-                                                <div class="financial-item">
-                                                    <span class="financial-label">กำไรขั้นต้น (%):</span>
-                                                    <span class="financial-value profit-highlight"><?php echo number_format($project['potential'], 2); ?>%</span>
-                                                </div>
-                                            </div>
                                         </div>
-                                    </div>
 
-                                    <!-- ข้อมูลการชำระเงิน -->
-                                    <div class="info-card">
-                                        <div class="info-card-header">
-                                            <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลการชำระเงิน</span>
-                                            <button class="edit-button btn-sm" onclick="openAddPaymentModal()">
-                                                <i class="fas fa-plus"></i> เพิ่ม
-                                            </button>
-                                        </div>
-                                        <div class="info-card-body">
-                                            <div class="payment-info">
-                                                <div class="table-view d-none d-md-block">
-                                                    <table class="table table-striped">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>งวดที่</th>
-                                                                <th>จำนวนเงิน</th>
-                                                                <th>คิดเป็นเปอร์เซนต์</th>
-                                                                <th>วันครบกำหนด</th>
-                                                                <th>สถานะ</th>
-                                                                <th>วันที่ชำระ</th>
-                                                                <th>จำนวนเงินที่ชำระแล้ว</th>
-                                                                <th class="no-print">การดำเนินการ</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <?php foreach ($payments as $payment): ?>
+                                        <!-- ข้อมูลการชำระเงิน -->
+                                        <div class="info-card">
+                                            <div class="info-card-header">
+                                                <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลการชำระเงิน</span>
+                                                <button class="edit-button btn-sm" onclick="openAddPaymentModal()">
+                                                    <i class="fas fa-plus"></i> เพิ่ม
+                                                </button>
+                                            </div>
+                                            <div class="info-card-body">
+                                                <div class="payment-info">
+                                                    <div class="table-view d-none d-md-block">
+                                                        <table class="table table-striped">
+                                                            <thead>
                                                                 <tr>
-                                                                    <td><?php echo htmlspecialchars($payment['payment_number']); ?></td>
-                                                                    <td><?php echo number_format($payment['amount'], 2); ?> บาท</td>
-                                                                    <td><?php echo htmlspecialchars($payment['payment_percentage']); ?></td>
-                                                                    <td><?php echo htmlspecialchars($payment['due_date']); ?></td>
-                                                                    <td>
-                                                                        <span class="<?php echo getStatusClass($payment['status']); ?>">
-                                                                            <?php echo htmlspecialchars($payment['status']); ?>
-                                                                        </span>
-                                                                    </td>
-                                                                    <td><?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?></td>
-                                                                    <td><?php echo number_format($payment['amount_paid'], 2); ?> บาท</td>
-                                                                    <td>
-                                                                        <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
-                                                                            <i class="fas fa-edit"></i>
-                                                                        </button>
-                                                                        <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
-                                                                            <i class="fas fa-trash"></i>
-                                                                        </button>
-                                                                    </td>
+                                                                    <th>งวดที่</th>
+                                                                    <th>จำนวนเงิน</th>
+                                                                    <th>คิดเป็นเปอร์เซนต์</th>
+                                                                    <th>วันครบกำหนด</th>
+                                                                    <th>สถานะ</th>
+                                                                    <th>วันที่ชำระ</th>
+                                                                    <th>จำนวนเงินที่ชำระแล้ว</th>
+                                                                    <th class="no-print">การดำเนินการ</th>
                                                                 </tr>
-                                                            <?php endforeach; ?>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
+                                                            </thead>
+                                                            <tbody>
+                                                                <?php foreach ($payments as $payment): ?>
+                                                                    <tr>
+                                                                        <td><?php echo htmlspecialchars($payment['payment_number']); ?></td>
+                                                                        <td><?php echo number_format($payment['amount'], 2); ?> บาท</td>
+                                                                        <td><?php echo htmlspecialchars($payment['payment_percentage']); ?></td>
+                                                                        <td><?php echo htmlspecialchars($payment['due_date']); ?></td>
+                                                                        <td>
+                                                                            <span class="<?php echo getStatusClass($payment['status']); ?>">
+                                                                                <?php echo htmlspecialchars($payment['status']); ?>
+                                                                            </span>
+                                                                        </td>
+                                                                        <td><?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?></td>
+                                                                        <td><?php echo number_format($payment['amount_paid'], 2); ?> บาท</td>
+                                                                        <td>
+                                                                            <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
+                                                                                <i class="fas fa-edit"></i>
+                                                                            </button>
+                                                                            <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
+                                                                                <i class="fas fa-trash"></i>
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                <?php endforeach; ?>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
 
-                                                <div class="card-view d-md-none">
-                                                    <?php foreach ($payments as $payment): ?>
-                                                        <div class="payment-card mb-3">
-                                                            <div class="card">
-                                                                <div class="card-body">
-                                                                    <h5 class="card-title">งวดที่ <?php echo htmlspecialchars($payment['payment_number']); ?></h5>
-                                                                    <p class="card-text">
-                                                                        <strong>จำนวนเงิน:</strong> <?php echo number_format($payment['amount'], 2); ?> บาท<br>
-                                                                        <strong>คิดเป็นเปอร์เซนต์:</strong> <?php echo htmlspecialchars($payment['payment_percentage']); ?><br>
-                                                                        <strong>วันครบกำหนด:</strong> <?php echo htmlspecialchars($payment['due_date']); ?><br>
-                                                                        <strong>สถานะ:</strong> <span class="<?php echo getStatusClass($payment['status']); ?>"><?php echo htmlspecialchars($payment['status']); ?></span><br>
-                                                                        <strong>วันที่ชำระ:</strong> <?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?><br>
-                                                                        <strong>จำนวนเงินที่ชำระแล้ว:</strong> <?php echo number_format($payment['amount_paid'], 2); ?> บาท
-                                                                    </p>
-                                                                    <div class="btn-group" role="group">
-                                                                        <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
-                                                                            <i class="fas fa-edit"></i> แก้ไข
-                                                                        </button>
-                                                                        <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
-                                                                            <i class="fas fa-trash"></i> ลบ
-                                                                        </button>
+                                                    <div class="card-view d-md-none">
+                                                        <?php foreach ($payments as $payment): ?>
+                                                            <div class="payment-card mb-3">
+                                                                <div class="card">
+                                                                    <div class="card-body">
+                                                                        <h5 class="card-title">งวดที่ <?php echo htmlspecialchars($payment['payment_number']); ?></h5>
+                                                                        <p class="card-text">
+                                                                            <strong>จำนวนเงิน:</strong> <?php echo number_format($payment['amount'], 2); ?> บาท<br>
+                                                                            <strong>คิดเป็นเปอร์เซนต์:</strong> <?php echo htmlspecialchars($payment['payment_percentage']); ?><br>
+                                                                            <strong>วันครบกำหนด:</strong> <?php echo htmlspecialchars($payment['due_date']); ?><br>
+                                                                            <strong>สถานะ:</strong> <span class="<?php echo getStatusClass($payment['status']); ?>"><?php echo htmlspecialchars($payment['status']); ?></span><br>
+                                                                            <strong>วันที่ชำระ:</strong> <?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?><br>
+                                                                            <strong>จำนวนเงินที่ชำระแล้ว:</strong> <?php echo number_format($payment['amount_paid'], 2); ?> บาท
+                                                                        </p>
+                                                                        <div class="btn-group" role="group">
+                                                                            <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
+                                                                                <i class="fas fa-edit"></i> แก้ไข
+                                                                            </button>
+                                                                            <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
+                                                                                <i class="fas fa-trash"></i> ลบ
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    <?php endforeach; ?>
+                                                        <?php endforeach; ?>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <!-- สรุปข้อมูลการชำระเงิน -->
-                                            <div class="mt-3">
-                                                <strong>สรุปการชำระเงิน:</strong>
-                                                <?php
-                                                $total_amount = array_sum(array_column($payments, 'amount'));
-                                                $total_paid = array_sum(array_column($payments, 'amount_paid'));
-                                                $remaining = $total_amount - $total_paid;
-                                                ?>
-                                                <p>จำนวนเงินทั้งหมด: <?php echo number_format($total_amount, 2); ?> บาท</p>
-                                                <p>จำนวนเงินที่ชำระแล้ว: <?php echo number_format($total_paid, 2); ?> บาท</p>
-                                                <p>จำนวนเงินคงเหลือ: <?php echo number_format($remaining, 2); ?> บาท</p>
+                                                <!-- สรุปข้อมูลการชำระเงิน -->
+                                                <div class="mt-3">
+                                                    <strong>สรุปการชำระเงิน:</strong>
+                                                    <?php
+                                                    $total_amount = array_sum(array_column($payments, 'amount'));
+                                                    $total_paid = array_sum(array_column($payments, 'amount_paid'));
+                                                    $remaining = $total_amount - $total_paid;
+                                                    ?>
+                                                    <p>จำนวนเงินทั้งหมด: <?php echo number_format($total_amount, 2); ?> บาท</p>
+                                                    <p>จำนวนเงินที่ชำระแล้ว: <?php echo number_format($total_paid, 2); ?> บาท</p>
+                                                    <p>จำนวนเงินคงเหลือ: <?php echo number_format($remaining, 2); ?> บาท</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                </section>
+                            </div>
+                            <!-- แถบที่ 2 ตารางแสดงไฟล์เอกสาร -->
+                            <div class="tab-pane" id="documents">
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#uploadModal">
+                                        <i class="fas fa-upload"></i> อัปโหลดเอกสาร
+                                    </button>
                                 </div>
-                            </section>
-                        </div>
-                        <!-- แถบที่ 2 ตารางแสดงไฟล์เอกสาร -->
-                        <div class="tab-pane" id="documents">
-                            <!-- ตารางแสดงเอกสารแนบ -->
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ชื่อเอกสาร</th>
-                                        <th>ประเภท</th>
-                                        <th>วันที่อัปโหลด</th>
-                                        <th>การดำเนินการ</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- ตัวอย่างข้อมูล (คุณต้องแทนที่ด้วยข้อมูลจริงจากฐานข้อมูล) -->
-                                    <tr>
-                                        <td>สัญญาโครงการ.pdf</td>
-                                        <td>PDF</td>
-                                        <td>2023-05-15</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-info">ดู</button>
-                                            <button class="btn btn-sm btn-danger">ลบ</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <!-- แถบที่ 3 ตารางแสดงภาพ -->
-                        <div class="tab-pane" id="images">
-                            <!-- แสดงรูปภาพ -->
-                            <div class="row">
-                                <!-- ตัวอย่างการแสดงรูปภาพ (คุณต้องแทนที่ด้วยข้อมูลจริงจากฐานข้อมูล) -->
-                                <div class="col-md-4">
-                                    <img src="path/to/image1.jpg" class="img-fluid mb-3" alt="Project Image">
+                                <div class="table-responsive">
+                                    <table id="example1" class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>ลำดับ</th>
+                                                <th>ชื่อเอกสาร</th>
+                                                <th>ประเภท</th>
+                                                <th>วันที่สร้าง</th>
+                                                <th>ผู้สร้าง</th>
+                                                <th>การดำเนินการ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="documentTableBody">
+                                            <!-- ข้อมูลเอกสารจะถูกเพิ่มที่นี่ด้วย JavaScript -->
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div class="col-md-4">
-                                    <img src="path/to/image2.jpg" class="img-fluid mb-3" alt="Project Image">
-                                </div>
-                                <div class="col-md-4">
-                                    <img src="path/to/image3.jpg" class="img-fluid mb-3" alt="Project Image">
+                            </div>
+                            <!-- แถบที่ 3 ตารางแสดงภาพ -->
+                            <div class="tab-pane" id="images">
+                                <!-- แสดงรูปภาพ -->
+                                <div class="row">
+                                    <!-- ตัวอย่างการแสดงรูปภาพ (คุณต้องแทนที่ด้วยข้อมูลจริงจากฐานข้อมูล) -->
+                                    <div class="col-md-4">
+                                        <img src="path/to/image1.jpg" class="img-fluid mb-3" alt="Project Image">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <img src="path/to/image2.jpg" class="img-fluid mb-3" alt="Project Image">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <img src="path/to/image3.jpg" class="img-fluid mb-3" alt="Project Image">
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
         <?php include '../../include/footer.php'; ?>
     </div>
@@ -1045,4 +1069,214 @@ function getStatusClass($status)
     });
 
     document.getElementById('status').addEventListener('change', updateAmountPaid);
+</script>
+<!-- Modal สำหรับเพิ่ม/แก้ไขการชำระเงิน -->
+
+
+<!-- Modal สำหรับอัปโหลดเอกสาร -->
+<div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadModalLabel">อัปโหลดเอกสาร</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <input type="hidden" name="project_id" value="<?php echo $project_id; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <div class="form-group">
+                        <label for="documentName">ชื่อเอกสาร</label>
+                        <input type="text" class="form-control" id="documentName" name="documentName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="documentFile">เลือกไฟล์</label>
+                        <input type="file" class="form-control-file" id="documentFile" name="documentFile" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="uploadDocument()">อัปโหลด</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ฟังก์ชันสำหรับอัปโหลดเอกสาร
+    function uploadDocument() {
+        var formData = new FormData(document.getElementById('uploadForm'));
+
+        $.ajax({
+            url: 'upload_document.php',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'อัปโหลดสำเร็จ',
+                        text: 'เอกสารถูกอัปโหลดเรียบร้อยแล้ว',
+                        confirmButtonText: 'ตกลง'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $('#uploadModal').modal('hide');
+                            loadDocuments(); // รีโหลดข้อมูลเอกสาร
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: response.message,
+                        confirmButtonText: 'ตกลง'
+                    });
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                    confirmButtonText: 'ตกลง'
+                });
+            }
+        });
+    }
+
+    // ฟังก์ชันสำหรับโหลดข้อมูลเอกสาร
+    function loadDocuments() {
+        $.ajax({
+            url: 'get_documents.php',
+            type: 'GET',
+            data: {
+                project_id: '<?php echo $project_id; ?>'
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    var table = $('#example1').DataTable();
+                    table.clear().draw();
+                    $.each(response.documents, function(index, doc) {
+                        table.row.add([
+                            index + 1,
+                            doc.document_name,
+                            doc.document_type,
+                            doc.upload_date,
+                            doc.uploaded_by,
+                            '<button class="btn btn-sm btn-info mr-1" onclick="viewDocument(\'' + doc.document_id + '\')">ดู</button>' +
+                            '<button class="btn btn-sm btn-danger" onclick="deleteDocument(\'' + doc.document_id + '\')">ลบ</button>'
+                        ]).draw(false);
+                    });
+                } else {
+                    console.error('Failed to load documents:', response.message);
+                }
+            },
+            error: function() {
+                console.error('Error connecting to server');
+            }
+        });
+    }
+
+    // ฟังก์ชันสำหรับดูเอกสาร
+    function viewDocument(documentId) {
+        window.open('view_document.php?document_id=' + documentId, '_blank');
+    }
+
+    // ฟังก์ชันสำหรับลบเอกสาร
+    function deleteDocument(documentId) {
+        Swal.fire({
+            title: 'คุณแน่ใจหรือไม่?',
+            text: "คุณต้องการลบเอกสารนี้ใช่หรือไม่?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'ใช่, ลบเลย!',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'delete_document.php',
+                    type: 'POST',
+                    data: {
+                        csrf_token: '<?php echo $csrf_token; ?>',
+                        document_id: documentId
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire(
+                                'ลบแล้ว!',
+                                'เอกสารถูกลบเรียบร้อยแล้ว',
+                                'success'
+                            ).then(() => {
+                                loadDocuments(); // รีโหลดข้อมูลเอกสาร
+                            });
+                        } else {
+                            Swal.fire(
+                                'เกิดข้อผิดพลาด!',
+                                response.message,
+                                'error'
+                            );
+                        }
+                    },
+                    error: function() {
+                        Swal.fire(
+                            'เกิดข้อผิดพลาด!',
+                            'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                            'error'
+                        );
+                    }
+                });
+            }
+        });
+    }
+
+    // โหลดข้อมูลเอกสารเมื่อเปิดแท็บเอกสาร
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+        if (e.target.hash === '#documents') {
+            loadDocuments();
+        }
+    });
+</script>
+<!-- Modal สำหรับอัปโหลดเอกสาร -->
+
+
+<!-- Active Tab -->
+<script>
+    // Function to get URL parameter
+    function getUrlParameter(name) {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        var results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
+
+    // Function to set active tab based on URL parameter
+    function setActiveTab() {
+        var activeTab = getUrlParameter('tab');
+        if (activeTab) {
+            $('.nav-pills a[data-tab="' + activeTab + '"]').tab('show');
+        }
+    }
+
+    // Update URL when tab is changed
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+        var tabName = $(e.target).data('tab');
+        var url = new URL(window.location);
+        url.searchParams.set('tab', tabName);
+        window.history.pushState({}, '', url);
+    });
+
+    // Call setActiveTab on page load
+    $(document).ready(function() {
+        setActiveTab();
+    });
 </script>
