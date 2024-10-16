@@ -557,70 +557,69 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         ?>
     </script>
+    <!-- เพิ่ม script นี้ก่อนปิด tag </body> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#addProjectForm').on('submit', function(e) {
+                e.preventDefault();
 
-</body>
+                // แสดง loading indicator
+                Swal.fire({
+                    title: 'กำลังบันทึกข้อมูล...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    },
+                });
 
-</html>
+                $.ajax({
+                    type: 'POST',
+                    url: 'add_project.php',
+                    data: $(this).serialize(),
+                    dataType: 'json',
+                    success: function(response) {
+                        Swal.close(); // ปิด loading indicator
 
-<!-- เพิ่มการบันทึกข้อมูล -->
-<script>
-    $(document).ready(function() {
-        $('#addProjectForm').on('submit', function(e) {
-            e.preventDefault();
-
-            // แสดง loading indicator
-            Swal.fire({
-                title: 'กำลังบันทึกข้อมูล...',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                willOpen: () => {
-                    Swal.showLoading();
-                },
-            });
-
-            $.ajax({
-                type: 'POST',
-                url: 'add_project.php',
-                data: $(this).serialize(),
-                dataType: 'json',
-                success: function(response) {
-                    Swal.close(); // ปิด loading indicator
-
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'บันทึกสำเร็จ',
-                            text: response.message,
-                            confirmButtonText: 'ตกลง'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href = 'project.php';
-                            }
-                        });
-                    } else {
-                        var errorMessage = response.errors.join('<br>');
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'บันทึกสำเร็จ',
+                                text: response.message,
+                                confirmButtonText: 'ตกลง'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = 'project.php';
+                                }
+                            });
+                        } else {
+                            var errorMessage = response.errors.join('<br>');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                html: errorMessage,
+                                confirmButtonText: 'ตกลง'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.close(); // ปิด loading indicator
+                        console.error(xhr.responseText);
                         Swal.fire({
                             icon: 'error',
                             title: 'เกิดข้อผิดพลาด',
-                            html: errorMessage,
+                            text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
                             confirmButtonText: 'ตกลง'
                         });
                     }
-                },
-                error: function(xhr, status, error) {
-                    Swal.close(); // ปิด loading indicator
-                    console.error(xhr.responseText);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'เกิดข้อผิดพลาด',
-                        text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
-                        confirmButtonText: 'ตกลง'
-                    });
-                }
+                });
             });
         });
-    });
-</script>
+    </script>
+</body>
+
+</html>
 
 <!-- // ฟังก์ชันในการเพิ่มคอมม่าในตัวเลข -->
 <script>
