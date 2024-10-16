@@ -951,27 +951,76 @@ function getStatusClass($status)
 
     // ฟังก์ชันสำหรับฟอร์แมตตัวเลขให้มีคอมม่าและทศนิยม 2 ตำแหน่ง
     function formatNumber(num) {
-        return parseInt(num).toLocaleString('th-TH');
+        return new Intl.NumberFormat('th-TH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(num);
     }
 
     // ฟังก์ชันสำหรับแปลงข้อความที่มีคอมม่าเป็นตัวเลข
     function parseFormattedNumber(str) {
         return parseFloat(str.replace(/,/g, '')) || 0;
     }
+
+    // ฟังก์ชันสำหรับจัดการการป้อนข้อมูลในช่องตัวเลข
+    function setupNumberInput(inputId) {
+        const input = document.getElementById(inputId);
+        let previousValue = '';
+
+        input.addEventListener('input', function(e) {
+            const cursorPosition = e.target.selectionStart;
+            let value = e.target.value.replace(/[^0-9.]/g, '');
+
+            // จำกัดให้มีจุดทศนิยมได้เพียงจุดเดียว
+            let parts = value.split('.');
+            if (parts.length > 2) {
+                parts = [parts[0], parts.slice(1).join('')];
+                value = parts.join('.');
+            }
+
+            // จำกัดทศนิยมให้เหลือ 2 ตำแหน่ง
+            if (parts.length > 1) {
+                parts[1] = parts[1].slice(0, 2);
+                value = parts.join('.');
+            }
+
+            // แปลงค่าเป็นตัวเลขและฟอร์แมตใหม่
+            const formattedValue = value ? formatNumber(parseFloat(value)) : '';
+
+            // คำนวณตำแหน่ง cursor ใหม่
+            const addedCommas = (formattedValue.match(/,/g) || []).length - (previousValue.match(/,/g) || []).length;
+            const newCursorPosition = cursorPosition + addedCommas;
+
+            // อัปเดตค่าในช่องป้อนข้อมูล
+            e.target.value = formattedValue;
+
+            // ตั้งตำแหน่ง cursor ใหม่
+            e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+
+            previousValue = formattedValue;
+
+            // ทริกเกอร์การคำนวณที่เกี่ยวข้อง
+            if (inputId === 'paymentPercentage') {
+                calculateAmountFromPercentage();
+            } else if (inputId === 'amount') {
+                calculatePercentageFromAmount();
+            }
+        });
+    }
+
     // ฟังก์ชันสำหรับคำนวณจำนวนเงินจากเปอร์เซ็นต์
     function calculateAmountFromPercentage() {
-        const percentage = parseFloat(document.getElementById('paymentPercentage').value) || 0;
+        const percentage = parseFormattedNumber(document.getElementById('paymentPercentage').value);
         const amount = (percentage / 100) * totalSaleAmount;
         document.getElementById('amount').value = formatNumber(amount);
         updateAmountPaid();
     }
 
-
     // ฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์จากจำนวนเงิน
     function calculatePercentageFromAmount() {
         const amount = parseFormattedNumber(document.getElementById('amount').value);
         const percentage = (amount / totalSaleAmount) * 100;
-        document.getElementById('paymentPercentage').value = percentage.toFixed(2);
+        document.getElementById('paymentPercentage').value = formatNumber(percentage);
         updateAmountPaid();
     }
 
@@ -1002,7 +1051,7 @@ function getStatusClass($status)
             document.getElementById('paymentModalLabel').textContent = 'แก้ไขการชำระเงิน';
             document.getElementById('paymentId').value = payment.payment_id;
             document.getElementById('paymentNumber').value = payment.payment_number;
-            document.getElementById('paymentPercentage').value = ((payment.amount / totalSaleAmount) * 100).toFixed(2);
+            document.getElementById('paymentPercentage').value = formatNumber((payment.amount / totalSaleAmount) * 100);
             document.getElementById('amount').value = formatNumber(payment.amount);
             document.getElementById('dueDate').value = payment.due_date;
             document.getElementById('status').value = payment.status;
@@ -1027,7 +1076,7 @@ function getStatusClass($status)
             project_id: '<?php echo $project_id; ?>',
             payment_number: document.getElementById('paymentNumber').value,
             amount: parseFormattedNumber(document.getElementById('amount').value),
-            payment_percentage: parseFloat(document.getElementById('paymentPercentage').value),
+            payment_percentage: parseFormattedNumber(document.getElementById('paymentPercentage').value),
             due_date: document.getElementById('dueDate').value,
             status: document.getElementById('status').value,
             payment_date: document.getElementById('paymentDate').value,
@@ -1112,7 +1161,6 @@ function getStatusClass($status)
                     },
                     dataType: 'json',
                     success: function(response) {
-                        console.log('Raw response:', response);
                         if (response && response.success) {
                             Swal.fire({
                                 icon: 'success',
@@ -1135,7 +1183,6 @@ function getStatusClass($status)
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
                         console.error('AJAX Error:', textStatus, errorThrown);
-                        console.log('Response Text:', jqXHR.responseText);
                         Swal.fire({
                             icon: 'error',
                             title: 'เกิดข้อผิดพลาด',
@@ -1149,19 +1196,11 @@ function getStatusClass($status)
     }
 
     // เพิ่ม Event Listeners
-    document.getElementById('paymentPercentage').addEventListener('input', function(e) {
-        let value = e.target.value.replace(/[^0-9.]/g, '');
-        e.target.value = value;
-        calculateAmountFromPercentage();
+    document.addEventListener('DOMContentLoaded', function() {
+        setupNumberInput('paymentPercentage');
+        setupNumberInput('amount');
+        document.getElementById('status').addEventListener('change', updateAmountPaid);
     });
-
-    document.getElementById('amount').addEventListener('input', function(e) {
-        let value = e.target.value.replace(/[^0-9.]/g, '');
-        e.target.value = formatNumber(value);
-        calculatePercentageFromAmount();
-    });
-
-    document.getElementById('status').addEventListener('change', updateAmountPaid);
 </script>
 <!-- Modal สำหรับเพิ่ม/แก้ไขการชำระเงิน -->
 
