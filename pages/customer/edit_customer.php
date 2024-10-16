@@ -72,19 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute();
     $existing_customer = $stmt->fetch();
 
-    if ($existing_customer) {
-        // ถ้าพบชื่อบริษัทหรืออีเมลหรือเบอร์ซ้ำ
-        echo "<script>
-                setTimeout(function() {
-                    Swal.fire({
-                        title: 'เกิดข้อผิดพลาด',
-                        text: 'ชื่อบริษัท อีเมล หรือเบอร์นี้ถูกใช้ไปแล้ว!',
-                        icon: 'error',
-                        confirmButtonText: 'ตกลง'
-                    });
-                }, 100);
-              </script>";
-    } else if (
+    if (
         $customer_name == $customer['customer_name'] &&
         $company == $customer['company'] &&
         $email == $customer['email'] &&

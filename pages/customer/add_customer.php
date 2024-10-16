@@ -23,18 +23,28 @@ function generateUUID()
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
+// ฟังก์ชันตรวจสอบความถูกต้องของเบอร์โทรศัพท์
+function isPhoneValid($phone)
+{
+    // ตรวจสอบว่าเบอร์โทรศัพท์มีเฉพาะตัวเลขและมีความยาว 10 หลัก
+    return preg_match('/^[0-9]{10}$/', $phone);
+}
+
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
 $created_by = $_SESSION['user_id']; // ดึง user_id ของผู้สร้างจาก session
 
+// ตัวแปรเก็บข้อความแจ้งเตือนสำหรับการตรวจสอบข้อมูล
+$error_messages = [];
+
 // ตรวจสอบว่าผู้ใช้กดปุ่ม "เพิ่มลูกค้า" หรือไม่
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
     // ตรวจสอบ CSRF Token
     if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("Invalid CSRF token");
+        die(json_encode(['success' => false, 'errors' => ['Invalid CSRF token']]));
     }
 
-    // สร้าง UUID สำหรับ project_id
+    // สร้าง UUID สำหรับ customer_id
     $customer_id = generateUUID();
 
     // รับข้อมูลจากฟอร์มและล้างข้อมูลด้วย htmlspecialchars เพื่อป้องกัน XSS
@@ -45,59 +55,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = clean_input($_POST['email']);
     $remark = clean_input($_POST['remark']);
 
-    // ตรวจสอบว่ามีชื่อบริษัทหรืออีเมลที่ซ้ำหรือไม่
-    $checkcustomer_sql = "SELECT * FROM customers WHERE company = :company OR email = :email OR phone = :phone";
-    $stmt = $condb->prepare($checkcustomer_sql);
-    $stmt->bindParam(':company', $company, PDO::PARAM_STR);
-    $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-    $stmt->bindParam(':phone', $email, PDO::PARAM_INT);
-    $stmt->execute();
-    $existing_customer = $stmt->fetch();
+    // ตรวจสอบความถูกต้องของรูปแบบอีเมล
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง";
+    }
 
-    if ($existing_customer) {
-        // ถ้าพบชื่อบริษัทหรืออีเมลซ้ำ
-        echo "<script>
-                setTimeout(function() {
-                    Swal.fire({
-                        title: 'เกิดข้อผิดพลาด',
-                        text: 'ชื่อบริษัทหรืออีเมลหรือเบอร์โทรนี้ถูกใช้ไปแล้ว!',
-                        icon: 'error',
-                        confirmButtonText: 'ตกลง'
-                    });
-                }, 100);
-              </script>";
-    } else {
-        // เพิ่มข้อมูลลูกค้าลงฐานข้อมูล
+    // ตรวจสอบความถูกต้องของเบอร์โทรศัพท์
+    if (!empty($phone) && !isPhoneValid($phone)) {
+        $error_messages[] = "เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเฉพาะตัวเลข 10 หลัก";
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง กรุณากรอกอีเมลให้ถูกต้อง";
+    }
+
+    // ถ้าไม่มีข้อผิดพลาด ดำเนินการบันทึกข้อมูลผู้ใช้ใหม่
+    if (empty($error_messages)) {
         try {
+            // ตรวจสอบชื่อบริษัทซ้ำในฐานข้อมูล
+            $stmt = $condb->prepare("SELECT COUNT(*) FROM customers WHERE company = :company");
+            $stmt->execute([':company' => $company]);
+            if ($stmt->fetchColumn() > 0) {
+                throw new Exception("ชื่อบริษัทนี้มีอยู่แล้ว");
+            }
+
+            // ตรวจสอบอีเมลซ้ำในฐานข้อมูล
+            $stmt = $condb->prepare("SELECT COUNT(*) FROM customers WHERE email = :email");
+            $stmt->execute([':email' => $email]);
+            if ($stmt->fetchColumn() > 0) {
+                throw new Exception("อีเมลนี้มีอยู่แล้ว");
+            }
+
+            // บันทึกข้อมูลลงในฐานข้อมูล
             $sql = "INSERT INTO customers (customer_id, customer_name, company, address, phone, email, remark, created_by)
                     VALUES (:customer_id, :customer_name, :company, :address, :phone, :email, :remark, :created_by)";
             $stmt = $condb->prepare($sql);
-            $stmt->bindParam(':customer_id', $customer_id, PDO::PARAM_STR);
-            $stmt->bindParam(':customer_name', $customer_name, PDO::PARAM_STR);
-            $stmt->bindParam(':company', $company, PDO::PARAM_STR);
-            $stmt->bindParam(':address', $address, PDO::PARAM_STR);
-            $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
-            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-            $stmt->bindParam(':remark', $remark, PDO::PARAM_STR);
-            $stmt->bindParam(':created_by', $created_by, PDO::PARAM_STR);
-            $stmt->execute();
+            $stmt->execute([
+                ':customer_id' => $customer_id,
+                ':customer_name' => $customer_name,
+                ':company' => $company,
+                ':address' => $address,
+                ':phone' => $phone,
+                ':email' => $email,
+                ':remark' => $remark,
+                ':created_by' => $created_by,
+            ]);
 
-            // แสดงข้อความเมื่อเพิ่มลูกค้าสำเร็จด้วย SweetAlert
-            echo "<script>
-                    setTimeout(function() {
-                        Swal.fire({
-                            title: 'สำเร็จ!',
-                            text: 'เพิ่มลูกค้าเรียบร้อยแล้ว!',
-                            icon: 'success',
-                            confirmButtonText: 'ตกลง'
-                        }).then(function() {
-                            window.location.href = 'customer.php';
-                        });
-                    }, 100);
-                  </script>";
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
+            // ล้างค่า CSRF token เมื่อบันทึกข้อมูลสำเร็จ
+            unset($_SESSION['csrf_token']);
+
+            echo json_encode(['success' => true, 'message' => 'บันทึกข้อมูลลูกค้าเรียบร้อยแล้ว']);
+            exit;
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'errors' => [$e->getMessage()]]);
+            exit;
         }
+    } else {
+        echo json_encode(['success' => false, 'errors' => $error_messages]);
+        exit;
     }
 }
 ?>
@@ -153,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <h3 class="card-title">Customer Information</h3>
                                 </div>
                                 <div class="card-body">
-                                    <form action="#" method="POST">
+                                    <form id="addCustomerForm" method="POST">
                                         <!-- CSRF Token -->
                                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
@@ -238,10 +253,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Footer -->
         <?php include '../../include/footer.php'; ?>
     </div>
+
     <script>
-        document.querySelector('form').addEventListener('submit', function(event) {
-            var submitButton = event.target.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
+        $(function() {
+            // จัดการการส่งฟอร์ม
+            $('#addCustomerForm').on('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+
+                Swal.fire({
+                    title: 'กำลังบันทึกข้อมูล...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    },
+                });
+
+                $.ajax({
+                    type: 'POST',
+                    url: 'add_customer.php', // แก้ไข URL ให้ถูกต้อง
+                    data: formData,
+                    dataType: 'json',
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        Swal.close();
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'บันทึกสำเร็จ',
+                                text: response.message,
+                                confirmButtonText: 'ตกลง'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = 'customer.php'; // เปลี่ยน URL หลังจากบันทึกสำเร็จ
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                html: response.errors.join('<br>'),
+                                confirmButtonText: 'ตกลง'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.close();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
+                            confirmButtonText: 'ตกลง'
+                        });
+                    }
+                });
+            });
         });
     </script>
 </body>

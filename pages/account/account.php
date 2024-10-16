@@ -294,17 +294,32 @@ $query_users = $stmt->fetchAll();
                                                         <?php
                                                         // ตรวจสอบเงื่อนไขการแสดงปุ่มแก้ไข
                                                         $showEditButton = true;
+
+                                                        // ตรวจสอบว่า Username ของผู้ใช้ในตารางเป็น Admin หรือไม่
+                                                        if ($user['username'] === 'Admin') {
+                                                            $showEditButton = false; // ถ้า username เป็น Admin ให้ซ่อนปุ่ม
+                                                        }
+
+                                                        // ตรวจสอบว่าเป็น Sale Supervisor หรือไม่
                                                         if ($_SESSION['role'] === 'Sale Supervisor') {
+                                                            // ถ้า role ของผู้ใช้ที่ล็อกอินคือ Sale Supervisor และผู้ใช้ที่กำลังแสดงอยู่เป็น Executive หรือเป็น Sale Supervisor (ที่ไม่ใช่ตัวเอง)
                                                             if ($user['role'] === 'Executive' || ($user['role'] === 'Sale Supervisor' && $user['user_id'] !== $_SESSION['user_id'])) {
                                                                 $showEditButton = false;
                                                             }
                                                         }
-                                                        if ($showEditButton):
-                                                        ?>
+
+                                                        // ถ้าเงื่อนไขการแสดงปุ่มแก้ไขผ่าน ให้แสดงปุ่มแก้ไข
+                                                        if ($showEditButton): ?>
                                                             <a href="edit_account.php?user_id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
                                                         <?php endif; ?>
-                                                        <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+
+                                                        <!-- ปุ่มลบจะถูกซ่อนถ้าเป็น Admin -->
+                                                        <?php if ($user['username'] !== 'Admin'): ?>
+                                                            <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                        <?php endif; ?>
                                                     </td>
+
+
                                                 </tr>
                                             <?php } ?>
                                         </tbody>
