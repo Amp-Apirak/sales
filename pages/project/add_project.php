@@ -6,6 +6,11 @@ include '../../include/Add_session.php';
 $role = $_SESSION['role'] ?? '';
 $team_id = $_SESSION['team_id'] ?? 0;
 $created_by = $_SESSION['user_id'] ?? 0;
+$user_id = $_SESSION['user_id'] ?? 0;
+
+
+error_log("Session role: " . $_SESSION['role']);
+error_log("Session user_id: " . $_SESSION['user_id']);
 
 // ตรวจสอบสิทธิ์การเข้าถึง
 if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
