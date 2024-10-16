@@ -1221,6 +1221,7 @@ function getStatusClass($status)
                         if (result.isConfirmed) {
                             $('#uploadModal').modal('hide');
                             loadDocuments(); // รีโหลดข้อมูลเอกสาร
+                            resetUploadForm(); // เพิ่มฟังก์ชันนี้เพื่อรีเซ็ตฟอร์ม
                         }
                     });
                 } else {
@@ -1242,6 +1243,17 @@ function getStatusClass($status)
             }
         });
     }
+
+    // เพิ่มฟังก์ชันใหม่เพื่อรีเซ็ตฟอร์ม
+    function resetUploadForm() {
+        $('#uploadForm')[0].reset();
+        $('#documentFile').val(''); // รีเซ็ต file input
+    }
+
+    // เพิ่ม event listener เมื่อ Modal ถูกซ่อน
+    $('#uploadModal').on('hidden.bs.modal', function() {
+        resetUploadForm();
+    });
 
     // ฟังก์ชันสำหรับโหลดข้อมูลเอกสาร
     function loadDocuments() {
