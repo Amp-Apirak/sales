@@ -373,11 +373,23 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                                                                                                             } ?> ">
                             <i class="nav-icon fas fa-box-open"></i>
                             <p>
-                                Product
+                                Product Point
                             </p>
                         </a>
                     </li>
                 <?php endif; ?>
+
+                <?php if ($role != 'Engineer'): ?>
+                    <li class="nav-item">
+                        <a href="<?php echo BASE_URL; ?>pages/setting/suppliers/suppliers.php" class="nav-link <?php if ($menu == "suppliers") {
+                                                                                                                    echo "active";
+                                                                                                                } ?>">
+                            <i class="nav-icon fas fa-truck"></i>
+                            <p>Suppliers</p>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
                 <?php if ($role === 'Executive'): ?>
                     <li class="nav-item">
                         <a href="<?php echo BASE_URL; ?>pages/setting/team/team.php" class="nav-link <?php if ($menu == "team") {
@@ -390,6 +402,9 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                         </a>
                     </li>
                 <?php endif; ?>
+
+
+
                 <!-- <li class="nav-item">
                     <a href="https://adminlte.io/docs/3.1/" class="nav-link">
                         <i class="nav-icon fas fa-file"></i>

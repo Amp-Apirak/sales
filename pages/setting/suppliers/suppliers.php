@@ -24,36 +24,6 @@ $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];
 $user_id = $_SESSION['user_id'];
 
-// รับค่าการค้นหาจากฟอร์ม (method="GET")
-$search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) : '';
-
-// Query พื้นฐานในการดึงข้อมูลสินค้า
-$sql_products = "SELECT p.*, u.first_name AS creator_first_name, u.last_name AS creator_last_name 
-                FROM products p 
-                LEFT JOIN users u ON p.created_by = u.user_id 
-                WHERE 1=1";
-
-// เพิ่มเงื่อนไขการค้นหาตามที่ผู้ใช้กรอกมา
-if (!empty($search_service)) {
-    $sql_products .= " AND (p.product_name LIKE :search_service 
-                        OR p.product_description LIKE :search_service 
-                        OR u.first_name LIKE :search_service 
-                        OR u.last_name LIKE :search_service)";
-}
-
-// เตรียม statement และ bind ค่า
-$stmt = $condb->prepare($sql_products);
-
-// ผูกค่าการค้นหากับ statement
-if (!empty($search_service)) {
-    $search_param = '%' . $search_service . '%';
-    $stmt->bindParam(':search_service', $search_param, PDO::PARAM_STR);
-}
-
-// Execute query เพื่อดึงข้อมูลสินค้า
-$stmt->execute();
-$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 ?>
 
 <!DOCTYPE html>
@@ -62,7 +32,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SalePipeline | Team Magement</title>
+    <title>SalePipeline | Suppliers Magement</title>
     <?php include '../../../include/header.php' ?>
 
     <!-- ใช้ฟอนต์ Noto Sans Thai กับ label -->
@@ -74,8 +44,8 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         th,
         h1 {
             font-family: 'Noto Sans Thai', sans-serif;
-            font-weight: 600;
-            font-size: 14px;
+            font-weight: 700;
+            font-size: 16px;
             color: #333;
         }
 
@@ -104,12 +74,12 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="container-fluid">
                     <div class="row mb-2">
                         <div class="col-sm-6">
-                            <h1 class="m-0">Product Magement</h1>
+                            <h1 class="m-0">Suppliers Magement</h1>
                         </div><!-- /.col -->
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
                                 <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">Home</a></li>
-                                <li class="breadcrumb-item active">Product Magement v1</li>
+                                <li class="breadcrumb-item active">Suppliers Magement v1</li>
                             </ol>
                         </div><!-- /.col -->
                     </div><!-- /.row -->
@@ -122,7 +92,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-12">
-
                             <!-- ส่วน Search -->
                             <section class="content">
                                 <div class="row">
@@ -136,7 +105,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <div class="row">
                                                         <div class="col-sm-3">
                                                             <div class="form-group">
-                                                            <input type="text" class="form-control" id="searchservice" name="searchservice" value="<?php echo htmlspecialchars($search_service, ENT_QUOTES, 'UTF-8'); ?>" placeholder="ค้นหา...">
+                                                                <input type="text" class="form-control" id="searchservice" name="searchservice" value="" placeholder="ค้นหา...">
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-3">
@@ -155,60 +124,20 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     </div>
                                 </div>
                             </section>
-
                             <!-- //Section Search -->
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
                             <div class="col-md-12 pb-3">
-                                <a href="add_product.php" class="btn btn-success btn-sm float-right" data-toggle="modal" data-target="#addbtn">เพิ่มข้อมูล<i class=""></i></a>
-                                <!-- Add Product -->
-                                <?php include 'add_product.php'; ?>
-                                <!-- Add Product -->
+                                <a href="add_suppliers.php" class="btn btn-success btn-sm float-right">เพิ่มข้อมูล<i class=""></i></a>
                             </div><br>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
 
-                            <!-- Section ตารางแสดงผล -->
-                            <!-- Section ตารางแสดงผล -->
+
+                            <!-- เนื้อหา -->
                             <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">Product List</h3>
-                                </div>
-                                <!-- /.card-header -->
-                                <div class="card-body">
-                                    <table id="example1" class="table table-bordered table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-nowrap text-center">No.</th>
-                                                <th class="text-nowrap">Product Name</th>
-                                                <th class="text-nowrap">Description</th>
-                                                <th class="text-nowrap">Created By</th>
-                                                <th class="text-nowrap">Created At</th>
-                                                <th class="text-nowrap">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($products as $index => $product) { ?>
-                                                <tr>
-                                                    <td class="text-nowrap text-center"><?php echo $index + 1; ?></td>
-                                                    <td class="text-nowrap" ><?php echo htmlspecialchars($product['product_name'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td><?php echo htmlspecialchars($product['product_description'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($product['creator_first_name'] . " " . $product['creator_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($product['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
 
-                                                    <td>
-                                                        <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                        <a href="delete_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                    </td>
-
-                                                </tr>
-
-                                            <?php } ?>
-
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <!-- /.card-body -->
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -221,28 +150,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php include('../../../include/footer.php'); ?>
     </div>
     <!-- ./wrapper -->
-
-
-    <!-- DataTables -->
-    <script>
-        $(function() {
-            $("#example1").DataTable({
-                "responsive": true,
-                "lengthChange": false,
-                "autoWidth": false,
-                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-            $('#example2').DataTable({
-                "paging": true,
-                "lengthChange": false,
-                "searching": false,
-                "ordering": true,
-                "info": true,
-                "autoWidth": false,
-                "responsive": true,
-            });
-        });
-    </script>
 
 </body>
 
