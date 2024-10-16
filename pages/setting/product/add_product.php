@@ -5,6 +5,14 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $csrf_token = $_SESSION['csrf_token'];
 
+
+// ตรวจสอบว่า User ได้ login แล้วหรือยัง และตรวจสอบ Role
+if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor' && $_SESSION['role'] != 'Seller')) {
+    // ถ้า Role ไม่ใช่ Executive หรือ Sale Supervisor ให้ redirect ไปยังหน้าอื่น เช่น หน้า Dashboard
+    header("Location: " . BASE_URL . "index.php"); // เปลี่ยนเส้นทางไปหน้า Dashboard
+    exit(); // หยุดการทำงานของสคริปต์
+}
+
 // ฟังก์ชันทำความสะอาดข้อมูล input
 function clean_input($data)
 {
@@ -46,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($existing_product) {
 
-        
+
 
 
         // ถ้าพบชื่อสินค้าซ้ำ

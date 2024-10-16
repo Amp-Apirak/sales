@@ -3,6 +3,13 @@
 session_start();
 include('../../../config/condb.php');
 
+// ตรวจสอบว่า User ได้ login แล้วหรือยัง และตรวจสอบ Role
+if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor' && $_SESSION['role'] != 'Seller')) {
+    // ถ้า Role ไม่ใช่ Executive หรือ Sale Supervisor ให้ redirect ไปยังหน้าอื่น เช่น หน้า Dashboard
+    header("Location: " . BASE_URL . "index.php"); // เปลี่ยนเส้นทางไปหน้า Dashboard
+    exit(); // หยุดการทำงานของสคริปต์
+}
+
 // เปิดการแสดงข้อผิดพลาดทั้งหมด (สำหรับใช้ในช่วงการพัฒนา แต่ควรปิดใน production)
 // ini_set('display_errors', 1);
 // ini_set('display_startup_errors', 1);

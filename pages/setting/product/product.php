@@ -12,6 +12,13 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSIO
     exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
 }
 
+// ตรวจสอบว่า User ได้ login แล้วหรือยัง และตรวจสอบ Role
+if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor' && $_SESSION['role'] != 'Seller')) {
+    // ถ้า Role ไม่ใช่ Executive หรือ Sale Supervisor ให้ redirect ไปยังหน้าอื่น เช่น หน้า Dashboard
+    header("Location: " . BASE_URL . "index.php"); // เปลี่ยนเส้นทางไปหน้า Dashboard
+    exit(); // หยุดการทำงานของสคริปต์
+}
+
 // ดึงข้อมูลจาก session
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];

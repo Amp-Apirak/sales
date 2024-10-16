@@ -12,11 +12,29 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSIO
     exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
 }
 
-
 // ดึงข้อมูลจาก session
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];
 $user_id = $_SESSION['user_id'];
+
+
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น (Executive หรือ Sale Supervisor)
+if (!in_array($role, ['Executive'])) {
+    echo "<script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>";
+    echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่อนุญาต',
+                    text: 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้',
+                    confirmButtonText: 'ตกลง'
+                }).then(function() {
+                    window.location.href = '../../../index.php'; 
+                });
+            }, 100);
+          </script>";
+    exit();
+}
 
 
 // รับค่าการค้นหาจากฟอร์ม (method="GET")
