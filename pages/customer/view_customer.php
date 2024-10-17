@@ -12,8 +12,6 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 // ถอดรหัส id
 $customer_id = decryptUserId($_GET['id']);
 
-
-
 // ดึงข้อมูลลูกค้าจากฐานข้อมูล
 try {
     $stmt = $condb->prepare("SELECT c.*, u.first_name, u.last_name 
@@ -34,7 +32,11 @@ try {
     exit();
 }
 
-// HTML และส่วนที่เหลือของหน้า view_customer.php
+// กำหนด path ของรูปภาพ
+$image_path = !empty($customer['customers_image'])
+    ? BASE_URL . 'uploads/customer_images/' . $customer['customers_image']
+    : BASE_URL . 'assets/img/gallery-img3.jpg';
+
 ?>
 
 <!DOCTYPE html>
@@ -53,6 +55,7 @@ try {
             object-fit: cover;
             border-radius: 50%;
             border: 3px solid #3c8dbc;
+            cursor: pointer;
         }
 
         /* ปุ่มแก้ไข */
@@ -63,6 +66,44 @@ try {
         .btn-edit:hover {
             transform: translateY(-2px);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            padding-top: 100px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -95,7 +136,7 @@ try {
                             <div class="card card-primary card-outline h-100">
                                 <div class="card-body box-profile">
                                     <div class="text-center">
-                                        <img class="customer-image" src="<?php echo BASE_URL; ?>assets/img/gallery-img3.jpg" alt="Customer Image">
+                                        <img class="customer-image" src="<?php echo $image_path; ?>" alt="Customer Image" id="customerImage">
                                     </div>
                                     <p></p>
                                     <p class="text-muted text-center"><?php echo htmlspecialchars($customer['company']); ?></p>
@@ -104,15 +145,12 @@ try {
                         </div>
                         <div class="col-md-8">
                             <div class="card card-primary card-outline h-100">
-                                <div class="card-body p-0 box-profile ">
-
-                                    <!-- เพิ่มปุ่ม Edit ตรงนี้ -->
+                                <div class="card-body p-0 box-profile">
                                     <div class="text-right p-3">
                                         <a href="edit_customer.php?customer_id=<?php echo urlencode($_GET['id']); ?>" class="btn btn-primary btn-sm btn-edit">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
                                     </div>
-
                                     <ul class="list-group list-group-flush">
                                         <li class="list-group-item">
                                             <div class="d-flex w-100 justify-content-between">
@@ -126,6 +164,8 @@ try {
                                             </div>
                                             <p class="mb-1"><small class="text-muted">Customer Name:</small> <?php echo htmlspecialchars($customer['customer_name']); ?></p>
                                             <p class="mb-1"><small class="text-muted">Phone:</small> <?php echo htmlspecialchars($customer['phone']); ?></p>
+                                            <p class="mb-1"><small class="text-muted">Office Phone:</small> <?php echo htmlspecialchars($customer['office_phone']); ?></p>
+                                            <p class="mb-1"><small class="text-muted">Extension:</small> <?php echo htmlspecialchars($customer['extension']); ?></p>
                                             <p class="mb-1"><small class="text-muted">Email:</small> <?php echo htmlspecialchars($customer['email']); ?></p>
                                         </li>
                                         <li class="list-group-item">
@@ -153,6 +193,40 @@ try {
         </div>
         <?php include '../../include/footer.php'; ?>
     </div>
+
+    <!-- The Modal -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="img01">
+    </div>
+
+    <script>
+        // Get the modal
+        var modal = document.getElementById("imageModal");
+
+        // Get the image and insert it inside the modal
+        var img = document.getElementById("customerImage");
+        var modalImg = document.getElementById("img01");
+        img.onclick = function() {
+            modal.style.display = "block";
+            modalImg.src = this.src;
+        }
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
 </body>
 
 </html>

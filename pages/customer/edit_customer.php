@@ -61,41 +61,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone = clean_input($_POST['phone']);
     $email = clean_input($_POST['email']);
     $remark = clean_input($_POST['remark']);
+    $office_phone = clean_input($_POST['office_phone']);
+    $extension = clean_input($_POST['extension']);
 
-    // ตรวจสอบว่ามีชื่อบริษัทหรืออีเมลที่ซ้ำกับลูกค้าคนอื่นหรือไม่
-    $checkcustomer_sql = "SELECT * FROM customers WHERE (company = :company OR email = :email OR phone = :phone) AND customer_id != :customer_id ";
-    $stmt = $condb->prepare($checkcustomer_sql);
-    $stmt->bindParam(':company', $company, PDO::PARAM_STR);
-    $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-    $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
-    $stmt->bindParam(':customer_id', $customer_id, PDO::PARAM_STR);
-    $stmt->execute();
-    $existing_customer = $stmt->fetch();
+    // เพิ่มตัวแปรเพื่อตรวจสอบการเปลี่ยนแปลงรูปภาพ
+    $image_changed = false;
 
-    if (
-        $customer_name == $customer['customer_name'] &&
-        $company == $customer['company'] &&
-        $email == $customer['email'] &&
-        $phone == $customer['phone'] &&
-        $address == $customer['address'] &&
-        $remark == $customer['remark']
-    ) {
+    // ตรวจสอบว่ามีการอัปโหลดรูปภาพใหม่หรือไม่
+    if (isset($_FILES['customers_image']) && $_FILES['customers_image']['error'] == 0) {
+        // ตรวจสอบขนาดไฟล์ (จำกัดที่ 5MB)
+        if ($_FILES['customers_image']['size'] > 5000000) {
+            echo "ไฟล์มีขนาดใหญ่เกินไป กรุณาอัปโหลดไฟล์ขนาดไม่เกิน 5MB";
+            exit;
+        }
+
+        $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+        $filename = $_FILES['customers_image']['name'];
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (in_array($ext, $allowed)) {
+            $new_filename = uniqid() . '.' . $ext;
+            $upload_path = '../../uploads/customer_images/' . $new_filename;
+            if (!move_uploaded_file($_FILES['customers_image']['tmp_name'], $upload_path)) {
+                // แสดงข้อผิดพลาดที่ชัดเจนมากขึ้น
+                echo "ไม่สามารถอัปโหลดรูปภาพได้: " . error_get_last()['message'];
+                exit;
+            }
+            $customers_image = $new_filename;
+            $image_changed = true;
+
+            // ลบรูปภาพเก่า (ถ้ามี)
+            if (!empty($customer['customers_image']) && file_exists('../../uploads/customer_images/' . $customer['customers_image'])) {
+                unlink('../../uploads/customer_images/' . $customer['customers_image']);
+            }
+        } else {
+            echo "ไฟล์รูปภาพไม่ถูกต้อง กรุณาอัปโหลดไฟล์ jpg, jpeg, png หรือ gif";
+            exit;
+        }
+    } else {
+        $customers_image = $customer['customers_image'];
+    }
+
+    // ตรวจสอบว่ามีการเปลี่ยนแปลงข้อมูลหรือไม่
+    $data_changed =
+        $customer_name != $customer['customer_name'] ||
+        $company != $customer['company'] ||
+        $email != $customer['email'] ||
+        $phone != $customer['phone'] ||
+        $address != $customer['address'] ||
+        $remark != $customer['remark'] ||
+        $office_phone != $customer['office_phone'] ||
+        $extension != $customer['extension'] ||
+        $image_changed;
+
+    if (!$data_changed) {
         // ถ้าไม่มีการเปลี่ยนแปลงข้อมูล แสดง SweetAlert
-        echo  '<script>
-            setTimeout(function() {
-                Swal.fire({
-                    title: "Opp..",
-                    text: "No data corrections found.",
-                    icon: "error"
-                }).then(function() {
-                    window.location = "customer.php"; //หน้าที่ต้องการให้กระโดดไป
-                });
-            }, 1000);
-            </script>';
+        echo '<script>
+        setTimeout(function() {
+            Swal.fire({
+                title: "Oops..",
+                text: "No data corrections found.",
+                icon: "error"
+            }).then(function() {
+                window.location = "customer.php"; //หน้าที่ต้องการให้กระโดดไป
+            });
+        }, 1000);
+        </script>';
     } else {
         // แก้ไขข้อมูลลูกค้าในฐานข้อมูล
         try {
-            $sql = "UPDATE customers SET customer_name = :customer_name, company = :company, address = :address, phone = :phone, email = :email, remark = :remark, updated_by = :updated_by WHERE customer_id = :customer_id";
+            $sql = "UPDATE customers SET customer_name = :customer_name, company = :company, address = :address, phone = :phone, email = :email, remark = :remark, updated_by = :updated_by, office_phone = :office_phone, extension = :extension, customers_image = :customers_image WHERE customer_id = :customer_id";
             $stmt = $condb->prepare($sql);
             $stmt->bindParam(':customer_name', $customer_name, PDO::PARAM_STR);
             $stmt->bindParam(':company', $company, PDO::PARAM_STR);
@@ -104,6 +138,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bindParam(':email', $email, PDO::PARAM_STR);
             $stmt->bindParam(':remark', $remark, PDO::PARAM_STR);
             $stmt->bindParam(':updated_by', $updated_by, PDO::PARAM_INT);
+            $stmt->bindParam(':office_phone', $office_phone, PDO::PARAM_STR);
+            $stmt->bindParam(':extension', $extension, PDO::PARAM_STR);
+            $stmt->bindParam(':customers_image', $customers_image, PDO::PARAM_STR);
             $stmt->bindParam(':customer_id', $customer_id, PDO::PARAM_STR);
             $stmt->execute();
 
@@ -178,9 +215,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <h3 class="card-title">Customer Information</h3>
                                 </div>
                                 <div class="card-body">
-                                    <form action="#" method="POST">
+                                    <form action="#" method="POST" enctype="multipart/form-data">
                                         <!-- CSRF Token -->
                                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+
+                                        <!-- Customer Image -->
+                                        <div class="form-group">
+                                            <label for="customers_image">Customer Logo</label>
+                                            <div class="input-group">
+                                                <div class="custom-file">
+                                                    <input type="file" class="custom-file-input" id="customers_image" name="customers_image">
+                                                    <label class="custom-file-label" for="customers_image">Choose file</label>
+                                                </div>
+                                            </div>
+                                            <?php if (!empty($customer['customers_image'])): ?>
+                                                <img src="../../uploads/customer_images/<?php echo htmlspecialchars($customer['customers_image']); ?>" alt="Current Customer Logo" class="mt-2" style="max-width: 200px;">
+                                            <?php endif; ?>
+                                        </div>
 
                                         <!-- Customer Name -->
                                         <div class="form-group">
@@ -190,6 +241,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <span class="input-group-text"><i class="fas fa-address-book"></i></span>
                                                 </div>
                                                 <input type="text" name="customer_name" class="form-control" id="customer_name" value="<?php echo htmlspecialchars($customer['customer_name']); ?>" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Phone -->
+                                        <div class="form-group">
+                                            <label for="phone">Phone</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                                </div>
+                                                <input type="text" name="phone" class="form-control" id="phone" value="<?php echo htmlspecialchars($customer['phone']); ?>">
                                             </div>
                                         </div>
 
@@ -215,14 +277,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             </div>
                                         </div>
 
+
                                         <!-- Phone -->
-                                        <div class="form-group">
-                                            <label for="phone">Phone</label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                        <div class="row">
+                                            <div class="form-group col-md-6">
+                                                <label for="office_phone">Office Phone</label>
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text"><i class="fas fa fa-phone"></i></span>
+                                                    </div>
+                                                    <input type="text" name="office_phone" class="form-control" id="office_phone" value="<?php echo htmlspecialchars($customer['office_phone']); ?>">
                                                 </div>
-                                                <input type="text" name="phone" class="form-control" id="phone" value="<?php echo htmlspecialchars($customer['phone']); ?>">
+                                            </div>
+
+                                            <div class="form-group col-md-6">
+                                                <label for="office_phone">Extension</label>
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text"><i class="fas fa-phone-square"></i></span>
+                                                    </div>
+                                                    <input type="text" name="extension" class="form-control" id="extension" value="<?php echo htmlspecialchars($customer['extension']); ?>">
+                                                </div>
                                             </div>
                                         </div>
 
@@ -263,6 +338,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Footer -->
         <?php include '../../include/footer.php'; ?>
     </div>
+    <script>
+        $(function() {
+            // แสดงชื่อไฟล์ที่เลือกในช่อง input file
+            $('.custom-file-input').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName);
+            });
+        });
+    </script>
 </body>
 
 </html>

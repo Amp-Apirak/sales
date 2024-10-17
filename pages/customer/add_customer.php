@@ -55,6 +55,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     $email = clean_input($_POST['email']);
     $remark = clean_input($_POST['remark']);
 
+    // รับข้อมูลเพิ่มเติมจากฟอร์ม
+    $office_phone = clean_input($_POST['office_phone']);
+    $extension = clean_input($_POST['extension']);
+
+    // ตรวจสอบและอัปโหลดรูปภาพ
+    $customers_image = '';
+    if (isset($_FILES['customers_image']) && $_FILES['customers_image']['error'] == 0) {
+        $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+        $filename = $_FILES['customers_image']['name'];
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (in_array($ext, $allowed)) {
+            $new_filename = uniqid() . '.' . $ext;
+            $upload_path = '../../uploads/customer_images/' . $new_filename;
+            if (move_uploaded_file($_FILES['customers_image']['tmp_name'], $upload_path)) {
+                $customers_image = $new_filename;
+            } else {
+                $error_messages[] = "ไม่สามารถอัปโหลดรูปภาพได้";
+            }
+        } else {
+            $error_messages[] = "ไฟล์รูปภาพไม่ถูกต้อง กรุณาอัปโหลดไฟล์ jpg, jpeg, png หรือ gif";
+        }
+    }
+
     // ตรวจสอบความถูกต้องของรูปแบบอีเมล
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง";
@@ -63,10 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     // ตรวจสอบความถูกต้องของเบอร์โทรศัพท์
     if (!empty($phone) && !isPhoneValid($phone)) {
         $error_messages[] = "เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเฉพาะตัวเลข 10 หลัก";
-    }
-
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง กรุณากรอกอีเมลให้ถูกต้อง";
     }
 
     // ถ้าไม่มีข้อผิดพลาด ดำเนินการบันทึกข้อมูลผู้ใช้ใหม่
@@ -87,8 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
             }
 
             // บันทึกข้อมูลลงในฐานข้อมูล
-            $sql = "INSERT INTO customers (customer_id, customer_name, company, address, phone, email, remark, created_by)
-                    VALUES (:customer_id, :customer_name, :company, :address, :phone, :email, :remark, :created_by)";
+            $sql = "INSERT INTO customers (customer_id, customer_name, company, address, phone, email, remark, created_by, customers_image, office_phone, extension)
+                    VALUES (:customer_id, :customer_name, :company, :address, :phone, :email, :remark, :created_by, :customers_image, :office_phone, :extension)";
             $stmt = $condb->prepare($sql);
             $stmt->execute([
                 ':customer_id' => $customer_id,
@@ -99,6 +118,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                 ':email' => $email,
                 ':remark' => $remark,
                 ':created_by' => $created_by,
+                ':customers_image' => $customers_image,
+                ':office_phone' => $office_phone,
+                ':extension' => $extension
             ]);
 
             // ล้างค่า CSRF token เมื่อบันทึกข้อมูลสำเร็จ
@@ -172,6 +194,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                                         <!-- CSRF Token -->
                                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
+                                        <!-- เพิ่มฟิลด์ใหม่: Customer Image -->
+                                        <div class="form-group">
+                                            <label for="customers_image">Customer Logo</label>
+                                            <div class="input-group">
+                                                <div class="custom-file">
+                                                    <input type="file" class="custom-file-input" id="customers_image" name="customers_image">
+                                                    <label class="custom-file-label" for="customers_image">Choose file</label>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <!-- Customer Name -->
                                         <div class="form-group">
                                             <label for="customer_name">Customer Name<span class="text-danger">*</span></label>
@@ -180,6 +213,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                                                     <span class="input-group-text"><i class="fas fa-address-book"></i></span>
                                                 </div>
                                                 <input type="text" name="customer_name" class="form-control" id="customer_name" placeholder="Customer Name" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Phone -->
+                                        <div class="form-group">
+                                            <label for="phone">Phone</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                                </div>
+                                                <input type="text" name="phone" class="form-control" id="phone" placeholder="Phone">
                                             </div>
                                         </div>
 
@@ -206,15 +250,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                                         </div>
 
                                         <!-- Phone -->
-                                        <div class="form-group">
-                                            <label for="phone">Phone</label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                        <div class="row">
+                                            <div class="form-group col-md-6">
+                                                <label for="office_phone">Office Phone</label>
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text"><i class="fas fa fa-phone"></i></span>
+                                                    </div>
+                                                    <input type="text" name="office_phone" class="form-control" id="office_phone" placeholder="Office Phone">
                                                 </div>
-                                                <input type="text" name="phone" class="form-control" id="phone" placeholder="Phone">
+                                            </div>
+
+                                            <div class="form-group col-md-6">
+                                                <label for="office_phone">Extension</label>
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text"><i class="fas fa-phone-square"></i></span>
+                                                    </div>
+                                                    <input type="text" name="extension" class="form-control" id="extension" placeholder="Extension">
+                                                </div>
                                             </div>
                                         </div>
+
 
                                         <!-- Email -->
                                         <div class="form-group">
@@ -272,7 +329,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 
                 $.ajax({
                     type: 'POST',
-                    url: 'add_customer.php', // แก้ไข URL ให้ถูกต้อง
+                    url: 'add_customer.php',
                     data: formData,
                     dataType: 'json',
                     contentType: false,
@@ -287,7 +344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                                 confirmButtonText: 'ตกลง'
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    window.location.href = 'customer.php'; // เปลี่ยน URL หลังจากบันทึกสำเร็จ
+                                    window.location.href = 'customer.php';
                                 }
                             });
                         } else {
@@ -309,6 +366,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                         });
                     }
                 });
+            });
+
+            // แสดงชื่อไฟล์ที่เลือกในช่อง input file
+            $('.custom-file-input').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName);
             });
         });
     </script>
