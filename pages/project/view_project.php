@@ -947,7 +947,7 @@ function getStatusClass($status)
 <script>
     // ตัวแปรสำหรับเก็บข้อมูลการชำระเงินทั้งหมด
     let payments = <?php echo json_encode($payments); ?>;
-    let totalSaleAmount = <?php echo $project['sale_vat']; ?>; // ราคาขาย (รวมภาษี)
+    let totalSaleAmount = <?php echo $project['sale_no_vat']; ?>; // ราคาขาย (รวมภาษี)
 
     // ฟังก์ชันสำหรับฟอร์แมตตัวเลขให้มีคอมม่าและทศนิยม 2 ตำแหน่ง
     function formatNumber(num) {
