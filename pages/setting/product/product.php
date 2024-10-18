@@ -58,11 +58,12 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!DOCTYPE html>
 <html lang="en">
+<?php $menu = "product"; ?>
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SalePipeline | Team Magement</title>
+    <title>SalePipeline | Product Magement</title>
     <?php include '../../../include/header.php' ?>
 
     <!-- ใช้ฟอนต์ Noto Sans Thai กับ label -->

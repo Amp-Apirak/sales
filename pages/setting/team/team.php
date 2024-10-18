@@ -69,6 +69,7 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!DOCTYPE html>
 <html lang="en">
+<?php $menu = "team"; ?>
 
 <head>
     <meta charset="utf-8">

@@ -824,7 +824,7 @@ function getStatusClass($status)
                                                     ?>
                                                     <p>จำนวนเงินทั้งหมด: <?php echo number_format($total_amount, 2); ?> บาท</p>
                                                     <p>จำนวนเงินที่ชำระแล้ว: <?php echo number_format($total_paid, 2); ?> บาท</p>
-                                                    <p>จำนวนเงินคงเหลือ: <?php echo number_format($remaining, 2); ?> บาท</p>
+                                                    <p class="text-danger text-bold">จำนวนเงินคงเหลือ: <?php echo number_format($remaining, 2); ?> บาท</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -947,7 +947,7 @@ function getStatusClass($status)
 <script>
     // ตัวแปรสำหรับเก็บข้อมูลการชำระเงินทั้งหมด
     let payments = <?php echo json_encode($payments); ?>;
-    let totalSaleAmount = <?php echo $project['sale_no_vat']; ?>; // ราคาขาย (รวมภาษี)
+    let totalSaleAmount = <?php echo $project['sale_no_vat']; ?>; // ราคาขาย (ไม่รวมภาษี)
 
     // ฟังก์ชันสำหรับฟอร์แมตตัวเลขให้มีคอมม่าและทศนิยม 2 ตำแหน่ง
     function formatNumber(num) {
@@ -1020,7 +1020,7 @@ function getStatusClass($status)
     function calculatePercentageFromAmount() {
         const amount = parseFormattedNumber(document.getElementById('amount').value);
         const percentage = (amount / totalSaleAmount) * 100;
-        document.getElementById('paymentPercentage').value = formatNumber(percentage);
+        document.getElementById('paymentPercentage').value = formatNumber(percentage, 2);
         updateAmountPaid();
     }
 
@@ -1085,17 +1085,21 @@ function getStatusClass($status)
 
         // คำนวณเปอร์เซ็นต์รวมของการชำระเงินทั้งหมด
         let totalPercentage = payments.reduce((total, payment) => {
-            return total + parseFloat(payment.payment_percentage);
+            // ถ้ากำลังแก้ไขรายการปัจจุบัน ไม่นับเปอร์เซ็นต์เดิม
+            if (payment.payment_id !== paymentData.payment_id) {
+                return total + parseFloat(payment.payment_percentage);
+            }
+            return total;
         }, 0);
 
-        // เพิ่มเปอร์เซ็นต์ของการชำระเงินใหม่
+        // เพิ่มเปอร์เซ็นต์ของการชำระเงินปัจจุบัน
         totalPercentage += parseFloat(paymentData.payment_percentage);
 
         if (totalPercentage > 100) {
             Swal.fire({
                 icon: 'warning',
                 title: 'เกินขีดจำกัด',
-                text: 'เปอร์เซ็นต์รวมของการชำระเงินเกิน 100% ของราคาขาย',
+                text: 'เปอร์เซ็นต์รวมของการชำระเงินเกิน 100% ของราคาขาย (ไม่รวมภาษี)',
                 confirmButtonText: 'ตกลง'
             });
             return;

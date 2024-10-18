@@ -472,7 +472,7 @@ function displayData($data, $format = null)
                                                                 <i class="fas fa-eye"></i>
                                                             </a>
                                                             <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                            <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                            <!-- <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a> -->
                                                         </td>
                                                     <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']) ? htmlspecialchars($project['contract_no']) : 'ไม่ระบุข้อมูล'; ?></td>

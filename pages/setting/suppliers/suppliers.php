@@ -28,6 +28,7 @@ $user_id = $_SESSION['user_id'];
 
 <!DOCTYPE html>
 <html lang="en">
+<?php $menu = "suppliers"; ?>
 
 <head>
     <meta charset="utf-8">
