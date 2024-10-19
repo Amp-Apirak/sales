@@ -196,7 +196,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($product['creator_first_name'] . " " . $product['creator_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($product['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
 
-                                                    <td>
+                                                    <td class="text-nowrap">
                                                         <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
                                                         <a href="delete_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                                     </td>

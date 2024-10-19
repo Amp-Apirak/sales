@@ -119,6 +119,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     updated_at = NOW(),
                     updated_by = :updated_by
                     WHERE payment_id = :payment_id AND project_id = :project_id";
+            $params = [
+                ':payment_id' => $payment_id,
+                ':project_id' => $project_id,
+                ':payment_number' => $payment_number,
+                ':amount' => $amount,
+                ':payment_percentage' => $payment_percentage,
+                ':due_date' => $due_date,
+                ':status' => $status,
+                ':payment_date' => $payment_date,
+                ':amount_paid' => $amount_paid,
+                ':remaining_amount' => $amount - $amount_paid,
+                ':payment_progress' => ($amount_paid / $amount) * 100,
+                ':updated_by' => $created_by
+            ];
         } else {
             // เพิ่มการชำระเงินใหม่
             $payment_id = generateUUID();
@@ -126,28 +140,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
             VALUES 
             (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())";
+
+            $params = [
+                ':payment_id' => $payment_id,
+                ':project_id' => $project_id,
+                ':payment_number' => $payment_number,
+                ':amount' => $amount,
+                ':payment_percentage' => $payment_percentage,
+                ':due_date' => $due_date,
+                ':status' => $status,
+                ':payment_date' => $payment_date,
+                ':amount_paid' => $amount_paid,
+                ':remaining_amount' => $amount - $amount_paid,
+                ':payment_progress' => ($amount_paid / $amount) * 100,
+                ':created_by' => $created_by
+            ];
         }
 
         $stmt = $condb->prepare($sql);
-        $stmt->bindParam(':payment_id', $payment_id, PDO::PARAM_STR);
-        $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
-        $stmt->bindParam(':payment_number', $payment_number, PDO::PARAM_INT);
-        $stmt->bindParam(':amount', $amount, PDO::PARAM_STR);
-        $stmt->bindParam(':payment_percentage', $payment_percentage, PDO::PARAM_STR);
-        $stmt->bindParam(':due_date', $due_date, PDO::PARAM_STR);
-        $stmt->bindParam(':status', $status, PDO::PARAM_STR);
-        $stmt->bindParam(':payment_date', $payment_date, PDO::PARAM_STR);
-        $stmt->bindParam(':amount_paid', $amount_paid, PDO::PARAM_STR);
-        $stmt->bindParam(':remaining_amount', $remaining_amount, PDO::PARAM_STR);
-        $stmt->bindParam(':payment_progress', $payment_progress, PDO::PARAM_STR);
-
-        if ($payment_id) {
-            $stmt->bindParam(':updated_by', $created_by, PDO::PARAM_STR);
-        } else {
-            $stmt->bindParam(':created_by', $created_by, PDO::PARAM_STR);
-        }
-
-        if (!$stmt->execute()) {
+        if (!$stmt->execute($params)) {
             throw new Exception("ไม่สามารถบันทึกข้อมูลได้");
         }
 
