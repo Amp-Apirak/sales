@@ -346,7 +346,7 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                 <?php endif; ?>
 
                 <li class="nav-item">
-                    <a href="<?php echo BASE_URL; ?>pages/service/service.php" class="nav-link <?php if ($menu == "service") {
+                    <a href="#" class="nav-link <?php if ($menu == "service") {
                                                                                                     echo "active";
                                                                                                 } ?> ">
                         <i class="nav-icon fas fa-receipt"></i>

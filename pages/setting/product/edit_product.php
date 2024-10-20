@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
         $error_message = "Invalid CSRF token";
     } else {
-        // รับข้อมูลจากฟอร์มและล้างข้อมูล
+        // รับข้อมูลจากฟอร์มและทำความสะอาด
         $product_name = clean_input($_POST['product_name']);
         $product_description = clean_input($_POST['product_description']);
 
@@ -97,22 +97,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
             $error_message = "กรุณากรอกชื่อสินค้า!";
         } else {
             try {
-                // แก้ไขข้อมูลสินค้า
-                $sql = "UPDATE products SET product_name = :product_name, product_description = :product_description, updated_by = :updated_by WHERE product_id = :product_id";
-                $stmt = $condb->prepare($sql);
+                // เริ่ม transaction
+                $condb->beginTransaction();
+
+                // อัปเดตข้อมูลสินค้า
+                $update_sql = "UPDATE products SET product_name = :product_name, product_description = :product_description, updated_by = :updated_by, updated_at = CURRENT_TIMESTAMP WHERE product_id = :product_id";
+                $stmt = $condb->prepare($update_sql);
                 $stmt->bindParam(':product_name', $product_name, PDO::PARAM_STR);
                 $stmt->bindParam(':product_description', $product_description, PDO::PARAM_STR);
-                $stmt->bindParam(':product_id', $product_id, PDO::PARAM_STR);
                 $stmt->bindParam(':updated_by', $updated_by, PDO::PARAM_STR);
-                $result = $stmt->execute();
+                $stmt->bindParam(':product_id', $product_id, PDO::PARAM_STR);
+                $stmt->execute();
 
-                if ($result) {
-                    $success_message = "แก้ไขข้อมูลสินค้าสำเร็จแล้ว!";
-                } else {
-                    $error_message = "ไม่สามารถอัพเดทข้อมูลได้!";
+                // จัดการอัปโหลดรูปภาพ
+                if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] == 0) {
+                    $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+                    $file_type = $_FILES['product_image']['type'];
+                    $max_file_size = 5 * 1024 * 1024; // 5MB
+
+                    if (in_array($file_type, $allowed_types) && $_FILES['product_image']['size'] <= $max_file_size) {
+                        $file_name = basename($_FILES['product_image']['name']);
+                        $file_ext = pathinfo($file_name, PATHINFO_EXTENSION);
+                        $new_file_name = $product_id . '.' . $file_ext;
+                        $upload_dir = '../../../uploads/product_images/';
+                        $upload_path = $upload_dir . $new_file_name;
+
+                        if (move_uploaded_file($_FILES['product_image']['tmp_name'], $upload_path)) {
+                            // อัปเดตชื่อไฟล์ในฐานข้อมูล
+                            $update_image_sql = "UPDATE products SET main_image = :main_image WHERE product_id = :product_id";
+                            $stmt = $condb->prepare($update_image_sql);
+                            $stmt->bindParam(':main_image', $new_file_name, PDO::PARAM_STR);
+                            $stmt->bindParam(':product_id', $product_id, PDO::PARAM_STR);
+                            $stmt->execute();
+                        } else {
+                            throw new Exception("ไม่สามารถอัปโหลดรูปภาพได้");
+                        }
+                    } else {
+                        throw new Exception("ไฟล์รูปภาพไม่ถูกต้องหรือมีขนาดใหญ่เกินไป");
+                    }
                 }
-            } catch (PDOException $e) {
-                $error_message = "Error: " . $e->getMessage();
+
+                // Commit transaction
+                $condb->commit();
+
+                $success_message = "แก้ไขข้อมูลสินค้าสำเร็จแล้ว!";
+
+                // บันทึกล็อกกิจกรรม
+                //logActivity($user_id, 'edit_product', "Edited product: $product_name (ID: $product_id)");
+            } catch (Exception $e) {
+                // Rollback transaction ในกรณีที่เกิดข้อผิดพลาด
+                $condb->rollBack();
+                $error_message = "เกิดข้อผิดพลาด: " . $e->getMessage();
             }
         }
     }
@@ -159,14 +194,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
                                 </div>
                                 <div class="card-body">
                                     <?php if (isset($error_message)): ?>
-                                        <div class="alert alert-danger"><?php echo $error_message; ?></div>
+                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                            <?php echo $error_message; ?>
+                                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
                                     <?php endif; ?>
+
                                     <?php if (isset($success_message)): ?>
-                                        <div class="alert alert-success"><?php echo $success_message; ?></div>
+                                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                            <?php echo $success_message; ?>
+                                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
                                     <?php endif; ?>
-                                    <form action="" method="POST">
+                                    <form action="" method="POST" enctype="multipart/form-data">
                                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                         <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product['product_id']); ?>">
+                                        <div class="form-group">
+                                            <label for="product_image">ภาพสินค้าหลัก</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="product_image" name="product_image" accept="image/*" onchange="previewImage(this);">
+                                                <label class="custom-file-label" for="product_image">Choose file</label>
+                                            </div>
+                                            <img id="preview" src="<?php echo !empty($product['main_image']) ? '../../../uploads/product_images/' . $product['main_image'] : '#'; ?>"
+                                                alt="ตัวอย่างรูปภาพ" style="max-width: 200px; margin-top: 10px; <?php echo empty($product['main_image']) ? 'display:none;' : ''; ?>">
+                                        </div>
                                         <div class="form-group">
                                             <label for="product_name">Product Name<span class="text-danger">*</span></label>
                                             <div class="input-group">
@@ -220,6 +275,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
                     confirmButtonText: 'ตกลง'
                 });
             <?php endif; ?>
+        });
+    </script>
+
+    <!-- สำหรับแสดงตัวอย่างรูปภาพ -->
+    <script>
+        function previewImage(input) {
+            var preview = document.getElementById('preview');
+            var file = input.files[0];
+            var reader = new FileReader();
+
+            reader.onloadend = function() {
+                preview.src = reader.result;
+                preview.style.display = 'block';
+            }
+
+            if (file) {
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+            }
+        }
+    </script>
+
+    <!-- File Input Select -->
+    <script>
+        $(function() {
+            bsCustomFileInput.init();
         });
     </script>
 </body>

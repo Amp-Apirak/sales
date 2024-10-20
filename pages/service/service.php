@@ -64,7 +64,7 @@ include '../../include/Add_session.php';
                                                     <div class="row">
                                                         <div class="col-sm-3">
                                                             <div class="form-group ">
-                                                                <input type="text" class="form-control " id="searchservice" name="searchservice" value="<?php echo htmlspecialchars($search); ?>" placeholder="ค้นหา...">
+                                                                <input type="text" class="form-control " id="searchservice" name="searchservice" value="" placeholder="ค้นหา...">
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-3">
@@ -81,9 +81,9 @@ include '../../include/Add_session.php';
                                                                 <label>Service Category</label>
                                                                 <select class="custom-select select2" name="company">
                                                                     <option value="">เลือก</option>
-                                                                    <?php while ($company = $query_company->fetch()) { ?>
-                                                                        <option value="<?php echo htmlspecialchars($company['company']); ?>"><?php echo htmlspecialchars($company['company']); ?></option>
-                                                                    <?php } ?>
+
+                                                                    <option value=""></option>
+
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -92,9 +92,9 @@ include '../../include/Add_session.php';
                                                                 <label>Category</label>
                                                                 <select class="custom-select select2" name="team">
                                                                     <option value="">เลือก</option>
-                                                                    <?php while ($team = $query_team->fetch()) { ?>
-                                                                        <option value="<?php echo htmlspecialchars($team['team_name']); ?>"><?php echo htmlspecialchars($team['team_name']); ?></option>
-                                                                    <?php } ?>
+
+                                                                    <option value=""></option>
+
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -103,9 +103,9 @@ include '../../include/Add_session.php';
                                                                 <label>Sub-Category</label>
                                                                 <select class="custom-select select2" name="role">
                                                                     <option value="">เลือก</option>
-                                                                    <?php while ($role = $query_role->fetch()) { ?>
-                                                                        <option value="<?php echo htmlspecialchars($role['role']); ?>"><?php echo htmlspecialchars($role['role']); ?></option>
-                                                                    <?php } ?>
+
+                                                                    <option value=""></option>
+
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -153,23 +153,23 @@ include '../../include/Add_session.php';
                                         </thead>
 
                                         <tbody>
-                                            <?php foreach ($query_users as $user) { ?>
-                                                <tr id="myTable">
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['username']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['company']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['team_name']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['role']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['position']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['phone']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['email']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['created_at']); ?></td>
-                                                    <td>
-                                                        <a href="edit_account.php?user_id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                        <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                    </td>
-                                                </tr>
-                                            <?php } ?>
+
+                                            <tr id="myTable">
+                                                <td class="text-nowrap"></td>
+                                                <td class="text-nowrap"></td>
+                                                <td class="text-nowrap"></td>
+                                                <td class="text-nowrap"></td>
+                                                <td class="text-nowrap"></td>
+                                                <td class="text-nowrap"></td>
+                                                <td class="text-nowrap"></td>
+                                                <td class="text-nowrap"></td>
+                                                <td class="text-nowrap"></td>
+                                                <td>
+                                                    <a href="edit_account.php?user_id=" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                    <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                                </td>
+                                            </tr>
+
                                         </tbody>
                                         <tfoot>
                                             <tr>

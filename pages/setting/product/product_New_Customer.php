@@ -28,12 +28,15 @@ $user_id = $_SESSION['user_id'];
 $search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) : '';
 
 // Query พื้นฐานในการดึงข้อมูลสินค้า
-$sql_products = "SELECT p.*, u.first_name AS creator_first_name, u.last_name AS creator_last_name 
-                FROM products p 
-                LEFT JOIN users u ON p.created_by = u.user_id 
-                WHERE 1=1";
+$sql_products = "SELECT p.*, u.first_name AS creator_first_name, u.last_name AS creator_last_name,
+                 GROUP_CONCAT(DISTINCT c.company SEPARATOR ', ') AS customer_companies,
+                 COUNT(DISTINCT pr.project_id) AS project_count
+                 FROM products p 
+                 LEFT JOIN users u ON p.created_by = u.user_id 
+                 LEFT JOIN projects pr ON p.product_id = pr.product_id
+                 LEFT JOIN customers c ON pr.customer_id = c.customer_id
+                 WHERE 1=1";
 
-// เพิ่มเงื่อนไขการค้นหาตามที่ผู้ใช้กรอกมา
 if (!empty($search_service)) {
     $sql_products .= " AND (p.product_name LIKE :search_service 
                         OR p.product_description LIKE :search_service 
@@ -41,16 +44,15 @@ if (!empty($search_service)) {
                         OR u.last_name LIKE :search_service)";
 }
 
-// เตรียม statement และ bind ค่า
+$sql_products .= " GROUP BY p.product_id";
+
 $stmt = $condb->prepare($sql_products);
 
-// ผูกค่าการค้นหากับ statement
 if (!empty($search_service)) {
     $search_param = '%' . $search_service . '%';
     $stmt->bindParam(':search_service', $search_param, PDO::PARAM_STR);
 }
 
-// Execute query เพื่อดึงข้อมูลสินค้า
 $stmt->execute();
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -141,6 +143,34 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         .font-weight-bold {
             font-weight: 600 !important;
+        }
+    </style>
+
+    <!-- ดึงข้อมูลลูกค้าที่มีการซื้อสินค้ามาแสดงในตาราง -->
+    <style>
+        .badge-info {
+            background-color: #17a2b8;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+    </style>
+    <!-- เว้นบรรทัดสำหรับชื่อลูกค้า -->
+    <style>
+        .badge-info {
+            background-color: #17a2b8;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            display: block;
+            text-align: left;
+            white-space: normal;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -239,6 +269,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <th class="text-center" width="5%">No.</th>
                                                 <th class="text-center" width="25%">Image</th>
                                                 <th>Product Details</th>
+                                                <th>Customers</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -260,6 +291,18 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                             <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-sm btn-outline-info"><i class="fas fa-pencil-alt"></i> Edit</a>
                                                             <a href="delete_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i> Delete</a>
                                                         </div>
+                                                    </td>
+                                                    <td>
+                                                        <?php
+                                                        if ($product['project_count'] > 0 && !empty($product['customer_companies'])) {
+                                                            $companies = explode(', ', $product['customer_companies']);
+                                                            foreach ($companies as $company) {
+                                                                echo "<div class='badge badge-info mb-1'>" . htmlspecialchars($company) . "</div>";
+                                                            }
+                                                        } else {
+                                                            echo "<span class='text-muted'>ไม่มีลูกค้าที่ซื้อสินค้านี้</span>";
+                                                        }
+                                                        ?>
                                                     </td>
                                                 </tr>
                                             <?php } ?>
