@@ -860,6 +860,7 @@ function getStatusClass($status)
                                                                 <span class="info-value text-success"><?php
                                                                                             // คำนวณจำนวนงวดที่ชำระแล้ว
                                                                                             $paidInstallments = 0;
+                                                                                            $totalInstallments = count($payments); // จำนวนงวดทั้งหมด
                                                                                             foreach ($payments as $payment) {
                                                                                                 if ($payment['status'] == 'Paid') {
                                                                                                     $paidInstallments++;
@@ -869,8 +870,9 @@ function getStatusClass($status)
                                                                                             // คำนวณยอดเงินที่ชำระแล้วทั้งหมด
                                                                                             $total_paid = array_sum(array_column($payments, 'amount_paid'));
                                                                                             echo number_format($total_paid, 2);
-                                                                                            ?> บาท (<?php echo $paidInstallments; ?> งวด)</span>
+                                                                                            ?> บาท (<?php echo $paidInstallments; ?>/<?php echo $totalInstallments; ?> งวด)</span>
                                                             </div>
+
 
                                                         </div>
                                                         <div class="col-md-4">
