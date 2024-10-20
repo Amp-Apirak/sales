@@ -817,14 +817,72 @@ function getStatusClass($status)
                                                 <!-- สรุปข้อมูลการชำระเงิน -->
                                                 <div class="mt-3">
                                                     <strong>สรุปการชำระเงิน:</strong>
-                                                    <?php
-                                                    $total_amount = array_sum(array_column($payments, 'amount'));
-                                                    $total_paid = array_sum(array_column($payments, 'amount_paid'));
-                                                    $remaining = $total_amount - $total_paid;
-                                                    ?>
-                                                    <p>จำนวนเงินทั้งหมด: <?php echo number_format($total_amount, 2); ?> บาท</p>
-                                                    <p>จำนวนเงินที่ชำระแล้ว: <?php echo number_format($total_paid, 2); ?> บาท</p>
-                                                    <p class="text-danger text-bold">จำนวนเงินคงเหลือ: <?php echo number_format($remaining, 2); ?> บาท</p>
+                                                    <div class="row mt-2">
+                                                        <div class="col-md-4">
+                                                            <div class="info-item">
+                                                                <span class="info-label">ราคาขาย (ไม่รวมภาษี):</span>
+                                                                <span class="info-value"><?php echo number_format($project['sale_no_vat'], 2); ?> บาท</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="info-item">
+                                                                <span class="info-label">จำนวนเงินรวมงวดชำระ :</span>
+                                                                <span class="info-value"><?php
+                                                                                            $total_scheduled_payments = array_sum(array_column($payments, 'amount'));
+                                                                                            echo number_format($total_scheduled_payments, 2);
+                                                                                            ?> บาท</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="info-item">
+                                                                <span class="info-label">(%)รวมงวดชำระ :</span>
+                                                                <span class="info-value"><?php
+                                                                                            $total_percentage_scheduled = array_sum(array_column($payments, 'payment_percentage'));
+                                                                                            echo number_format($total_percentage_scheduled, 2);
+                                                                                            ?>%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <div class="info-item">
+                                                                <span class="info-label">จำนวนภาษีมูลค่าเพิ่ม (VAT 7%):</span>
+                                                                <span class="info-value"><?php
+                                                                                            $vat_rate = 7; // กำหนดอัตรา VAT เป็น 7%
+                                                                                            $vat_amount = ($project['sale_no_vat'] * $vat_rate) / 100;
+                                                                                            echo number_format($vat_amount, 2);
+                                                                                            ?> บาท</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="info-item">
+                                                                <span class="info-label text-success">จำนวนเงินที่ชำระแล้ว:</span>
+                                                                <span class="info-value text-success"><?php
+                                                                                            // คำนวณจำนวนงวดที่ชำระแล้ว
+                                                                                            $paidInstallments = 0;
+                                                                                            foreach ($payments as $payment) {
+                                                                                                if ($payment['status'] == 'Paid') {
+                                                                                                    $paidInstallments++;
+                                                                                                }
+                                                                                            }
+
+                                                                                            // คำนวณยอดเงินที่ชำระแล้วทั้งหมด
+                                                                                            $total_paid = array_sum(array_column($payments, 'amount_paid'));
+                                                                                            echo number_format($total_paid, 2);
+                                                                                            ?> บาท (<?php echo $paidInstallments; ?> งวด)</span>
+                                                            </div>
+
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="info-item">
+                                                                <span class="info-label text-danger">(%)ที่ยังไม่ได้แบ่งชำระ:</span>
+                                                                <span class="info-value text-danger"><?php
+                                                                                                        $remaining_percentage = 100 - $total_percentage_scheduled;
+                                                                                                        echo number_format($remaining_percentage, 2);
+                                                                                                        ?>%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
