@@ -553,7 +553,7 @@ function getStatusClass($status)
                 <div class="card-header p-2">
                     <ul class="nav nav-pills">
                         <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
-                        <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
+                        <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">โครงการต้นทุน</a></li>
                         <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab" data-tab="documents">เอกสารแนบ</a></li>
                         <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
                     </ul
@@ -896,63 +896,35 @@ function getStatusClass($status)
                             <!-- แถบที่ 2 ต้นทุนโครงการ -->
                             <div class="tab-pane" id="project-cost">
                                 <div class="table-responsive">
-                                    <table id="costTable" class="table table-bordered">
+                                    <table id="costTable" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Type</th>
-                                                <th>PART No.</th>
-                                                <th>Description</th>
-                                                <th>QTY.</th>
-                                                <th>Price / Unit</th>
-                                                <th>Total Amount</th>
-                                                <th>Cost / Unit</th>
-                                                <th>Total Cost</th>
-                                                <th>Supplier</th>
-                                                <th>Actions</th>
+                                                <th>ลำดับ</th>
+                                                <th>ผู้ขาย</th>
+                                                <th>ประเภท</th>
+                                                <th>รายละเอียด</th>
+                                                <th>จำนวน</th>
+                                                <th>ราคา</th>
+                                                <th>การดำเนินการ</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <!-- ตัวอย่างข้อมูลแถวแรก -->
-                                            <tr>
-                                                <td>Hardware</td>
-                                                <td>ชุดเฝ้าระวัง</td>
-                                                <td>Brand : Eviev EV-07BX-4G</td>
-                                                <td>30</td>
-                                                <td>1,347.00</td>
-                                                <td>40,410.00</td>
-                                                <td>1,347.00</td>
-                                                <td>40,410.00</td>
-                                                <td>Stock Point IT</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-info" onclick="editRow(this)">แก้ไข</button>
-                                                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">ลบ</button>
+                                            <!-- ข้อมูลต้นทุนจะแสดงที่นี่ -->
+                                            <!-- แถวสำหรับกรอกข้อมูลต้นทุน -->
+                                            <tr id="inputRow">
+                                                <td>#</td>
+                                                <td><input type="text" class="form-control form-control-sm" id="vendor" placeholder="ผู้ขาย"></td>
+                                                <td><input type="text" class="form-control form-control-sm" id="type" placeholder="ประเภท"></td>
+                                                <td><input type="text" class="form-control form-control-sm" id="description" placeholder="รายละเอียด"></td>
+                                                <td><input type="number" class="form-control form-control-sm" id="quantity" placeholder="จำนวน"></td>
+                                                <td><input type="number" class="form-control form-control-sm" id="price" placeholder="ราคา"></td>
+                                                <td class="text-nowrap">
+                                                    <button type="button" class="btn btn-primary btn-sm" onclick="addCost()">เพิ่ม</button>
                                                 </td>
                                             </tr>
-                                            <!-- แถวสำหรับกรอกข้อมูลใหม่ -->
-                                            <tr>
-                                                <td><input type="text" id="typeInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="partNoInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="descriptionInput" class="form-control form-control-sm"></td>
-                                                <td><input type="number" id="qtyInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="priceInput" class="form-control form-control-sm"></td> <!-- ช่องที่จะแสดงคอมม่า -->
-                                                <td><span id="totalAmountInput">0.00</span></td>
-                                                <td><input type="text" id="costInput" class="form-control form-control-sm"></td> <!-- ช่องที่จะแสดงคอมม่า -->
-                                                <td><span id="totalCostInput">0.00</span></td>
-                                                <td><input type="text" id="supplierInput" class="form-control form-control-sm"></td>
-                                                <td><button class="btn btn-sm btn-success" onclick="addRow()">เพิ่ม</button></td>
-                                            </tr>
-
                                         </tbody>
                                     </table>
                                 </div>
-
-                                <!-- Total Section -->
-                                <div class="totals-section">
-                                    <p>Total: <span id="totalAmount">0.00</span> บาท</p>
-                                    <p>Vat: <span id="vatAmount">0.00</span> บาท</p>
-                                    <p>Grand Total: <span id="grandTotal">0.00</span> บาท</p>
-                                </div>
-
                             </div>
 
 
@@ -1895,159 +1867,76 @@ function getStatusClass($status)
 
 <!-- function สำหรับการพิมพ์ PDF -->
 
-<!-- // ฟังก์ชันเพิ่มแถวใหม่ในตารางต้นทุน -->
+
 <script>
-    // ฟังก์ชันคำนวณยอดรวม
-    document.getElementById('qtyInput').addEventListener('input', calculateTotals);
-    document.getElementById('priceInput').addEventListener('input', handleInputWithCommas);
-    document.getElementById('costInput').addEventListener('input', handleInputWithCommas);
+    // ฟังก์ชันเพิ่มแถวใหม่ในตารางต้นทุน
+    // ฟังก์ชันเพิ่มแถวใหม่ในตารางต้นทุน
+    function addCost() {
+        const vendor = document.getElementById('vendor').value;
+        const type = document.getElementById('type').value;
+        const description = document.getElementById('description').value;
+        const quantity = document.getElementById('quantity').value;
+        const price = document.getElementById('price').value;
 
-    // ฟังก์ชันฟอร์แมตตัวเลขพร้อมรักษาตำแหน่ง Cursor
-    function handleInputWithCommas(event) {
-        const input = event.target;
-        let value = input.value;
-
-        // เก็บตำแหน่งของ Cursor ก่อนฟอร์แมต
-        const cursorPosition = input.selectionStart;
-
-        // ลบคอมม่าออกจากค่าที่มีอยู่
-        value = value.replace(/,/g, '');
-
-        // ตรวจสอบและฟอร์แมตตัวเลขใหม่
-        if (!isNaN(value) && value !== '') {
-            input.value = formatNumber(value);
-        } else {
-            input.value = '';
-        }
-
-        // คืนตำแหน่ง Cursor กลับ
-        input.setSelectionRange(cursorPosition, cursorPosition);
-        calculateTotals(); // เรียกฟังก์ชันคำนวณยอดรวมใหม่
-    }
-
-    // ฟังก์ชันฟอร์แมตตัวเลขให้มีคอมม่า
-    function formatNumber(value) {
-        const parts = value.split('.');
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        return parts.join('.');
-    }
-
-    // ฟังก์ชันคำนวณยอดรวมในแถวใหม่ที่กรอกข้อมูล
-    function calculateTotals() {
-        const qty = parseFloat(document.getElementById('qtyInput').value.replace(/,/g, '')) || 0;
-        const price = parseFloat(document.getElementById('priceInput').value.replace(/,/g, '')) || 0;
-        const cost = parseFloat(document.getElementById('costInput').value.replace(/,/g, '')) || 0;
-
-        const totalAmount = qty * price;
-        const totalCost = qty * cost;
-
-        document.getElementById('totalAmountInput').textContent = totalAmount.toLocaleString('th-TH', {
-            minimumFractionDigits: 2
-        });
-        document.getElementById('totalCostInput').textContent = totalCost.toLocaleString('th-TH', {
-            minimumFractionDigits: 2
-        });
-    }
-
-    // ฟังก์ชันสำหรับเพิ่มแถวใหม่ในตาราง
-    function addRow() {
-        const type = document.getElementById('typeInput').value;
-        const partNo = document.getElementById('partNoInput').value;
-        const description = document.getElementById('descriptionInput').value;
-        const qty = parseFloat(document.getElementById('qtyInput').value.replace(/,/g, '')) || 0;
-        const price = parseFloat(document.getElementById('priceInput').value.replace(/,/g, '')) || 0;
-        const totalAmount = qty * price;
-        const cost = parseFloat(document.getElementById('costInput').value.replace(/,/g, '')) || 0;
-        const totalCost = qty * cost;
-        const supplier = document.getElementById('supplierInput').value;
-
-        if (type && partNo && description && qty && price && cost && supplier) {
+        if (vendor && type && description && quantity && price) {
             const table = document.getElementById('costTable').getElementsByTagName('tbody')[0];
-            const newRow = table.insertRow(-1); // แทรกก่อนแถวฟอร์มเพิ่ม
+            const rowCount = table.rows.length; // นับจำนวนแถวที่มีอยู่
+            const newRow = table.insertRow(rowCount - 1); // เพิ่มแถวใหม่ก่อนแถวฟิลด์กรอกข้อมูล
 
             newRow.innerHTML = `
             <tr>
-                <td>${type}</td>
-                <td>${partNo}</td>
-                <td>${description}</td>
-                <td>${qty}</td>
-                <td>${price.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
-                <td>${totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
-                <td>${cost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
-                <td>${totalCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
-                <td>${supplier}</td>
+                <td>${rowCount}</td>
+                <td><span>${vendor}</span></td>
+                <td><span>${type}</span></td>
+                <td><span>${description}</span></td>
+                <td><span>${quantity}</span></td>
+                <td><span>${price}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-info" onclick="editRow(this)">แก้ไข</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">ลบ</button>
+                    <button type="button" class="btn btn-info btn-sm" onclick="editCost(this)">แก้ไข</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeCostRow(this)">ลบ</button>
                 </td>
             </tr>
         `;
 
-            updateTotals();
-            clearFormFields();
+            // ล้างค่าในฟิลด์หลังจากเพิ่มต้นทุนเสร็จ
+            document.getElementById('vendor').value = '';
+            document.getElementById('type').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('quantity').value = '';
+            document.getElementById('price').value = '';
         } else {
             alert("กรุณากรอกข้อมูลให้ครบถ้วน");
         }
     }
 
-    // ฟังก์ชันสำหรับแก้ไขแถว
-    function editRow(button) {
+    // ฟังก์ชันลบแถว
+    function removeCostRow(button) {
+        const row = button.closest('tr');
+        row.parentNode.removeChild(row);
+        updateRowNumbers();
+    }
+
+    // ฟังก์ชันแก้ไขแถว
+    function editCost(button) {
         const row = button.closest('tr');
         const cells = row.getElementsByTagName('td');
 
-        // นำข้อมูลจากแถวที่เลือกไปยังฟิลด์ฟอร์มเพื่อแก้ไข
-        document.getElementById('typeInput').value = cells[0].textContent;
-        document.getElementById('partNoInput').value = cells[1].textContent;
-        document.getElementById('descriptionInput').value = cells[2].textContent;
-        document.getElementById('qtyInput').value = cells[3].textContent;
-        document.getElementById('priceInput').value = cells[4].textContent.replace(/,/g, '');
-        document.getElementById('costInput').value = cells[6].textContent.replace(/,/g, '');
-        document.getElementById('supplierInput').value = cells[8].textContent;
+        // รับค่าจากแถวที่ต้องการแก้ไขและใส่กลับไปยังฟิลด์
+        document.getElementById('vendor').value = cells[1].querySelector('span').textContent;
+        document.getElementById('type').value = cells[2].querySelector('span').textContent;
+        document.getElementById('description').value = cells[3].querySelector('span').textContent;
+        document.getElementById('quantity').value = cells[4].querySelector('span').textContent;
+        document.getElementById('price').value = cells[5].querySelector('span').textContent;
 
-        // ลบแถวปัจจุบันหลังจากแก้ไขเสร็จ
-        deleteRow(button);
+        // ลบแถวปัจจุบันหลังจากทำการแก้ไข
+        removeCostRow(button);
     }
 
-    // ฟังก์ชันสำหรับลบแถว
-    function deleteRow(button) {
-        const row = button.closest('tr');
-        row.parentNode.removeChild(row);
-        updateTotals();
-    }
-
-    // ฟังก์ชันสำหรับคำนวณยอดรวม
-    function updateTotals() {
-        const rows = document.querySelectorAll('#costTable tbody tr:not(:last-child)'); // เว้นแถวสุดท้าย
-        let totalAmount = 0;
-        let totalCost = 0;
-
-        rows.forEach(row => {
-            const amountCell = row.cells[5];
-            const costCell = row.cells[7];
-
-            totalAmount += parseFloat(amountCell.textContent.replace(/,/g, '')) || 0;
-            totalCost += parseFloat(costCell.textContent.replace(/,/g, '')) || 0;
+    // ฟังก์ชันอัปเดตลำดับแถวใหม่หลังจากลบหรือแก้ไขแถว
+    function updateRowNumbers() {
+        const rows = document.querySelectorAll('#costTable tbody tr:not(#inputRow)');
+        rows.forEach((row, index) => {
+            row.cells[0].textContent = index + 1; // อัปเดตลำดับ
         });
-
-        document.getElementById('totalAmount').textContent = totalAmount.toLocaleString('th-TH', {
-            minimumFractionDigits: 2
-        });
-        document.getElementById('vatAmount').textContent = (totalAmount * 0.07).toLocaleString('th-TH', {
-            minimumFractionDigits: 2
-        }); // คำนวณ VAT 7%
-        document.getElementById('grandTotal').textContent = (totalAmount + (totalAmount * 0.07)).toLocaleString('th-TH', {
-            minimumFractionDigits: 2
-        });
-    }
-
-    // ฟังก์ชันสำหรับล้างข้อมูลในฟอร์ม
-    function clearFormFields() {
-        document.getElementById('typeInput').value = '';
-        document.getElementById('partNoInput').value = '';
-        document.getElementById('descriptionInput').value = '';
-        document.getElementById('qtyInput').value = '';
-        document.getElementById('priceInput').value = '';
-        document.getElementById('costInput').value = '';
-        document.getElementById('supplierInput').value = '';
     }
 </script>
