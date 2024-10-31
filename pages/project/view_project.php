@@ -911,46 +911,49 @@ function getStatusClass($status)
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <!-- ตัวอย่างข้อมูลแถวแรก -->
-                                            <tr>
-                                                <td>Hardware</td>
-                                                <td>ชุดเฝ้าระวัง</td>
-                                                <td>Brand : Eviev EV-07BX-4G</td>
-                                                <td>30</td>
-                                                <td>1,347.00</td>
-                                                <td>40,410.00</td>
-                                                <td>1,347.00</td>
-                                                <td>40,410.00</td>
-                                                <td>Stock Point IT</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-info" onclick="editRow(this)">แก้ไข</button>
-                                                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">ลบ</button>
-                                                </td>
-                                            </tr>
-                                            <!-- แถวสำหรับกรอกข้อมูลใหม่ -->
+                                        <tbody id="costTableBody">
+                                            <!-- ข้อมูลจะถูกเพิ่มที่นี่ด้วย JavaScript -->
+                                        </tbody>
+                                        <!-- แถวสำหรับกรอกข้อมูลใหม่ -->
+                                        <tfoot>
                                             <tr>
                                                 <td><input type="text" id="typeInput" class="form-control form-control-sm"></td>
                                                 <td><input type="text" id="partNoInput" class="form-control form-control-sm"></td>
                                                 <td><input type="text" id="descriptionInput" class="form-control form-control-sm"></td>
                                                 <td><input type="number" id="qtyInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="priceInput" class="form-control form-control-sm"></td> <!-- ช่องที่จะแสดงคอมม่า -->
+                                                <td><input type="text" id="priceInput" class="form-control form-control-sm"></td>
                                                 <td><span id="totalAmountInput">0.00</span></td>
-                                                <td><input type="text" id="costInput" class="form-control form-control-sm"></td> <!-- ช่องที่จะแสดงคอมม่า -->
+                                                <td><input type="text" id="costInput" class="form-control form-control-sm"></td>
                                                 <td><span id="totalCostInput">0.00</span></td>
                                                 <td><input type="text" id="supplierInput" class="form-control form-control-sm"></td>
-                                                <td><button class="btn btn-sm btn-success" onclick="addRow()">เพิ่ม</button></td>
+                                                <td><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
                                             </tr>
-
-                                        </tbody>
+                                        </tfoot>
                                     </table>
                                 </div>
 
                                 <!-- Total Section -->
                                 <div class="totals-section">
-                                    <p>Total: <span id="totalAmount">0.00</span> บาท</p>
-                                    <p>Vat: <span id="vatAmount">0.00</span> บาท</p>
-                                    <p>Grand Total: <span id="grandTotal">0.00</span> บาท</p>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <p>Total Amount: <span id="totalAmount">0.00</span> บาท</p>
+                                                    <p>Vat (7%): <span id="vatAmount">0.00</span> บาท</p>
+                                                    <p>Grand Total: <span id="grandTotal">0.00</span> บาท</p>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <p>Total Cost: <span id="totalCost">0.00</span> บาท</p>
+                                                    <p>Cost Vat (7%): <span id="costVatAmount">0.00</span> บาท</p>
+                                                    <p>Total Cost with Vat: <span id="totalCostWithVat">0.00</span> บาท</p>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <p>Profit: <span id="profitAmount">0.00</span> บาท</p>
+                                                    <p>Profit Percentage: <span id="profitPercentage">0.00</span>%</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                             </div>
@@ -1891,6 +1894,60 @@ function getStatusClass($status)
         }
 
     }
+
+    /* ปรับแต่งตารางแสดงผลต้นทุนโครงการ Datatables */
+    .table-responsive {
+        margin: 15px 0;
+    }
+
+    #costTable {
+        width: 100% !important;
+        margin-bottom: 1rem;
+    }
+
+    #costTable th,
+    #costTable td {
+        padding: 8px;
+        vertical-align: middle;
+    }
+
+    .dataTables_wrapper {
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+
+    /* สไตล์สำหรับปุ่ม DataTables */
+    .dt-buttons {
+        margin-bottom: 15px;
+        float: left;
+    }
+
+    .dt-button {
+        margin-right: 5px !important;
+    }
+
+    /* จัดการ responsive */
+    @media screen and (max-width: 767px) {
+        .table-responsive {
+            border: none;
+        }
+
+        .dataTables_wrapper {
+            padding: 0;
+        }
+    }
+
+    /* ปรับแต่งปุ่ม Export */
+    .buttons-excel {
+        color: #fff !important;
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+        padding: .25rem .5rem !important;
+        font-size: .875rem !important;
+        line-height: 1.5 !important;
+        border-radius: .2rem !important;
+    }
 </style>
 
 <!-- function สำหรับการพิมพ์ PDF -->
@@ -2049,5 +2106,377 @@ function getStatusClass($status)
         document.getElementById('priceInput').value = '';
         document.getElementById('costInput').value = '';
         document.getElementById('supplierInput').value = '';
+    }
+
+
+    // เพิ่ม global variables
+    let projectId = '<?php echo $project_id; ?>'; // รับค่า project_id จาก PHP
+
+    // เมื่อโหลดหน้าเว็บ
+    $(document).ready(function() {
+        // โหลดข้อมูลเริ่มต้น
+        loadCosts();
+
+        // เพิ่ม event listeners
+        $('#qtyInput').on('input', calculateTotals);
+        $('#priceInput').on('input', handleInputWithCommas);
+        $('#costInput').on('input', handleInputWithCommas);
+    });
+
+    // แทนที่ฟังก์ชัน addRow เดิมด้วย saveCost
+    function saveCost() {
+        if (!validateInputs()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+                text: 'โปรดกรอกข้อมูลที่จำเป็นทุกช่อง',
+                confirmButtonText: 'ตกลง'
+            });
+            return;
+        }
+
+        const costData = {
+            csrf_token: $('input[name="csrf_token"]').val(),
+            project_id: projectId,
+            type: $('#typeInput').val(),
+            part_no: $('#partNoInput').val(),
+            description: $('#descriptionInput').val(),
+            quantity: parseFloat($('#qtyInput').val()),
+            price_per_unit: parseFormattedNumber($('#priceInput').val()),
+            cost_per_unit: parseFormattedNumber($('#costInput').val()),
+            supplier: $('#supplierInput').val()
+        };
+
+        $.ajax({
+            url: 'save_cost.php',
+            type: 'POST',
+            data: costData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'บันทึกสำเร็จ',
+                        text: 'เพิ่มข้อมูลต้นทุนเรียบร้อยแล้ว',
+                        confirmButtonText: 'ตกลง'
+                    }).then(() => {
+                        clearFormFields(); // ล้างฟอร์ม
+                        loadCosts(); // โหลดข้อมูลใหม่
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: response.message,
+                        confirmButtonText: 'ตกลง'
+                    });
+                }
+            }
+        });
+    }
+
+    // ฟังก์ชันป้องกัน XSS
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // เรียกโหลดข้อมูลเมื่อโหลดหน้า
+    $(document).ready(function() {
+        loadCosts();
+    });
+
+    // เพิ่มฟังก์ชันตรวจสอบการกรอกข้อมูล
+    function validateInputs() {
+        const required = ['typeInput', 'partNoInput', 'descriptionInput', 'qtyInput', 'priceInput', 'costInput', 'supplierInput'];
+        return required.every(id => $('#' + id).val().trim() !== '');
+    }
+
+    // ฟังก์ชันโหลดข้อมูลต้นทุน
+    // แทนที่ฟังก์ชัน loadCosts เดิมด้วยโค้ดนี้
+    function loadCosts() {
+        $.ajax({
+            url: 'get_costs.php',
+            type: 'GET',
+            data: {
+                project_id: projectId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // ถ้ามีตาราง DataTable อยู่แล้ว ให้ทำลายก่อน
+                    if ($.fn.DataTable.isDataTable('#costTable')) {
+                        $('#costTable').DataTable().destroy();
+                    }
+
+                    const tbody = $('#costTableBody');
+                    tbody.empty(); // ล้างข้อมูลเก่า
+
+                    // เพิ่มข้อมูลใหม่
+                    response.costs.forEach(function(cost) {
+                        const row = $('<tr>');
+                        row.html(`
+                        <td>${escapeHtml(cost.type)}</td>
+                        <td>${escapeHtml(cost.part_no)}</td>
+                        <td>${escapeHtml(cost.description)}</td>
+                        <td>${cost.quantity}</td>
+                        <td>${formatNumber(cost.price_per_unit)}</td>
+                        <td>${formatNumber(cost.total_amount)}</td>
+                        <td>${formatNumber(cost.cost_per_unit)}</td>
+                        <td>${formatNumber(cost.total_cost)}</td>
+                        <td>${escapeHtml(cost.supplier)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info mr-1" onclick="editCost('${cost.cost_id}')">แก้ไข</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCost('${cost.cost_id}')">ลบ</button>
+                        </td>
+                    `);
+                        tbody.append(row);
+                    });
+
+                    // สร้าง DataTable พร้อมปุ่ม Export
+                    $('#costTable').DataTable({
+                        dom: 'Bfrtip',
+                        buttons: [{
+                            extend: 'excel',
+                            text: '<i class="fas fa-file-excel"></i> Export Excel',
+                            className: 'btn btn-success btn-sm',
+                            title: 'Project Cost Report',
+                            filename: 'Project_Costs_' + new Date().toISOString().slice(0, 10),
+                            customize: function(xlsx) {
+                                var sheet = xlsx.xl.worksheets['sheet1.xml'];
+
+                                // เพิ่มข้อมูลสรุป
+                                var summaryData = [
+                                    ['Summary'],
+                                    ['Total Amount:', $('#totalAmount').text()],
+                                    ['VAT Amount:', $('#vatAmount').text()],
+                                    ['Grand Total:', $('#grandTotal').text()],
+                                    ['Total Cost:', $('#totalCost').text()],
+                                    ['Cost VAT Amount:', $('#costVatAmount').text()],
+                                    ['Total Cost with VAT:', $('#totalCostWithVat').text()],
+                                    ['Profit Amount:', $('#profitAmount').text()],
+                                    ['Profit Percentage:', $('#profitPercentage').text()]
+                                ];
+
+                                // คำนวณตำแหน่งแถวสุดท้าย
+                                var lastRow = $('row', sheet).length;
+
+                                // เพิ่มข้อมูลสรุป
+                                summaryData.forEach(function(data) {
+                                    lastRow++;
+                                    var row = sheet.createElement('row');
+
+                                    data.forEach(function(text, index) {
+                                        var cell = sheet.createElement('c');
+                                        var t = sheet.createElement('t');
+                                        t.textContent = text;
+                                        cell.appendChild(t);
+                                        if (index === 0) {
+                                            cell.setAttribute('s', '2'); // style สำหรับหัวข้อ
+                                        }
+                                        row.appendChild(cell);
+                                    });
+
+                                    sheet.getElementsByTagName('sheetData')[0].appendChild(row);
+                                });
+                            },
+                            exportOptions: {
+                                columns: ':not(:last-child)' // ไม่รวมคอลัมน์ Actions
+                            }
+                        }],
+                        pageLength: 10,
+                        responsive: true,
+                        ordering: true,
+                        searching: true,
+                        columnDefs: [{
+                            targets: -1, // คอลัมน์สุดท้าย (Actions)
+                            orderable: false
+                        }],
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/th.json'
+                        }
+                    });
+
+                    // อัพเดทข้อมูลสรุป
+                    if (response.summary) {
+                        updateSummaryDisplay(response.summary);
+                    }
+                }
+            }
+        });
+    }
+
+
+    $(document).ready(function() {
+        loadCosts(); // โหลดข้อมูลและสร้าง DataTable เมื่อหน้าเว็บโหลดเสร็จ
+
+        // เพิ่ม event listeners
+        $('#qtyInput').on('input', calculateTotals);
+        $('#priceInput').on('input', handleInputWithCommas);
+        $('#costInput').on('input', handleInputWithCommas);
+    });
+
+    // ฟังก์ชันอัพเดทยอดรวม
+    // function updateSummary(summary) {
+    //     $('#totalAmount').text(formatNumber(summary.total_amount) + ' บาท');
+    //     $('#vatAmount').text(formatNumber(summary.vat_amount) + ' บาท');
+    //     $('#grandTotal').text(formatNumber(summary.grand_total) + ' บาท');
+    //     $('#totalCost').text(formatNumber(summary.total_cost) + ' บาท');
+    //     $('#costVatAmount').text(formatNumber(summary.cost_vat_amount) + ' บาท');
+    //     $('#totalCostWithVat').text(formatNumber(summary.total_cost_with_vat) + ' บาท');
+    //     $('#profitAmount').text(formatNumber(summary.profit_amount) + ' บาท');
+    //     $('#profitPercentage').text(formatNumber(summary.profit_percentage) + '%');
+    // }
+
+    // ฟังก์ชันอัพเดทการแสดงผลสรุป
+    function updateSummaryDisplay(summary) {
+        $('#totalAmount').text(formatNumber(summary.total_amount));
+        $('#vatAmount').text(formatNumber(summary.vat_amount));
+        $('#grandTotal').text(formatNumber(summary.grand_total));
+        $('#totalCost').text(formatNumber(summary.total_cost));
+        $('#costVatAmount').text(formatNumber(summary.cost_vat_amount));
+        $('#totalCostWithVat').text(formatNumber(summary.total_cost_with_vat));
+        $('#profitAmount').text(formatNumber(summary.profit_amount));
+        $('#profitPercentage').text(formatNumber(summary.profit_percentage));
+    }
+
+    // ฟังก์ชันแก้ไขข้อมูล
+    function editCost(costId) {
+        $.ajax({
+            url: 'get_cost_details.php',
+            type: 'GET',
+            data: {
+                cost_id: costId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    const cost = response.cost;
+                    // นำข้อมูลไปแสดงในฟอร์ม
+                    $('#typeInput').val(cost.type);
+                    $('#partNoInput').val(cost.part_no);
+                    $('#descriptionInput').val(cost.description);
+                    $('#qtyInput').val(cost.quantity);
+                    $('#priceInput').val(formatNumber(cost.price_per_unit));
+                    $('#costInput').val(formatNumber(cost.cost_per_unit));
+                    $('#supplierInput').val(cost.supplier);
+
+                    // เปลี่ยนปุ่มบันทึกเป็นปุ่มอัพเดท
+                    const saveButton = $('button[onclick="saveCost()"]');
+                    saveButton.text('อัพเดท');
+                    saveButton.attr('onclick', `updateCost('${costId}')`);
+
+                    // เลื่อนไปที่ฟอร์ม
+                    $('html, body').animate({
+                        scrollTop: $('#costForm').offset().top
+                    }, 500);
+                }
+            }
+        });
+    }
+
+    // ฟังก์ชันอัพเดทข้อมูล
+    function updateCost(costId) {
+        if (!validateInputs()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+                text: 'โปรดกรอกข้อมูลที่จำเป็นทุกช่อง',
+                confirmButtonText: 'ตกลง'
+            });
+            return;
+        }
+
+        const costData = {
+            csrf_token: $('input[name="csrf_token"]').val(),
+            cost_id: costId,
+            project_id: projectId,
+            type: $('#typeInput').val(),
+            part_no: $('#partNoInput').val(),
+            description: $('#descriptionInput').val(),
+            quantity: parseFloat($('#qtyInput').val()),
+            price_per_unit: parseFormattedNumber($('#priceInput').val()),
+            cost_per_unit: parseFormattedNumber($('#costInput').val()),
+            supplier: $('#supplierInput').val()
+        };
+
+        $.ajax({
+            url: 'edit_cost.php',
+            type: 'POST',
+            data: costData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'อัพเดทสำเร็จ',
+                        text: 'แก้ไขข้อมูลต้นทุนเรียบร้อยแล้ว',
+                        confirmButtonText: 'ตกลง'
+                    }).then(() => {
+                        // รีเซ็ตฟอร์มและปุ่มบันทึก
+                        clearFormFields();
+                        loadCosts();
+                        const saveButton = $('button[onclick*="updateCost"]');
+                        saveButton.text('เพิ่ม');
+                        saveButton.attr('onclick', 'saveCost()');
+                        loadCosts();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: response.message,
+                        confirmButtonText: 'ตกลง'
+                    });
+                }
+            }
+        });
+    }
+
+    // ฟังก์ชันลบข้อมูล
+    function deleteCost(costId) {
+        Swal.fire({
+            title: 'คุณแน่ใจหรือไม่?',
+            text: "คุณต้องการลบข้อมูลต้นทุนนี้ใช่หรือไม่?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'ใช่, ลบเลย!',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'delete_cost.php',
+                    type: 'POST',
+                    data: {
+                        csrf_token: $('input[name="csrf_token"]').val(),
+                        cost_id: costId,
+                        project_id: projectId
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'ลบสำเร็จ',
+                                text: 'ลบข้อมูลต้นทุนเรียบร้อยแล้ว',
+                                confirmButtonText: 'ตกลง'
+                            }).then(() => {
+                                loadCosts(); // โหลดข้อมูลและอัพเดทสรุปใหม่
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: response.message,
+                                confirmButtonText: 'ตกลง'
+                            });
+                        }
+                    }
+                });
+            }
+        });
     }
 </script>
