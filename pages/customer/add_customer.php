@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     }
 
     // ตรวจสอบความถูกต้องของรูปแบบอีเมล
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง";
     }
 
@@ -92,18 +92,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     if (empty($error_messages)) {
         try {
             // ตรวจสอบชื่อบริษัทซ้ำในฐานข้อมูล
-            $stmt = $condb->prepare("SELECT COUNT(*) FROM customers WHERE company = :company");
-            $stmt->execute([':company' => $company]);
-            if ($stmt->fetchColumn() > 0) {
-                throw new Exception("ชื่อบริษัทนี้มีอยู่แล้ว");
-            }
+            // $stmt = $condb->prepare("SELECT COUNT(*) FROM customers WHERE company = :company");
+            // $stmt->execute([':company' => $company]);
+            // if ($stmt->fetchColumn() > 0) {
+            //     throw new Exception("ชื่อบริษัทนี้มีอยู่แล้ว");
+            // }
 
             // ตรวจสอบอีเมลซ้ำในฐานข้อมูล
-            $stmt = $condb->prepare("SELECT COUNT(*) FROM customers WHERE email = :email");
-            $stmt->execute([':email' => $email]);
-            if ($stmt->fetchColumn() > 0) {
-                throw new Exception("อีเมลนี้มีอยู่แล้ว");
-            }
+            // $stmt = $condb->prepare("SELECT COUNT(*) FROM customers WHERE email = :email");
+            // $stmt->execute([':email' => $email]);
+            // if ($stmt->fetchColumn() > 0) {
+            //     throw new Exception("อีเมลนี้มีอยู่แล้ว");
+            // }
 
             // บันทึกข้อมูลลงในฐานข้อมูล
             $sql = "INSERT INTO customers (customer_id, customer_name, company, address, phone, email, remark, created_by, customers_image, office_phone, extension)

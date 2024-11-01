@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bindParam(':product_name', $product_name, PDO::PARAM_STR);
             $stmt->bindParam(':product_description', $product_description, PDO::PARAM_STR);
             $stmt->bindParam(':main_image', $main_image, PDO::PARAM_STR);
-            $stmt->bindParam(':created_by', $created_by, PDO::PARAM_INT);
+            $stmt->bindParam(':created_by', $created_by, PDO::PARAM_STR);
             $stmt->execute();
 
             // แสดงข้อความเมื่อเพิ่มสินค้าสำเร็จด้วย SweetAlert
