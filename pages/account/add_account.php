@@ -20,11 +20,14 @@ if (empty($_SESSION['csrf_token'])) {
 $csrf_token = $_SESSION['csrf_token'];
 
 // ฟังก์ชันทำความสะอาดข้อมูล input เพื่อป้องกันการโจมตีแบบ XSS
+
 function clean_input($data)
 {
-    return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
+    // ทำความสะอาดข้อมูลแต่ยังคงเก็บอักขระพิเศษไว้
+    $data = trim($data);
+    // ป้องกัน SQL Injection โดยใช้ PDO parameters แทน
+    return $data;
 }
-
 // ฟังก์ชันสำหรับสร้าง UUID สำหรับ user_id ใหม่
 function generateUUID()
 {
@@ -581,7 +584,7 @@ $current_user_team_id = $_SESSION['team_id'];
                 theme: 'bootstrap4',
                 selectionCssClass: 'form-control'
             });
-            
+
             // เพิ่มโค้ดนี้เพื่อให้ Select2 แสดงค่า Default ที่ถูกต้อง
             $('#team_id').trigger('change');
 

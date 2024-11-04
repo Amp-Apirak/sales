@@ -8,9 +8,11 @@ $csrf_token = $_SESSION['csrf_token'];
 // ฟังก์ชันทำความสะอาดข้อมูล input
 function clean_input($data)
 {
-    return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
+    // ทำความสะอาดข้อมูลแต่ยังคงเก็บอักขระพิเศษไว้
+    $data = trim($data);
+    // ป้องกัน SQL Injection โดยใช้ PDO parameters แทน
+    return $data;
 }
-
 // ฟังก์ชันสำหรับสร้าง UUID แบบปลอดภัย
 function generateUUID()
 {
