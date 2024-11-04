@@ -113,7 +113,7 @@ try {
 <!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-light-primary elevation-4">
     <!-- Brand Logo -->
-    <a href="<?php echo BASE_URL; ?>index.php" class="brand-link bg-dark bg-primary bg-danger ">
+    <a href="<?php echo BASE_URL; ?>index.php" class="brand-link bg-dark">
         <img src="<?php echo BASE_URL; ?>assets/img/inoo.png" alt="INO Management" class="brand-image img-circle elevation-3" style="opacity: .8">
         <span class="brand-text font-weight-light">INO Management</span>
     </a>

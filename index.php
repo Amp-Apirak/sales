@@ -419,6 +419,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!DOCTYPE html>
 <html lang="en">
+<?php $menu = "index"; ?>
 
 <head>
     <meta charset="utf-8">
