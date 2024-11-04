@@ -15,6 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ตรวจสอบว่ามีผู้ใช้นี้หรือไม่ และตรวจสอบรหัสผ่าน
     if ($user && password_verify($password, $user['password'])) {
+
+        // เพิ่ม team_name เข้าไปใน session
+        $_SESSION['team_name'] = $row['team_name'];
         // เก็บข้อมูลผู้ใช้ใน session
         $_SESSION['user_id'] = $user['user_id'];
         $_SESSION['username'] = $user['username'];

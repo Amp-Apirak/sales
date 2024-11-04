@@ -7,6 +7,24 @@ $first_name = $_SESSION['first_name']; // ดึง first_name ของผู�
 $lastname = $_SESSION['last_name']; // ดึง last_name ของผู้ใช้จาก session
 $profile_image = $_SESSION['profile_image']; // ดึง profile_image ของผู้ใช้จาก session
 
+// เมื่อมีการอัพเดทข้อมูลผู้ใช้หรือทีม
+try {
+    $stmt = $condb->prepare("
+        SELECT t.team_name 
+        FROM teams t 
+        WHERE t.team_id = :team_id
+    ");
+    $stmt->bindParam(':team_id', $_SESSION['team_id'], PDO::PARAM_STR);
+    $stmt->execute();
+    $team = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($team) {
+        $_SESSION['team_name'] = $team['team_name'];
+    }
+} catch (PDOException $e) {
+    echo "Error: " . $e->getMessage();
+}
+
 ?>
 
 
@@ -259,8 +277,15 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                 <img src="<?php echo $profile_image; ?>" alt="User Image">
             </div>
             <div class="info">
-                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-name"><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>
-                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role"><?php echo htmlspecialchars($_SESSION['role']); ?></a>
+                <?php
+                // ตรวจสอบว่ามี team_name ใน session หรือไม่
+                $team_display = isset($_SESSION['team_name']) ? $_SESSION['team_name'] : 'No Team';
+                ?>
+                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-name">
+                    <?php echo htmlspecialchars($team_display); ?> team
+                </a>
+                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role">Role : <?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>
+                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role">Name :<?php echo htmlspecialchars($_SESSION['role']); ?></a>
             </div>
             <a href="<?php echo BASE_URL; ?>logout.php" class="logout-btn info">
                 <i class="fas fa-sign-out-alt"></i> Logout
@@ -347,8 +372,8 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
 
                 <!-- <li class="nav-item">
                     <a href="#" class="nav-link <?php if ($menu == "service") {
-                                                                                                    echo "active";
-                                                                                                } ?> ">
+                                                    echo "active";
+                                                } ?> ">
                         <i class="nav-icon fas fa-receipt"></i>
                         <p>
                             IT Service
