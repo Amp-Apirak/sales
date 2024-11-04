@@ -266,8 +266,8 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                 <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-name">
                     <?php echo htmlspecialchars($team_display); ?> team
                 </a>
-                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role">Name :<?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>
-                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role">Role :<?php echo htmlspecialchars($_SESSION['role']); ?></a>
+                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role"><b>Name :</b> <?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>
+                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role"><b>Role :</b> <?php echo htmlspecialchars($_SESSION['role']); ?></a>
             </div>
             <a href="<?php echo BASE_URL; ?>logout.php" class="logout-btn info">
                 <i class="fas fa-sign-out-alt"></i> Logout
