@@ -329,9 +329,9 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                         </p>
                     </a>
                 </li>
-                <li class="nav-header text-primary">Service</li>
+                <!-- <li class="nav-header text-primary">Service</li> -->
 
-                <?php if ($role === 'Engineer'): ?>
+                <!-- <?php if ($role === 'Engineer'): ?>
                     <li class="nav-item">
                         <a href="<?php echo BASE_URL; ?>pages/category/category.php" class="nav-link <?php if ($menu == "category") {
                                                                                                             echo "active";
@@ -343,9 +343,9 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                             </p>
                         </a>
                     </li>
-                <?php endif; ?>
+                <?php endif; ?> -->
 
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                     <a href="#" class="nav-link <?php if ($menu == "service") {
                                                                                                     echo "active";
                                                                                                 } ?> ">
@@ -354,7 +354,7 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                             IT Service
                         </p>
                     </a>
-                </li>
+                </li> -->
                 <!-- <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>pages/inventory/inventory.php" class="nav-link <?php if ($menu == "inventory") {
                                                                                                         echo "active";
@@ -379,7 +379,7 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                     </li>
                 <?php endif; ?>
 
-                <?php if ($role != 'Engineer'): ?>
+                <!-- <?php if ($role != 'Engineer'): ?>
                     <li class="nav-item">
                         <a href="<?php echo BASE_URL; ?>pages/setting/suppliers/suppliers.php" class="nav-link <?php if ($menu == "suppliers") {
                                                                                                                     echo "active";
@@ -388,7 +388,7 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                             <p>Suppliers</p>
                         </a>
                     </li>
-                <?php endif; ?>
+                <?php endif; ?> -->
 
                 <?php if ($role === 'Executive'): ?>
                     <li class="nav-item">
