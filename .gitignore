@@ -32,7 +32,7 @@ vendor/
 *.xlsx
 *.ppt
 *.pptx
-# *.pdf
+*.pdf
 *.txt
 *.rtf
 *.odt
