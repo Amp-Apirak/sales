@@ -881,316 +881,285 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 </html>
 
-<!-- เพิ่ม Chart.js ล่าสุด -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 
 <script>
-    // =====================================================
-    // ส่วนที่ 1: การเตรียมพร้อมและฟังก์ชันช่วยเหลือ
-    // =====================================================
     document.addEventListener('DOMContentLoaded', function() {
+        // สร้าง Pie chart สำหรับสถานะโครงการ
+        var ctxStatus = document.getElementById('projectStatusChart').getContext('2d');
+        var statusData = <?php echo json_encode($project_status_data); ?>;
+        var labels = statusData.map(item => item.status);
+        var data = statusData.map(item => item.count);
+        var backgroundColors = [
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+        ];
 
-        let charts = {}; // เก็บ reference ของกราฟทั้งหมด
-
-        // ฟังก์ชันสำหรับจัดรูปแบบตัวเลขทั่วไป เช่น 1,234
-        function formatNumber(number) {
-            return new Intl.NumberFormat('th-TH', {
-                style: 'decimal',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-            }).format(number || 0);
-        }
-
-        // ฟังก์ชันสำหรับจัดรูปแบบเงิน เช่น ฿1,234
-        function formatCurrency(number) {
-            return '฿' + formatNumber(number);
-        }
-
-        // ฟังก์ชันสำหรับจัดรูปแบบเปอร์เซ็นต์ เช่น 12.34%
-        function formatPercent(number) {
-            return number.toFixed(2) + '%';
-        }
-
-        // ฟังก์ชันทำลายกราฟเดิม
-        function destroyCharts() {
-            Object.values(charts).forEach(chart => {
-                if (chart instanceof Chart) {
-                    chart.destroy();
-                }
-            });
-            charts = {};
-        }
-
-        // เพิ่มชุดสีสำหรับกราฟ
-        const chartColors = {
-            bar: [
-                'rgba(255, 99, 132, 0.8)', // สีชมพู
-                'rgba(54, 162, 235, 0.8)', // สีฟ้า
-                'rgba(255, 206, 86, 0.8)', // สีเหลือง
-                'rgba(75, 192, 192, 0.8)', // สีเขียวมิ้นต์
-                'rgba(153, 102, 255, 0.8)', // สีม่วง
-                'rgba(255, 159, 64, 0.8)', // สีส้ม
-                'rgba(76, 175, 80, 0.8)', // สีเขียว
-                'rgba(244, 67, 54, 0.8)', // สีแดง
-                'rgba(156, 39, 176, 0.8)', // สีม่วงเข้ม
-                'rgba(63, 81, 181, 0.8)' // สีน้ำเงินเข้ม
-            ],
-            borderColors: function() {
-                return this.bar.map(color => color.replace('0.8', '1'));
-            },
-            // สร้างสีตามจำนวนข้อมูล
-            generateColors: function(count) {
-                let colors = [];
-                for (let i = 0; i < count; i++) {
-                    colors.push(this.bar[i % this.bar.length]);
-                }
-                return colors;
-            }
-        };
-
-
-
-        // =====================================================
-        // ส่วนที่ 2: การตั้งค่าพื้นฐานของ Chart.js
-        // =====================================================
-
-        // กำหนดค่าเริ่มต้นสำหรับ Chart.js ทั้งหมด
-        Chart.defaults.font.family = 'Kanit, sans-serif';
-        Chart.defaults.font.size = 13;
-        Chart.defaults.plugins.tooltip.padding = 10;
-        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-
-        // กำหนดตัวเลือกพื้นฐานที่ใช้ร่วมกันในทุกกราฟ
-        const commonOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true,
-                        font: {
-                            size: 12
-                        }
-                    }
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            let value = context.raw;
-                            return label + ': ' + formatCurrency(value);
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: value => formatCurrency(value)
-                    }
-                }
-            },
-            animation: {
-                duration: 500
-            }
-        };
-
-        // =====================================================
-        // ส่วนที่ 3: การสร้างกราฟแต่ละประเภท
-        // =====================================================
-
-        // 1. กราฟวงกลมแสดงสถานะโครงการ
-        // -----------------------------------------------------
-        new Chart(document.getElementById('projectStatusChart'), {
+        new Chart(ctxStatus, {
             type: 'pie',
             data: {
-                labels: <?php echo json_encode(array_map(function ($item) {
-                            return $item['status'];
-                        }, $project_status_data)); ?>,
+                labels: labels,
                 datasets: [{
-                    data: <?php echo json_encode(array_map(function ($item) {
-                                return intval($item['count']);
-                            }, $project_status_data)); ?>,
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.8)', // สีแดง
-                        'rgba(54, 162, 235, 0.8)', // สีฟ้า
-                        'rgba(255, 206, 86, 0.8)', // สีเหลือง
-                        'rgba(75, 192, 192, 0.8)', // สีเขียว
-                        'rgba(153, 102, 255, 0.8)' // สีม่วง
-                    ]
+                    data: data,
+                    backgroundColor: backgroundColors
                 }]
             },
             options: {
-                ...commonOptions,
+                responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.label + ': ' + formatNumber(context.raw) + ' โครงการ';
-                            }
-                        }
+                    legend: {
+                        position: 'bottom',
+                    },
+                    title: {
+                        display: true
                     }
                 }
             }
         });
 
-        // 2. กราฟยอดขายรายปี
-        // -----------------------------------------------------
-        new Chart(document.getElementById('yearlySalesChart'), {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode(array_map(function ($item) {
-                            return $item['year'];
-                        }, $yearly_sales_data)); ?>,
-                datasets: [{
-                    label: 'ยอดขายรวม',
-                    data: <?php echo json_encode(array_map(function ($item) {
-                                return floatval($item['total_sales']);
-                            }, $yearly_sales_data)); ?>,
-                    backgroundColor: chartColors.generateColors(<?php echo count($yearly_sales_data); ?>),
-                    borderColor: chartColors.borderColors(),
-                    borderWidth: 1
-                }]
-            },
-            options: commonOptions
-        });
+        // สร้างกราฟแนวนอนสำหรับ Product ที่ขายดีที่สุด
+        var ctxProducts = document.getElementById('topProductsChart').getContext('2d');
+        var productsData = <?php echo json_encode($top_products_data); ?>;
+        var productLabels = productsData.map(item => item.product_name);
+        var productData = productsData.map(item => item.count);
 
-        // 3. กราฟยอดขายรายเดือน
-        // -----------------------------------------------------
-        new Chart(document.getElementById('monthlySalesChart'), {
-            type: 'line',
-            data: {
-                labels: <?php echo json_encode(array_map(function ($item) {
-                            return date('M Y', strtotime($item['month'] . '-01'));
-                        }, $monthly_sales_data)); ?>,
-                datasets: [{
-                    label: 'ยอดขายรายเดือน',
-                    data: <?php echo json_encode(array_map(function ($item) {
-                                return floatval($item['total_sales']);
-                            }, $monthly_sales_data)); ?>,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: true,
-                    tension: 0.1
-                }]
-            },
-            options: {
-                ...commonOptions,
-                plugins: {
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false
-                    }
-                }
-            }
-        });
-
-        // 4. กราฟยอดขายของพนักงาน (แนวนอน)
-        // -----------------------------------------------------
-        new Chart(document.getElementById('employeeSalesChart'), {
+        new Chart(ctxProducts, {
             type: 'bar',
             data: {
-                labels: <?php echo json_encode(array_map(function ($item) {
-                            return $item['first_name'] . ' ' . $item['last_name'];
-                        }, $employee_sales_data)); ?>,
-                datasets: [{
-                    label: 'ยอดขาย',
-                    data: <?php echo json_encode(array_map(function ($item) {
-                                return floatval($item['total_sales']);
-                            }, $employee_sales_data)); ?>,
-                    backgroundColor: chartColors.generateColors(<?php echo count($employee_sales_data); ?>),
-                    borderColor: chartColors.borderColors(),
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                ...commonOptions,
-                indexAxis: 'y',
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: value => formatCurrency(value)
-                        }
-                    }
-                }
-            }
-        });
-
-        // 5. กราฟยอดขายรายทีม
-        // -----------------------------------------------------
-        new Chart(document.getElementById('teamSalesChart'), {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode(array_map(function ($item) {
-                            return $item['team_name'];
-                        }, $team_sales_data)); ?>,
-                datasets: [{
-                    label: 'ยอดขายรายทีม',
-                    data: <?php echo json_encode(array_map(function ($item) {
-                                return floatval($item['total_sales']);
-                            }, $team_sales_data)); ?>,
-                    backgroundColor: chartColors.generateColors(<?php echo count($team_sales_data); ?>),
-                    borderColor: chartColors.borderColors(),
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                ...commonOptions,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'ยอดขาย: ' + formatCurrency(context.raw);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        // 6. กราฟแท่งแสดงจำนวนการขายสินค้า
-        // -----------------------------------------------------
-        new Chart(document.getElementById('topProductsChart'), {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode(array_map(function ($item) {
-                            return $item['product_name'];
-                        }, $top_products_data)); ?>,
+                labels: productLabels,
                 datasets: [{
                     label: 'จำนวนการขาย',
-                    data: <?php echo json_encode(array_map(function ($item) {
-                                return intval($item['count']);
-                            }, $top_products_data)); ?>,
-                    backgroundColor: chartColors.generateColors(<?php echo count($top_products_data); ?>),
-                    borderColor: chartColors.borderColors(),
+                    data: productData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1
                 }]
             },
             options: {
-                ...commonOptions,
                 indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                    },
+                    title: {
+                        display: true
+                    }
+                },
                 scales: {
                     x: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<!-- แสดงข้อมูลยอดขายรายปี และแต่ละบุคคล -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (โค้ดเดิมสำหรับกราฟอื่นๆ) ...
+
+        // กราฟแท่งแสดงยอดขายแต่ละปี
+        var ctxYearlySales = document.getElementById('yearlySalesChart').getContext('2d');
+        var yearlySalesData = <?php echo json_encode($yearly_sales_data); ?>;
+        var years = yearlySalesData.map(item => item.year);
+        var salesData = yearlySalesData.map(item => item.total_sales);
+
+        // สร้างชุดสีสำหรับแต่ละแท่ง
+        var colors = [
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+            'rgba(255, 159, 64, 0.8)',
+            'rgba(199, 199, 199, 0.8)',
+            'rgba(83, 102, 255, 0.8)',
+            'rgba(40, 159, 64, 0.8)',
+            'rgba(210, 105, 30, 0.8)'
+        ];
+
+        new Chart(ctxYearlySales, {
+            type: 'bar',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: 'ยอดขายรวม',
+                    data: salesData,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: value => formatNumber(value)
+                            callback: function(value, index, values) {
+                                return '฿' + value.toLocaleString();
+                            }
                         }
                     }
                 },
                 plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'จำนวน: ' + formatNumber(context.raw) + ' ครั้ง';
+                    legend: {
+                        display: true
+                    },
+                    title: {
+                        display: true,
+                        text: 'ยอดขายรายปี'
+                    }
+                }
+            }
+        });
+
+        // กราฟแสดงยอดขายของพนักงานแต่ละคน
+        var ctxEmployeeSales = document.getElementById('employeeSalesChart').getContext('2d');
+        var employeeSalesData = <?php echo json_encode($employee_sales_data); ?>;
+        var employees = employeeSalesData.map(item => item.first_name + ' ' + item.last_name);
+        var employeeSales = employeeSalesData.map(item => item.total_sales);
+
+        new Chart(ctxEmployeeSales, {
+            type: 'horizontalBar',
+            data: {
+                labels: employees,
+                datasets: [{
+                    label: 'ยอดขาย',
+                    data: employeeSales,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '฿' + value.toLocaleString();
                             }
                         }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    title: {
+                        display: true,
+                        text: 'ยอดขายของพนักงาน (Top 10)'
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<!-- แสดงข้อมูลยอดขายรายเดือน และแต่ละทีม -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (โค้ดเดิมสำหรับกราฟอื่นๆ) ...
+
+        // กราฟเส้นแสดงยอดขายรายเดือน
+        var ctxMonthlySales = document.getElementById('monthlySalesChart').getContext('2d');
+        var monthlySalesData = <?php echo json_encode($monthly_sales_data); ?>;
+        var months = monthlySalesData.map(item => {
+            var date = new Date(item.month);
+            return date.toLocaleString('th-TH', {
+                month: 'short',
+                year: 'numeric'
+            });
+        });
+        var monthlySales = monthlySalesData.map(item => item.total_sales);
+
+        new Chart(ctxMonthlySales, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'ยอดขายรายเดือน',
+                    data: monthlySales,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '฿' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    title: {
+                        display: true,
+                        text: 'ยอดขายรายเดือน'
+                    }
+                }
+            }
+        });
+
+        // กราฟแท่งเทียนแสดงยอดขายรายทีม
+        var ctxTeamSales = document.getElementById('teamSalesChart').getContext('2d');
+        var teamSalesData = <?php echo json_encode($team_sales_data); ?>;
+        var teamNames = teamSalesData.map(item => item.team_name);
+        var teamSales = teamSalesData.map(item => item.total_sales);
+
+        new Chart(ctxTeamSales, {
+            type: 'bar',
+            data: {
+                labels: teamNames,
+                datasets: [{
+                    label: 'ยอดขายรายทีม',
+                    data: teamSales,
+                    backgroundColor: 'rgba(255, 159, 64, 0.8)',
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '฿' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    title: {
+                        display: true,
+                        text: 'ยอดขายรายทีม'
                     }
                 }
             }

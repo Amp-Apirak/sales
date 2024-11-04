@@ -148,6 +148,16 @@ function displayData($data, $format = null)
     }
 }
 
+// ฟังก์ชันสำหรับแสดงข้อมูลกำหนดความยาว 100 ตัวอักษร หากมากกว่าให้แสดง ... (Customer Address)
+function truncateText($text, $length = 100)
+{
+    if (!$text) return 'ไม่ระบุข้อมูล';
+    if (mb_strlen($text) > $length) {
+        return mb_substr($text, 0, $length) . '...';
+    }
+    return $text;
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -182,6 +192,64 @@ function displayData($data, $format = null)
             color: #FF5733;
         }
     </style>
+
+    <!-- ฟังก์ชันสำหรับแสดงข้อมูลกำหนดความยาว 100 ตัวอักษร หากมากกว่าให้แสดง ... (Customer Address) -->
+    <style>
+        .truncate-text {
+            max-width: 400px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            cursor: pointer;
+            /* เพิ่ม cursor เมื่อ hover */
+        }
+
+        /* เพิ่ม tooltip เมื่อ hover */
+        .truncate-text:hover::after {
+            content: attr(title);
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: normal;
+            max-width: 300px;
+            z-index: 1000;
+        }
+    </style>
+    <!-- ฟังก์ชันสำหรับแสดงข้อมูลกำหนดความยาว 100 ตัวอักษร หากมากกว่าให้แสดง ... (Customer Address) -->
+    <style>
+        /* เพิ่ม class ใหม่สำหรับ Project Name */
+        .truncate-text-project {
+            max-width: 600px;
+            /* ปรับความกว้างให้มากกว่า truncate-text ปกติ */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            cursor: pointer;
+        }
+
+        /* ปรับปรุง tooltip สำหรับ Project Name */
+        .truncate-text-project:hover::after {
+            content: attr(title);
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: normal;
+            max-width: 600px;
+            /* เพิ่มความกว้างสูงสุดของ tooltip */
+            z-index: 1000;
+            margin-top: 20px;
+            line-height: 1.4;
+            left: 0;
+        }
+    </style>
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -214,74 +282,74 @@ function displayData($data, $format = null)
             <!-- /.content-header -->
 
             <?php if ($role != 'Engineer'): ?>
-            <!-- Main content -->
-            <section class="content">
-                <div class="container-fluid">
-                    <!-- Small boxes (Stat box) -->
-                    <div class="row">
+                <!-- Main content -->
+                <section class="content">
+                    <div class="container-fluid">
+                        <!-- Small boxes (Stat box) -->
+                        <div class="row">
 
-                        <div class="col-lg-3 col-6">
-                            <div class="small-box bg-info">
-                                <div class="inner">
-                                    <h3><?php echo number_format($total_projects); ?></h3>
-                                    <p>Project All</p>
+                            <div class="col-lg-3 col-6">
+                                <div class="small-box bg-info">
+                                    <div class="inner">
+                                        <h3><?php echo number_format($total_projects); ?></h3>
+                                        <p>Project All</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-folder"></i>
+                                    </div>
                                 </div>
-                                <div class="icon">
-                                    <i class="fas fa-folder"></i>
+                            </div>
+                            <!-- ./col -->
+
+                            <!-- ------------------------------------------------------------------------------------------------------------------ -->
+
+
+                            <div class="col-lg-3 col-6">
+                                <div class="small-box bg-warning">
+                                    <div class="inner">
+                                        <h3><?php echo number_format($total_creators); ?></h3>
+                                        <p>Seller</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ------------------------------------------------------------------------------------------------------------------ -->
+
+                            <div class="col-lg-3 col-6">
+                                <div class="small-box bg-primary">
+                                    <div class="inner">
+                                        <h3><?php echo number_format($total_cost, 2); ?></h3>
+                                        <p>Cost Price (Vat)</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- ./col -->
+
+                            <!-- ------------------------------------------------------------------------------------------------------------------ -->
+
+                            <div class="col-lg-3 col-6">
+                                <div class="small-box bg-success">
+                                    <div class="inner">
+                                        <h3><?php echo number_format($total_sale, 2); ?></h3>
+                                        <p>Sale Price (Vat)</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- ./col -->
 
                         <!-- ------------------------------------------------------------------------------------------------------------------ -->
-
-
-                        <div class="col-lg-3 col-6">
-                            <div class="small-box bg-warning">
-                                <div class="inner">
-                                    <h3><?php echo number_format($total_creators); ?></h3>
-                                    <p>Seller</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ------------------------------------------------------------------------------------------------------------------ -->
-
-                        <div class="col-lg-3 col-6">
-                            <div class="small-box bg-primary">
-                                <div class="inner">
-                                    <h3><?php echo number_format($total_cost, 2); ?></h3>
-                                    <p>Cost Price (Vat)</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- ./col -->
-
-                        <!-- ------------------------------------------------------------------------------------------------------------------ -->
-
-                        <div class="col-lg-3 col-6">
-                            <div class="small-box bg-success">
-                                <div class="inner">
-                                    <h3><?php echo number_format($total_sale, 2); ?></h3>
-                                    <p>Sale Price (Vat)</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ------------------------------------------------------------------------------------------------------------------ -->
-                </div><!-- /.container-fluid -->
-            </section>
-            <!-- /.content -->
+                    </div><!-- /.container-fluid -->
+                </section>
+                <!-- /.content -->
             <?php endif; ?>
 
 
@@ -503,7 +571,13 @@ function displayData($data, $format = null)
                                                         ?>
                                                     </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['project_name']); ?></td>
+                                                    <td class="text-nowrap">
+                                                        <div class="truncate-text-project" title="<?php echo htmlspecialchars($project['project_name']); ?>">
+                                                            <?php
+                                                            echo truncateText(htmlspecialchars($project['project_name']), 300); // เปลี่ยนค่า length เป็น 300
+                                                            ?>
+                                                        </div>
+                                                    </td>
                                                     <?php if ($role != 'Engineer'): ?>
                                                         <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
                                                         <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
@@ -520,7 +594,11 @@ function displayData($data, $format = null)
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['team_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']) ? htmlspecialchars($project['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo isset($project['address']) ? htmlspecialchars($project['address']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap">
+                                                        <div class="truncate-text" title="<?php echo htmlspecialchars($project['address'] ?? 'ไม่ระบุข้อมูล'); ?>">
+                                                            <?php echo isset($project['address']) ? truncateText(htmlspecialchars($project['address'])) : 'ไม่ระบุข้อมูล'; ?>
+                                                        </div>
+                                                    </td>
                                                     <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']) ? htmlspecialchars($project['remark']) : 'ไม่ระบุข้อมูล'; ?></td>
