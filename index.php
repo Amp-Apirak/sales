@@ -656,7 +656,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <div class="card-header">
                                         <h3 class="card-title">
                                             <i class="fas fa-percentage mr-1"></i>
-                                            กำไรคิดเป็นเปอร์เซ็นต์
+                                            คิดเป็น %
                                         </h3>
                                         <div class="card-tools">
                                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
