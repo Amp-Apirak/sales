@@ -13,47 +13,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute();
     $user = $stmt->fetch();
 
-    // ตรวจสอบว่ามีผู้ใช้นี้หรือไม่ และตรวจสอบรหัสผ่าน
+    // แก้ไขส่วนการ query และการเก็บค่าใน session
     if ($user && password_verify($password, $user['password'])) {
 
-        // เพิ่ม team_name เข้าไปใน session
-        $_SESSION['team_name'] = $row['team_name'];
-        // เก็บข้อมูลผู้ใช้ใน session
-        $_SESSION['user_id'] = $user['user_id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['team_id'] = $user['team_id'];
-        $_SESSION['first_name'] = $user['first_name'];
-        $_SESSION['last_name'] = $user['last_name'];
-        $_SESSION['profile_image'] = $user['profile_image'];
+        // ดึงข้อมูล team_name จากตาราง teams
+        try {
+            $stmt = $condb->prepare("
+            SELECT t.team_name 
+            FROM teams t 
+            INNER JOIN users u ON u.team_id = t.team_id 
+            WHERE u.user_id = :user_id
+        ");
+            $stmt->bindParam(':user_id', $user['user_id']);
+            $stmt->execute();
+            $team = $stmt->fetch();
 
-        // แสดง SweetAlert เมื่อเข้าสู่ระบบสำเร็จ
-        echo "<script>
-                setTimeout(function() {
-                    Swal.fire({
-                        title: 'Login success.',
-                        text: 'Welcome to login Sale Service.',
-                        icon: 'success',
-                        confirmButtonText: 'OK'
-                    }).then(function() {
-                        window.location.href = 'index.php'; // นำไปยังหน้าถัดไปหลังจาก SweetAlert
-                    });
-                }, 100);
-              </script>";
-        $conn = null; //close connect db
+            // เก็บข้อมูลใน session
+            $_SESSION['team_name'] = $team['team_name'];
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['team_id'] = $user['team_id'];
+            $_SESSION['first_name'] = $user['first_name'];
+            $_SESSION['last_name'] = $user['last_name'];
+            $_SESSION['profile_image'] = $user['profile_image'];
+
+            // แสดง SweetAlert เมื่อเข้าสู่ระบบสำเร็จ
+            echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    title: 'Login success.',
+                    text: 'Welcome to login Sale Service.',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(function() {
+                    window.location.href = 'index.php';
+                });
+            }, 100);
+        </script>";
+        } catch (PDOException $e) {
+            // จัดการ error
+            echo "Error: " . $e->getMessage();
+        }
     } else {
+        // แสดง error เมื่อ login ไม่สำเร็จ
         echo "<script>
-                setTimeout(function() {
-                    Swal.fire({
-                        title: 'Oop.....!',
-                        text: 'Invalid username or password, please try again.',
-                        icon: 'warning',
-                    }).then(function() {
-                        window.location.href = 'index.php'; // นำไปยังหน้าถัดไปหลังจาก SweetAlert
-                    });
-                }, 100);
-              </script>";
-        $conn = null; //close connect db
+        setTimeout(function() {
+            Swal.fire({
+                title: 'Oop.....!', 
+                text: 'Invalid username or password, please try again.',
+                icon: 'warning',
+            }).then(function() {
+                window.location.href = 'login.php';
+            });
+        }, 100);
+    </script>";
     }
 }
 ?>
