@@ -1157,6 +1157,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
         // 6. กราฟแท่งแสดงจำนวนการขายสินค้า
         // -----------------------------------------------------
+        // 6. กราฟแท่งแสดงจำนวนการขายสินค้า
         new Chart(document.getElementById('topProductsChart'), {
             type: 'bar',
             data: {
@@ -1176,23 +1177,68 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             options: {
                 ...commonOptions,
                 indexAxis: 'y',
+                layout: {
+                    padding: {
+                        left: 5,
+                        right: 25
+                    }
+                },
                 scales: {
                     x: {
                         beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        },
                         ticks: {
                             callback: value => formatNumber(value)
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            maxRotation: 0,
+                            minRotation: 0,
+                            mirror: false,
+                            padding: 5,
+                            // เพิ่มการจัดการความยาวของ label
+                            callback: function(value, index) {
+                                let label = this.getLabelForValue(value);
+                                if (!label) return '';
+
+                                // จำกัดความยาวของ label และเพิ่ม ... ถ้ายาวเกินไป
+                                if (label.length > 25) {
+                                    return label.substr(0, 25) + '...';
+                                }
+                                return label;
+                            },
+                            font: {
+                                size: 12 // ปรับขนาดตัวอักษร
+                            }
                         }
                     }
                 },
                 plugins: {
+                    legend: {
+                        display: false // ซ่อน legend เพราะมี label เดียว
+                    },
                     tooltip: {
                         callbacks: {
+                            title: function(context) {
+                                // แสดงชื่อเต็มใน tooltip
+                                return context[0].label;
+                            },
                             label: function(context) {
                                 return 'จำนวน: ' + formatNumber(context.raw) + ' ครั้ง';
                             }
                         }
                     }
-                }
+                },
+                maintainAspectRatio: false,
+                responsive: true,
+                height: 400 // กำหนดความสูงของกราฟ
             }
         });
     });
