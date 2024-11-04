@@ -42,7 +42,7 @@ vendor/
 # ไฟล์รูปภาพ
 *.jpg
 *.jpeg
-# *.png
+*.png
 *.gif
 *.bmp
 *.svg
