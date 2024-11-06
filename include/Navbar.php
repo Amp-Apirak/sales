@@ -92,12 +92,98 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
     </ul>
 </nav>
 
+<!-- LOGO -->
+<style>
+    /* แก้ไขส่วน Brand Logo */
+    .brand-link {
+        /* เพิ่มพื้นหลังสีดำเข้มตลอดเวลา */
+        background-color: #1a1a1a !important;
+        /* สีดำเข้ม */
+        border-bottom: 1px solid #4b4b4b !important;
+        /* เส้นคั่นด้านล่าง */
+        transition: all 0.3s ease;
+        /* เพิ่มการเปลี่ยนแปลงแบบนุ่มนวล */
+    }
+
+    /* เมื่อ hover ที่ brand-link */
+    .brand-link:hover {
+        background-color: #000000 !important;
+        /* สีดำสนิทเมื่อ hover */
+    }
+
+    /* ปรับ brand-text ให้เข้ากับพื้นหลังสีดำ */
+    .brand-text {
+        /* ขนาดตัวอักษร */
+        font-size: 1rem;
+
+        /* เอฟเฟกต์สีและการไล่ระดับ - ปรับให้สว่างขึ้น */
+        background: linear-gradient(to right, #FFD700, #FFF8DC, #DAA520, #FFFACD, #B8860B);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+
+        /* เอฟเฟกต์เพิ่มเติม */
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        letter-spacing: 1px;
+        font-weight: bold;
+
+        /* เพิ่มแอนิเมชั่น */
+        animation: goldShine 3s infinite;
+        transition: all 0.3s ease;
+    }
+
+    /* ปรับแอนิเมชั่นให้มีความสว่างมากขึ้น */
+    @keyframes goldShine {
+        0% {
+            filter: brightness(100%);
+        }
+
+        50% {
+            filter: brightness(130%);
+        }
+
+        100% {
+            filter: brightness(100%);
+        }
+    }
+
+    /* เอฟเฟกต์ hover ให้สว่างขึ้น */
+    .brand-text:hover {
+        transform: scale(1.05);
+        text-shadow: 3px 3px 6px rgba(255, 215, 0, 0.3);
+        filter: brightness(120%);
+    }
+
+    .brand-image {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5) !important;
+        border: 2px solid #FFD700 !important;
+        padding: 2px !important;
+        background: rgba(255, 215, 0, 0.1) !important;
+        transition: all 0.3s ease !important;
+    }
+
+    /* แอนิเมชั่นความสว่าง */
+    @keyframes goldShine {
+        0% {
+            filter: brightness(100%);
+        }
+
+        50% {
+            filter: brightness(130%);
+        }
+
+        100% {
+            filter: brightness(100%);
+        }
+    }
+</style>
+
 <!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-light-primary elevation-4">
     <!-- Brand Logo -->
     <a href="<?php echo BASE_URL; ?>index.php" class="brand-link bg-dark">
-        <img src="<?php echo BASE_URL; ?>assets/img/inoo.png" alt="INO Management" class="brand-image img-circle elevation-3" style="opacity: .8">
-        <span class="brand-text font-weight-light">INO Management</span>
+        <img src="<?php echo BASE_URL; ?>assets/img/pit3.png" alt="POINT IT INNOVATION" class="brand-image img-circle elevation-3" style="opacity: .8">
+        <span class="brand-text"><b>POINT IT INNOVATION</b></span>
     </a>
 
     <!-- Sidebar -->
@@ -429,9 +515,98 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                     </a>
                 </li>
             </ul>
-        </nav>
-        <!-- /.sidebar-menu -->
 
+            <style>
+
+            </style>
+
+            <!-- /.sidebar-menu -->
+            <div class="copyright-bar text-center" style="position: absolute; bottom: 0; width: 100%; padding: 8px;">
+                <a href="<?php echo BASE_URL; ?>index.php" class="footer-logo">
+                    <img src="<?php echo BASE_URL; ?>assets/img/pit.png"
+                        alt="POINT IT INNOVATION"
+                        class="footer-brand-image"
+                        id="footerLogo">
+                </a>
+            </div>
+
+            <style>
+                /* ขนาดปกติ */
+                #footerLogo {
+                    height: 60px;
+                    width: auto;
+                    transition: all 0.3s ease;
+                    /* เพิ่ม animation การเปลี่ยนขนาด */
+                }
+
+                /* เมื่อ Navbar ถูกย่อ */
+                body.sidebar-collapse #footerLogo {
+                    height: 35px;
+                    /* ขนาดเมื่อ Navbar ย่อ */
+                }
+
+                /* สำหรับหน้าจอขนาดเล็ก */
+                @media (max-width: 768px) {
+                    #footerLogo {
+                        height: 45px;
+                    }
+
+                    body.sidebar-collapse #footerLogo {
+                        height: 30px;
+                    }
+                }
+
+                /* สำหรับหน้าจอขนาดเล็กมาก */
+                @media (max-width: 576px) {
+                    #footerLogo {
+                        height: 40px;
+                    }
+
+                    body.sidebar-collapse #footerLogo {
+                        height: 25px;
+                    }
+                }
+
+                .copyright-bar {
+                    transition: all 0.3s ease;
+                    /* ทำให้การเปลี่ยนแปลงทั้งหมดมี animation */
+                }
+
+                body.sidebar-collapse .copyright-bar {
+                    padding: 5px;
+                    /* ลด padding เมื่อ Navbar ย่อ */
+                }
+            </style>
+
+            <script>
+                // ตรวจจับการย่อ/ขยาย Navbar
+                document.addEventListener('DOMContentLoaded', function() {
+                    // ตรวจสอบสถานะเริ่มต้น
+                    if (document.body.classList.contains('sidebar-collapse')) {
+                        document.getElementById('footerLogo').style.height = '35px';
+                    }
+
+                    // ติดตามการเปลี่ยนแปลง class ของ body
+                    const observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            if (mutation.attributeName === 'class') {
+                                const isCollapsed = document.body.classList.contains('sidebar-collapse');
+                                const logo = document.getElementById('footerLogo');
+                                if (isCollapsed) {
+                                    logo.style.height = '35px';
+                                } else {
+                                    logo.style.height = '60px';
+                                }
+                            }
+                        });
+                    });
+
+                    observer.observe(document.body, {
+                        attributes: true
+                    });
+                });
+            </script>
+        </nav>
     </div>
     <!-- /.sidebar -->
 </aside>
