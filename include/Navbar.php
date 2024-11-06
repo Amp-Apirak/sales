@@ -521,12 +521,14 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
             </style>
 
             <!-- /.sidebar-menu -->
-            <div class="copyright-bar text-center" style="position: absolute; bottom: 0; width: 100%; padding: 8px;">
+            <!-- <div class="copyright-bar text-center" style="position: absolute; bottom: 0; width: 100%; padding: 8px;"> รูปติดขอบล่าง -->
+            <div class="copyright-bar text-center" style="display: flex; justify-content: center; align-items: center; padding: 20px; margin-top: 50px;">
                 <a href="<?php echo BASE_URL; ?>index.php" class="footer-logo">
                     <img src="<?php echo BASE_URL; ?>assets/img/pit.png"
                         alt="POINT IT INNOVATION"
                         class="footer-brand-image"
-                        id="footerLogo">
+                        id="footerLogo"
+                        style="height: 60px; width: auto; transition: all 0.3s ease;">
                 </a>
             </div>
 
@@ -577,40 +579,41 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                     /* ลด padding เมื่อ Navbar ย่อ */
                 }
             </style>
-
-            <script>
-                // ตรวจจับการย่อ/ขยาย Navbar
-                document.addEventListener('DOMContentLoaded', function() {
-                    // ตรวจสอบสถานะเริ่มต้น
-                    if (document.body.classList.contains('sidebar-collapse')) {
-                        document.getElementById('footerLogo').style.height = '35px';
-                    }
-
-                    // ติดตามการเปลี่ยนแปลง class ของ body
-                    const observer = new MutationObserver(function(mutations) {
-                        mutations.forEach(function(mutation) {
-                            if (mutation.attributeName === 'class') {
-                                const isCollapsed = document.body.classList.contains('sidebar-collapse');
-                                const logo = document.getElementById('footerLogo');
-                                if (isCollapsed) {
-                                    logo.style.height = '35px';
-                                } else {
-                                    logo.style.height = '60px';
-                                }
-                            }
-                        });
-                    });
-
-                    observer.observe(document.body, {
-                        attributes: true
-                    });
-                });
-            </script>
         </nav>
     </div>
     <!-- /.sidebar -->
 </aside>
 
+
+<!-- LOGO POINT ด้านล่าง ตรวจจับการขยายจอ-->
+<script>
+    // ตรวจจับการย่อ/ขยาย Navbar
+    document.addEventListener('DOMContentLoaded', function() {
+        // ตรวจสอบสถานะเริ่มต้น
+        if (document.body.classList.contains('sidebar-collapse')) {
+            document.getElementById('footerLogo').style.height = '35px';
+        }
+
+        // ติดตามการเปลี่ยนแปลง class ของ body
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    const isCollapsed = document.body.classList.contains('sidebar-collapse');
+                    const logo = document.getElementById('footerLogo');
+                    if (isCollapsed) {
+                        logo.style.height = '35px';
+                    } else {
+                        logo.style.height = '60px';
+                    }
+                }
+            });
+        });
+
+        observer.observe(document.body, {
+            attributes: true
+        });
+    });
+</script>
 
 <!-- /.Preloader -->
 <style>
