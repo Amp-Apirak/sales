@@ -10,6 +10,7 @@ $created_by = $_SESSION['user_id'] ?? 0;
 // ฟังก์ชันทำความสะอาดข้อมูล input
 function clean_input($data)
 {
+    if ($data === null) return '';
     $data = trim($data);
     $data = stripslashes($data);
     $data = htmlspecialchars($data);
@@ -20,7 +21,7 @@ function clean_input($data)
 $search_service = clean_input($_POST['searchservice'] ?? '');
 $search_product = filter_var($_POST['product'] ?? 0, FILTER_VALIDATE_INT);
 $search_status = clean_input($_POST['status'] ?? '');
-$search_creator = filter_var($_POST['creator'] ?? 0, FILTER_VALIDATE_INT);
+$search_creator = clean_input($_POST['creator'] ?? '');
 $search_customer = filter_var($_POST['customer'] ?? 0, FILTER_VALIDATE_INT);
 $search_year = filter_var($_POST['year'] ?? 0, FILTER_VALIDATE_INT);
 $search_team = clean_input($_POST['team'] ?? '');
@@ -48,7 +49,7 @@ function getDropdownData($condb, $sql, $params)
 // ดึงข้อมูลสำหรับ dropdowns
 $products = getDropdownData($condb, "SELECT DISTINCT p.product_id, pr.product_name FROM projects p JOIN products pr ON p.product_id = pr.product_id $where_clause_dropdown", $params_dropdown);
 $statuses = getDropdownData($condb, "SELECT DISTINCT status FROM projects p $where_clause_dropdown", $params_dropdown);
-$creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name FROM users u INNER JOIN projects p ON u.user_id = p.created_by $where_clause_dropdown", $params_dropdown);
+$creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name FROM users u INNER JOIN projects p ON u.user_id = p.created_by $where_clause_dropdown ORDER BY u.first_name, u.last_name", $params_dropdown);
 $customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_name FROM customers c INNER JOIN projects p ON c.customer_id = p.customer_id $where_clause_dropdown", $params_dropdown);
 // ปรับปรุงการดึงข้อมูลปีจาก sales_date
 $years = getDropdownData($condb, "SELECT DISTINCT YEAR(sales_date) AS year FROM projects p $where_clause_dropdown ORDER BY year DESC", $params_dropdown);
@@ -432,7 +433,8 @@ function truncateText($text, $length = 100)
                                                                 <select class="custom-select select2" name="creator">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($creators as $creator) : ?>
-                                                                        <option value="<?php echo htmlspecialchars($creator['created_by']); ?>" <?php echo ($search_creator == $creator['created_by']) ? 'selected' : ''; ?>>
+                                                                        <option value="<?php echo $creator['created_by']; ?>"
+                                                                            <?php echo ($search_creator === $creator['created_by']) ? 'selected' : ''; ?>>
                                                                             <?php echo htmlspecialchars($creator['first_name'] . ' ' . $creator['last_name']); ?>
                                                                         </option>
                                                                     <?php endforeach; ?>

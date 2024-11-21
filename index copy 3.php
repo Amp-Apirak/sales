@@ -696,7 +696,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </button>
                                     </div>
                                 </div>
-                                <div class="card-body" style="height: 360px; min-height: 360px;">
+                                <div class="card-body">
                                     <canvas id="yearlySalesChart"></canvas>
                                 </div>
                             </div>
@@ -717,7 +717,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </button>
                                     </div>
                                 </div>
-                                <div class="card-body" style="height: 360px; min-height: 360px;">
+                                <div class="card-body">
                                     <canvas id="monthlySalesChart"></canvas>
                                 </div>
                             </div>
@@ -744,7 +744,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </button>
                                     </div>
                                 </div>
-                                <div class="card-body" style="height: 360px; min-height: 360px;">
+                                <div class="card-body">
                                     <canvas id="teamSalesChart"></canvas>
                                 </div>
                             </div>
@@ -765,7 +765,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </button>
                                     </div>
                                 </div>
-                                <div class="card-body" style="height: 360px; min-height: 360px;">
+                                <div class="card-body">
                                     <canvas id="employeeSalesChart"></canvas>
                                 </div>
                             </div>
@@ -791,7 +791,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     </button>
                                 </div>
                             </div>
-                            <div class="card-body" style="height: 360px; min-height: 360px;">
+                            <div class="card-body">
                                 <canvas id="projectStatusChart"></canvas>
                             </div>
                         </div>
@@ -812,7 +812,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     </button>
                                 </div>
                             </div>
-                            <div class="card-body" style="height: 360px; min-height: 360px;">
+                            <div class="card-body">
                                 <canvas id="topProductsChart"></canvas>
                             </div>
                         </div>
