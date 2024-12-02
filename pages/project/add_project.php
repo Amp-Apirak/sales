@@ -299,7 +299,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                             <label>สถานะโครงการ<span class="text-danger">*</span></label>
                                                             <select class="form-control select2" name="status" id="status" style="width: 100%;">
                                                                 <option selected="selected">Select</option>
-                                                                <option>Wiating for approve</option>
+                                                                <option>Waiting for approve</option>
                                                                 <option>On-Hold</option>
                                                                 <option>Quotation</option>
                                                                 <option>Negotiation</option>
