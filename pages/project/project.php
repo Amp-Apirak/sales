@@ -53,7 +53,6 @@ $creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as created_by, u.
 $customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_name FROM customers c INNER JOIN projects p ON c.customer_id = p.customer_id $where_clause_dropdown", $params_dropdown);
 
 // ปรับปรุงการดึงข้อมูลปีจาก sales_date
-$years = getDropdownData($condb, "SELECT DISTINCT YEAR(sales_date) AS year FROM projects p $where_clause_dropdown ORDER BY year DESC", $params_dropdown);
 $years = getDropdownData(
     $condb,
     "SELECT DISTINCT YEAR(sales_date) AS year 
