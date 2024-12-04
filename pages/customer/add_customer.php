@@ -141,7 +141,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 }
 
 // เพิ่ม SQL query เพื่อดึงรายการ Company จากฐานข้อมูล
-$stmt = $condb->prepare("SELECT DISTINCT company, address FROM customers WHERE company IS NOT NULL");
+$sql = "SELECT DISTINCT c.company, c.address, c.office_phone, c.extension 
+        FROM customers c
+        LEFT JOIN users u ON c.created_by = u.user_id 
+        WHERE c.company IS NOT NULL";
+
+// เพิ่มเงื่อนไขตาม Role
+if ($role == 'Sale Supervisor') {
+    // Sale Supervisor เห็นเฉพาะลูกค้าในทีมของตัวเอง
+    $sql .= " AND u.team_id = :team_id";
+    $stmt = $condb->prepare($sql);
+    $stmt->bindParam(':team_id', $team_id);
+} elseif ($role == 'Seller') {
+    // Seller เห็นเฉพาะลูกค้าที่ตัวเองสร้าง
+    $sql .= " AND c.created_by = :user_id";
+    $stmt = $condb->prepare($sql);
+    $stmt->bindParam(':user_id', $_SESSION['user_id']);
+} elseif ($role == 'Executive') {
+    // Executive เห็นทั้งหมด
+    $stmt = $condb->prepare($sql);
+} else {
+    // Role อื่นๆ เห็นเฉพาะที่ตัวเองสร้าง
+    $sql .= " AND c.created_by = :user_id";
+    $stmt = $condb->prepare($sql);
+    $stmt->bindParam(':user_id', $_SESSION['user_id']);
+}
+
 $stmt->execute();
 $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -401,30 +426,42 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <!-- เพิ่ม JavaScript เพื่อจัดการการเลือก Company และดึงที่อยู่ -->
 <script>
     $(function() {
-        // สร้าง object เก็บความสัมพันธ์ระหว่าง company และ address
-        const companyAddresses = {};
+        // สร้าง object เก็บความสัมพันธ์ระหว่าง company และข้อมูลอื่นๆ
+        const companyData = {};
         <?php foreach ($companies as $company): ?>
-            companyAddresses['<?php echo addslashes($company['company']); ?>'] =
-                '<?php echo addslashes($company['address']); ?>';
+            companyData['<?php echo addslashes($company['company']); ?>'] = {
+                address: '<?php echo addslashes($company['address']); ?>',
+                office_phone: '<?php echo addslashes($company['office_phone'] ?? ''); ?>',
+                extension: '<?php echo addslashes($company['extension'] ?? ''); ?>'
+            };
         <?php endforeach; ?>
 
         // เมื่อเลือกหรือกรอก company
         $('#company').on('input', function() {
             const selectedCompany = $(this).val();
-            const address = companyAddresses[selectedCompany];
+            const data = companyData[selectedCompany];
 
-            // ถ้ามีที่อยู่ของบริษัทที่เลือก ให้แสดงในช่อง address
-            if (address) {
-                $('#address').val(address);
+            if (data) {
+                // กำหนดค่าให้กับฟิลด์ต่างๆ
+                $('#address').val(data.address);
+                $('#office_phone').val(data.office_phone);
+                $('#extension').val(data.extension);
+            } else {
+                // กรณีไม่พบข้อมูล ให้เคลียร์ค่าในฟิลด์
+                $('#address').val('');
+                $('#office_phone').val('');
+                $('#extension').val('');
             }
         });
 
         // ทำให้สามารถเลือกจาก datalist ได้ใน mobile
         $('#company').on('change', function() {
             const selectedCompany = $(this).val();
-            const address = companyAddresses[selectedCompany];
-            if (address) {
-                $('#address').val(address);
+            const data = companyData[selectedCompany];
+            if (data) {
+                $('#address').val(data.address);
+                $('#office_phone').val(data.office_phone);
+                $('#extension').val(data.extension);
             }
         });
     });

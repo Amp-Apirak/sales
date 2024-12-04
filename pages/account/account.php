@@ -49,8 +49,7 @@ if ($role !== 'Executive') {
     $sql_users .= " AND u.team_id = :team_id";
 }
 
-// เพิ่ม ORDER BY created_at DESC ที่ท้าย query หลังจาก where clause
-$sql_users .= " ORDER BY u.created_at DESC";
+
 
 // เพิ่มเงื่อนไขการค้นหาตามฟิลด์ที่ระบุ
 if (!empty($search)) {
@@ -68,6 +67,8 @@ if (!empty($search_role)) {
 if (!empty($search_position)) {
     $sql_users .= " AND u.position = :search_position";
 }
+
+$sql_users .= " ORDER BY u.created_at DESC";
 
 // เตรียม statement
 $stmt = $condb->prepare($sql_users);
