@@ -397,7 +397,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                                             </div>
                                             <div class="card-footer">
-                                                <label class="custom-label"><small>***ไม่พบข้อมูลลูกค้าสามารถเพิ่มได้ที่ เมนู "Customer"*** </small></label>
+                                                <a href="<?php echo BASE_URL; ?>pages/customer/add_customer.php" <label class="custom-label"><small>***ไม่พบข้อมูลลูกค้าสามารถเพิ่มได้ที่ เมนู "Customer"*** </small></label> </a>
                                             </div>
                                             <!-- /.card-body -->
                                         </div>
