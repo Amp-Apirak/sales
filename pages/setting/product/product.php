@@ -341,8 +341,10 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                                 class="btn btn-sm btn-outline-primary">
                                                                 <i class="fas fa-eye"></i> View
                                                             </a>
-                                                            <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                        </div>
+                                                            <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>"
+                                                                class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-pencil-alt"></i> Edit
+                                                            </a>
                                                     </td>
                                                 </tr>
                                             <?php } ?>
