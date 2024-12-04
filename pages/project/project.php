@@ -51,18 +51,8 @@ $products = getDropdownData($condb, "SELECT DISTINCT p.product_id, pr.product_na
 $statuses = getDropdownData($condb, "SELECT DISTINCT status FROM projects p $where_clause_dropdown", $params_dropdown);
 $creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name FROM users u INNER JOIN projects p ON u.user_id = p.created_by $where_clause_dropdown ORDER BY u.first_name, u.last_name", $params_dropdown);
 $customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_name FROM customers c INNER JOIN projects p ON c.customer_id = p.customer_id $where_clause_dropdown", $params_dropdown);
-
 // ปรับปรุงการดึงข้อมูลปีจาก sales_date
-$years = getDropdownData(
-    $condb,
-    "SELECT DISTINCT YEAR(sales_date) AS year 
- FROM projects p 
- $where_clause_dropdown 
- WHERE sales_date IS NOT NULL 
- AND YEAR(sales_date) != 0 
- ORDER BY year DESC",
-    $params_dropdown
-);
+$years = getDropdownData($condb, "SELECT DISTINCT YEAR(sales_date) AS year FROM projects p $where_clause_dropdown ORDER BY year DESC", $params_dropdown);
 
 // Team Dropdown (เฉพาะ Executive หรือ Sale Supervisor)
 if ($role == 'Executive' || $role == 'Sale Supervisor') {
@@ -523,12 +513,9 @@ function truncateText($text, $length = 100)
                                                                 <select class="custom-select select2" name="year">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($years as $year) : ?>
-                                                                        <?php if (!empty($year['year'])) : ?> <!-- เพิ่มการตรวจสอบค่าว่าง -->
-                                                                            <option value="<?php echo htmlspecialchars($year['year']); ?>"
-                                                                                <?php echo ($search_year == $year['year']) ? 'selected' : ''; ?>>
-                                                                                <?php echo htmlspecialchars($year['year']); ?>
-                                                                            </option>
-                                                                        <?php endif; ?>
+                                                                        <option value="<?php echo htmlspecialchars($year['year']); ?>" <?php echo ($search_year == $year['year']) ? 'selected' : ''; ?>>
+                                                                            <?php echo htmlspecialchars($year['year']); ?>
+                                                                        </option>
                                                                     <?php endforeach; ?>
                                                                 </select>
                                                             </div>
