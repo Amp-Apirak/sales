@@ -245,17 +245,12 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 "responsive": true,
                 "lengthChange": false,
                 "autoWidth": false,
-                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
+                "order": [
+                    [5, "desc"]
+                ], // เรียงตามคอลัมน์ที่ 5 (created_at) จากมากไปน้อย
+                "pageLength": 10 // แสดง 10 รายการต่อหน้า
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-            $('#example2').DataTable({
-                "paging": true,
-                "lengthChange": false,
-                "searching": false,
-                "ordering": true,
-                "info": true,
-                "autoWidth": false,
-                "responsive": true,
-            });
         });
     </script>
 </body>

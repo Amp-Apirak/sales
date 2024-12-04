@@ -280,6 +280,12 @@ $query_teams = $stmt_teams->fetchAll();
 // เก็บ team_id ของผู้ใช้ปัจจุบันเพื่อใช้เป็นค่า Default
 $current_user_team_id = $_SESSION['team_id'];
 
+
+// เพิ่ม SQL query เพื่อดึงรายการบริษัทที่มีอยู่:
+$stmt = $condb->prepare("SELECT DISTINCT company FROM users WHERE company IS NOT NULL AND company != ''");
+$stmt->execute();
+$companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 
@@ -552,7 +558,22 @@ $current_user_team_id = $_SESSION['team_id'];
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="company">บริษัท</label>
-                                            <input type="text" class="form-control " id="company" name="company">
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-building"></i></span>
+                                                </div>
+                                                <input type="text"
+                                                    class="form-control"
+                                                    id="company"
+                                                    name="company"
+                                                    list="companyList"
+                                                    placeholder="เลือกหรือพิมพ์ชื่อบริษัท">
+                                                <datalist id="companyList">
+                                                    <?php foreach ($companies as $company): ?>
+                                                        <option value="<?php echo htmlspecialchars($company['company']); ?>">
+                                                        <?php endforeach; ?>
+                                                </datalist>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -660,6 +681,24 @@ $current_user_team_id = $_SESSION['team_id'];
                         });
                     }
                 });
+            });
+        });
+    </script>
+
+    <!-- เพิ่ม JavaScript เพื่อจัดการการแสดงผล:บริษัท -->
+    <script>
+        $(function() {
+            // จัดการการแสดงผลของ datalist
+            $('#company').on('input', function() {
+                var val = $(this).val();
+                var list = $('#companyList');
+
+                // ถ้าผู้ใช้พิมพ์ค่าใหม่ที่ไม่มีในรายการ ก็จะใช้ค่านั้นได้
+                if (val && !list.find('option').filter(function() {
+                        return $(this).val() === val;
+                    }).length) {
+                    // ค่าใหม่ที่ผู้ใช้กรอก
+                }
             });
         });
     </script>

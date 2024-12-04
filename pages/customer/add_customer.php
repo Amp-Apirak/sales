@@ -139,6 +139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
         exit;
     }
 }
+
+// เพิ่ม SQL query เพื่อดึงรายการ Company จากฐานข้อมูล
+$stmt = $condb->prepare("SELECT DISTINCT company, address FROM customers WHERE company IS NOT NULL");
+$stmt->execute();
+$companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -236,7 +241,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text"><i class="fas fa-building"></i></span>
                                                 </div>
-                                                <input type="text" name="company" class="form-control" id="company" placeholder="Company" required>
+                                                <input type="text"
+                                                    name="company"
+                                                    class="form-control"
+                                                    id="company"
+                                                    placeholder="Company"
+                                                    list="companyList"
+                                                    required>
+                                                <datalist id="companyList">
+                                                    <?php foreach ($companies as $company): ?>
+                                                        <option value="<?php echo htmlspecialchars($company['company']); ?>"
+                                                            data-address="<?php echo htmlspecialchars($company['address']); ?>">
+                                                        <?php endforeach; ?>
+                                                </datalist>
                                             </div>
                                         </div>
 
@@ -380,3 +397,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 </body>
 
 </html>
+
+<!-- เพิ่ม JavaScript เพื่อจัดการการเลือก Company และดึงที่อยู่ -->
+<script>
+    $(function() {
+        // สร้าง object เก็บความสัมพันธ์ระหว่าง company และ address
+        const companyAddresses = {};
+        <?php foreach ($companies as $company): ?>
+            companyAddresses['<?php echo addslashes($company['company']); ?>'] =
+                '<?php echo addslashes($company['address']); ?>';
+        <?php endforeach; ?>
+
+        // เมื่อเลือกหรือกรอก company
+        $('#company').on('input', function() {
+            const selectedCompany = $(this).val();
+            const address = companyAddresses[selectedCompany];
+
+            // ถ้ามีที่อยู่ของบริษัทที่เลือก ให้แสดงในช่อง address
+            if (address) {
+                $('#address').val(address);
+            }
+        });
+
+        // ทำให้สามารถเลือกจาก datalist ได้ใน mobile
+        $('#company').on('change', function() {
+            const selectedCompany = $(this).val();
+            const address = companyAddresses[selectedCompany];
+            if (address) {
+                $('#address').val(address);
+            }
+        });
+    });
+</script>

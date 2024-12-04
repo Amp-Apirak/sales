@@ -49,6 +49,9 @@ if ($role !== 'Executive') {
     $sql_users .= " AND u.team_id = :team_id";
 }
 
+// เพิ่ม ORDER BY created_at DESC ที่ท้าย query หลังจาก where clause
+$sql_users .= " ORDER BY u.created_at DESC";
+
 // เพิ่มเงื่อนไขการค้นหาตามฟิลด์ที่ระบุ
 if (!empty($search)) {
     $sql_users .= " AND (u.username LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search OR u.phone LIKE :search OR u.email LIKE :search)";
@@ -361,17 +364,9 @@ $query_users = $stmt->fetchAll();
                 "responsive": true,
                 "lengthChange": false,
                 "autoWidth": false,
+                "order": [], // ปิดการเรียงลำดับอัตโนมัติ
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-            $('#example2').DataTable({
-                "paging": true,
-                "lengthChange": false,
-                "searching": false,
-                "ordering": true,
-                "info": true,
-                "autoWidth": false,
-                "responsive": true,
-            });
         });
     </script>
     <script>

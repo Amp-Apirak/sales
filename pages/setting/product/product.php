@@ -41,6 +41,8 @@ if (!empty($search_service)) {
                         OR u.last_name LIKE :search_service)";
 }
 
+$sql_products .= " ORDER BY p.created_at DESC";
+
 // เตรียม statement และ bind ค่า
 $stmt = $condb->prepare($sql_products);
 
@@ -233,11 +235,82 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <!-- /.card-header -->
                                 <div class="card-body">
                                     <!-- ปรับแต่งตาราง -->
+                                    <!-- ปรับแต่ง CSS ในส่วน head -->
+                                    <style>
+                                        /* ปรับแต่งขนาดและสไตล์ของตาราง */
+                                        .table {
+                                            margin-bottom: 0;
+                                        }
+
+                                        /* ปรับขนาดคอลัมน์รูปภาพ */
+                                        .product-image-column {
+                                            width: 180px !important;
+                                            /* ลดขนาดลงจาก 200px */
+                                            max-width: 180px !important;
+                                        }
+
+                                        /* ปรับแต่งรูปภาพ */
+                                        .product-image {
+                                            width: 160px;
+                                            /* ลดขนาดลง */
+                                            height: 120px;
+                                            /* ลดความสูง */
+                                            object-fit: contain;
+                                            border-radius: 6px;
+                                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                            background-color: #fff;
+                                            padding: 8px;
+                                            border: 1px solid #dee2e6;
+                                        }
+
+                                        /* เพิ่ม animation เมื่อ hover */
+                                        .product-image:hover {
+                                            transform: scale(1.03);
+                                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+                                        }
+
+                                        /* ปรับแต่งส่วนรายละเอียดสินค้า */
+                                        .product-details {
+                                            padding: 10px 15px;
+                                        }
+
+                                        .product-title {
+                                            font-size: 1.1rem;
+                                            font-weight: 600;
+                                            margin-bottom: 8px;
+                                            color: #2c3e50;
+                                        }
+
+                                        .product-description {
+                                            font-size: 0.9rem;
+                                            color: #666;
+                                            margin-bottom: 10px;
+                                        }
+
+                                        .product-meta {
+                                            font-size: 0.85rem;
+                                            color: #777;
+                                            margin-bottom: 5px;
+                                        }
+
+                                        /* ปรับแต่งปุ่มกดต่างๆ */
+                                        .btn-action-group {
+                                            margin-top: 10px;
+                                        }
+
+                                        .btn-action-group .btn {
+                                            padding: 4px 12px;
+                                            font-size: 0.85rem;
+                                            margin-right: 5px;
+                                        }
+                                    </style>
+
+                                    <!-- แก้ไขโครงสร้าง HTML ของตาราง -->
                                     <table id="example1" class="table table-bordered table-hover">
                                         <thead>
                                             <tr class="bg-primary text-white">
-                                                <th class="text-center" width="5%">No.</th>
-                                                <th class="text-center" width="25%">Image</th>
+                                                <th class="text-center" style="width: 5%">No.</th>
+                                                <th class="text-center product-image-column">Image</th>
                                                 <th>Product Details</th>
                                             </tr>
                                         </thead>
@@ -245,20 +318,30 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <?php foreach ($products as $index => $product) { ?>
                                                 <tr>
                                                     <td class="text-center align-middle"><?php echo $index + 1; ?></td>
-                                                    <td class="text-center" style="width: 200px;"> <!-- กำหนดความกว้างคงที่ -->
-                                                        <a href="<?php echo !empty($product['main_image']) ? '../../../uploads/product_images/' . $product['main_image'] : '../../../assets/img/pit.png'; ?>" data-lightbox="product-image" data-title="<?php echo htmlspecialchars($product['product_name']); ?>">
-                                                            <img src="<?php echo !empty($product['main_image']) ? '../../../uploads/product_images/' . $product['main_image'] : '../../../assets/img/pit.png'; ?>" class="product-image" alt="<?php echo htmlspecialchars($product['product_name']); ?>">
+                                                    <td class="text-center product-image-column">
+                                                        <a href="<?php echo !empty($product['main_image']) ? '../../../uploads/product_images/' . $product['main_image'] : '../../../assets/img/pit.png'; ?>"
+                                                            data-lightbox="product-image"
+                                                            data-title="<?php echo htmlspecialchars($product['product_name']); ?>">
+                                                            <img src="<?php echo !empty($product['main_image']) ? '../../../uploads/product_images/' . $product['main_image'] : '../../../assets/img/pit.png'; ?>"
+                                                                class="product-image"
+                                                                alt="<?php echo htmlspecialchars($product['product_name']); ?>">
                                                         </a>
                                                     </td>
-                                                    <td>
-                                                        <h5 class="font-weight-bold mb-2"><?php echo htmlspecialchars($product['product_name'], ENT_QUOTES, 'UTF-8'); ?></h5>
-                                                        <p class="text-muted mb-2"><strong>Description:</strong> <?php echo htmlspecialchars($product['product_description'], ENT_QUOTES, 'UTF-8'); ?></p>
-                                                        <p class="mb-1"><strong>Created By:</strong> <?php echo htmlspecialchars($product['creator_first_name'] . " " . $product['creator_last_name'], ENT_QUOTES, 'UTF-8'); ?></p>
-                                                        <p class="mb-3"><strong>Created Date:</strong> <?php echo date('F j, Y', strtotime($product['created_at'])); ?></p>
-                                                        <div class="btn-group" role="group">
-                                                            <a href="view_product.php?id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View</a>
-                                                            <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-sm btn-outline-info"><i class="fas fa-pencil-alt"></i> Edit</a>
-                                                            <a href="delete_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i> Delete</a>
+                                                    <td class="product-details">
+                                                        <div class="product-title"><?php echo htmlspecialchars($product['product_name']); ?></div>
+                                                        <div class="product-description"><?php echo htmlspecialchars($product['product_description']); ?></div>
+                                                        <div class="product-meta">
+                                                            <strong>Created By:</strong> <?php echo htmlspecialchars($product['creator_first_name'] . " " . $product['creator_last_name']); ?>
+                                                        </div>
+                                                        <div class="product-meta">
+                                                            <strong>Created Date:</strong> <?php echo date('F j, Y', strtotime($product['created_at'])); ?>
+                                                        </div>
+                                                        <div class="btn-action-group">
+                                                            <a href="view_product.php?id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>"
+                                                                class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-eye"></i> View
+                                                            </a>
+                                                            <!-- ปุ่มอื่นๆ -->
                                                         </div>
                                                     </td>
                                                 </tr>
