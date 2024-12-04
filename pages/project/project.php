@@ -312,8 +312,8 @@ function truncateText($text, $length = 100)
                     <div class="container-fluid">
                         <!-- Small boxes (Stat box) -->
                         <div class="row">
-
-                            <div class="col-lg-3 col-6">
+                            <!-- Project All Card -->
+                            <div class="col-lg-2 col-6">
                                 <div class="small-box bg-info">
                                     <div class="inner">
                                         <h3><?php echo number_format($total_projects); ?></h3>
@@ -324,12 +324,9 @@ function truncateText($text, $length = 100)
                                     </div>
                                 </div>
                             </div>
-                            <!-- ./col -->
 
-                            <!-- ------------------------------------------------------------------------------------------------------------------ -->
-
-
-                            <div class="col-lg-3 col-6">
+                            <!-- Seller Card -->
+                            <div class="col-lg-2 col-6">
                                 <div class="small-box bg-warning">
                                     <div class="inner">
                                         <h3><?php echo number_format($total_creators); ?></h3>
@@ -341,9 +338,8 @@ function truncateText($text, $length = 100)
                                 </div>
                             </div>
 
-                            <!-- ------------------------------------------------------------------------------------------------------------------ -->
-
-                            <div class="col-lg-3 col-6">
+                            <!-- Cost Price Card -->
+                            <div class="col-lg-2 col-6">
                                 <div class="small-box bg-primary">
                                     <div class="inner">
                                         <h3><?php echo number_format($total_cost, 2); ?></h3>
@@ -354,11 +350,9 @@ function truncateText($text, $length = 100)
                                     </div>
                                 </div>
                             </div>
-                            <!-- ./col -->
 
-                            <!-- ------------------------------------------------------------------------------------------------------------------ -->
-
-                            <div class="col-lg-3 col-6">
+                            <!-- Sale Price Card -->
+                            <div class="col-lg-2 col-6">
                                 <div class="small-box bg-success">
                                     <div class="inner">
                                         <h3><?php echo number_format($total_sale, 2); ?></h3>
@@ -369,12 +363,47 @@ function truncateText($text, $length = 100)
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- ------------------------------------------------------------------------------------------------------------------ -->
-                    </div><!-- /.container-fluid -->
+                            <!-- เพิ่ม Gross Profit Card -->
+                            <div class="col-lg-2 col-6">
+                                <div class="small-box bg-danger">
+                                    <div class="inner">
+                                        <?php
+                                        $total_gross_profit = 0;
+                                        foreach ($projects as $project) {
+                                            $total_gross_profit += $project['gross_profit'];
+                                        }
+                                        ?>
+                                        <h3><?php echo number_format($total_gross_profit, 2); ?></h3>
+                                        <p>Gross Profit</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- เพิ่ม GP % Card -->
+                            <div class="col-lg-2 col-6">
+                                <div class="small-box bg-secondary">
+                                    <div class="inner">
+                                        <?php
+                                        $avg_gp_percentage = 0;
+                                        if ($total_sale > 0) {
+                                            $avg_gp_percentage = ($total_gross_profit / $total_sale) * 100;
+                                        }
+                                        ?>
+                                        <h3><?php echo number_format($avg_gp_percentage, 2); ?>%</h3>
+                                        <p>Average GP %</p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="fas fa-percentage"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </section>
-                <!-- /.content -->
             <?php endif; ?>
 
 
