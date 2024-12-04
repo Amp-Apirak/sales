@@ -114,7 +114,7 @@ $sql_projects = "
     LEFT JOIN products pr ON p.product_id = pr.product_id
     LEFT JOIN users seller ON p.seller = seller.user_id
     $where_clause
-    ORDER BY p.project_id DESC 
+    ORDER BY p.created_at DESC 
 ";
 
 $stmt_projects = $condb->prepare($sql_projects);
@@ -175,6 +175,30 @@ function truncateText($text, $length = 100)
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* สไตล์สำหรับ tooltip ที่หัวตาราง */
+        .table-header-tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .table-header-tooltip:hover::after {
+            content: attr(title);
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: normal;
+            max-width: 200px;
+            z-index: 1000;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 5px;
+        }
+    </style>
     <style>
         /* ใช้ฟอนต์ Noto Sans Thai กับ label */
         th,
@@ -500,37 +524,37 @@ function truncateText($text, $length = 100)
                                         <thead>
                                             <tr>
                                                 <?php if ($role != 'Engineer'): ?>
-                                                    <th class="text-nowrap text-center">Action</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ดูรายละเอียดและแก้ไขข้อมูลโครงการ">Action</th>
                                                 <?php endif; ?>
-                                                <th class="text-nowrap text-center">Contact No.</th>
-                                                <th class="text-nowrap text-center">Sales Date</th>
-                                                <th class="text-nowrap text-center">Start Date</th>
-                                                <th class="text-nowrap text-center">End Date</th>
-                                                <th class="text-nowrap text-center">Status</th>
-                                                <th class="text-nowrap text-center">Product</th>
-                                                <th class="text-nowrap text-center">Project Name</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="วันที่/เวลา เพิ่มข้อมูลโครงการเข้าระบบ">Create Date</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ชื่อบริษัทของลูกค้า">Customer Company</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="สถานะของโครงการ">Status</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ประเภทผลิตภัณฑ์หรือบริการ">Product</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ชื่อโครงการ">Project Name</th>
                                                 <?php if ($role != 'Engineer'): ?>
-                                                    <th class="text-nowrap text-center">Cost Price</th>
-                                                    <th class="text-nowrap text-center">Cost Price (Vat)</th>
-                                                    <th class="text-nowrap text-center">Sale Price</th>
-                                                    <th class="text-nowrap text-center">Sale Price (Vat)</th>
-                                                    <th class="text-nowrap text-center">Gross Profit</th>
-                                                    <th class="text-nowrap text-center">(% GP)</th>
-                                                    <th class="text-nowrap text-center">Vat (%)</th>
-                                                    <th class="text-nowrap text-center">Estimate Cost</th>
-                                                    <th class="text-nowrap text-center">Estimate Sale</th>
-                                                    <th class="text-nowrap text-center">Estimate GP</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ราคาต้นทุนไม่รวม VAT">Cost Price</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ราคาต้นทุนรวม VAT">Cost Price (Vat)</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ราคาขายไม่รวม VAT">Sale Price</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ราคาขายรวม VAT">Sale Price (Vat)</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="กำไรขั้นต้น">Gross Profit</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="เปอร์เซ็นต์กำไรขั้นต้น">% GP</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="อัตราภาษีมูลค่าเพิ่ม">Vat (%)</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ประมาณการต้นทุน">Estimate Cost</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ประมาณการยอดขาย">Estimate Sale</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ประมาณการกำไรขั้นต้น">Estimate GP</th>
                                                 <?php endif; ?>
-                                                <th class="text-nowrap text-center">Seller</th>
-                                                <th class="text-nowrap text-center">Team</th>
-                                                <th class="text-nowrap text-center">Customer Name</th>
-                                                <th class="text-nowrap text-center">Customer Company</th>
-                                                <th class="text-nowrap text-center">Customer Address</th>
-                                                <th class="text-nowrap text-center">Customer Phone</th>
-                                                <th class="text-nowrap text-center">Customer Email</th>
-                                                <th class="text-nowrap text-center">Remark</th>
-                                                <th class="text-nowrap text-center">Create By</th>
-                                                <th class="text-nowrap text-center">Create Date</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ชื่อพนักงานขาย">Seller</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ทีมที่รับผิดชอบโครงการ">Team</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ชื่อผู้ติดต่อของลูกค้า">Customer Name</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ที่อยู่ของลูกค้าหรือบริษัท">Customer Address</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="หมายเลขโทรศัพท์ติดต่อลูกค้า">Customer Phone</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="อีเมลติดต่อลูกค้า">Customer Email</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="หมายเหตุเพิ่มเติมของโครงการ">Remark</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="เลขที่สัญญาหรือเลขที่เอกสารอ้างอิง">Contact No.</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="วันที่ขาย">Sales Date</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="วันที่เริ่มโครงการ">Start Date</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="วันที่สิ้นสุดโครงการ">End Date</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ผู้สร้างข้อมูลโครงการ">Create By</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -545,10 +569,8 @@ function truncateText($text, $length = 100)
                                                             <!-- <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a> -->
                                                         </td>
                                                     <?php endif; ?>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']) ? htmlspecialchars($project['contract_no']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['end_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
+                                                    <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap text-center">
                                                         <?php
                                                         if (strcasecmp($project["status"], 'Waiting for approve') == 0) {
@@ -595,7 +617,6 @@ function truncateText($text, $length = 100)
                                                     <td class="text-nowrap"><?php echo displayData($project['seller_first_name'] . ' ' . $project['seller_last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['team_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']) ? htmlspecialchars($project['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap">
                                                         <div class="truncate-text" title="<?php echo htmlspecialchars($project['address'] ?? 'ไม่ระบุข้อมูล'); ?>">
                                                             <?php echo isset($project['address']) ? truncateText(htmlspecialchars($project['address'])) : 'ไม่ระบุข้อมูล'; ?>
@@ -604,8 +625,11 @@ function truncateText($text, $length = 100)
                                                     <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']) ? htmlspecialchars($project['remark']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']) ? htmlspecialchars($project['contract_no']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['end_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
