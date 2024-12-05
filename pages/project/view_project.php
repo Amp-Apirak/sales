@@ -118,347 +118,15 @@ function getStatusClass($status)
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SalePipeline | View Project</title>
     <?php include '../../include/header.php'; ?>
+
     <!-- PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
     <!-- PDF -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <style>
-        /* การกำหนดรูปแบบการแสดงผลของหน้าเว็บ */
-        body {
-            font-family: 'Noto Sans Thai', sans-serif;
-            background-color: #f8f9fa;
-            font-size: 14px;
-        }
 
-        .content-wrapper {
-            padding: 20px;
-        }
-
-        .project-header {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .project-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .project-status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .project-date {
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        .info-card {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-
-        .info-card-header {
-            background-color: #f8f9fa;
-            color: black;
-            padding: 15px 20px;
-            font-weight: 600;
-            font-size: 18px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .info-card-body {
-            padding: 20px;
-        }
-
-        .info-item {
-            display: flex;
-            margin-bottom: 15px;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: #34495e;
-            width: 150px;
-            flex-shrink: 0;
-        }
-
-        .info-value {
-            flex-grow: 1;
-            color: #2c3e50;
-        }
-
-        /* สไตล์สำหรับส่วนสรุปทางการเงิน */
-        .financial-summary {
-            background-color: #ecf0f1;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .financial-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-
-        .financial-label {
-            font-weight: 600;
-            color: #34495e;
-        }
-
-        .financial-value {
-            font-weight: 700;
-            color: #2c3e50;
-        }
-
-        .profit-highlight {
-            color: #27ae60;
-            font-size: 18px;
-        }
-
-        /* สไตล์ปุ่มแก้ไข */
-        .edit-button {
-            float: right;
-            background-color: transparent;
-            color: #6a11cb;
-            border: none;
-            padding: 2px 5px;
-            border-radius: 3px;
-            cursor: pointer;
-            transition: background-color 0.3s, color 0.3s;
-            font-size: 14px;
-        }
-
-        .edit-button:hover {
-            background-color: #6a11cb;
-            color: white;
-        }
-
-        /* สไตล์สำหรับตาราง */
-        .table {
-            width: 100%;
-            margin-bottom: 1rem;
-            color: #212529;
-        }
-
-        .table th,
-        .table td {
-            padding: 0.75rem;
-            vertical-align: top;
-            border-top: 1px solid #dee2e6;
-        }
-
-        .table-striped tbody tr:nth-of-type(odd) {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        /* สไตล์สำหรับสถานะการชำระเงิน */
-        .text-success {
-            color: #28a745 !important;
-        }
-
-        .text-warning {
-            color: #ffc107 !important;
-        }
-
-        .text-danger {
-            color: #dc3545 !important;
-        }
-
-        /* สไตล์สำหรับปุ่มขนาดเล็ก */
-        .btn-sm {
-            padding: .25rem .5rem;
-            font-size: .875rem;
-            line-height: 1.5;
-            border-radius: .2rem;
-        }
-
-        .mr-1 {
-            margin-right: .25rem !important;
-        }
-
-        /* สไตล์สำหรับการแสดงผลบนอุปกรณ์มือถือ */
-        @media (max-width: 768px) {
-            .table-responsive {
-                overflow-x: auto;
-            }
-        }
-
-        @media (max-width: 767px) {
-            .payment-card .card {
-                border: 1px solid #ddd;
-                border-radius: 8px;
-            }
-
-            .payment-card .card-body {
-                padding: 15px;
-            }
-
-            .payment-card .card-title {
-                font-size: 18px;
-                margin-bottom: 10px;
-            }
-
-            .payment-card .card-text {
-                font-size: 14px;
-                margin-bottom: 15px;
-            }
-
-            .payment-card .btn-group {
-                display: flex;
-                justify-content: space-between;
-            }
-        }
-
-        /* สไตล์สำหรับการจัดการความสูงของการ์ด */
-        .equal-height-cards {
-            display: flex;
-            flex-wrap: wrap;
-        }
-
-        .equal-height-cards>[class*='col-'] {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .equal-height-cards .info-card {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .equal-height-cards .info-card-body {
-            flex: 1;
-        }
-
-        .info-card {
-            min-height: 300px;
-            /* ปรับตามความเหมาะสม */
-        }
-
-
-        /* เพิ่ม CSS เพื่อสร้างเส้นใต้ให้กับ Tab */
-        .nav-pills {
-            border-bottom: 2px solid #dee2e6;
-            padding-bottom: 10px;
-            /* margin-bottom: 20px; */
-        }
-
-        .nav-pills .nav-link {
-            border-bottom: 3px solid transparent;
-        }
-
-        .nav-pills .nav-link.active {
-            background-color: transparent;
-            border-bottom: 3px solid #007bff;
-            color: #007bff;
-        }
-
-        /* .tab-content {
-            padding-top: 20px;
-        } */
-
-        .btn-sm {
-            font-size: 0.875rem;
-            padding: 0.25rem 0.5rem;
-        }
-
-        /* สไตล์สำหรับการจัดการความกว้างของการ์ดรูปภาพ Tab 3 */
-        .image-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .image-card {
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .image-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .image-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-
-        .image-info {
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.9);
-        }
-
-        .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 0, 0, 0.7);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            font-size: 16px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .image-card:hover .delete-btn {
-            opacity: 1;
-        }
-
-        .lightbox {
-            display: none;
-            position: fixed;
-            z-index: 999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-        }
-
-        .lightbox-content {
-            margin: auto;
-            display: block;
-            width: 80%;
-            max-width: 700px;
-        }
-
-        .close {
-            position: absolute;
-            top: 15px;
-            right: 35px;
-            color: #f1f1f1;
-            font-size: 40px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-    </style>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/view_project.css">
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -474,6 +142,7 @@ function getStatusClass($status)
                         <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
                         <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab" data-tab="documents">เอกสารแนบ</a></li>
                         <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#links" data-toggle="tab" data-tab="links">แนบลิงค์เอกสารโครงการ</a></li>
                     </ul
                         </div>
                     <div class="card-body">
@@ -901,6 +570,7 @@ function getStatusClass($status)
                                     </table>
                                 </div>
                             </div>
+
                             <!-- แถบที่ 4 ตารางแสดงภาพ -->
                             <div class="tab-pane" id="images">
                                 <div class="mb-3">
@@ -922,6 +592,33 @@ function getStatusClass($status)
                                     <img class="lightbox-content" id="lightbox-img">
                                 </div>
                             </div>
+
+                            <!-- แถบที่ 5 ตาราง links -->
+                            <div class="tab-pane" id="links">
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#linkModal">
+                                        <i class="fas fa-plus"></i> เพิ่มลิงก์เอกสาร
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table id="example2" class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>ลำดับ</th>
+                                                <th>หมวด/หมู่เอกสาร</th>
+                                                <th>ชื่อเอกสาร</th>
+                                                <th>วันที่สร้าง</th>
+                                                <th>ผู้สร้าง</th>
+                                                <th>การดำเนินการ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="linkTableBody">
+                                            <!-- ข้อมูลจะถูกเพิ่มที่นี่ด้วย JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -1751,22 +1448,26 @@ function getStatusClass($status)
 <style>
     /* CSS สำหรับการพิมพ์ PDF */
     @media print {
+
         /* การตั้งค่าพื้นฐานสำหรับ body และ container */
         body {
-            font-size: 12pt; /* กำหนดขนาดฟอนต์ให้เหมาะสม */
+            font-size: 12pt;
+            /* กำหนดขนาดฟอนต์ให้เหมาะสม */
             padding: 0;
             margin: 0;
         }
 
         .container-fluid {
-            width: 100%; /* กำหนดให้ container กินพื้นที่เต็มหน้า */
+            width: 100%;
+            /* กำหนดให้ container กินพื้นที่เต็มหน้า */
             padding: 0;
             margin: 0;
         }
 
         .wrapper,
         .content-wrapper {
-            background-color: white !important; /* กำหนดสีพื้นหลังเป็นสีขาว */
+            background-color: white !important;
+            /* กำหนดสีพื้นหลังเป็นสีขาว */
         }
 
         /* ซ่อนองค์ประกอบที่ไม่ต้องการให้พิมพ์ */
@@ -1779,70 +1480,87 @@ function getStatusClass($status)
         .main-sidebar,
         .main-header,
         .main-footer {
-            display: none !important; /* ไม่แสดงปุ่มหรือส่วนที่ไม่จำเป็น */
+            display: none !important;
+            /* ไม่แสดงปุ่มหรือส่วนที่ไม่จำเป็น */
         }
 
         /* การจัดรูปแบบของ info-card และ row */
         .info-card {
-            page-break-inside: avoid; /* ป้องกันไม่ให้ตัดหน้าในขณะพิมพ์ */
+            page-break-inside: avoid;
+            /* ป้องกันไม่ให้ตัดหน้าในขณะพิมพ์ */
             margin-bottom: 20px;
             width: 100%;
-            break-inside: avoid; /* ป้องกันการตัดหน้า */
+            break-inside: avoid;
+            /* ป้องกันการตัดหน้า */
         }
 
         .row {
             display: block;
-            page-break-inside: avoid; /* ป้องกันการตัดหน้าในขณะพิมพ์ */
+            page-break-inside: avoid;
+            /* ป้องกันการตัดหน้าในขณะพิมพ์ */
             margin-bottom: 20px;
         }
 
         /* การจัดการโครงสร้างของคอลัมน์และเนื้อหา info-card */
         .col-md-12 {
-            width: 100%; /* ปรับให้คอลัมน์มีขนาดเต็ม */
+            width: 100%;
+            /* ปรับให้คอลัมน์มีขนาดเต็ม */
             float: none;
         }
 
         .info-card-body {
-            padding: 15px; /* กำหนดระยะห่างภายในของการ์ด */
+            padding: 15px;
+            /* กำหนดระยะห่างภายในของการ์ด */
         }
 
         .info-item {
-            margin-bottom: 10px; /* กำหนดระยะห่างระหว่างแต่ละรายการ */
+            margin-bottom: 10px;
+            /* กำหนดระยะห่างระหว่างแต่ละรายการ */
         }
 
         .info-label {
-            font-weight: bold; /* กำหนดตัวหนาให้กับ label */
+            font-weight: bold;
+            /* กำหนดตัวหนาให้กับ label */
             display: inline-block;
-            width: 150px; /* กำหนดความกว้างของ label */
+            width: 150px;
+            /* กำหนดความกว้างของ label */
             vertical-align: top;
         }
 
         .info-value {
             display: inline-block;
-            width: calc(100% - 160px); /* กำหนดให้แสดงผลเต็มพื้นที่ */
+            width: calc(100% - 160px);
+            /* กำหนดให้แสดงผลเต็มพื้นที่ */
         }
 
         /* การจัดการตาราง */
         .table-responsive {
-            overflow-x: visible !important; /* แก้ไขปัญหาการแสดงผลของตารางใน container */
+            overflow-x: visible !important;
+            /* แก้ไขปัญหาการแสดงผลของตารางใน container */
         }
 
         .table {
-            width: 100% !important; /* กำหนดให้ตารางเต็มหน้ากระดาษ */
-            table-layout: fixed; /* ใช้การจัดรูปแบบตารางให้เท่ากันทุกคอลัมน์ */
-            border-collapse: collapse !important; /* รวมเส้นขอบของตาราง */
+            width: 100% !important;
+            /* กำหนดให้ตารางเต็มหน้ากระดาษ */
+            table-layout: fixed;
+            /* ใช้การจัดรูปแบบตารางให้เท่ากันทุกคอลัมน์ */
+            border-collapse: collapse !important;
+            /* รวมเส้นขอบของตาราง */
         }
 
         .table-section {
-            page-break-inside: avoid; /* ป้องกันไม่ให้ตัดหน้าในขณะพิมพ์ */
+            page-break-inside: avoid;
+            /* ป้องกันไม่ให้ตัดหน้าในขณะพิมพ์ */
         }
 
         .table th,
         .table td {
-            word-wrap: break-word; /* แก้ไขปัญหาคำใน cell ยาวเกิน */
+            word-wrap: break-word;
+            /* แก้ไขปัญหาคำใน cell ยาวเกิน */
             max-width: 100%;
             white-space: normal;
-            background-color: #fff !important; /* กำหนดสีพื้นหลังของ cell ให้เป็นสีขาว */
+            background-color: #fff !important;
+            /* กำหนดสีพื้นหลังของ cell ให้เป็นสีขาว */
         }
 
         /* การจัดการหัวข้อและรูปภาพ */
@@ -1852,66 +1570,80 @@ function getStatusClass($status)
         h4,
         h5,
         h6 {
-            page-break-after: avoid; /* ป้องกันการตัดหน้าในหัวข้อ */
+            page-break-after: avoid;
+            /* ป้องกันการตัดหน้าในหัวข้อ */
         }
 
         img {
-            max-width: 100% !important; /* ป้องกันไม่ให้ภาพขยายเกินขอบ */
+            max-width: 100% !important;
+            /* ป้องกันไม่ให้ภาพขยายเกินขอบ */
         }
     }
 
     /* การปรับแต่งตารางต้นทุนโครงการ (Datatables) */
     .table-responsive {
-        margin: 15px 0; /* กำหนดระยะห่างรอบตาราง */
+        margin: 15px 0;
+        /* กำหนดระยะห่างรอบตาราง */
     }
 
     #costTable {
-        width: 100% !important; /* กำหนดความกว้างของตารางให้เต็ม */
+        width: 100% !important;
+        /* กำหนดความกว้างของตารางให้เต็ม */
         margin-bottom: 1rem;
     }
 
     #costTable th,
     #costTable td {
-        padding: 8px; /* กำหนดระยะห่างภายใน cell */
-        vertical-align: middle; /* จัดแนวข้อมูลให้อยู่กลาง */
+        padding: 8px;
+        /* กำหนดระยะห่างภายใน cell */
+        vertical-align: middle;
+        /* จัดแนวข้อมูลให้อยู่กลาง */
     }
 
     .dataTables_wrapper {
         width: 100%;
         margin: 0 auto;
-        padding: 0 15px; /* จัดระยะห่างภายใน wrapper */
+        padding: 0 15px;
+        /* จัดระยะห่างภายใน wrapper */
     }
 
     /* สไตล์ปุ่ม DataTables */
     .dt-buttons {
         margin-bottom: 15px;
-        float: left; /* จัดตำแหน่งปุ่มไปทางซ้าย */
+        float: left;
+        /* จัดตำแหน่งปุ่มไปทางซ้าย */
     }
 
     .dt-button {
-        margin-right: 5px !important; /* ระยะห่างระหว่างปุ่ม */
+        margin-right: 5px !important;
+        /* ระยะห่างระหว่างปุ่ม */
     }
 
     /* การปรับปรุง responsive */
     @media screen and (max-width: 767px) {
         .table-responsive {
-            border: none; /* ซ่อนเส้นขอบเมื่อลดขนาดจอ */
+            border: none;
+            /* ซ่อนเส้นขอบเมื่อลดขนาดจอ */
         }
 
         .dataTables_wrapper {
-            padding: 0; /* ลบระยะห่างภายในเมื่อจอเล็ก */
+            padding: 0;
+            /* ลบระยะห่างภายในเมื่อจอเล็ก */
         }
     }
 
     /* ปรับแต่งปุ่ม Export */
     .buttons-excel {
         color: #fff !important;
-        background-color: #28a745 !important; /* กำหนดสีพื้นหลังเป็นสีเขียว */
+        background-color: #28a745 !important;
+        /* กำหนดสีพื้นหลังเป็นสีเขียว */
         border-color: #28a745 !important;
-        padding: .25rem .5rem !important; /* กำหนดระยะห่างภายในปุ่ม */
+        padding: .25rem .5rem !important;
+        /* กำหนดระยะห่างภายในปุ่ม */
         font-size: .875rem !important;
         line-height: 1.5 !important;
-        border-radius: .2rem !important; /* กำหนดขอบโค้งของปุ่ม */
+        border-radius: .2rem !important;
+        /* กำหนดขอบโค้งของปุ่ม */
     }
 </style>
 <!-- 5. function สำหรับการพิมพ์ PDF -->
@@ -2444,3 +2176,263 @@ function getStatusClass($status)
         });
     }
 </script>
+<!-- 6.  // ฟังก์ชันเพิ่มแถวใหม่ในตารางต้นทุน -->
+
+<!-- 7 Modal สำหรับเพิ่ม/แก้ไขลิงก์เอกสาร -->
+<div class="modal fade" id="linkModal" tabindex="-1" role="dialog" aria-labelledby="linkModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkModalLabel">เพิ่มลิงก์เอกสาร</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="linkForm">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <input type="hidden" id="linkId">
+                    <div class="form-group">
+                        <label for="documentCategory">หมวด/หมู่เอกสาร<span class="text-danger">*</span></label>
+                        <select class="form-control" id="documentCategory" required>
+                            <option value="">เลือกหมวดหมู่</option>
+                            <option value="contract">สัญญา</option>
+                            <option value="proposal">ข้อเสนอโครงการ</option>
+                            <option value="report">รายงาน</option>
+                            <option value="specification">ข้อกำหนด</option>
+                            <option value="other">อื่นๆ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="documentNames">ชื่อเอกสาร<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="documentNames" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="documentLink">ลิงก์เอกสาร<span class="text-danger">*</span></label>
+                        <input type="url" class="form-control" id="documentLink" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="saveDocumentLink()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ฟังก์ชันสำหรับโหลดข้อมูลลิงก์เอกสาร
+    function loadDocumentLinks() {
+        if ($.fn.DataTable.isDataTable('#example2')) {
+            $('#example2').DataTable().destroy();
+        }
+
+        // โหลดข้อมูลลิงก์เอกสารที่ต้องการใส่ในตาราง
+        $.ajax({
+            url: 'get_document_links.php',
+            type: 'GET',
+            data: {
+                project_id: projectId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    const tbody = $('#linkTableBody');
+                    tbody.empty();
+
+                    response.links.forEach((link, index) => {
+                        const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${getCategoryName(link.category)}</td>
+                        <td><a href="${link.url}" target="_blank">${link.document_name}</a></td>
+                        <td>${formatDate(link.created_at)}</td>
+                        <td>${link.created_by_name}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info mr-1" onclick="editDocumentLink('${link.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteDocumentLink('${link.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    `;
+                        tbody.append(row);
+                    });
+
+                    // สร้าง DataTable ใหม่
+                    $("#example2").DataTable({
+                        "dom": 'Bfrtip',
+                        "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
+                        "responsive": true,
+                        "lengthChange": true,
+                        "autoWidth": false,
+                        "order": [],
+                        "language": {
+                            "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/th.json"
+                        }
+                    }).buttons().container().appendTo('#example2_wrapper .col-md-6:eq(0)');
+                }
+            }
+        });
+    }
+
+
+    // ฟังก์ชันแปลงหมวดหมู่เป็นภาษาไทย
+    function getCategoryName(category) {
+        const categories = {
+            'contract': 'สัญญา',
+            'proposal': 'ข้อเสนอโครงการ',
+            'report': 'รายงาน',
+            'specification': 'ข้อกำหนด',
+            'other': 'อื่นๆ'
+        };
+        return categories[category] || category;
+    }
+
+    // ฟังก์ชันบันทึกลิงก์เอกสาร
+    function saveDocumentLink() {
+        const linkData = {
+            csrf_token: $('input[name="csrf_token"]').val(),
+            project_id: projectId,
+            link_id: $('#linkId').val(),
+            category: $('#documentCategory').val(),
+            document_name: $('#documentNames').val(),
+            url: $('#documentLink').val()
+        };
+
+        $.ajax({
+            url: 'save_document_link.php',
+            type: 'POST',
+            data: linkData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'สำเร็จ',
+                        text: 'บันทึกลิงก์เอกสารเรียบร้อยแล้ว',
+                        confirmButtonText: 'ตกลง'
+                    }).then(() => {
+                        $('#linkModal').modal('hide');
+                        loadDocumentLinks();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: response.message,
+                        confirmButtonText: 'ตกลง'
+                    });
+                }
+            }
+        });
+    }
+
+    // ฟังก์ชันแก้ไขลิงก์เอกสาร
+    function editDocumentLink(linkId) {
+        $.ajax({
+            url: 'get_document_link_details.php',
+            type: 'GET',
+            data: {
+                link_id: linkId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $('#linkId').val(linkId);
+                    $('#documentCategory').val(response.link.category);
+                    $('#documentNames').val(response.link.document_name);
+                    $('#documentLink').val(response.link.url);
+                    $('#linkModalLabel').text('แก้ไขลิงก์เอกสาร');
+                    $('#linkModal').modal('show');
+                }
+            }
+        });
+    }
+
+    // ฟังก์ชันลบลิงก์เอกสาร
+    function deleteDocumentLink(linkId) {
+        Swal.fire({
+            title: 'คุณแน่ใจหรือไม่?',
+            text: "คุณต้องการลบลิงก์เอกสารนี้ใช่หรือไม่?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'ใช่, ลบเลย!',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'delete_document_link.php',
+                    type: 'POST',
+                    data: {
+                        csrf_token: $('input[name="csrf_token"]').val(),
+                        link_id: linkId
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'ลบสำเร็จ',
+                                text: 'ลบลิงก์เอกสารเรียบร้อยแล้ว',
+                                confirmButtonText: 'ตกลง'
+                            }).then(() => {
+                                loadDocumentLinks();
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // เพิ่ม event listeners
+    $(document).ready(function() {
+        // โหลดข้อมูลลิงก์เมื่อเปิดแท็บ links
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+            if (e.target.hash === '#links') {
+                loadDocumentLinks();
+            }
+        });
+
+        // เพิ่มการเรียกใช้ฟังก์ชันนี้เมื่อโหลดหน้าเว็บเพื่อให้ข้อมูลไม่หายหลังจากรีเฟรช
+        loadDocumentLinks();
+
+        // รีเซ็ตฟอร์มเมื่อปิด Modal
+        $('#linkModal').on('hidden.bs.modal', function() {
+            $('#linkForm').trigger('reset');
+            $('#linkId').val('');
+            $('#linkModalLabel').text('เพิ่มลิงก์เอกสาร');
+        });
+    });
+
+    // เพิ่มฟังก์ชันนี้ในส่วน JavaScript
+    function formatDate(dateString) {
+        const options = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return new Date(dateString).toLocaleDateString('th-TH', options);
+    }
+</script>
+
+<style>
+    /* ปรับสีปุ่ม Excel ให้อยู่ในโทนเดียวกับปุ่มอื่น ๆ */
+    .buttons-excel {
+        background-color: #007bff !important;
+        /* เปลี่ยนสีปุ่มเป็นสีน้ำเงิน */
+        border-color: #007bff !important;
+        /* เปลี่ยนสีขอบปุ่มให้เข้ากัน */
+        color: #ffffff !important;
+        /* เปลี่ยนสีตัวอักษรเป็นสีขาว */
+    }
+</style>
+<!-- 7 Modal สำหรับเพิ่ม/แก้ไขลิงก์เอกสาร -->
