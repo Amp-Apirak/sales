@@ -556,15 +556,18 @@ function truncateText($text, $length = 100)
                                                     <th class="text-nowrap text-center table-header-tooltip" title="ดูรายละเอียดและแก้ไขข้อมูลโครงการ">Action</th>
                                                 <?php endif; ?>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="วันที่/เวลา เพิ่มข้อมูลโครงการเข้าระบบ">Create Date</th>
-                                                <th class="text-nowrap text-center table-header-tooltip" title="ชื่อบริษัทของลูกค้า">Customer Company</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="วันที่ขาย">Sales Date</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="สถานะของโครงการ">Status</th>
-                                                <th class="text-nowrap text-center table-header-tooltip" title="ประเภทผลิตภัณฑ์หรือบริการ">Product</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="เลขที่สัญญาหรือเลขที่เอกสารอ้างอิง">Contact No.</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="ชื่อโครงการ">Project Name</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ชื่อบริษัทของลูกค้า">Customer Company</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ชื่อผู้ติดต่อของลูกค้า">Customer Name</th>
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ประเภทผลิตภัณฑ์หรือบริการ">Product</th>
                                                 <?php if ($role != 'Engineer'): ?>
-                                                    <th class="text-nowrap text-center table-header-tooltip" title="ราคาต้นทุนไม่รวม VAT">Cost Price</th>
-                                                    <th class="text-nowrap text-center table-header-tooltip" title="ราคาต้นทุนรวม VAT">Cost Price (Vat)</th>
                                                     <th class="text-nowrap text-center table-header-tooltip" title="ราคาขายไม่รวม VAT">Sale Price</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ราคาต้นทุนไม่รวม VAT">Cost Price</th>
                                                     <th class="text-nowrap text-center table-header-tooltip" title="ราคาขายรวม VAT">Sale Price (Vat)</th>
+                                                    <th class="text-nowrap text-center table-header-tooltip" title="ราคาต้นทุนรวม VAT">Cost Price (Vat)</th>
                                                     <th class="text-nowrap text-center table-header-tooltip" title="กำไรขั้นต้น">Gross Profit</th>
                                                     <th class="text-nowrap text-center table-header-tooltip" title="เปอร์เซ็นต์กำไรขั้นต้น">% GP</th>
                                                     <th class="text-nowrap text-center table-header-tooltip" title="อัตราภาษีมูลค่าเพิ่ม">Vat (%)</th>
@@ -574,13 +577,10 @@ function truncateText($text, $length = 100)
                                                 <?php endif; ?>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="ชื่อพนักงานขาย">Seller</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="ทีมที่รับผิดชอบโครงการ">Team</th>
-                                                <th class="text-nowrap text-center table-header-tooltip" title="ชื่อผู้ติดต่อของลูกค้า">Customer Name</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="ที่อยู่ของลูกค้าหรือบริษัท">Customer Address</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="หมายเลขโทรศัพท์ติดต่อลูกค้า">Customer Phone</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="อีเมลติดต่อลูกค้า">Customer Email</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="หมายเหตุเพิ่มเติมของโครงการ">Remark</th>
-                                                <th class="text-nowrap text-center table-header-tooltip" title="เลขที่สัญญาหรือเลขที่เอกสารอ้างอิง">Contact No.</th>
-                                                <th class="text-nowrap text-center table-header-tooltip" title="วันที่ขาย">Sales Date</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="วันที่เริ่มโครงการ">Start Date</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="วันที่สิ้นสุดโครงการ">End Date</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="ผู้สร้างข้อมูลโครงการ">Create By</th>
@@ -599,7 +599,7 @@ function truncateText($text, $length = 100)
                                                         </td>
                                                     <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
-                                                    <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
                                                     <td class="text-nowrap text-center">
                                                         <?php
                                                         if (strcasecmp($project["status"], 'Waiting for approve') == 0) {
@@ -623,7 +623,7 @@ function truncateText($text, $length = 100)
                                                         }
                                                         ?>
                                                     </td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']) ? htmlspecialchars($project['contract_no']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap">
                                                         <div class="truncate-text-project" title="<?php echo htmlspecialchars($project['project_name']); ?>">
                                                             <?php
@@ -631,11 +631,14 @@ function truncateText($text, $length = 100)
                                                             ?>
                                                         </div>
                                                     </td>
+                                                    <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']) ? htmlspecialchars($project['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
                                                     <?php if ($role != 'Engineer'): ?>
-                                                        <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
+                                                        <td class="text-nowrap"><?php echo number_format($project['sale_vat'], 2); ?></td>
                                                         <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
                                                         <td class="text-nowrap "><?php echo number_format($project['sale_no_vat'], 2); ?></td>
-                                                        <td class="text-nowrap"><?php echo number_format($project['sale_vat'], 2); ?></td>
+                                                        <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
                                                         <td class="text-nowrap" style="color: Green; font-weight: bold;"><?php echo number_format($project['gross_profit'], 2); ?></td>
                                                         <td class="text-nowrap" style="color: Green; font-weight: bold;"><?php echo !empty($project['potential']) ? htmlspecialchars($project['potential']) . '%' : ''; ?></td>
                                                         <td class="text-nowrap"><?php echo number_format($project['vat'], 2); ?>%</td>
@@ -645,7 +648,6 @@ function truncateText($text, $length = 100)
                                                     <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo displayData($project['seller_first_name'] . ' ' . $project['seller_last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['team_name']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']) ? htmlspecialchars($project['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap">
                                                         <div class="truncate-text" title="<?php echo htmlspecialchars($project['address'] ?? 'ไม่ระบุข้อมูล'); ?>">
                                                             <?php echo isset($project['address']) ? truncateText(htmlspecialchars($project['address'])) : 'ไม่ระบุข้อมูล'; ?>
@@ -654,8 +656,6 @@ function truncateText($text, $length = 100)
                                                     <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']) ? htmlspecialchars($project['remark']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']) ? htmlspecialchars($project['contract_no']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['end_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>

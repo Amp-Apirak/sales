@@ -2197,6 +2197,7 @@ function getStatusClass($status)
                         <select class="form-control" id="documentCategory" required>
                             <option value="">เลือกหมวดหมู่</option>
                             <option value="contract">สัญญา</option>
+                            <option value="proposal">หนังสือค่ำประกันสัญญา</option>
                             <option value="proposal">ข้อเสนอโครงการ</option>
                             <option value="report">รายงาน</option>
                             <option value="specification">ข้อกำหนด</option>

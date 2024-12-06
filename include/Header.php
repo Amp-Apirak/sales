@@ -34,3 +34,5 @@
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/plugins/toastr/toastr.min.css">
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+
+    <link rel="icon" type="image/x-icon" href="<?php echo BASE_URL; ?>assets/img/favicon.ico">

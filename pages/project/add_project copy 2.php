@@ -290,18 +290,6 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
     </style>
 
-    <!-- สำหรับซ่อนฟิลด์: -->
-    <style>
-        /* ซ่อนฟิลด์เริ่มต้น */
-        .contract-fields {
-            display: none;
-        }
-        /* เมื่อสถานะเป็น Win จะแสดงฟิลด์ */
-        .show-win-fields {
-            display: block !important;
-        }
-    </style>
-
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -415,28 +403,26 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <!-- /ชื่อโครงการ -->
 
                                                 <!--  Win กรอกวันที่เริ่มโครงการ/สิ้นสุดโครงการ -->
-                                                <div class="contract-fields">
-                                                    <div class="row">
-                                                        <div class="col col-6">
-                                                            <div class="form-group">
-                                                                <label>เลขที่สัญญา</label>
-                                                                <input type="text" name="con_number" class="form-control" id="exampleInputEmail1" placeholder="เลขที่สัญญา">
-                                                            </div>
+                                                <div class="row">
+                                                    <div class="col col-6">
+                                                        <div class="form-group">
+                                                            <label>เลขที่สัญญา</label>
+                                                            <input type="text" name="con_number" class="form-control" id="exampleInputEmail1" placeholder="เลขที่สัญญา">
                                                         </div>
                                                     </div>
+                                                </div>
 
-                                                    <div class="row">
-                                                        <div class="col col-6">
-                                                            <div class="form-group">
-                                                                <label>วันเริ่มโครงการ</label>
-                                                                <input type="date" name="date_start" class="form-control" id="exampleInputEmail1" placeholder="">
-                                                            </div>
+                                                <div class="row">
+                                                    <div class="col col-6">
+                                                        <div class="form-group">
+                                                            <label>วันเริ่มโครงการ</label>
+                                                            <input type="date" name="date_start" class="form-control" id="exampleInputEmail1" placeholder="">
                                                         </div>
-                                                        <div class="col col-6">
-                                                            <div class="form-group">
-                                                                <label>วันสิ้นสุดโครงการ</label>
-                                                                <input type="date" name="date_end" class="form-control" id="exampleInputEmail1" placeholder="">
-                                                            </div>
+                                                    </div>
+                                                    <div class="col col-6">
+                                                        <div class="form-group">
+                                                            <label>วันสิ้นสุดโครงการ</label>
+                                                            <input type="date" name="date_end" class="form-control" id="exampleInputEmail1" placeholder="">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -513,7 +499,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </div>
 
                                             <!-- Estimate Potential -->
-                                            <div class="col-md-6 estimate-card">
+                                            <div class="col-md-6">
                                                 <div class="card card-warning card-equal-height">
                                                     <div class="card-header">
                                                         <h3 class="card-title">Estimate Potential</h3>
@@ -626,7 +612,6 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         ?>
     </script>
-
 
 </body>
 
@@ -877,28 +862,3 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
     });
 </script>
-
-
-<!-- JavaScript สำหรับควบคุมการแสดง/ซ่อนฟิลด์:  -->
-<script>
-    $(document).ready(function() {
-        // ฟังก์ชันสำหรับจัดการการแสดง/ซ่อนฟิลด์
-        function toggleWinFields(status) {
-            const isWin = status === 'ชนะ (Win)';
-            $('.contract-fields').toggleClass('show-win-fields', isWin);
-        }
-
-        // เพิ่ม event listener สำหรับการเปลี่ยนสถานะ
-        $('#status').on('change', function() {
-            const selectedStatus = $(this).val();
-            toggleWinFields(selectedStatus);
-
-            // ยังคงเรียกฟังก์ชันคำนวณเดิม
-            recalculateEstimate();
-        });
-
-        // เรียกใช้ฟังก์ชันครั้งแรกเมื่อโหลดหน้า
-        toggleWinFields($('#status').val());
-    });
-</script>
-

@@ -191,9 +191,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- ส่วนฟอร์ม Login -->
             <div class="col-lg-6 login-box-form">
                 <div class="p-4 p-md-5">
-                    <h1 class="login-title text-center mb-4 animate-fade-in">
+                    <img src="assets/img/pit.png" class="img-fluid rounded animate-fade-in" alt="Company Logo">
+                    <h5 class="login-title text-center mb-4 animate-fade-in">
                         <i class="fas fa-handshake"></i> Point IT Sales Management
-                    </h1>
+                    </h5>
                     <!-- ฟอร์ม Login -->
                     <form action="login.php" method="post" class="animate-fade-in">
                         <!-- ช่องกรอก Username -->
