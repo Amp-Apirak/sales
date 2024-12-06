@@ -255,9 +255,6 @@ $query_users = $stmt->fetchAll();
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
                             <div class="col-md-12 pb-3">
                                 <div class="btn-group float-right">
-                                    <a href="import_account.php" class="btn btn-info btn-sm mr-2">
-                                        <i class="fas fa-file-import"></i> Import Excel/CSV
-                                    </a>
                                     <a href="add_account.php" class="btn btn-success btn-sm">เพิ่มข้อมูล</a>
                                 </div>
                             </div><br>
