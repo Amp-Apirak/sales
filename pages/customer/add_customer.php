@@ -56,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     $phone = clean_input($_POST['phone']);
     $email = clean_input($_POST['email']);
     $remark = clean_input($_POST['remark']);
+    $position = clean_input($_POST['position']);
 
     // รับข้อมูลเพิ่มเติมจากฟอร์ม
     $office_phone = clean_input($_POST['office_phone']);
@@ -108,13 +109,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
             // }
 
             // บันทึกข้อมูลลงในฐานข้อมูล
-            $sql = "INSERT INTO customers (customer_id, customer_name, company, address, phone, email, remark, created_by, customers_image, office_phone, extension)
-                    VALUES (:customer_id, :customer_name, :company, :address, :phone, :email, :remark, :created_by, :customers_image, :office_phone, :extension)";
+            $sql = "INSERT INTO customers (customer_id, customer_name, company, position, address, phone, email, remark, created_by, customers_image, office_phone, extension)
+        VALUES (:customer_id, :customer_name, :company, :position, :address, :phone, :email, :remark, :created_by, :customers_image, :office_phone, :extension)";
             $stmt = $condb->prepare($sql);
             $stmt->execute([
                 ':customer_id' => $customer_id,
                 ':customer_name' => $customer_name,
                 ':company' => $company,
+                ':position' => $position,
                 ':address' => $address,
                 ':phone' => $phone,
                 ':email' => $email,
@@ -237,28 +239,6 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </div>
                                         </div>
 
-                                        <!-- Customer Name -->
-                                        <div class="form-group">
-                                            <label for="customer_name">Customer Name<span class="text-danger">*</span></label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text"><i class="fas fa-address-book"></i></span>
-                                                </div>
-                                                <input type="text" name="customer_name" class="form-control" id="customer_name" placeholder="Customer Name" required>
-                                            </div>
-                                        </div>
-
-                                        <!-- Phone -->
-                                        <div class="form-group">
-                                            <label for="phone">Phone</label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                                </div>
-                                                <input type="text" name="phone" class="form-control" id="phone" placeholder="Phone">
-                                            </div>
-                                        </div>
-
                                         <!-- Company -->
                                         <div class="form-group">
                                             <label for="company">Company<span class="text-danger">*</span></label>
@@ -315,6 +295,41 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <!-- Customer Name -->
+                                        <div class="form-group">
+                                            <label for="customer_name">Customer Name<span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-address-book"></i></span>
+                                                </div>
+                                                <input type="text" name="customer_name" class="form-control" id="customer_name" placeholder="Customer Name" required>
+                                            </div>
+                                        </div>
+
+
+                                        <!-- Position -->
+                                        <div class="form-group">
+                                            <label for="position">Position</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                                                </div>
+                                                <input type="text" name="position" class="form-control" id="position" placeholder="Position">
+                                            </div>
+                                        </div>
+
+                                        <!-- Phone -->
+                                        <div class="form-group">
+                                            <label for="phone">Phone</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                                </div>
+                                                <input type="text" name="phone" class="form-control" id="phone" placeholder="Phone">
+                                            </div>
+                                        </div>
+
 
 
                                         <!-- Email -->

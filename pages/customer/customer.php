@@ -31,8 +31,11 @@ if ($role == 'Sale Supervisor') {
 
 // เพิ่มเงื่อนไขการค้นหาข้อมูลตามที่ผู้ใช้กรอกมา
 if (!empty($search_service)) {
-    $sql_customers .= " AND (c.customer_name LIKE :search OR c.company LIKE :search OR c.phone LIKE :search OR c.email LIKE :search)";
+    $sql_customers .= " AND (c.customer_name LIKE :search OR c.company LIKE :search OR c.phone LIKE :search OR c.position LIKE :search OR c.email LIKE :search)";
 }
+
+
+$sql_customers .= " ORDER BY c.created_at DESC";
 
 // เตรียม statement และ bind ค่าต่างๆ เพื่อความปลอดภัย
 $stmt = $condb->prepare($sql_customers);
@@ -162,10 +165,12 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <!-- //Section Search -->
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
-                            <div class="col-md-12 pb-3">
-                                <a href="add_customer.php" class="btn btn-success btn-sm float-right">เพิ่มข้อมูล<i class=""></i></a>
-                            </div><br>
-                            <!-- //Section ปุ่มเพิ่มข้อมูล -->
+                            <div class="col-md-12 pb-3 text-right">
+                                    <a href="import_customer.php" class="btn btn-info btn-sm mr-2">
+                                        <i class="fas fa-file-import"></i> Import Excel/CSV
+                                    </a>
+                                    <a href="add_customer.php" class="btn btn-success btn-sm">เพิ่มข้อมูล</a>
+                            </div>
 
                             <!-- Section ตารางแสดงผล -->
                             <div class="card">
@@ -180,6 +185,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <thead>
                                             <tr>
                                                 <th class="text-nowrap text-center">Customer Name</th>
+                                                <th class="text-nowrap text-center">Position</th>
                                                 <th class="text-nowrap text-center">Phone</th>
                                                 <th class="text-nowrap text-center">Email</th>
                                                 <th class="text-nowrap text-center">Company</th>
@@ -193,6 +199,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <?php foreach ($customers as $customer) { ?>
                                                 <tr>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['position']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($customer['phone']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($customer['email']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($customer['company']); ?></td>
@@ -211,6 +218,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <tfoot>
                                             <tr>
                                                 <th>Customer Name</th>
+                                                <th>Position</th>
                                                 <th>Phone</th>
                                                 <th>Email</th>
                                                 <th>Company</th>

@@ -602,21 +602,21 @@ function truncateText($text, $length = 100)
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
                                                     <td class="text-nowrap text-center">
                                                         <?php
-                                                        if (strcasecmp($project["status"], 'Waiting for approve') == 0) {
+                                                        if (strcasecmp($project["status"], 'นำเสนอโครงการ (Presentations)') == 0) {
                                                             echo "<span class='badge badge-primary'>{$project['status']}</span>";
                                                         } elseif (strcasecmp($project["status"], 'On Hold') == 0) {
                                                             echo "<span class='badge badge-warning'>{$project['status']}</span>";
-                                                        } elseif (strcasecmp($project["status"], 'Quotation') == 0) {
+                                                        } elseif (strcasecmp($project["status"], 'ใบเสนอราคา (Quotation)') == 0) {
                                                             echo "<span class='badge badge-info'>{$project['status']}</span>";
                                                         } elseif (strcasecmp($project["status"], 'Negotiation') == 0) {
                                                             echo "<span class='badge badge-primary'>{$project['status']}</span>";
-                                                        } elseif (strcasecmp($project["status"], 'Bidding') == 0) {
+                                                        } elseif (strcasecmp($project["status"], 'ยื่นประมูล (Bidding)') == 0) {
                                                             echo "<span class='badge badge-warning'>{$project['status']}</span>";
-                                                        } elseif (strcasecmp($project["status"], 'Win') == 0) {
+                                                        } elseif (strcasecmp($project["status"], 'ชนะ (Win)') == 0) {
                                                             echo "<span class='badge badge-success'>{$project['status']}</span>";
-                                                        } elseif (strcasecmp($project["status"], 'Lost') == 0) {
+                                                        } elseif (strcasecmp($project["status"], 'แพ้ (Loss)') == 0) {
                                                             echo "<span class='badge badge-danger'>{$project['status']}</span>";
-                                                        } elseif (strcasecmp($project["status"], 'Cancelled') == 0) {
+                                                        } elseif (strcasecmp($project["status"], 'ยกเลิก (Cancled)') == 0) {
                                                             echo "<span class='badge badge-secondary'>{$project['status']}</span>";
                                                         } else {
                                                             echo "<span class='badge badge-secondary'>{$project['status']}</span>";

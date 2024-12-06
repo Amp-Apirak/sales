@@ -234,6 +234,74 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #FF5733;
         }
     </style>
+
+    <!-- ควบคุมความสูงของ content area -->
+    <style>
+        /* ควบคุมความสูงของ content area */
+        .content-wrapper {
+            min-height: calc(100vh - 120px);
+        }
+
+        /* จัดการความสูงของ cards */
+        .card-equal-height {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* จัดการพื้นที่ภายใน card */
+        .card-equal-height .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ทำให้ form-group กระจายพื้นที่เท่าๆ กัน */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        /* ปรับขนาด input fields ให้สม่ำเสมอ */
+        .form-control {
+            height: calc(2rem + 2px);
+        }
+
+        /* สำหรับ textarea ให้ขยายตามเนื้อหา */
+        textarea.form-control {
+            height: auto;
+            min-height: 80px;
+        }
+
+        /* ให้ card-footer อยู่ด้านล่างเสมอ */
+        .card-equal-height .card-footer {
+            margin-top: auto;
+        }
+
+        /* จัดการ row ที่มี cards */
+        .row-equal-height {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* ทำให้ columns มีความสูงเท่ากัน */
+        .row-equal-height>[class*='col-'] {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+
+    <!-- สำหรับซ่อนฟิลด์: -->
+    <style>
+        /* ซ่อนฟิลด์เริ่มต้น */
+        .contract-fields {
+            display: none;
+        }
+        /* เมื่อสถานะเป็น Win จะแสดงฟิลด์ */
+        .show-win-fields {
+            display: block !important;
+        }
+    </style>
+
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -272,21 +340,23 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <section class="content">
                 <div class="container-fluid">
                     <div class="row">
-                        <div class="col-12">
-                            <!-- เพิ่มข้อมูล -->
-                            <div class="row">
-                                <!-- /.col (left) -->
-                                <div class="col-md-6">
-                                    <!-- /.Pipeline descriptions ----------------------------------------------------------------------->
-                                    <form id="addProjectForm" action="#" method="POST" enctype="multipart/form-data">
+                        <div class="col-12 mb-3">
+                            <form id="addProjectForm" action="#" method="POST" enctype="multipart/form-data">
+                                <div class="row row-equal-height">
+
+                                    <!-- Project descriptions/Customer descriptions -->
+                                    <div class="col-md-5">
+                                        <!-- /.Pipeline descriptions ----------------------------------------------------------------------->
+
                                         <!-- Include the CSRF token as a hidden input -->
                                         <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                        <!-- /.card -->
-                                        <div class="card card-primary h-80 w-100">
+
+                                        <div class="card card-primary card-equal-height">
                                             <div class="card-header ">
-                                                <h3 class="card-title">Pipeline descriptions</h3>
+                                                <h3 class="card-title">Project descriptions</h3>
                                             </div>
                                             <div class="card-body">
+
                                                 <div class="row">
                                                     <div class="col col-6">
                                                         <div class="form-group">
@@ -311,27 +381,8 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <!-- /.form-group -->
                                                     </div>
                                                 </div>
+
                                                 <div class="row">
-                                                    <div class="col col-6">
-                                                        <div class="form-group">
-                                                            <label>วันเริ่มโครงการ</label>
-                                                            <input type="date" name="date_start" class="form-control" id="exampleInputEmail1" placeholder="">
-                                                        </div>
-                                                    </div>
-                                                    <div class="col col-6">
-                                                        <div class="form-group">
-                                                            <label>วันสิ้นสุดโครงการ</label>
-                                                            <input type="date" name="date_end" class="form-control" id="exampleInputEmail1" placeholder="">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col col-6">
-                                                        <div class="form-group">
-                                                            <label>เลขที่สัญญา</label>
-                                                            <input type="text" name="con_number" class="form-control" id="exampleInputEmail1" placeholder="เลขที่สัญญา">
-                                                        </div>
-                                                    </div>
                                                     <div class="col col-6">
                                                         <?php
                                                         // ดึงข้อมูลจากตาราง Products โดยใช้ prepared statement
@@ -356,19 +407,160 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     </div>
                                                 </div>
 
+                                                <!-- ชื่อโครงการ -->
                                                 <div class="form-group">
                                                     <label>ชื่อโครงการ<span class="text-danger">*</span></label>
                                                     <input type="text" name="project_name" class="form-control" id="exampleInputEmail1" placeholder="ชื่อโครงการ">
                                                 </div>
+                                                <!-- /ชื่อโครงการ -->
+
+                                                <!--  Win กรอกวันที่เริ่มโครงการ/สิ้นสุดโครงการ -->
+                                                <div class="contract-fields">
+                                                    <div class="row">
+                                                        <div class="col col-6">
+                                                            <div class="form-group">
+                                                                <label>เลขที่สัญญา</label>
+                                                                <input type="text" name="con_number" class="form-control" id="exampleInputEmail1" placeholder="เลขที่สัญญา">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row">
+                                                        <div class="col col-6">
+                                                            <div class="form-group">
+                                                                <label>วันเริ่มโครงการ</label>
+                                                                <input type="date" name="date_start" class="form-control" id="exampleInputEmail1" placeholder="">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col col-6">
+                                                            <div class="form-group">
+                                                                <label>วันสิ้นสุดโครงการ</label>
+                                                                <input type="date" name="date_end" class="form-control" id="exampleInputEmail1" placeholder="">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!--  Win กรอกวันที่เริ่มโครงการ/สิ้นสุดโครงการ -->
+
+                                                <!-- Remark -->
+                                                <div class="form-group">
+                                                    <label>Remark</label>
+                                                    <textarea class="form-control" name="remark" id="remark" rows="4" placeholder=""></textarea>
+                                                </div>
+                                                <!-- /Remark -->
+
                                             </div>
                                             <div class="card-footer">
                                             </div>
                                             <!-- /.card-body -->
                                         </div>
+                                    </div>
 
+                                    <!-- Cost Project -->
+                                    <div class="col-md-7">
+                                        <div class="row row-equal-height">
+
+                                            <div class="col-md-6">
+                                                <div class="card card-warning card-equal-height">
+                                                    <div class="card-header">
+                                                        <h3 class="card-title">Cost Project</h3>
+                                                    </div>
+                                                    <div class="card-body ">
+                                                        <div class="form-group">
+                                                            <label>ตั้งการคำนวณ <span class="text-primary">Vat (%)</span></label>
+                                                            <select class="form-control select2" name="vat" id="vat" style="width: 100%;">
+                                                                <option value="7">7%</option>
+                                                                <option value="0">0%</option>
+                                                                <option value="3">3%</option>
+                                                                <option value="5">5%</option>
+                                                                <option value="15">15%</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label><span class="text-primary">ราคาขาย</span>/รวมภาษีมูลค่าเพิ่ม</label>
+                                                            <input type="int" name="sale_vat" class="form-control" value="" id="sale_vat" placeholder="">
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label>ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                            <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control" placeholder="">
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label><span class="text-primary">ราคาต้นทุน</span>/รวมภาษีมูลค่าเพิ่ม</label>
+                                                            <input type="int" name="cost_vat" id="cost_vat" class="form-control" placeholder="">
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                            <input type="int" name="cost_no_vat" class="form-control" value="" id="cost_no_vat" style="background-color:#F8F8FF" placeholder="">
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label>กำไรขั้นต้น/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                            <input type="int" name="gross_profit" class="form-control" value="" id="gross_profit" style="background-color:#F8F8FF" placeholder="">
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label>กำไรขั้นต้น/คิดเป็น %</label>
+                                                            <input type="int" name="potential" class="form-control" value="" id="potential" style="background-color:#F8F8FF" placeholder="">
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-footer">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Estimate Potential -->
+                                            <div class="col-md-6 estimate-card">
+                                                <div class="card card-warning card-equal-height">
+                                                    <div class="card-header">
+                                                        <h3 class="card-title">Estimate Potential</h3>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <div class="col col">
+                                                                <!-- /.form-group -->
+                                                                <div class="form-group">
+                                                                    <label><span class="text-primary">ยอดขาย</span>/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
+                                                                    <input type="text" name="es_sale_no_vat" class="form-control" value="" id="es_sale_no_vat" style="background-color:#F8F8FF" placeholder="">
+                                                                </div>
+
+                                                                <div class="form-group">
+                                                                    <label><span class="text-primary">ต้นทุน</span>/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
+                                                                    <input type="text" name="es_cost_no_vat" class="form-control" value="" id="es_cost_no_vat" style="background-color:#F8F8FF" placeholder="">
+                                                                </div>
+
+                                                                <div class="form-group">
+                                                                    <label><span class="text-primary">กำไรที่คาดการณ์</span>ไม่รวมภาษีมูลค่าเพิ่ม</label>
+                                                                    <input type="text" name="es_gp_no_vat" class="form-control" value="" id="es_gp_no_vat" style="background-color:#F8F8FF" placeholder="">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+
+                                                        <!-- Date range -->
+                                                        <div class="form-group ">
+                                                            <button type="submit" name="submit" value="submit" class="btn btn-success">Save</button>
+                                                        </div>
+                                                        <!-- /.form group -->
+                                                    </div>
+                                                    <div class="card-footer">
+                                                    </div>
+                                                    <!-- /.card-body -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="row">
+                                    <!-- Project descriptions/Customer descriptions -->
+                                    <div class="col-md-12 mt-3 mb-4">
                                         <!-- /.Customer descriptions ----------------------------------------------------------------------->
-                                        <!-- /.card -->
-                                        <div class="card card-success h-45 w-100">
+                                        <div class="card card-success mb-3">
                                             <div class="card-header">
                                                 <h3 class="card-title">Customer descriptions</h3>
                                             </div>
@@ -389,7 +581,6 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <!-- /.form-group -->
                                                     </div>
                                                     <div class="col col-4">
-
                                                     </div>
                                                 </div>
 
@@ -400,135 +591,14 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </div>
                                             <!-- /.card-body -->
                                         </div>
-                                </div>
-                                <!-- /.col (right) -->
-
-
-                                <!-- /.Cost Project ----------------------------------------------------------------------->
-                                <!-- /.col (left) -->
-                                <div class="col-md-3">
-                                    <!-- /.col (left) -->
-                                    <div class="card card-warning h-100">
-                                        <div class="card-header">
-                                            <h3 class="card-title">Cost Project</h3>
-                                        </div>
-                                        <div class="card-body ">
-                                            <div class="row">
-                                                <div class="col col">
-                                                    <div class="form-group">
-                                                        <label>ตั้งการคำนวณ <span class="text-primary">Vat (%)</span></label>
-                                                        <select class="form-control select2" name="vat" id="vat" style="width: 100%;">
-                                                            <option value="7">7%</option>
-                                                            <option value="0">0%</option>
-                                                            <option value="3">3%</option>
-                                                            <option value="5">5%</option>
-                                                            <option value="15">15%</option>
-                                                        </select>
-                                                    </div>
-                                                    <!-- /.form-group -->
-
-                                                    <div class="form-group">
-                                                        <label><span class="text-primary">ราคาขาย</span>/รวมภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="sale_vat" class="form-control" value="" id="sale_vat" placeholder="">
-                                                    </div>
-
-                                                    <div class="form-group">
-                                                        <label>ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control" placeholder="">
-                                                    </div>
-
-                                                    <div class="form-group">
-                                                        <label><span class="text-primary">ราคาต้นทุน</span>/รวมภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="cost_vat" id="cost_vat" class="form-control" placeholder="">
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="cost_no_vat" class="form-control" value="" id="cost_no_vat" style="background-color:#F8F8FF" placeholder="">
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>กำไรขั้นต้น/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="gross_profit" class="form-control" value="" id="gross_profit" style="background-color:#F8F8FF" placeholder="">
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>กำไรขั้นต้น/คิดเป็น %</label>
-                                                        <input type="int" name="potential" class="form-control" value="" id="potential" style="background-color:#F8F8FF" placeholder="">
-                                                    </div>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="card-footer">
-
-                                        </div>
-                                        <!-- /.card-body -->
                                     </div>
-                                    <!-- /.card -->
                                 </div>
-                                <!-- /.card -->
 
-                                <!-- /.Cost Project ----------------------------------------------------------------------->
-
-                                <div class="col-md-3">
-                                    <!-- /.col (left) -->
-                                    <div class="card card-warning h-100">
-                                        <div class="card-header">
-                                            <h3 class="card-title">Estimate Potential</h3>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col col">
-                                                    <!-- /.form-group -->
-                                                    <div class="form-group">
-                                                        <label><span class="text-primary">ยอดขาย</span>/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="text" name="es_sale_no_vat" class="form-control" value="" id="es_sale_no_vat" style="background-color:#F8F8FF" placeholder="">
-                                                    </div>
-
-                                                    <div class="form-group">
-                                                        <label><span class="text-primary">ต้นทุน</span>/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="text" name="es_cost_no_vat" class="form-control" value="" id="es_cost_no_vat" style="background-color:#F8F8FF" placeholder="">
-                                                    </div>
-
-                                                    <div class="form-group">
-                                                        <label><span class="text-primary">กำไรที่คาดการณ์</span>ไม่รวมภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="text" name="es_gp_no_vat" class="form-control" value="" id="es_gp_no_vat" style="background-color:#F8F8FF" placeholder="">
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- textarea -->
-                                            <div class="form-group">
-                                                <label>Remark</label>
-                                                <textarea class="form-control" name="remark" id="remark" rows="4" placeholder=""></textarea>
-                                            </div>
-
-
-
-                                            <!-- Date range -->
-                                            <div class="form-group ">
-                                                <button type="submit" name="submit" value="submit" class="btn btn-success">Save</button>
-                                            </div>
-                                            <!-- /.form group -->
-                                        </div>
-
-                                        </form>
-                                        <div class="card-footer">
-                                        </div>
-                                        <!-- /.card-body -->
-                                    </div>
-                                    <!-- /.card -->
-                                </div>
-                                <!-- /.card -->
-                            </div>
-                            <!-- /.col (right) -->
+                            </form>
                         </div>
-                        <!-- /.row -->
                     </div>
-                    <!-- /.container-fluid -->
             </section>
-            <!-- /.content -->
         </div>
-        <!-- /.content-wrapper -->
-
         <!-- // include footer -->
         <?php include  '../../include/footer.php'; ?>
     </div>
@@ -556,6 +626,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         ?>
     </script>
+
 
 </body>
 
@@ -806,3 +877,28 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
     });
 </script>
+
+
+<!-- JavaScript สำหรับควบคุมการแสดง/ซ่อนฟิลด์:  -->
+<script>
+    $(document).ready(function() {
+        // ฟังก์ชันสำหรับจัดการการแสดง/ซ่อนฟิลด์
+        function toggleWinFields(status) {
+            const isWin = status === 'ชนะ (Win)';
+            $('.contract-fields').toggleClass('show-win-fields', isWin);
+        }
+
+        // เพิ่ม event listener สำหรับการเปลี่ยนสถานะ
+        $('#status').on('change', function() {
+            const selectedStatus = $(this).val();
+            toggleWinFields(selectedStatus);
+
+            // ยังคงเรียกฟังก์ชันคำนวณเดิม
+            recalculateEstimate();
+        });
+
+        // เรียกใช้ฟังก์ชันครั้งแรกเมื่อโหลดหน้า
+        toggleWinFields($('#status').val());
+    });
+</script>
+

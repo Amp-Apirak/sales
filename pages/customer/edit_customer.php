@@ -66,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remark = clean_input($_POST['remark']);
     $office_phone = clean_input($_POST['office_phone']);
     $extension = clean_input($_POST['extension']);
+    $position = clean_input($_POST['position']);
 
     // เพิ่มตัวแปรเพื่อตรวจสอบการเปลี่ยนแปลงรูปภาพ
     $image_changed = false;
@@ -107,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ตรวจสอบว่ามีการเปลี่ยนแปลงข้อมูลหรือไม่
     $data_changed =
         $customer_name != $customer['customer_name'] ||
+        $position != $customer['position'] ||
         $company != $customer['company'] ||
         $email != $customer['email'] ||
         $phone != $customer['phone'] ||
@@ -132,9 +134,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // แก้ไขข้อมูลลูกค้าในฐานข้อมูล
         try {
-            $sql = "UPDATE customers SET customer_name = :customer_name, company = :company, address = :address, phone = :phone, email = :email, remark = :remark, updated_by = :updated_by, office_phone = :office_phone, extension = :extension, customers_image = :customers_image WHERE customer_id = :customer_id";
+            $sql = "UPDATE customers SET customer_name = :customer_name, position = :position, company = :company, address = :address, phone = :phone, email = :email, remark = :remark, updated_by = :updated_by, office_phone = :office_phone, extension = :extension, customers_image = :customers_image WHERE customer_id = :customer_id";
             $stmt = $condb->prepare($sql);
             $stmt->bindParam(':customer_name', $customer_name, PDO::PARAM_STR);
+            $stmt->bindParam(':position', $position, PDO::PARAM_STR);
             $stmt->bindParam(':company', $company, PDO::PARAM_STR);
             $stmt->bindParam(':address', $address, PDO::PARAM_STR);
             $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
@@ -236,28 +239,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <?php endif; ?>
                                         </div>
 
-                                        <!-- Customer Name -->
-                                        <div class="form-group">
-                                            <label for="customer_name">Customer Name<span class="text-danger">*</span></label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text"><i class="fas fa-address-book"></i></span>
-                                                </div>
-                                                <input type="text" name="customer_name" class="form-control" id="customer_name" value="<?php echo htmlspecialchars($customer['customer_name']); ?>" required>
-                                            </div>
-                                        </div>
-
-                                        <!-- Phone -->
-                                        <div class="form-group">
-                                            <label for="phone">Phone</label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                                </div>
-                                                <input type="text" name="phone" class="form-control" id="phone" value="<?php echo htmlspecialchars($customer['phone']); ?>">
-                                            </div>
-                                        </div>
-
                                         <!-- Company -->
                                         <div class="form-group">
                                             <label for="company">Company<span class="text-danger">*</span></label>
@@ -303,6 +284,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <!-- Customer Name -->
+                                        <div class="form-group">
+                                            <label for="customer_name">Customer Name<span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-address-book"></i></span>
+                                                </div>
+                                                <input type="text" name="customer_name" class="form-control" id="customer_name" value="<?php echo htmlspecialchars($customer['customer_name']); ?>" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Position -->
+                                        <div class="form-group">
+                                            <label for="position">Position</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                                                </div>
+                                                <input type="text" name="position" class="form-control" id="position" value="<?php echo htmlspecialchars($customer['position']); ?>" placeholder="Position">
+                                            </div>
+                                        </div>
+
+                                        <!-- Phone -->
+                                        <div class="form-group">
+                                            <label for="phone">Phone</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                                </div>
+                                                <input type="text" name="phone" class="form-control" id="phone" value="<?php echo htmlspecialchars($customer['phone']); ?>">
+                                            </div>
+                                        </div>
+
 
                                         <!-- Email -->
                                         <div class="form-group">

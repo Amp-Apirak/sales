@@ -272,14 +272,13 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="form-group">
                                                             <label>สถานะโครงการ<span class="text-danger">*</span></label>
                                                             <select class="form-control select2" name="status">
-                                                                <option value="Waiting for approve" <?php echo ($project['status'] == 'Waiting for approve') ? 'selected' : ''; ?>>Waiting for approve</option>
-                                                                <option value="On-Hold" <?php echo ($project['status'] == 'On-Hold') ? 'selected' : ''; ?>>On-Hold</option>
-                                                                <option value="Quotation" <?php echo ($project['status'] == 'Quotation') ? 'selected' : ''; ?>>Quotation</option>
-                                                                <option value="Negotiation" <?php echo ($project['status'] == 'Negotiation') ? 'selected' : ''; ?>>Negotiation</option>
-                                                                <option value="Bidding" <?php echo ($project['status'] == 'Bidding') ? 'selected' : ''; ?>>Bidding</option>
-                                                                <option value="Win" <?php echo ($project['status'] == 'Win') ? 'selected' : ''; ?>>Win</option>
-                                                                <option value="Lost" <?php echo ($project['status'] == 'Lost') ? 'selected' : ''; ?>>Lost</option>
-                                                                <option value="Cancelled" <?php echo ($project['status'] == 'Cancelled') ? 'selected' : ''; ?>>Cancelled</option>
+                                                                <option value="นำเสนอโครงการ (Presentations)" <?php echo ($project['status'] == 'นำเสนอโครงการ (Presentations)') ? 'selected' : ''; ?>>นำเสนอโครงการ (Presentations)</option>
+                                                                <option value="ใบเสนอราคา (Quotation)" <?php echo ($project['status'] == 'ใบเสนอราคา (Quotation)') ? 'selected' : ''; ?>>ใบเสนอราคา (Quotation)</option>
+                                                                <option value="ยื่นประมูล (แพ้ (Loss))" <?php echo ($project['status'] == 'ยื่นประมูล (แพ้ (Loss))') ? 'selected' : ''; ?>>ยื่นประมูล (แพ้ (Loss))</option>
+                                                                <option value="ชนะ (Win)" <?php echo ($project['status'] == 'ชนะ (Win)') ? 'selected' : ''; ?>>ชนะ (Win)</option>
+                                                                <option value="แพ้ (Loss)" <?php echo ($project['status'] == 'แพ้ (Loss)') ? 'selected' : ''; ?>>แพ้ (Loss)</option>
+                                                                <option value="รอการพิจารณา (On Hold)" <?php echo ($project['status'] == 'รอการพิจารณา (On Hold)') ? 'selected' : ''; ?>>รอการพิจารณา (On Hold)</option>
+                                                                <option value="ยกเลิก (Cancled)" <?php echo ($project['status'] == 'ยกเลิก (Cancled)') ? 'selected' : ''; ?>>ยกเลิก (Cancled)</option>
                                                             </select>
                                                         </div>
                                                         <!-- /.form-group -->
@@ -628,23 +627,26 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             // กำหนดเปอร์เซ็นต์ตามสถานะโครงการ
             var percentage = 0;
             switch (status) {
-                case 'Lost':
-                case 'Cancelled':
+                case 'นำเสนอโครงการ (Presentations)':
                     percentage = 0;
                     break;
-                case 'Quotation':
+                case 'ใบเสนอราคา (Quotation)':
                     percentage = 10;
                     break;
-                case 'Negotiation':
-                    percentage = 30;
+                case 'ยื่นประมูล (Bidding)':
+                    percentage = 10;
                     break;
-                case 'Bidding':
-                    percentage = 50;
-                    break;
-                case 'Win':
-                case 'Waiting for approve':
-                case 'On-Hold':
+                case 'ชนะ (Win)':
                     percentage = 100;
+                    break;
+                case 'แพ้ (Loss)':
+                    percentage = 0;
+                    break;
+                case 'รอการพิจารณา (On Hold)':
+                    percentage = 0;
+                    break;
+                case 'ยกเลิก (Cancled)':
+                    percentage = 0;
                     break;
             }
 
