@@ -141,8 +141,9 @@ function getStatusClass($status)
                         <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
                         <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
                         <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab" data-tab="documents">เอกสารแนบ</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
                         <li class="nav-item"><a class="nav-link" href="#links" data-toggle="tab" data-tab="links">แนบลิงค์เอกสารโครงการ</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
+
                     </ul
                         </div>
                     <div class="card-body">
@@ -212,12 +213,16 @@ function getStatusClass($status)
                                             <div class="col-md-12">
                                                 <div class="info-card">
                                                     <div class="info-card-header">
-                                                        <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า</span>
+                                                        <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า (หลัก)</span>
                                                     </div>
                                                     <div class="info-card-body">
                                                         <div class="info-item">
                                                             <span class="info-label">ชื่อลูกค้า:</span>
                                                             <span class="info-value"><?php echo htmlspecialchars($project['customer_name']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">ตำแหน่ง:</span>
+                                                            <span class="info-value"><?php echo isset($project['position']) ? htmlspecialchars($project['position']) : '-'; ?></span>
                                                         </div>
                                                         <div class="info-item">
                                                             <span class="info-label">บริษัท:</span>

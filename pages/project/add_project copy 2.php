@@ -8,7 +8,6 @@ $team_id = $_SESSION['team_id'] ?? 0;
 $created_by = $_SESSION['user_id'] ?? 0;
 $user_id = $_SESSION['user_id'] ?? 0;
 
-
 error_log("Session role: " . $_SESSION['role']);
 error_log("Session user_id: " . $_SESSION['user_id']);
 
@@ -18,7 +17,7 @@ if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
     exit();
 }
 
-// สร้างหรือดึง CSRF Token สำหรับป้องกันการโจมตี CSRF
+// สร้างหรือดึง CSRF Token
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -30,25 +29,97 @@ function clean_input($data)
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
-// ฟังก์ชันสำหรับสร้าง UUID แบบปลอดภัย
+// ฟังก์ชันสร้าง UUID
 function generateUUID()
 {
     $data = random_bytes(16);
-    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // เวอร์ชัน 4 UUID
-    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // UUID variant
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
-$alert = ''; // ตัวแปรสำหรับแสดงข้อความแจ้งเตือน
-// ตัวแปรสำหรับเก็บข้อความแจ้งเตือนและข้อผิดพลาด
+// ฟังก์ชันตรวจสอบการเข้าถึงข้อมูลลูกค้า
+function canAccessCustomer($customer_id, $role, $user_id, $team_id)
+{
+    global $condb;
+
+    try {
+        $sql = "SELECT c.created_by, u.team_id 
+                FROM customers c 
+                LEFT JOIN users u ON c.created_by = u.user_id 
+                WHERE c.customer_id = :customer_id";
+
+        $stmt = $condb->prepare($sql);
+        $stmt->execute([':customer_id' => $customer_id]);
+        $customer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$customer) {
+            return false;
+        }
+
+        switch ($role) {
+            case 'Executive':
+                return true;
+            case 'Sale Supervisor':
+                return $customer['team_id'] == $team_id;
+            case 'Seller':
+                return $customer['created_by'] == $user_id;
+            default:
+                return false;
+        }
+    } catch (Exception $e) {
+        error_log("Error checking customer access: " . $e->getMessage());
+        return false;
+    }
+}
+
+// ฟังก์ชันดึงข้อมูลลูกค้าตามสิทธิ์
+function getAccessibleCustomers($role, $user_id, $team_id)
+{
+    global $condb;
+
+    try {
+        $sql = "SELECT c.*, CONCAT(c.customer_name, ' - ', c.company) as display_name 
+                FROM customers c";
+        $params = [];
+
+        switch ($role) {
+            case 'Executive':
+                $sql .= " ORDER BY c.customer_name";
+                break;
+            case 'Sale Supervisor':
+                $sql .= " INNER JOIN users u ON c.created_by = u.user_id 
+                         WHERE u.team_id = :team_id 
+                         ORDER BY c.customer_name";
+                $params[':team_id'] = $team_id;
+                break;
+            case 'Seller':
+                $sql .= " WHERE c.created_by = :user_id 
+                         ORDER BY c.customer_name";
+                $params[':user_id'] = $user_id;
+                break;
+            default:
+                return [];
+        }
+
+        $stmt = $condb->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Error fetching customers: " . $e->getMessage());
+        return [];
+    }
+}
+
+$alert = '';
 $error_messages = [];
 
-// ตรวจสอบว่ามีการส่งฟอร์มหรือไม่
-// ตรวจสอบว่ามีการส่งข้อมูลแบบ POST หรือไม่
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // ตรวจสอบว่าเป็นการร้องขอแบบ AJAX หรือไม่
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+// ดึงข้อมูลลูกค้าสำหรับ dropdowns
+$customers = getAccessibleCustomers($role, $user_id, $team_id);
 
+// ตรวจสอบการ POST ข้อมูล
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
         // ตรวจสอบ CSRF Token
         if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
             die("Invalid CSRF token");
@@ -57,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // สร้าง UUID สำหรับ project_id
         $project_id = generateUUID();
 
-        // ทำความสะอาดข้อมูลที่ได้จากฟอร์ม
+        // ทำความสะอาดข้อมูลจากฟอร์ม
         $project_name = clean_input($_POST['project_name']);
         $sales_date = clean_input($_POST['sales_date']);
         $date_start = clean_input($_POST['date_start']);
@@ -66,6 +137,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $contract_no = clean_input($_POST['con_number']);
         $product_id = clean_input($_POST['product_id']);
         $customer_id = clean_input($_POST['customer_id']);
+
+        // ทำความสะอาดข้อมูลตัวเลข
         $sale_vat = filter_var(str_replace(',', '', $_POST['sale_vat']), FILTER_VALIDATE_FLOAT);
         $sale_no_vat = filter_var(str_replace(',', '', $_POST['sale_no_vat']), FILTER_VALIDATE_FLOAT);
         $cost_vat = filter_var(str_replace(',', '', $_POST['cost_vat']), FILTER_VALIDATE_FLOAT);
@@ -78,6 +151,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $remark = clean_input($_POST['remark']);
         $vat = filter_var($_POST['vat'], FILTER_VALIDATE_FLOAT);
 
+        // รับข้อมูลลูกค้าโครงการ
+        $project_customers = [];
+        if (isset($_POST['project_customers'])) {
+            $project_customers = json_decode($_POST['project_customers'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $error_messages[] = "ข้อมูลลูกค้าไม่ถูกต้อง";
+            }
+        }
+
         // ตรวจสอบข้อมูลที่จำเป็น
         if (empty($project_name)) {
             $error_messages[] = "กรุณากรอกชื่อโครงการ";
@@ -89,14 +171,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error_messages[] = "กรุณาเลือกสินค้าที่ขาย";
         }
 
-        // ถ้าไม่มีข้อผิดพลาด ดำเนินการบันทึกข้อมูล
-        // ถ้าไม่มีข้อผิดพลาด ดำเนินการบันทึกข้อมูล
+        // ตรวจสอบสิทธิ์การเข้าถึงข้อมูลลูกค้า
+        if (!empty($project_customers)) {
+            foreach ($project_customers as $customer) {
+                if (!empty($customer['customer_id'])) {
+                    if (!canAccessCustomer($customer['customer_id'], $role, $user_id, $team_id)) {
+                        $error_messages[] = "ไม่มีสิทธิ์เข้าถึงข้อมูลลูกค้าบางราย";
+                        break;
+                    }
+                }
+            }
+        }
+
+        // บันทึกข้อมูลถ้าไม่มีข้อผิดพลาด
         if (empty($error_messages)) {
             try {
-                // เริ่ม transaction
                 $condb->beginTransaction();
 
-                // ตรวจสอบว่ามีโครงการชื่อซ้ำหรือไม่
+                // ตรวจสอบชื่อโครงการซ้ำ
                 $stmt = $condb->prepare("SELECT COUNT(*) FROM projects WHERE project_name = :project_name");
                 $stmt->bindParam(':project_name', $project_name, PDO::PARAM_STR);
                 $stmt->execute();
@@ -104,13 +196,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception("มีโครงการชื่อนี้อยู่แล้ว");
                 }
 
-                // เตรียม SQL สำหรับการเพิ่มข้อมูลโดยใช้ UUID สำหรับ project_id
-                $sql = "INSERT INTO projects (project_id, project_name, start_date, end_date, status, contract_no, product_id, customer_id, 
-            sale_vat, sale_no_vat, cost_vat, cost_no_vat, gross_profit, potential, sales_date,
-            es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at, seller) 
-            VALUES (:project_id, :project_name, :start_date, :end_date, :status, :contract_no, :product_id, :customer_id, 
-            :sale_vat, :sale_no_vat, :cost_vat, :cost_no_vat, :gross_profit, :potential, :sales_date,
-            :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW(), :seller)";
+                // บันทึกข้อมูลโครงการหลัก
+                $sql = "INSERT INTO projects (
+                    project_id, project_name, start_date, end_date, status, 
+                    contract_no, product_id, customer_id, sale_vat, sale_no_vat, 
+                    cost_vat, cost_no_vat, gross_profit, potential, sales_date,
+                    es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, 
+                    created_by, created_at, seller
+                ) VALUES (
+                    :project_id, :project_name, :start_date, :end_date, :status,
+                    :contract_no, :product_id, :customer_id, :sale_vat, :sale_no_vat,
+                    :cost_vat, :cost_no_vat, :gross_profit, :potential, :sales_date,
+                    :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat,
+                    :created_by, NOW(), :seller
+                )";
 
                 $stmt = $condb->prepare($sql);
                 $stmt->execute([
@@ -121,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':status' => $status,
                     ':contract_no' => $contract_no,
                     ':product_id' => $product_id,
-                    ':customer_id' => $customer_id ?: null, // ใส่ null หากไม่มี customer_id
+                    ':customer_id' => $customer_id ?: null,
                     ':sale_vat' => $sale_vat,
                     ':sale_no_vat' => $sale_no_vat,
                     ':cost_vat' => $cost_vat,
@@ -138,22 +237,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':seller' => $created_by
                 ]);
 
-                // Commit transaction
-                $condb->commit();
-                $alert = "success|บันทึกข้อมูลโครงการเรียบร้อยแล้ว";
-            } catch (Exception $e) {
-                // Rollback transaction ในกรณีที่เกิดข้อผิดพลาด
-                $condb->rollBack();
-                $alert = "error|" . $e->getMessage();
-            }
-        }
+                // บันทึกข้อมูลลูกค้าโครงการ
+                if (!empty($project_customers)) {
+                    // ตรวจสอบจำนวนลูกค้าหลัก
+                    $primary_count = 0;
+                    foreach ($project_customers as $customer) {
+                        if (!empty($customer['is_primary'])) {
+                            $primary_count++;
+                        }
+                    }
+                    if ($primary_count > 1) {
+                        throw new Exception("สามารถระบุลูกค้าหลักได้เพียงหนึ่งรายเท่านั้น");
+                    }
 
-        // เตรียมข้อมูลสำหรับส่งกลับ
-        $response = [
-            'success' => empty($error_messages),
-            'errors' => $error_messages,
-            'message' => empty($error_messages) ? 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว' : ''
-        ];
+                    $stmt = $condb->prepare("
+                        INSERT INTO project_customers (
+                            id, project_id, customer_id, is_primary, created_at
+                        ) VALUES (
+                            UUID(), :project_id, :customer_id, :is_primary, CURRENT_TIMESTAMP
+                        )
+                    ");
+
+                    foreach ($project_customers as $customer) {
+                        if (!empty($customer['customer_id'])) {
+                            $stmt->execute([
+                                ':project_id' => $project_id,
+                                ':customer_id' => $customer['customer_id'],
+                                ':is_primary' => !empty($customer['is_primary']) ? 1 : 0
+                            ]);
+                        }
+                    }
+                }
+
+                $condb->commit();
+                $response = [
+                    'success' => true,
+                    'message' => 'บันทึกข้อมูลโครงการและลูกค้าเรียบร้อยแล้ว',
+                    'project_id' => $project_id
+                ];
+            } catch (Exception $e) {
+                $condb->rollBack();
+                $response = [
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ];
+            }
+        } else {
+            $response = [
+                'success' => false,
+                'errors' => $error_messages
+            ];
+        }
 
         // ส่งการตอบกลับเป็น JSON
         header('Content-Type: application/json');
@@ -161,7 +295,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
-
 
 // ดึงข้อมูลสำหรับ dropdowns
 $stmt = $condb->query("SELECT product_id, product_name FROM products");
@@ -235,61 +368,63 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
     </style>
 
-    <!-- ควบคุมความสูงของ content area -->
     <style>
-        /* ควบคุมความสูงของ content area */
-        .content-wrapper {
-            min-height: calc(100vh - 120px);
+        /* Existing styles */
+        label,
+        h1 {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: #333;
         }
 
-        /* จัดการความสูงของ cards */
-        .card-equal-height {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
+        .custom-label {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #FF5733;
         }
 
-        /* จัดการพื้นที่ภายใน card */
-        .card-equal-height .card-body {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+        /* Add responsive styles */
+        @media (max-width: 768px) {
+
+            .col-sm-3,
+            .col-sm-6,
+            .col-sm-12 {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+
+            .card-body .row {
+                margin: 0;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            /* Adjust select2 width on mobile */
+            .select2-container {
+                width: 100% !important;
+            }
         }
 
-        /* ทำให้ form-group กระจายพื้นที่เท่าๆ กัน */
-        .form-group {
-            margin-bottom: 1rem;
-        }
+        /* Add spacing between stacked elements */
+        @media (max-width: 576px) {
+            .card-body .row>div {
+                padding-left: 5px;
+                padding-right: 5px;
+            }
 
-        /* ปรับขนาด input fields ให้สม่ำเสมอ */
-        .form-control {
-            height: calc(2rem + 2px);
-        }
+            h1 {
+                font-size: 24px;
+            }
 
-        /* สำหรับ textarea ให้ขยายตามเนื้อหา */
-        textarea.form-control {
-            height: auto;
-            min-height: 80px;
-        }
-
-        /* ให้ card-footer อยู่ด้านล่างเสมอ */
-        .card-equal-height .card-footer {
-            margin-top: auto;
-        }
-
-        /* จัดการ row ที่มี cards */
-        .row-equal-height {
-            display: flex;
-            flex-wrap: wrap;
-        }
-
-        /* ทำให้ columns มีความสูงเท่ากัน */
-        .row-equal-height>[class*='col-'] {
-            display: flex;
-            flex-direction: column;
+            .form-control {
+                font-size: 14px;
+            }
         }
     </style>
-
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -328,234 +463,252 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <section class="content">
                 <div class="container-fluid">
                     <div class="row">
-                        <div class="col-12 mb-3">
+                        <div class="col-12 mb-5">
                             <form id="addProjectForm" action="#" method="POST" enctype="multipart/form-data">
-                                <div class="row row-equal-height">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
-                                    <!-- Project descriptions/Customer descriptions -->
-                                    <div class="col-md-5">
-                                        <!-- /.Pipeline descriptions ----------------------------------------------------------------------->
-
-                                        <!-- Include the CSRF token as a hidden input -->
-                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-
-                                        <div class="card card-primary card-equal-height">
-                                            <div class="card-header ">
-                                                <h3 class="card-title">Project descriptions</h3>
-                                            </div>
-                                            <div class="card-body">
-
-                                                <div class="row">
-                                                    <div class="col col-6">
-                                                        <div class="form-group">
-                                                            <label>วันเปิดการขาย</label>
-                                                            <input type="date" name="sales_date" class="form-control" id="exampleInputEmail1" placeholder="">
-                                                        </div>
-                                                    </div>
-                                                    <div class="col col-6">
-                                                        <div class="form-group">
-                                                            <label>สถานะโครงการ<span class="text-danger">*</span></label>
-                                                            <select class="form-control select2" name="status" id="status" style="width: 100%;">
-                                                                <option selected="selected">Select</option>
-                                                                <option>นำเสนอโครงการ (Presentations)</option>
-                                                                <option>ใบเสนอราคา (Quotation)</option>
-                                                                <option>ยื่นประมูล (Bidding)</option>
-                                                                <option>ชนะ (Win)</option>
-                                                                <option>แพ้ (Loss)</option>
-                                                                <option>รอการพิจารณา (On Hold)</option>
-                                                                <option>ยกเลิก (Cancled)</option>
-                                                            </select>
-                                                        </div>
-                                                        <!-- /.form-group -->
-                                                    </div>
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="col col-6">
-                                                        <?php
-                                                        // ดึงข้อมูลจากตาราง Products โดยใช้ prepared statement
-                                                        $query = "SELECT * FROM products";
-                                                        $stmt = $condb->prepare($query);
-                                                        $stmt->execute();
-                                                        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                                                        ?>
-
-                                                        <div class="form-group">
-                                                            <label>สินค้าที่ขาย<span class="text-danger">*</span></label>
-                                                            <select name="product_id" class="form-control select2">
-                                                                <option value="">Select Product</option>
-                                                                <?php foreach ($products as $product): ?>
-                                                                    <option value="<?php echo htmlspecialchars($product['product_id']); ?>">
-                                                                        <?php echo htmlspecialchars($product['product_name']); ?>
-                                                                    </option>
-                                                                <?php endforeach; ?>
-                                                            </select>
-                                                        </div>
-                                                        <!-- /.form-group -->
-                                                    </div>
-                                                </div>
-
-                                                <!-- ชื่อโครงการ -->
-                                                <div class="form-group">
-                                                    <label>ชื่อโครงการ<span class="text-danger">*</span></label>
-                                                    <input type="text" name="project_name" class="form-control" id="exampleInputEmail1" placeholder="ชื่อโครงการ">
-                                                </div>
-                                                <!-- /ชื่อโครงการ -->
-
-                                                <!--  Win กรอกวันที่เริ่มโครงการ/สิ้นสุดโครงการ -->
-                                                <div class="row">
-                                                    <div class="col col-6">
-                                                        <div class="form-group">
-                                                            <label>เลขที่สัญญา</label>
-                                                            <input type="text" name="con_number" class="form-control" id="exampleInputEmail1" placeholder="เลขที่สัญญา">
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="col col-6">
-                                                        <div class="form-group">
-                                                            <label>วันเริ่มโครงการ</label>
-                                                            <input type="date" name="date_start" class="form-control" id="exampleInputEmail1" placeholder="">
-                                                        </div>
-                                                    </div>
-                                                    <div class="col col-6">
-                                                        <div class="form-group">
-                                                            <label>วันสิ้นสุดโครงการ</label>
-                                                            <input type="date" name="date_end" class="form-control" id="exampleInputEmail1" placeholder="">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <!--  Win กรอกวันที่เริ่มโครงการ/สิ้นสุดโครงการ -->
-
-                                                <!-- Remark -->
-                                                <div class="form-group">
-                                                    <label>Remark</label>
-                                                    <textarea class="form-control" name="remark" id="remark" rows="4" placeholder=""></textarea>
-                                                </div>
-                                                <!-- /Remark -->
-
-                                            </div>
-                                            <div class="card-footer">
-                                            </div>
-                                            <!-- /.card-body -->
+                                <div class="col col-sm-12">
+                                    <div class="card card-primary ">
+                                        <div class="card-header ">
+                                            <h3 class="card-title">Project descriptions</h3>
                                         </div>
-                                    </div>
-
-                                    <!-- Cost Project -->
-                                    <div class="col-md-7">
-                                        <div class="row row-equal-height">
-
-                                            <div class="col-md-6">
-                                                <div class="card card-warning card-equal-height">
-                                                    <div class="card-header">
-                                                        <h3 class="card-title">Cost Project</h3>
+                                        <!-- Project descriptions -->
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>วันเปิดการขาย</label>
+                                                        <input type="date" name="sales_date" class="form-control" id="exampleInputEmail1" placeholder="">
                                                     </div>
-                                                    <div class="card-body ">
-                                                        <div class="form-group">
-                                                            <label>ตั้งการคำนวณ <span class="text-primary">Vat (%)</span></label>
-                                                            <select class="form-control select2" name="vat" id="vat" style="width: 100%;">
-                                                                <option value="7">7%</option>
-                                                                <option value="0">0%</option>
-                                                                <option value="3">3%</option>
-                                                                <option value="5">5%</option>
-                                                                <option value="15">15%</option>
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label><span class="text-primary">ราคาขาย</span>/รวมภาษีมูลค่าเพิ่ม</label>
-                                                            <input type="int" name="sale_vat" class="form-control" value="" id="sale_vat" placeholder="">
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label>ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                            <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control" placeholder="">
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label><span class="text-primary">ราคาต้นทุน</span>/รวมภาษีมูลค่าเพิ่ม</label>
-                                                            <input type="int" name="cost_vat" id="cost_vat" class="form-control" placeholder="">
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                            <input type="int" name="cost_no_vat" class="form-control" value="" id="cost_no_vat" style="background-color:#F8F8FF" placeholder="">
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label>กำไรขั้นต้น/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                            <input type="int" name="gross_profit" class="form-control" value="" id="gross_profit" style="background-color:#F8F8FF" placeholder="">
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label>กำไรขั้นต้น/คิดเป็น %</label>
-                                                            <input type="int" name="potential" class="form-control" value="" id="potential" style="background-color:#F8F8FF" placeholder="">
-                                                        </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>สถานะโครงการ<span class="text-danger">*</span></label>
+                                                        <select class="form-control select2" name="status" id="status" style="width: 100%;">
+                                                            <option selected="selected">Select</option>
+                                                            <option>นำเสนอโครงการ (Presentations)</option>
+                                                            <option>ใบเสนอราคา (Quotation)</option>
+                                                            <option>ยื่นประมูล (Bidding)</option>
+                                                            <option>ชนะ (Win)</option>
+                                                            <option>แพ้ (Loss)</option>
+                                                            <option>รอการพิจารณา (On Hold)</option>
+                                                            <option>ยกเลิก (Cancled)</option>
+                                                        </select>
                                                     </div>
-                                                    <div class="card-footer">
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <?php
+                                                    // ดึงข้อมูลจากตาราง Products โดยใช้ prepared statement
+                                                    $query = "SELECT * FROM products";
+                                                    $stmt = $condb->prepare($query);
+                                                    $stmt->execute();
+                                                    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                                    ?>
+                                                    <div class="form-group">
+                                                        <label>สินค้าที่ขาย<span class="text-danger">*</span></label>
+                                                        <select name="product_id" class="form-control select2">
+                                                            <option value="">Select Product</option>
+                                                            <?php foreach ($products as $product): ?>
+                                                                <option value="<?php echo htmlspecialchars($product['product_id']); ?>">
+                                                                    <?php echo htmlspecialchars($product['product_name']); ?>
+                                                                </option>
+                                                            <?php endforeach; ?>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>เลขที่สัญญา</label>
+                                                        <input type="text" name="con_number" class="form-control" id="exampleInputEmail1" placeholder="เลขที่สัญญา">
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <!-- Estimate Potential -->
-                                            <div class="col-md-6">
-                                                <div class="card card-warning card-equal-height">
-                                                    <div class="card-header">
-                                                        <h3 class="card-title">Estimate Potential</h3>
+                                            <!-- ชื่อโครงการ -->
+                                            <div class="row">
+                                                <div class="col-12 col-md-6">
+                                                    <div class="form-group">
+                                                        <label>ชื่อโครงการ<span class="text-danger">*</span></label>
+                                                        <input type="text" name="project_name" class="form-control" id="exampleInputEmail1" placeholder="ชื่อโครงการ">
                                                     </div>
-                                                    <div class="card-body">
-                                                        <div class="row">
-                                                            <div class="col col">
-                                                                <!-- /.form-group -->
-                                                                <div class="form-group">
-                                                                    <label><span class="text-primary">ยอดขาย</span>/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
-                                                                    <input type="text" name="es_sale_no_vat" class="form-control" value="" id="es_sale_no_vat" style="background-color:#F8F8FF" placeholder="">
-                                                                </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>วันเริ่มโครงการ</label>
+                                                        <input type="date" name="date_start" class="form-control" id="exampleInputEmail1" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>วันสิ้นสุดโครงการ</label>
+                                                        <input type="date" name="date_end" class="form-control" id="exampleInputEmail1" placeholder="">
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                                                <div class="form-group">
-                                                                    <label><span class="text-primary">ต้นทุน</span>/ที่คาดการณ์ไม่รวมภาษีมูลค่าเพิ่ม</label>
-                                                                    <input type="text" name="es_cost_no_vat" class="form-control" value="" id="es_cost_no_vat" style="background-color:#F8F8FF" placeholder="">
-                                                                </div>
+                                            <!-- Remark -->
+                                            <div class="row">
+                                                <div class="col-12 col-md-12">
+                                                    <div class="form-group">
+                                                        <label>Remark</label>
+                                                        <textarea class="form-control" name="remark" id="remark" rows="4" placeholder=""></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- /Remark -->
+                                        </div>
 
-                                                                <div class="form-group">
-                                                                    <label><span class="text-primary">กำไรที่คาดการณ์</span>ไม่รวมภาษีมูลค่าเพิ่ม</label>
-                                                                    <input type="text" name="es_gp_no_vat" class="form-control" value="" id="es_gp_no_vat" style="background-color:#F8F8FF" placeholder="">
-                                                                </div>
+                                        <!-- Cost And Estimate Potential Project descriptions -->
+                                        <div class="card-body">
+                                            <!-- หัวข้อ Cost Project -->
+                                            <h5><b><span class="text-primary">Cost Project</span></b></h5>
+                                            <hr>
+                                            <p>
+                                            <div class="row">
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>ตั้งการคำนวณ Vat (%)</label>
+                                                        <select class="form-control select2" name="vat" id="vat" style="width: 100%;">
+                                                            <option value="7">7%</option>
+                                                            <option value="0">0%</option>
+                                                            <option value="3">3%</option>
+                                                            <option value="5">5%</option>
+                                                            <option value="15">15%</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>กำไรขั้นต้น/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                        <input type="int" name="gross_profit" class="form-control" value="" id="gross_profit" style="background-color:#F8F8FF" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>กำไรขั้นต้น/คิดเป็น %</label>
+                                                        <input type="int" name="potential" class="form-control" value="" id="potential" style="background-color:#F8F8FF" placeholder="">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+                                            <div class="row mb-4">
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>ราคาขาย/รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <input type="int" name="sale_vat" class="form-control" value="" id="sale_vat" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <input type="int" name="cost_vat" id="cost_vat" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                        <input type="int" name="cost_no_vat" class="form-control" value="" id="cost_no_vat" placeholder="">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+
+                                            <!-- หัวข้อ Estimate Potential -->
+                                            <h5><b><span class="text-primary">Estimate Potential</span></b>
+                                                <h5>
+                                                    <hr>
+                                                    <p>
+                                                    <div class="row mb-4">
+                                                        <div class="col-12 col-md-3">
+                                                            <div class="form-group">
+                                                                <label>ประมาณการยอดขาย (No Vat)</label>
+                                                                <input type="text" name="es_sale_no_vat" class="form-control" value="" id="es_sale_no_vat" style="background-color:#F8F8FF" placeholder="">
                                                             </div>
                                                         </div>
-
-
-                                                        <!-- Date range -->
-                                                        <div class="form-group ">
-                                                            <button type="submit" name="submit" value="submit" class="btn btn-success">Save</button>
+                                                        <div class="col-12 col-md-3">
+                                                            <div class="form-group">
+                                                                <label>ประมาณการต้นทุน (No Vat)</label>
+                                                                <input type="text" name="es_cost_no_vat" class="form-control" value="" id="es_cost_no_vat" style="background-color:#F8F8FF" placeholder="">
+                                                            </div>
                                                         </div>
-                                                        <!-- /.form group -->
+                                                        <div class="col-12 col-md-3">
+                                                            <div class="form-group">
+                                                                <label>กำไรที่คาดการณ์ (No Vat)</label>
+                                                                <input type="text" name="es_gp_no_vat" class="form-control" value="" id="es_gp_no_vat" style="background-color:#F8F8FF" placeholder="">
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div class="card-footer">
+
+
+
+                                                    <!-- Remark -->
+                                                    <!-- <div class="row">
+                                                <div class="col-12 col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Remark</label>
+                                                        <textarea class="form-control" name="remark" id="remark" rows="4" placeholder=""></textarea>
                                                     </div>
-                                                    <!-- /.card-body -->
+                                                </div>
+                                            </div> -->
+                                                    <!-- /Remark -->
+                                        </div>
+
+                                        <!-- Customer Project (ลูกค้าในโครงการ) -->
+                                        <div class="card-body">
+                                            <!-- หัวข้อ Customer Project -->
+                                            <h5><b><span class="text-primary">Customer Project</span></b></h5>
+                                            <hr>
+                                            <p>
+
+                                            <div class="row">
+                                                <div class="col-12 col-md-6">
+                                                    <div class="form-group">
+                                                        <label>ข้อมูลลูกค้า (บทบาทดูแลควบคุมโครงการทุกภาคส่วน)</label>
+                                                        <select name="customer_id" class="form-control select2">
+                                                            <option value="">เลือกลูกค้า</option>
+                                                            <?php foreach ($customers as $customer): ?>
+                                                                <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>">
+                                                                    <?php echo htmlspecialchars($customer['customer_name'] . ' - ' . $customer['company']); ?>
+                                                                </option>
+                                                            <?php endforeach; ?>
+                                                        </select>
+                                                    </div>
+                                                    <!-- /.form-group -->
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
 
-                                </div>
+                                            <hr>
+                                            <p>
 
-                                <div class="row">
-                                    <!-- Project descriptions/Customer descriptions -->
-                                    <div class="col-md-12 mt-3 mb-4">
-                                        <!-- /.Customer descriptions ----------------------------------------------------------------------->
-                                        <div class="card card-success mb-3">
-                                            <div class="card-header">
-                                                <h3 class="card-title">Customer descriptions</h3>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="row">
-                                                    <div class="col col-12">
-                                                        <div class="form-group">
-                                                            <label>ข้อมูลลูกค้า</label>
-                                                            <select name="customer_id" class="form-control select2">
+
+
+                                            <div id="customer-list">
+                                                <!-- ส่วนแสดงรายการลูกค้าที่เลือก -->
+                                                <div class="selected-customers">
+                                                    <!-- รายการลูกค้าจะถูกเพิ่มที่นี่โดย JavaScript -->
+                                                </div>
+
+                                                <!-- ปุ่มเพิ่มลูกค้า -->
+                                                <button type="button" class="btn btn-sm btn-primary mt-3" id="add-customer-btn">
+                                                    <i class="fas fa-plus"></i> เลือกรายชื่อลูกค้า
+                                                </button>
+
+                                                <!-- Template สำหรับแถวลูกค้า -->
+                                                <template id="customer-row-template">
+                                                    <div class="customer-row row mt-3">
+                                                        <div class="col-md-6">
+                                                            <select class="form-control select2 customer-select" name="project_customers[]">
                                                                 <option value="">เลือกลูกค้า</option>
                                                                 <?php foreach ($customers as $customer): ?>
                                                                     <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>">
@@ -564,19 +717,36 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                                 <?php endforeach; ?>
                                                             </select>
                                                         </div>
-                                                        <!-- /.form-group -->
+                                                        <div class="col-md-4">
+                                                            <div class="form-check">
+                                                                <input type="checkbox" class="form-check-input primary-customer" name="is_primary[]">
+                                                                <label class="form-check-label">ลูกค้าหลัก</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <button type="button" class="btn btn-danger remove-customer">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                    <div class="col col-4">
-                                                    </div>
-                                                </div>
-
-
+                                                </template>
                                             </div>
-                                            <div class="card-footer">
-                                                <a href="<?php echo BASE_URL; ?>pages/customer/add_customer.php" <label class="custom-label"><small>***ไม่พบข้อมูลลูกค้าสามารถเพิ่มได้ที่ เมนู "Customer"*** </small></label> </a>
-                                            </div>
-                                            <!-- /.card-body -->
                                         </div>
+
+                                        <div class="container mx-auto">
+                                            <div class="row">
+                                                <div class="col col-sm-12">
+                                                    <div class="form-group text-center">
+                                                        <button type="submit" name="submit" value="submit" class="btn btn-success">Save</button>
+                                                    </div>
+                                                    <!-- /.form group -->
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="card-footer">
+                                        </div>
+                                        <!-- /.card-body -->
                                     </div>
                                 </div>
 
@@ -613,6 +783,27 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         ?>
     </script>
 
+    <!--สำหรับ select2 ให้ responsive:  -->
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2
+            $('.select2').select2({
+                width: '100%', // ให้ select2 ขยายเต็มความกว้างของ container
+                dropdownAutoWidth: true, // ให้ dropdown ปรับขนาดอัตโนมัติ
+                responsive: true
+            });
+
+            // Update Select2 width when window resizes
+            $(window).on('resize', function() {
+                $('.select2').each(function() {
+                    $(this).select2({
+                        width: '100%',
+                        dropdownAutoWidth: true
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>
@@ -859,6 +1050,157 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // เมื่อมีการเปลี่ยนสถานะโครงการ
         $("#status").on("change", function() {
             recalculateEstimate(); // คำนวณ Estimate Potential ใหม่
+        });
+    });
+</script>
+
+
+<!-- สำหรับจัดการการเพิ่ม/ลบลูกค้า: -->
+<script>
+    // สำหรับจัดการการเพิ่ม/ลบลูกค้า
+    $(document).ready(function() {
+
+        // จัดการการเพิ่มลูกค้า
+        $('#add-customer-btn').click(function() {
+
+            // ตรวจสอบว่ามีค่าในช่องลูกค้าหลักหรือไม่
+            const mainCustomer = $('select[name="customer_id"]').val();
+            if (!mainCustomer) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณาเลือกลูกค้าหลักก่อน',
+                    text: 'ต้องเลือกลูกค้าในช่อง "ข้อมูลลูกค้า (บทบาทดูแลควบคุมโครงการทุกภาคส่วน)" ก่อน',
+                    confirmButtonText: 'ตกลง'
+                });
+                return;
+            }
+
+            // ตรวจสอบจำนวนลูกค้าที่มีอยู่
+            const currentCustomers = $('.customer-row').length;
+            const maxCustomers = 8;
+
+            if (currentCustomers >= maxCustomers) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ไม่สามารถเพิ่มลูกค้าได้',
+                    text: 'จำนวนลูกค้าเพิ่มเติมสูงสุดที่สามารถเพิ่มได้คือ ' + maxCustomers + ' ราย',
+                    confirmButtonText: 'ตกลง'
+                });
+                return;
+            }
+
+            // สร้างแถวลูกค้าใหม่
+            const template = document.querySelector('#customer-row-template');
+            const customerRow = template.content.cloneNode(true);
+
+            // เพิ่มแถวลูกค้าใหม่
+            $('.selected-customers').append(customerRow);
+
+            // เริ่มต้น select2 
+            const newSelect = $('.customer-select').last();
+            newSelect.select2({
+                width: '100%',
+                dropdownAutoWidth: true,
+                placeholder: 'เลือกลูกค้า'
+            });
+
+            // ตรวจสอบการเลือกซ้ำ
+            newSelect.on('select2:select', function(e) {
+                const selectedId = e.params.data.id;
+                const mainCustomerId = $('select[name="customer_id"]').val();
+
+                // ตรวจสอบว่าซ้ำกับลูกค้าหลักหรือไม่
+                if (selectedId === mainCustomerId) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'ไม่สามารถเลือกลูกค้าซ้ำได้',
+                        text: 'ลูกค้ารายนี้ถูกเลือกเป็นลูกค้าหลักแล้ว',
+                        confirmButtonText: 'ตกลง'
+                    });
+                    $(this).val('').trigger('change');
+                    return;
+                }
+
+                // ตรวจสอบว่าซ้ำกับลูกค้าอื่นหรือไม่
+                let isDuplicate = false;
+                $('.customer-select').not(this).each(function() {
+                    if ($(this).val() === selectedId) {
+                        isDuplicate = true;
+                        return false;
+                    }
+                });
+
+                if (isDuplicate) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'ไม่สามารถเลือกลูกค้าซ้ำได้',
+                        text: 'กรุณาเลือกลูกค้ารายอื่น',
+                        confirmButtonText: 'ตกลง'
+                    });
+                    $(this).val('').trigger('change');
+                }
+            });
+        });
+
+        // จัดการการลบลูกค้า 
+        $(document).on('click', '.remove-customer', function() {
+            const row = $(this).closest('.customer-row');
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'ยืนยันการลบ',
+                text: 'คุณต้องการลบข้อมูลลูกค้ารายนี้ใช่หรือไม่?',
+                showCancelButton: true,
+                confirmButtonText: 'ใช่, ลบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    row.remove();
+                }
+            });
+        });
+
+        // เมื่อมีการเปลี่ยนลูกค้าหลัก ต้องตรวจสอบลูกค้าที่เพิ่มเติมด้วย
+        $('select[name="customer_id"]').on('change', function() {
+            const mainCustomerId = $(this).val();
+
+            // ตรวจสอบลูกค้าที่เพิ่มเติมทั้งหมด
+            $('.customer-select').each(function() {
+                if ($(this).val() === mainCustomerId) {
+                    const row = $(this).closest('.customer-row');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'พบข้อมูลซ้ำ',
+                        text: 'ลูกค้ารายนี้ถูกเลือกเป็นลูกค้าเพิ่มเติมไว้แล้ว จะถูกลบออก',
+                        confirmButtonText: 'ตกลง'
+                    }).then(() => {
+                        row.remove();
+                    });
+                }
+            });
+        });
+
+        // จัดการการ submit form
+        $('#addProjectForm').on('submit', function(e) {
+            e.preventDefault();
+
+            // ตรวจสอบข้อมูลลูกค้าเพิ่มเติม
+            const customers = [];
+            $('.customer-row').each(function() {
+                const customerId = $(this).find('.customer-select').val();
+                if (customerId) {
+                    customers.push({
+                        customer_id: customerId
+                    });
+                }
+            });
+
+            // เพิ่มข้อมูลลูกค้าเข้า FormData
+            const formData = new FormData(this);
+            formData.append('additional_customers', JSON.stringify(customers));
+
+            // ส่งข้อมูล...
+            submitForm(formData);
         });
     });
 </script>

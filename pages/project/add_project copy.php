@@ -296,6 +296,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .contract-fields {
             display: none;
         }
+
         /* เมื่อสถานะเป็น Win จะแสดงฟิลด์ */
         .show-win-fields {
             display: block !important;
@@ -448,11 +449,44 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <textarea class="form-control" name="remark" id="remark" rows="4" placeholder=""></textarea>
                                                 </div>
                                                 <!-- /Remark -->
-
                                             </div>
+
                                             <div class="card-footer">
                                             </div>
                                             <!-- /.card-body -->
+                                        </div>
+
+                                        <!-- /.Project Customer descriptions ----------------------------------------------------------------------->
+                                        <div class="card card-success mb-3">
+                                            <div class="card-header">
+                                                <h3 class="card-title">Project Customer descriptions</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col col-12">
+                                                        <div class="form-group">
+                                                            <label>ข้อมูลลูกค้า</label>
+                                                            <select name="customer_id" class="form-control select2">
+                                                                <option value="">เลือกลูกค้า</option>
+                                                                <?php foreach ($customers as $customer): ?>
+                                                                    <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>">
+                                                                        <?php echo htmlspecialchars($customer['customer_name'] . ' - ' . $customer['company']); ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                        <!-- /.form-group -->
+                                                    </div>
+                                                    <div class="col col-4">
+                                                    </div>
+
+
+                                                </div>
+                                                <div class="card-footer">
+                                                    <a href="<?php echo BASE_URL; ?>pages/customer/add_customer.php" <label class="custom-label"><small>***ไม่พบข้อมูลลูกค้าสามารถเพิ่มได้ที่ เมนู "Customer"*** </small></label> </a>
+                                                </div>
+                                                <!-- /.card-body -->
+                                            </div>
                                         </div>
                                     </div>
 
@@ -554,44 +588,6 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </div>
                                     </div>
 
-                                </div>
-
-                                <div class="row">
-                                    <!-- Project descriptions/Customer descriptions -->
-                                    <div class="col-md-12 mt-3 mb-4">
-                                        <!-- /.Customer descriptions ----------------------------------------------------------------------->
-                                        <div class="card card-success mb-3">
-                                            <div class="card-header">
-                                                <h3 class="card-title">Customer descriptions</h3>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="row">
-                                                    <div class="col col-12">
-                                                        <div class="form-group">
-                                                            <label>ข้อมูลลูกค้า</label>
-                                                            <select name="customer_id" class="form-control select2">
-                                                                <option value="">เลือกลูกค้า</option>
-                                                                <?php foreach ($customers as $customer): ?>
-                                                                    <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>">
-                                                                        <?php echo htmlspecialchars($customer['customer_name'] . ' - ' . $customer['company']); ?>
-                                                                    </option>
-                                                                <?php endforeach; ?>
-                                                            </select>
-                                                        </div>
-                                                        <!-- /.form-group -->
-                                                    </div>
-                                                    <div class="col col-4">
-                                                    </div>
-                                                </div>
-
-
-                                            </div>
-                                            <div class="card-footer">
-                                                <a href="<?php echo BASE_URL; ?>pages/customer/add_customer.php" <label class="custom-label"><small>***ไม่พบข้อมูลลูกค้าสามารถเพิ่มได้ที่ เมนู "Customer"*** </small></label> </a>
-                                            </div>
-                                            <!-- /.card-body -->
-                                        </div>
-                                    </div>
                                 </div>
 
                             </form>
@@ -901,4 +897,3 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         toggleWinFields($('#status').val());
     });
 </script>
-

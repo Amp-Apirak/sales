@@ -157,7 +157,6 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <?php $menu = "customer"; ?>
@@ -168,6 +167,62 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
     <title>Import Customers</title>
     <?php include '../../include/header.php'; ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .import-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .template-card {
+            border-left: 4px solid #17a2b8;
+            transition: transform 0.2s;
+        }
+
+        .template-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-card {
+            border-left: 4px solid #007bff;
+        }
+
+        .instructions-card {
+            border-left: 4px solid #28a745;
+        }
+
+        .custom-file-label::after {
+            content: "Browse";
+            background: #007bff;
+            color: white;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 0.5rem;
+            color: white;
+        }
+    </style>
 </head>
 
 <body class="sidebar-mini layout-fixed layout-navbar-fixed layout-footer-fixed">
@@ -177,55 +232,86 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
         <div class="content-wrapper">
             <div class="content-header">
                 <div class="container-fluid">
-                    <div class="row mb-2">
-                        <div class="col-sm-6">
-                            <h1 class="m-0">Import Customers</h1>
-                        </div>
+                    <div class="page-header">
+                        <h1><i class="fas fa-file-import mr-2"></i>Import Customers</h1>
+                        <p class="mb-0">นำเข้าข้อมูลลูกค้าจากไฟล์ Excel หรือ CSV</p>
                     </div>
                 </div>
             </div>
 
             <section class="content">
                 <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">Import Customer Data</h3>
-                                </div>
-                                <div class="card-body">
-                                    <!-- Template Download -->
-                                    <div class="mb-4">
-                                        <h5>Template Download</h5>
-                                        <p>ดาวน์โหลดไฟล์ template สำหรับกรอกข้อมูล:</p>
-                                        <a href="templates/customer_template.xlsx" class="btn btn-info">
-                                            <i class="fas fa-download"></i> Download Template
-                                        </a>
-                                    </div>
-
-                                    <!-- Import Form -->
-                                    <form action="" method="POST" enctype="multipart/form-data">
-                                        <div class="form-group">
-                                            <label>เลือกไฟล์ Excel/CSV</label>
-                                            <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="file" name="file" accept=".xlsx,.csv" required>
-                                                <label class="custom-file-label" for="file">Choose file</label>
-                                            </div>
+                    <div class="import-container">
+                        <div class="row">
+                            <!-- Template Download Card -->
+                            <div class="col-12 mb-4">
+                                <div class="card template-card">
+                                    <div class="card-body d-flex align-items-center">
+                                        <div class="mr-4">
+                                            <i class="fas fa-file-excel text-info" style="font-size: 3rem;"></i>
                                         </div>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-upload"></i> Import
-                                        </button>
-                                    </form>
+                                        <div>
+                                            <h5 class="card-title">ดาวน์โหลด Template</h5>
+                                            <p class="card-text mb-3">ดาวน์โหลดไฟล์ template สำหรับกรอกข้อมูลลูกค้า</p>
+                                            <a href="templates/customer_template.xlsx" class="btn btn-info">
+                                                <i class="fas fa-download mr-2"></i>Download Template
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                                    <!-- Instructions -->
-                                    <div class="mt-4">
-                                        <h5>คำแนะนำการนำเข้าข้อมูล</h5>
-                                        <ul>
-                                            <li>รองรับไฟล์นามสกุล .xlsx และ .csv</li>
-                                            <li>ข้อมูลต้องอยู่ในรูปแบบตาม template ที่กำหนด</li>
-                                            <li>ลำดับคอลัมน์: Customer Name, Position, Company, Phone, Email, Address, Office Phone, Extension</li>
-                                            <li>Row แรกเป็น header จะถูกข้ามไป</li>
-                                        </ul>
+                            <!-- Upload Form Card -->
+                            <div class="col-12 mb-4">
+                                <div class="card upload-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title mb-4">
+                                            <i class="fas fa-upload mr-2"></i>อัพโหลดไฟล์
+                                        </h5>
+                                        <form action="" method="POST" enctype="multipart/form-data">
+                                            <div class="form-group">
+                                                <div class="custom-file mb-3">
+                                                    <input type="file" class="custom-file-input" id="file" name="file" accept=".xlsx,.csv" required>
+                                                    <label class="custom-file-label" for="file">เลือกไฟล์...</label>
+                                                </div>
+                                                <small class="form-text text-muted">รองรับไฟล์ .xlsx และ .csv เท่านั้น</small>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-lg btn-block">
+                                                <i class="fas fa-file-import mr-2"></i>นำเข้าข้อมูล
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Instructions Card -->
+                            <div class="col-12">
+                                <div class="card instructions-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title mb-4">
+                                            <i class="fas fa-info-circle mr-2"></i>คำแนะนำการนำเข้าข้อมูล
+                                        </h5><br><br>
+                                        <div class="instruction-item">
+                                            <span class="step-number">1</span>
+                                            <div>ดาวน์โหลดไฟล์ template จากปุ่ม "Download Template" ด้านบน</div>
+                                        </div>
+                                        <div class="instruction-item">
+                                            <span class="step-number">2</span>
+                                            <div>กรอกข้อมูลลูกค้าตามลำดับคอลัมน์: Customer Name, Position, Company, Phone, Email, Address, Office Phone, Extension</div>
+                                        </div>
+                                        <div class="instruction-item">
+                                            <span class="step-number">3</span>
+                                            <div>บันทึกไฟล์ในรูปแบบ .xlsx หรือ .csv</div>
+                                        </div>
+                                        <div class="instruction-item">
+                                            <span class="step-number">4</span>
+                                            <div>อัพโหลดไฟล์และกดปุ่ม "นำเข้าข้อมูล"</div>
+                                        </div>
+
+                                        <div class="alert alert-info mt-4">
+                                            <i class="fas fa-lightbulb mr-2"></i>
+                                            <strong>คำแนะนำ:</strong> ตรวจสอบข้อมูลให้ครบถ้วนก่อนทำการนำเข้า และอย่าลบ header row ในไฟล์ template
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -238,10 +324,15 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
     </div>
 
     <script>
-        // แสดงชื่อไฟล์ที่เลือก
+        // Show selected filename
         $('.custom-file-input').on('change', function() {
             let fileName = $(this).val().split('\\').pop();
             $(this).next('.custom-file-label').addClass("selected").html(fileName);
+        });
+
+        // Add loading state to submit button
+        $('form').on('submit', function() {
+            $(this).find('button[type="submit"]').html('<i class="fas fa-spinner fa-spin mr-2"></i>กำลังนำเข้าข้อมูล...').attr('disabled', true);
         });
     </script>
 </body>
