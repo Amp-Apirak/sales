@@ -168,6 +168,29 @@ $query_users = $stmt->fetchAll();
                     <div class="row">
                         <div class="col-12">
 
+                            <!-- เพิ่มในส่วนบนของหน้า account.php -->
+                            <?php if (isset($_SESSION['success'])): ?>
+                                <div class="alert alert-success alert-dismissible">
+                                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                                    <h5><i class="icon fas fa-check"></i> สำเร็จ!</h5>
+                                    <?php
+                                    echo $_SESSION['success'];
+                                    unset($_SESSION['success']);
+                                    ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if (isset($_SESSION['error'])): ?>
+                                <div class="alert alert-danger alert-dismissible">
+                                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                                    <h5><i class="icon fas fa-ban"></i> ผิดพลาด!</h5>
+                                    <?php
+                                    echo $_SESSION['error'];
+                                    unset($_SESSION['error']);
+                                    ?>
+                                </div>
+                            <?php endif; ?>
+                            
                             <!-- Section Search -->
                             <section class="content">
                                 <div class="row">
@@ -252,10 +275,16 @@ $query_users = $stmt->fetchAll();
                             <!-- //Section Search -->
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
-                            <!-- Section ปุ่มเพิ่มข้อมูล -->
+                            <!-- เพิ่มในส่วนปุ่มด้านบนตาราง -->
                             <div class="col-md-12 pb-3">
                                 <div class="btn-group float-right">
                                     <a href="add_account.php" class="btn btn-success btn-sm">เพิ่มข้อมูล</a>
+                                    <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#importModal">
+                                        นำเข้าข้อมูล Excel/CSV
+                                    </button>
+                                    <a href="templates/account_import_template.xlsx" class="btn btn-secondary btn-sm">
+                                        ดาวน์โหลด Template
+                                    </a>
                                 </div>
                             </div><br>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
@@ -388,3 +417,38 @@ $query_users = $stmt->fetchAll();
 </body>
 
 </html>
+
+
+<!-- Modal สำหรับนำเข้าไฟล์:  -->
+<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">นำเข้าข้อมูล Account</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="import_account.php" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>เลือกไฟล์ Excel/CSV</label>
+                        <input type="file" class="form-control" name="file" accept=".xlsx,.xls,.csv" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <small>
+                            - รองรับไฟล์นามสกุล .xlsx, .xls และ .csv<br>
+                            - ขนาดไฟล์ไม่เกิน 5MB<br>
+                            - กรุณาใช้ Template ที่กำหนดให้เท่านั้น
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">นำเข้าข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- ./Modal สำหรับนำเข้าไฟล์:  -->
