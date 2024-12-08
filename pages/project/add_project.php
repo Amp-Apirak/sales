@@ -488,11 +488,13 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                                         <!-- ส่วนของ Customer Project -->
                                         <div class="card-body">
-                                            <h5><b><span class="text-primary">Customer Project</span></b></h5>
-                                            <!-- ปุ่มสำหรับเปิด Modal เพิ่มลูกค้าใหม่ -->
-                                            <button type="button" class="btn btn-success btn-sm " data-toggle="modal" data-target="#addCustomerModal">
-                                                <i class="fas fa-plus"></i> เพิ่มลูกค้าใหม่
-                                            </button>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h5><b><span class="text-primary">Customer Project</span></b></h5>
+                                                <!-- ปุ่มสำหรับเปิด Modal เพิ่มลูกค้าใหม่ -->
+                                                <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#addCustomerModal">
+                                                    <i class="fas fa-plus"></i> เพิ่มลูกค้าใหม่
+                                                </button>
+                                            </div>
                                             <hr>
                                             <div class="row">
                                                 <div class="col-12 col-md-6">
@@ -935,73 +937,231 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </script>
 
     <!-- Modal สำหรับเพิ่มลูกค้าใหม่ -->
-    <div class="modal fade" id="addCustomerModal" tabindex="-1" role="dialog" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <style>
+        .modal-content {
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+            color: white;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            padding: 1rem 1.5rem;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #344767;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+        }
+
+        .required-field::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+        }
+
+        .modal-footer {
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            padding: 1rem 1.5rem;
+            background-color: #f8f9fa;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+
+            .modal-body {
+                padding: 1rem;
+            }
+
+            .row {
+                margin: 0;
+            }
+
+            .col-md-6 {
+                padding: 0 5px;
+            }
+        }
+    </style>
+
+    <div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addCustomerModalLabel">เพิ่มข้อมูลลูกค้า</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <h5 class="modal-title" id="addCustomerModalLabel">
+                        <i class="fas fa-user-plus me-2"></i>  เพิ่มข้อมูลลูกค้า
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addCustomerForm">
-                        <div class="row">
+                        <div class="row g-3">
+                            <!-- ข้อมูลหลัก -->
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>ชื่อลูกค้า <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="customer_name" required>
+                                    <label class="required-field">ชื่อลูกค้า</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-user"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="customer_name" required
+                                            placeholder="กรุณากรอกชื่อลูกค้า">
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>ชื่อบริษัท</label>
-                                    <input type="text" class="form-control" name="company">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-building"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="company"
+                                            placeholder="กรุณากรอกชื่อบริษัท">
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row">
+
+                            <!-- ข้อมูลติดต่อ -->
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>ตำแหน่ง</label>
-                                    <input type="text" class="form-control" name="position">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-briefcase"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="position"
+                                            placeholder="กรุณากรอกตำแหน่ง">
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>เบอร์โทรศัพท์</label>
-                                    <input type="text" class="form-control" name="phone">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-phone"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="phone"
+                                            placeholder="กรุณากรอกเบอร์โทรศัพท์">
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row">
+
+                            <!-- ข้อมูลติดต่อเพิ่มเติม -->
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>อีเมล</label>
-                                    <input type="email" class="form-control" name="email">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-envelope"></i>
+                                        </span>
+                                        <input type="email" class="form-control" name="email"
+                                            placeholder="example@email.com">
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>เบอร์หน่วยงาน</label>
-                                    <input type="text" class="form-control" name="office_phone">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-phone-office"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="office_phone"
+                                            placeholder="กรุณากรอกเบอร์หน่วยงาน">
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label>ที่อยู่</label>
-                            <textarea class="form-control" name="address" rows="3"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>หมายเหตุ</label>
-                            <textarea class="form-control" name="remark" rows="2"></textarea>
+
+                            <!-- ที่อยู่และหมายเหตุ -->
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label>ที่อยู่</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </span>
+                                        <textarea class="form-control" name="address" rows="3"
+                                            placeholder="กรุณากรอกที่อยู่"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group mb-0">
+                                    <label>หมายเหตุ</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-sticky-note"></i>
+                                        </span>
+                                        <textarea class="form-control" name="remark" rows="2"
+                                            placeholder="กรุณากรอกหมายเหตุ (ถ้ามี)"></textarea>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <!-- ปุ่มบันทึกข้อมูลลูกค้าใหม่ -->
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
-                    <button type="button" class="btn btn-primary" id="saveCustomer">บันทึก</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>&nbsp;ยกเลิก
+                    </button>
+                    <button type="button" class="btn btn-primary" id="saveCustomer">
+                        <i class="fas fa-save me-2"></i>&nbsp;บันทึก
+                    </button>
                 </div>
             </div>
         </div>

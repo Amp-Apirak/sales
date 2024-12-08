@@ -536,7 +536,13 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </div>
 
                                         <div class="card-body">
-                                            <h5><b><span class="text-primary">Customer Project</span></b></h5>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h5><b><span class="text-primary">Customer Project</span></b></h5>
+                                                <!-- ปุ่มสำหรับเปิด Modal เพิ่มลูกค้าใหม่ -->
+                                                <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#addCustomerModal">
+                                                    <i class="fas fa-plus"></i> เพิ่มลูกค้าใหม่
+                                                </button>
+                                            </div>
                                             <hr>
                                             <div class="row">
                                                 <div class="col-12 col-md-6">
@@ -1033,6 +1039,435 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     width: '100%',
                     dropdownAutoWidth: true,
                     placeholder: 'เลือกลูกค้า'
+                });
+            });
+        });
+    </script>
+
+    <!-- Modal สำหรับเพิ่มลูกค้าใหม่ -->
+    <style>
+        .modal-content {
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+            color: white;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            padding: 1rem 1.5rem;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #344767;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+        }
+
+        .required-field::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+        }
+
+        .modal-footer {
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            padding: 1rem 1.5rem;
+            background-color: #f8f9fa;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+
+            .modal-body {
+                padding: 1rem;
+            }
+
+            .row {
+                margin: 0;
+            }
+
+            .col-md-6 {
+                padding: 0 5px;
+            }
+        }
+    </style>
+
+    <div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCustomerModalLabel">
+                        <i class="fas fa-user-plus me-2"></i> เพิ่มข้อมูลลูกค้า
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCustomerForm">
+                        <div class="row g-3">
+                            <!-- ข้อมูลหลัก -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="required-field">ชื่อลูกค้า</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-user"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="customer_name" required
+                                            placeholder="กรุณากรอกชื่อลูกค้า">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>ชื่อบริษัท</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-building"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="company"
+                                            placeholder="กรุณากรอกชื่อบริษัท">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ข้อมูลติดต่อ -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>ตำแหน่ง</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-briefcase"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="position"
+                                            placeholder="กรุณากรอกตำแหน่ง">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>เบอร์โทรศัพท์</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-phone"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="phone"
+                                            placeholder="กรุณากรอกเบอร์โทรศัพท์">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ข้อมูลติดต่อเพิ่มเติม -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>อีเมล</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-envelope"></i>
+                                        </span>
+                                        <input type="email" class="form-control" name="email"
+                                            placeholder="example@email.com">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>เบอร์หน่วยงาน</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-phone-office"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="office_phone"
+                                            placeholder="กรุณากรอกเบอร์หน่วยงาน">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ที่อยู่และหมายเหตุ -->
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label>ที่อยู่</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </span>
+                                        <textarea class="form-control" name="address" rows="3"
+                                            placeholder="กรุณากรอกที่อยู่"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group mb-0">
+                                    <label>หมายเหตุ</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-sticky-note"></i>
+                                        </span>
+                                        <textarea class="form-control" name="remark" rows="2"
+                                            placeholder="กรุณากรอกหมายเหตุ (ถ้ามี)"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>&nbsp;ยกเลิก
+                    </button>
+                    <button type="button" class="btn btn-primary" id="saveCustomer">
+                        <i class="fas fa-save me-2"></i>&nbsp;บันทึก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script สำหรับจัดการการเพิ่มลูกค้าใหม่ผ่าน Modal -->
+    <script>
+        // เก็บข้อมูลลูกค้าใหม่ที่เพิ่มเข้ามา
+        window.newCustomers = [];
+
+        $(document).ready(function() {
+            // เมื่อกดบันทึกลูกค้าใหม่
+            $('#saveCustomer').off('click').on('click', function() {
+                var customerName = $('input[name="customer_name"]').val();
+                if (!customerName) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'กรุณากรอกข้อมูล',
+                        text: 'กรุณากรอกชื่อลูกค้า'
+                    });
+                    return;
+                }
+
+                var formData = new FormData($('#addCustomerForm')[0]);
+
+                Swal.fire({
+                    title: 'กำลังบันทึกข้อมูล...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                $.ajax({
+                    url: 'save_customer_ajax.php',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    success: function(response) {
+                        Swal.close();
+                        if (response.success) {
+                            // ปิด Modal หลังบันทึกเรียบร้อย
+                            $('#addCustomerModal').modal('hide');
+
+                            // เพิ่มลูกค้าใหม่ลงใน Dropdown หลัก
+                            var newOptionMain = new Option(
+                                response.customer.customer_name + ' - ' + response.customer.company,
+                                response.customer.customer_id,
+                                false,
+                                false
+                            );
+                            $('select[name="customer_id"]').append(newOptionMain).trigger('change');
+
+                            // เก็บข้อมูลลูกค้าใหม่ไว้ในตัวแปร newCustomers
+                            window.newCustomers.push({
+                                id: response.customer.customer_id,
+                                name: response.customer.customer_name + ' - ' + response.customer.company
+                            });
+
+                            // รีเซ็ตฟอร์ม
+                            $('#addCustomerForm')[0].reset();
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'บันทึกสำเร็จ',
+                                text: 'เพิ่มข้อมูลลูกค้าเรียบร้อยแล้ว',
+                                timer: 1500
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: response.message || 'ไม่สามารถบันทึกข้อมูลได้'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.close();
+                        console.error('AJAX Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์'
+                        });
+                    }
+                });
+            });
+
+            // รีเซ็ตฟอร์มเมื่อปิด Modal
+            $('#addCustomerModal').on('hidden.bs.modal', function() {
+                $('#addCustomerForm')[0].reset();
+            });
+
+            // เมื่อกดปุ่ม "เลือกรายชื่อลูกค้า"
+            $('#add-customer-btn').off('click').on('click', function() {
+                const mainCustomer = $('select[name="customer_id"]').val();
+                if (!mainCustomer) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'กรุณาเลือกลูกค้าหลักก่อน',
+                        text: 'ต้องเลือกลูกค้าในช่อง "ข้อมูลลูกค้า (บทบาทดูแลควบคุมโครงการทุกภาคส่วน)" ก่อน',
+                        confirmButtonText: 'ตกลง'
+                    });
+                    return;
+                }
+
+                const currentCustomers = $('.customer-row').length;
+                const maxCustomers = 8;
+
+                if (currentCustomers >= maxCustomers) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'ไม่สามารถเพิ่มลูกค้าได้',
+                        text: 'จำนวนลูกค้าเพิ่มเติมสูงสุดคือ ' + maxCustomers + ' ราย',
+                        confirmButtonText: 'ตกลง'
+                    });
+                    return;
+                }
+
+                // Clone template เพียงครั้งเดียวเพื่อเพิ่ม 1 แถวลูกค้าเพิ่มเติม
+                const template = document.querySelector('#customer-row-template');
+                const customerRow = template.content.cloneNode(true);
+                $('.selected-customers').append(customerRow);
+
+                // หา select ล่าสุดที่เพิ่มเข้าไป
+                const newRow = $('.selected-customers .customer-row').last();
+                const newSelect = newRow.find('.customer-select');
+
+                newSelect.select2({
+                    width: '100%',
+                    dropdownAutoWidth: true,
+                    placeholder: 'เลือกลูกค้า'
+                });
+
+                // เพิ่มลูกค้าใหม่ที่เคยถูกบันทึกไว้ใน newCustomers ลงใน newSelect
+                if (window.newCustomers.length > 0) {
+                    window.newCustomers.forEach(function(cust) {
+                        if (newSelect.find('option[value="' + cust.id + '"]').length === 0) {
+                            var newOpt = new Option(cust.name, cust.id, false, false);
+                            newSelect.append(newOpt);
+                        }
+                    });
+                    newSelect.trigger('change');
+                }
+
+                // ตรวจสอบการเลือกไม่ให้ซ้ำกับลูกค้าหลักหรือซ้ำในลูกค้าเพิ่มเติม
+                newSelect.on('select2:select', function(e) {
+                    const selectedId = e.params.data.id;
+                    const mainCustomerId = $('select[name="customer_id"]').val();
+
+                    if (selectedId === mainCustomerId) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'ไม่สามารถเลือกลูกค้าซ้ำได้',
+                            text: 'ลูกค้ารายนี้ถูกเลือกเป็นลูกค้าหลักแล้ว',
+                            confirmButtonText: 'ตกลง'
+                        });
+                        $(this).val('').trigger('change');
+                        return;
+                    }
+
+                    let isDuplicate = false;
+                    $('.customer-select').not(this).each(function() {
+                        if ($(this).val() === selectedId) {
+                            isDuplicate = true;
+                            return false;
+                        }
+                    });
+
+                    if (isDuplicate) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'ไม่สามารถเลือกลูกค้าซ้ำได้',
+                            text: 'กรุณาเลือกลูกค้ารายอื่น',
+                            confirmButtonText: 'ตกลง'
+                        });
+                        $(this).val('').trigger('change');
+                    }
+                });
+            });
+
+            // ลบลูกค้าเพิ่มเติม
+            $(document).off('click', '.remove-customer').on('click', '.remove-customer', function() {
+                const row = $(this).closest('.customer-row');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ยืนยันการลบ',
+                    text: 'คุณต้องการลบข้อมูลลูกค้ารายนี้ใช่หรือไม่?',
+                    showCancelButton: true,
+                    confirmButtonText: 'ใช่, ลบ',
+                    cancelButtonText: 'ยกเลิก'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        row.remove();
+                    }
                 });
             });
         });
