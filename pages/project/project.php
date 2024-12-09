@@ -913,6 +913,90 @@ function truncateText($text, $length = 100)
         }
     </script>
 
+
+    <!-- แจ้งเตือน Import Error -->
+    // Add this to your project.php page
+    <script>
+        $(document).ready(function() {
+            $('#importForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var formData = new FormData(this);
+
+                $.ajax({
+                    url: 'import_project.php',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        try {
+                            const result = JSON.parse(response);
+
+                            if (result.status === 'success') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'สำเร็จ',
+                                    text: result.message
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.reload();
+                                    }
+                                });
+                            } else {
+                                let errorMessage = '<div style="max-height: 400px; overflow-y: auto;">';
+                                errorMessage += '<p>' + result.message + '</p>';
+
+                                if (result.errors && result.errors.length > 0) {
+                                    errorMessage += '<div class="text-left">';
+                                    result.errors.forEach(function(error) {
+                                        errorMessage += `<div class="alert alert-danger mb-2">`;
+                                        errorMessage += `<strong>แถวที่ ${error.row}:</strong><br>`;
+                                        error.errors.forEach(function(err) {
+                                            errorMessage += `- ${err}<br>`;
+                                        });
+                                        errorMessage += `<small>ข้อมูล: สถานะ="${error.data.status}", `;
+                                        errorMessage += `สินค้า="${error.data.product}", `;
+                                        errorMessage += `ชื่อโครงการ="${error.data.project_name}"</small>`;
+                                        errorMessage += `</div>`;
+                                    });
+                                    errorMessage += '</div>';
+                                }
+                                errorMessage += '</div>';
+
+                                if (result.success_count > 0) {
+                                    errorMessage += `<div class="alert alert-success mt-3">`;
+                                    errorMessage += `นำเข้าสำเร็จ ${result.success_count} รายการ`;
+                                    errorMessage += `</div>`;
+                                }
+
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'พบข้อผิดพลาด',
+                                    html: errorMessage,
+                                    width: '800px'
+                                });
+                            }
+                        } catch (e) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: 'ไม่สามารถประมวลผลการนำเข้าข้อมูลได้'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+
 </body>
 
 </html>
