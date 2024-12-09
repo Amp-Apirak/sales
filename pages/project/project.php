@@ -535,7 +535,10 @@ function truncateText($text, $length = 100)
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
                             <?php if ($role != 'Engineer') : ?>
                                 <div class="col-md-12 pb-3">
-                                    <a href="add_project.php" class="btn btn-success btn-sm float-right">เพิ่มข้อมูล<i class=""></i></a>
+                                    <div class="btn-group float-right">
+                                        <a href="add_project.php" class="btn btn-success btn-sm">เพิ่มข้อมูลโครงการ</a>
+                                        <button class="btn btn-info btn-sm float-right mr-2" data-toggle="modal" data-target="#importModal"> Import ข้อมูล <i class="fas fa-upload"></i></button>
+                                    </div>
                                 </div><br>
                             <?php endif; ?>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
@@ -696,6 +699,7 @@ function truncateText($text, $length = 100)
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>
+
     <script>
         // Dropdown Select2
         $(function() {
@@ -708,6 +712,207 @@ function truncateText($text, $length = 100)
             })
         });
     </script>
+
+    <!-- Modal สำหรับการ Import -->
+    <!-- Modal สำหรับนำเข้าไฟล์ -->
+    <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="importModalLabel">
+                        <i class="fas fa-file-import mr-2"></i> นำเข้าข้อมูลโครงการ
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="importForm" action="import_project.php" method="POST" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <!-- ขั้นตอนการนำเข้า -->
+                        <div class="import-steps mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <!-- Step 1 -->
+                                <div class="step text-center">
+                                    <a href="templates/project_import_template.xlsx" class="text-decoration-none step-link">
+                                        <div class="step-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 50px; height: 50px;">
+                                            <i class="fas fa-download"></i>
+                                        </div>
+                                        <div class="step-text">
+                                            <small>ขั้นตอนที่ 1</small><br>ดาวน์โหลด Template
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="step-line flex-grow-1 bg-light mx-2" style="height: 2px;"></div>
+                                <!-- Step 2 -->
+                                <div class="step text-center">
+                                    <div class="step-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-file-excel"></i>
+                                    </div>
+                                    <div class="step-text">
+                                        <small>ขั้นตอนที่ 2</small><br>กรอกข้อมูล
+                                    </div>
+                                </div>
+                                <div class="step-line flex-grow-1 bg-light mx-2" style="height: 2px;"></div>
+                                <!-- Step 3 -->
+                                <div class="step text-center">
+                                    <div class="step-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-upload"></i>
+                                    </div>
+                                    <div class="step-text">
+                                        <small>ขั้นตอนที่ 3</small><br>อัพโหลดไฟล์
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ส่วนอัพโหลดไฟล์ -->
+                        <div class="upload-section p-4 bg-light rounded">
+                            <div class="text-center mb-4">
+                                <i class="fas fa-cloud-upload-alt text-primary mb-3" style="font-size: 48px;"></i>
+                                <h6 class="font-weight-bold">อัพโหลดไฟล์ Excel/CSV</h6>
+                                <p class="text-muted small">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</p>
+                            </div>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="importFile" name="file" accept=".xlsx,.xls,.csv" required>
+                                <label class="custom-file-label" for="importFile">เลือกไฟล์...</label>
+                            </div>
+                        </div>
+
+                        <!-- คำแนะนำและข้อกำหนด -->
+                        <div class="info-section mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card border-info h-100">
+                                        <div class="card-header bg-info text-white">
+                                            <i class="fas fa-info-circle mr-2"></i> ข้อกำหนดไฟล์
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="list-unstyled mb-0">
+                                                <li><i class="fas fa-check-circle text-success mr-2"></i> รองรับไฟล์ .xlsx, .xls, และ .csv</li>
+                                                <li><i class="fas fa-check-circle text-success mr-2"></i> ขนาดไฟล์ไม่เกิน 5MB</li>
+                                                <li><i class="fas fa-check-circle text-success mr-2"></i> ใช้ Template ที่กำหนดเท่านั้น</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card border-warning h-100">
+                                        <div class="card-header bg-warning text-dark">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i> คำแนะนำ
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="list-unstyled mb-0">
+                                                <li><i class="fas fa-angle-right text-warning mr-2"></i> ตรวจสอบข้อมูลให้ครบถ้วน</li>
+                                                <li><i class="fas fa-angle-right text-warning mr-2"></i> ห้ามแก้ไขหัวคอลัมน์ใน Template</li>
+                                                <li><i class="fas fa-angle-right text-warning mr-2"></i> บันทึกไฟล์ก่อนอัพโหลด</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times mr-2"></i> ยกเลิก
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-file-import mr-2"></i> นำเข้าข้อมูล
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSS -->
+    <style>
+        .modal-lg {
+            max-width: 800px;
+        }
+
+        .upload-section {
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .custom-file-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .step-text {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .info-section .card {
+            transition: all 0.3s ease;
+        }
+
+        .info-section .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+
+    <!-- JS -->
+    <script>
+        // แสดงชื่อไฟล์ที่เลือก
+        $('.custom-file-input').on('change', function() {
+            let fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').html(fileName);
+        });
+
+        // Drag & Drop
+        const uploadSection = document.querySelector('.upload-section');
+        const fileInput = document.querySelector('#importFile');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            uploadSection.style.backgroundColor = '#e9ecef';
+            uploadSection.style.borderColor = '#007bff';
+        }
+
+        function unhighlight(e) {
+            uploadSection.style.backgroundColor = '#f8f9fa';
+            uploadSection.style.borderColor = '#dee2e6';
+        }
+
+        uploadSection.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            let fileName = files[0].name;
+            $('.custom-file-label').html(fileName);
+        }
+    </script>
+
 </body>
 
 </html>

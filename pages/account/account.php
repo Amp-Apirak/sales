@@ -278,13 +278,10 @@ $query_users = $stmt->fetchAll();
                             <!-- เพิ่มในส่วนปุ่มด้านบนตาราง -->
                             <div class="col-md-12 pb-3">
                                 <div class="btn-group float-right">
-                                    <a href="add_account.php" class="btn btn-success btn-sm">เพิ่มข้อมูล</a>
+                                    <a href="add_account.php" class="btn btn-success btn-sm">เพิ่มข้อมูลผู้ใช้งานระบบ</a>
                                     <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#importModal">
                                         นำเข้าข้อมูล Excel/CSV
                                     </button>
-                                    <a href="templates/account_import_template.xlsx" class="btn btn-secondary btn-sm">
-                                        ดาวน์โหลด Template
-                                    </a>
                                 </div>
                             </div><br>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
@@ -402,6 +399,7 @@ $query_users = $stmt->fetchAll();
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>
+
     <script>
         // Dropdown Select2
         $(function() {
@@ -414,6 +412,7 @@ $query_users = $stmt->fetchAll();
             })
         });
     </script>
+
 </body>
 
 </html>
