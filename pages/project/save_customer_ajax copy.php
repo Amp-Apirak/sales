@@ -52,16 +52,6 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQ
         $remark = trim($_POST['remark'] ?? '');
         $created_by = $_SESSION['user_id'] ?? null;
 
-        // ตรวจสอบความถูกต้องของอีเมล
-        if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("รูปแบบอีเมลไม่ถูกต้อง");
-        }
-
-        // ตรวจสอบเบอร์โทรศัพท์
-        if (!empty($phone) && !preg_match('/^[0-9]{10}$/', $phone)) {
-            throw new Exception("เบอร์โทรศัพท์ควรมีความยาว 10 หลักและเป็นตัวเลขเท่านั้น");
-        }
-
         // เริ่ม Transaction
         $condb->beginTransaction();
 

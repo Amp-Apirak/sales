@@ -164,26 +164,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 
             // หากทุกอย่างไม่มีปัญหา ให้ commit transaction
             $condb->commit();
-
-            // เข้ารหัส project_id เพื่อส่งไปยัง view_project.php
-            $encrypted_project_id = encryptUserId($project_id);
-
-            // ส่ง response กลับไปพร้อม redirect URL
-            $response = [
-                'success' => true,
-                'message' => 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว',
-                'redirect_url' => "view_project.php?project_id=" . urlencode($encrypted_project_id)
-            ];
-            echo json_encode($response);
-            exit();
+            $alert = "success|บันทึกข้อมูลโครงการเรียบร้อยแล้ว";
         } catch (Exception $e) {
+            // หากมีข้อผิดพลาด ให้ rollback transaction เพื่อให้ฐานข้อมูลกลับสู่สภาพเดิม
             $condb->rollBack();
-            $response = [
-                'success' => false,
-                'errors' => [$e->getMessage()]
-            ];
-            echo json_encode($response);
-            exit();
+            $alert = "error|" . $e->getMessage();
         }
     }
 
@@ -791,8 +776,10 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                 title: 'บันทึกสำเร็จ',
                                 text: response.message,
                                 confirmButtonText: 'ตกลง'
-                            }).then(() => {
-                                window.location.href = response.redirect_url; // เปลี่ยนเส้นทางไปยังหน้ารายละเอียดโครงการ
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = 'project.php';
+                                }
                             });
                         } else {
                             var errorMessage = response.errors.join('<br>');
@@ -816,7 +803,6 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                     }
                 });
             });
-
         });
     </script>
 
@@ -1492,8 +1478,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
             /* ซ่อนหัวข้อและเนื้อหา */
         }
     </style>
-    <!-- /เงื่อนไขการซ่อนฟิลด์จากสถานะ -->
-
+     <!-- /เงื่อนไขการซ่อนฟิลด์จากสถานะ -->
 
 </body>
 
