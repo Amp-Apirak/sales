@@ -121,38 +121,17 @@ $stmt_projects = $condb->prepare($sql_projects);
 $stmt_projects->execute($params);
 $projects = $stmt_projects->fetchAll(PDO::FETCH_ASSOC);
 
-// นับจำนวน Project ทั้งหมดและนับ Seller ไม่เปลี่ยนแปลงเงื่อนไขเดิม
+// คำนวณสถิติต่างๆ
 $total_projects = count($projects);
+$total_cost = 0;
+$total_sale = 0;
 $unique_creators = array();
 foreach ($projects as $project) {
+    $total_cost += $project['cost_vat'];
+    $total_sale += $project['sale_vat'];
     $unique_creators[$project['created_by']] = true;
 }
 $total_creators = count($unique_creators);
-
-// *** เริ่มส่วนที่มีการแก้ไขการคำนวณตามเงื่อนไขใหม่ ***
-// คำนวณเฉพาะโครงการสถานะ "ชนะ (Win)" เท่านั้น
-$total_cost = 0;        // จาก cost_no_vat ของโครงการที่ชนะเท่านั้น
-$total_sale = 0;        // จาก sale_no_vat ของโครงการที่ชนะเท่านั้น
-$total_gross_profit = 0; // จาก gross_profit ของโครงการที่ชนะเท่านั้น
-
-foreach ($projects as $project) {
-    // ตรวจสอบสถานะโครงการเป็น ชนะ (Win)
-    if (strcasecmp($project['status'], 'ชนะ (Win)') === 0) {
-        // สะสมค่า cost_no_vat แทน cost_vat
-        $total_cost += $project['cost_no_vat'];
-        // สะสมค่า sale_no_vat แทน sale_vat
-        $total_sale += $project['sale_no_vat'];
-        // สะสม gross_profit เฉพาะโครงการที่ชนะ
-        $total_gross_profit += $project['gross_profit'];
-    }
-}
-
-// คำนวณ Average GP % = (Gross Profit รวม / Sale Price รวม) * 100 เฉพาะโครงการที่ชนะ
-$avg_gp_percentage = 0;
-if ($total_sale > 0) {
-    $avg_gp_percentage = ($total_gross_profit / $total_sale) * 100;
-}
-// *** สิ้นสุดส่วนแก้ไขเงื่อนไขคำนวณ ***
 
 // ฟังก์ชันสำหรับแสดงข้อมูลหรือ "ไม่ระบุข้อมูล" ถ้าไม่มีข้อมูล
 function displayData($data, $format = null)
@@ -170,7 +149,7 @@ function displayData($data, $format = null)
     }
 }
 
-// ฟังก์ชันสำหรับแสดงข้อมูลกำหนดความยาว 100 ตัวอักษร
+// ฟังก์ชันสำหรับแสดงข้อมูลกำหนดความยาว 100 ตัวอักษร หากมากกว่าให้แสดง ... (Customer Address)
 function truncateText($text, $length = 100)
 {
     if (!$text) return 'ไม่ระบุข้อมูล';
@@ -179,6 +158,7 @@ function truncateText($text, $length = 100)
     }
     return $text;
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -219,7 +199,6 @@ function truncateText($text, $length = 100)
             margin-top: 5px;
         }
     </style>
-
     <style>
         /* ใช้ฟอนต์ Noto Sans Thai กับ label */
         th,
@@ -265,7 +244,6 @@ function truncateText($text, $length = 100)
             z-index: 1000;
         }
     </style>
-
     <!-- ฟังก์ชันสำหรับแสดงข้อมูลกำหนดความยาว 100 ตัวอักษร หากมากกว่าให้แสดง ... (Customer Address) -->
     <style>
         /* เพิ่ม class ใหม่สำหรับ Project Name */
@@ -332,6 +310,7 @@ function truncateText($text, $length = 100)
                 <!-- Main content -->
                 <section class="content">
                     <div class="container-fluid">
+                        <!-- Small boxes (Stat box) -->
                         <div class="row">
                             <!-- Project All Card -->
                             <div class="col-lg-2 col-6">
@@ -359,12 +338,12 @@ function truncateText($text, $length = 100)
                                 </div>
                             </div>
 
-                            <!-- Cost Price (ปรับให้ใช้ cost_no_vat เฉพาะสถานะชนะ) -->
+                            <!-- Cost Price Card -->
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-primary">
                                     <div class="inner">
                                         <h3><?php echo number_format($total_cost, 2); ?></h3>
-                                        <p>Cost Price</p>
+                                        <p>Cost Price (Vat)</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-dollar-sign"></i>
@@ -372,12 +351,12 @@ function truncateText($text, $length = 100)
                                 </div>
                             </div>
 
-                            <!-- Sale Price (ปรับให้ใช้ sale_no_vat เฉพาะสถานะชนะ) -->
+                            <!-- Sale Price Card -->
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-success">
                                     <div class="inner">
                                         <h3><?php echo number_format($total_sale, 2); ?></h3>
-                                        <p>Sale Price</p>
+                                        <p>Sale Price (Vat)</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-dollar-sign"></i>
@@ -385,10 +364,16 @@ function truncateText($text, $length = 100)
                                 </div>
                             </div>
 
-                            <!-- Gross Profit (เฉพาะสถานะชนะ) -->
+                            <!-- เพิ่ม Gross Profit Card -->
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-danger">
                                     <div class="inner">
+                                        <?php
+                                        $total_gross_profit = 0;
+                                        foreach ($projects as $project) {
+                                            $total_gross_profit += $project['gross_profit'];
+                                        }
+                                        ?>
                                         <h3><?php echo number_format($total_gross_profit, 2); ?></h3>
                                         <p>Gross Profit</p>
                                     </div>
@@ -398,10 +383,16 @@ function truncateText($text, $length = 100)
                                 </div>
                             </div>
 
-                            <!-- Average GP % (เฉพาะสถานะชนะ) -->
+                            <!-- เพิ่ม GP % Card -->
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-pink">
                                     <div class="inner">
+                                        <?php
+                                        $avg_gp_percentage = 0;
+                                        if ($total_sale > 0) {
+                                            $avg_gp_percentage = ($total_gross_profit / $total_sale) * 100;
+                                        }
+                                        ?>
                                         <h3><?php echo number_format($avg_gp_percentage, 2); ?>%</h3>
                                         <p>Average GP %</p>
                                     </div>
