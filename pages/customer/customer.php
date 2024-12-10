@@ -165,12 +165,15 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <!-- //Section Search -->
 
                             <!-- Section ปุ่มเพิ่มข้อมูล -->
-                            <div class="col-md-12 pb-3 text-right">
+                            <div class="col-md-12 pb-3">
+                                <div class="btn-group float-right">
+                                    <a href="add_customer.php" class="btn btn-success btn-sm">เพิ่มข้อมูลลูกค้า</a>
                                     <a href="import_customer.php" class="btn btn-info btn-sm mr-2">
-                                        <i class="fas fa-file-import"></i> Import Excel/CSV
+                                        <i class="fas fa-file-import"></i> Import ข้อมูล
                                     </a>
-                                    <a href="add_customer.php" class="btn btn-success btn-sm">เพิ่มข้อมูล</a>
-                            </div>
+
+                                </div>
+                            </div><br>
 
                             <!-- Section ตารางแสดงผล -->
                             <div class="card">
