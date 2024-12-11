@@ -449,7 +449,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
 
                                         <!-- ส่วนของ Cost Project และ Estimate Potential -->
                                         <div class="card-body">
-                                            <h5><b><span class="text-primary">Cost Project</span></b></h5>
+                                            <h5><b><span class="text-primary">Estimate </span></b></h5>
                                             <hr>
                                             <div class="row">
                                                 <div class="col-12 col-md-3">
@@ -468,13 +468,13 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>กำไรขั้นต้น/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="gross_profit" class="form-control" id="gross_profit" style="background-color:#F8F8FF">
+                                                        <input type="int" name="gross_profit" class="form-control" id="gross_profit" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>กำไรขั้นต้น/คิดเป็น %</label>
-                                                        <input type="int" name="potential" class="form-control" id="potential" style="background-color:#F8F8FF">
+                                                        <input type="int" name="potential" class="form-control" id="potential"  readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                             </div>
@@ -507,26 +507,26 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                             </div>
 
                                             <div id="estimate-potential-section">
-                                                <h5><b><span class="text-primary">Estimate Potential</span></b></h5>
+                                                <h5><b><span class="text-primary">Potential</span></b></h5>
                                                 <hr>
                                             </div>
                                             <div class="row mb-4">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ประมาณการยอดขาย (No Vat)</label>
-                                                        <input type="text" name="es_sale_no_vat" class="form-control" id="es_sale_no_vat" style="background-color:#F8F8FF">
+                                                        <input type="text" name="es_sale_no_vat" class="form-control" id="es_sale_no_vat" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ประมาณการต้นทุน (No Vat)</label>
-                                                        <input type="text" name="es_cost_no_vat" class="form-control" id="es_cost_no_vat" style="background-color:#F8F8FF">
+                                                        <input type="text" name="es_cost_no_vat" class="form-control" id="es_cost_no_vat" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>กำไรที่คาดการณ์ (No Vat)</label>
-                                                        <input type="text" name="es_gp_no_vat" class="form-control" id="es_gp_no_vat" style="background-color:#F8F8FF">
+                                                        <input type="text" name="es_gp_no_vat" class="form-control" id="es_gp_no_vat" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                             </div>

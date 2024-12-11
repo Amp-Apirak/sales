@@ -19,10 +19,11 @@ function clean_input($data)
 
 // รับค่าจากฟอร์มการค้นหาและทำความสะอาด
 $search_service = clean_input($_POST['searchservice'] ?? '');
-$search_product = filter_var($_POST['product'] ?? 0, FILTER_VALIDATE_INT);
+$search_product = clean_input($_POST['product'] ?? '');
 $search_status = clean_input($_POST['status'] ?? '');
+//$search_status = clean_input($_POST['status'] ?? 'ชนะ (Win)');
 $search_creator = clean_input($_POST['creator'] ?? '');
-$search_customer = filter_var($_POST['customer'] ?? 0, FILTER_VALIDATE_INT);
+$search_customer = clean_input($_POST['customer'] ?? '');
 $search_year = filter_var($_POST['year'] ?? 0, FILTER_VALIDATE_INT);
 $search_team = clean_input($_POST['team'] ?? '');
 
@@ -121,44 +122,120 @@ $stmt_projects = $condb->prepare($sql_projects);
 $stmt_projects->execute($params);
 $projects = $stmt_projects->fetchAll(PDO::FETCH_ASSOC);
 
-// คำนวณสถิติต่างๆ
-$total_projects = count($projects);
-$total_cost = 0;
-$total_sale = 0;
-$unique_creators = array();
-foreach ($projects as $project) {
-    $total_cost += $project['cost_vat'];
-    $total_sale += $project['sale_vat'];
-    $unique_creators[$project['created_by']] = true;
-}
-$total_creators = count($unique_creators);
+// ฟังก์ชันสำหรับตัดข้อความให้สั้นลงและเพิ่ม ...
+function truncateText($text, $length = 100)
+{
+    // ถ้าข้อความเป็น null หรือว่างเปล่า
+    if (empty($text)) {
+        return 'ไม่ระบุข้อมูล';
+    }
 
-// ฟังก์ชันสำหรับแสดงข้อมูลหรือ "ไม่ระบุข้อมูล" ถ้าไม่มีข้อมูล
+    // แปลงเป็น string เพื่อป้องกัน error
+    $text = (string)$text;
+
+    // วัดความยาวข้อความ UTF-8
+    if (mb_strlen($text, 'UTF-8') > $length) {
+        // ตัดข้อความและเพิ่ม ...
+        return mb_substr($text, 0, $length, 'UTF-8') . '...';
+    }
+    return $text;
+}
+
+// ฟังก์ชันสำหรับแสดงข้อมูลหรือข้อความ "ไม่ระบุข้อมูล"
 function displayData($data, $format = null)
 {
     if (isset($data) && $data !== '') {
         if ($format === 'number') {
-            return number_format($data, 2);
+            return number_format((float)$data, 2);
         } elseif ($format === 'percentage') {
             return $data . '%';
         } else {
             return htmlspecialchars($data);
         }
-    } else {
-        return 'ไม่ระบุข้อมูล';
     }
+    return 'ไม่ระบุข้อมูล';
 }
 
-// ฟังก์ชันสำหรับแสดงข้อมูลกำหนดความยาว 100 ตัวอักษร หากมากกว่าให้แสดง ... (Customer Address)
-function truncateText($text, $length = 100)
+// ฟังก์ชันคำนวณข้อมูลสำหรับการ์ด
+function calculateProjectMetrics($projects, $search_params = [])
 {
-    if (!$text) return 'ไม่ระบุข้อมูล';
-    if (mb_strlen($text) > $length) {
-        return mb_substr($text, 0, $length) . '...';
+    // กำหนดค่าเริ่มต้นสำหรับการคำนวณ
+    $metrics = [
+        'total_projects' => 0,      // จำนวนโครงการทั้งหมด
+        'total_creators' => 0,      // จำนวนผู้ขาย
+        'total_cost' => 0,          // ต้นทุนรวม
+        'total_sale' => 0,          // ยอดขายรวม
+        'total_gross_profit' => 0,  // กำไรขั้นต้นรวม
+        'avg_gp_percentage' => 0    // เปอร์เซ็นต์กำไรเฉลี่ย
+    ];
+
+    // สร้างอาเรย์เก็บ creator_id ที่ไม่ซ้ำกัน
+    $unique_creators = array();
+
+    // วนลูปผ่านโครงการทั้งหมด
+    foreach ($projects as $project) {
+        $include_project = true; // ตัวแปรควบคุมการนับโครงการ
+
+        // ตรวจสอบเงื่อนไขการค้นหาต่างๆ
+        if (!empty($search_params['status']) && $project['status'] !== $search_params['status']) {
+            $include_project = false;
+        }
+        if (!empty($search_params['product']) && $project['product_id'] !== $search_params['product']) {
+            $include_project = false;
+        }
+        if (!empty($search_params['customer']) && $project['customer_id'] !== $search_params['customer']) {
+            $include_project = false;
+        }
+        if (!empty($search_params['team']) && $project['team_name'] !== $search_params['team']) {
+            $include_project = false;
+        }
+        if (!empty($search_params['year']) && date('Y', strtotime($project['sales_date'])) != $search_params['year']) {
+            $include_project = false;
+        }
+        if (!empty($search_params['creator']) && $project['created_by'] !== $search_params['creator']) {
+            $include_project = false;
+        }
+
+        // ถ้าผ่านเงื่อนไขการค้นหาทั้งหมด ให้นับและคำนวณ
+        if ($include_project) {
+            // นับจำนวนโครงการ
+            $metrics['total_projects']++;
+
+            // เก็บ creator_id เพื่อนับจำนวน seller ที่ไม่ซ้ำกัน
+            if (!empty($project['created_by'])) {
+                $unique_creators[$project['created_by']] = true;
+            }
+
+            // สะสมค่าทางการเงิน
+            $metrics['total_cost'] += floatval($project['cost_no_vat']);
+            $metrics['total_sale'] += floatval($project['sale_no_vat']);
+            $metrics['total_gross_profit'] += floatval($project['gross_profit']);
+        }
     }
-    return $text;
+
+    // นับจำนวน seller ที่ไม่ซ้ำกัน
+    $metrics['total_creators'] = count($unique_creators);
+
+    // คำนวณ Average GP % เมื่อมียอดขาย
+    if ($metrics['total_sale'] > 0) {
+        $metrics['avg_gp_percentage'] = ($metrics['total_gross_profit'] / $metrics['total_sale']) * 100;
+    }
+
+    return $metrics;
 }
 
+// ส่วนการใช้งาน - เก็บพารามิเตอร์การค้นหาทั้งหมด
+$search_params = [
+    'status' => clean_input($_POST['status'] ?? ''),
+    'product' => clean_input($_POST['product'] ?? ''),
+    'customer' => clean_input($_POST['customer'] ?? ''),
+    'team' => clean_input($_POST['team'] ?? ''),
+    'year' => filter_var($_POST['year'] ?? null, FILTER_VALIDATE_INT),
+    'creator' => clean_input($_POST['creator'] ?? '')
+];
+
+// คำนวณ metrics ตามพารามิเตอร์การค้นหา
+$metrics = calculateProjectMetrics($projects, $search_params);
 ?>
 
 <!DOCTYPE html>
@@ -199,6 +276,7 @@ function truncateText($text, $length = 100)
             margin-top: 5px;
         }
     </style>
+
     <style>
         /* ใช้ฟอนต์ Noto Sans Thai กับ label */
         th,
@@ -244,6 +322,7 @@ function truncateText($text, $length = 100)
             z-index: 1000;
         }
     </style>
+
     <!-- ฟังก์ชันสำหรับแสดงข้อมูลกำหนดความยาว 100 ตัวอักษร หากมากกว่าให้แสดง ... (Customer Address) -->
     <style>
         /* เพิ่ม class ใหม่สำหรับ Project Name */
@@ -306,18 +385,17 @@ function truncateText($text, $length = 100)
             </div>
             <!-- /.content-header -->
 
+            <!-- ส่วนแสดงผลการ์ด -->
             <?php if ($role != 'Engineer'): ?>
-                <!-- Main content -->
                 <section class="content">
                     <div class="container-fluid">
-                        <!-- Small boxes (Stat box) -->
                         <div class="row">
                             <!-- Project All Card -->
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-info">
                                     <div class="inner">
-                                        <h3><?php echo number_format($total_projects); ?></h3>
-                                        <p>Project All</p>
+                                        <h3><?php echo number_format($metrics['total_projects']); ?></h3>
+                                        <p>Project <?php echo $search_status ? "($search_status)" : "All"; ?></p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-folder"></i>
@@ -329,7 +407,7 @@ function truncateText($text, $length = 100)
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-warning">
                                     <div class="inner">
-                                        <h3><?php echo number_format($total_creators); ?></h3>
+                                        <h3><?php echo number_format($metrics['total_creators']); ?></h3>
                                         <p>Seller</p>
                                     </div>
                                     <div class="icon">
@@ -342,8 +420,8 @@ function truncateText($text, $length = 100)
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-primary">
                                     <div class="inner">
-                                        <h3><?php echo number_format($total_cost, 2); ?></h3>
-                                        <p>Cost Price (Vat)</p>
+                                        <h3><?php echo number_format($metrics['total_cost'], 2); ?></h3>
+                                        <p>Cost Price</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-dollar-sign"></i>
@@ -355,8 +433,8 @@ function truncateText($text, $length = 100)
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-success">
                                     <div class="inner">
-                                        <h3><?php echo number_format($total_sale, 2); ?></h3>
-                                        <p>Sale Price (Vat)</p>
+                                        <h3><?php echo number_format($metrics['total_sale'], 2); ?></h3>
+                                        <p>Sale Price</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-dollar-sign"></i>
@@ -364,17 +442,11 @@ function truncateText($text, $length = 100)
                                 </div>
                             </div>
 
-                            <!-- เพิ่ม Gross Profit Card -->
+                            <!-- Gross Profit Card -->
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-danger">
                                     <div class="inner">
-                                        <?php
-                                        $total_gross_profit = 0;
-                                        foreach ($projects as $project) {
-                                            $total_gross_profit += $project['gross_profit'];
-                                        }
-                                        ?>
-                                        <h3><?php echo number_format($total_gross_profit, 2); ?></h3>
+                                        <h3><?php echo number_format($metrics['total_gross_profit'], 2); ?></h3>
                                         <p>Gross Profit</p>
                                     </div>
                                     <div class="icon">
@@ -383,17 +455,11 @@ function truncateText($text, $length = 100)
                                 </div>
                             </div>
 
-                            <!-- เพิ่ม GP % Card -->
+                            <!-- Average GP % Card -->
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-pink">
                                     <div class="inner">
-                                        <?php
-                                        $avg_gp_percentage = 0;
-                                        if ($total_sale > 0) {
-                                            $avg_gp_percentage = ($total_gross_profit / $total_sale) * 100;
-                                        }
-                                        ?>
-                                        <h3><?php echo number_format($avg_gp_percentage, 2); ?>%</h3>
+                                        <h3><?php echo number_format($metrics['avg_gp_percentage'], 2); ?>%</h3>
                                         <p>Average GP %</p>
                                     </div>
                                     <div class="icon">
@@ -442,7 +508,7 @@ function truncateText($text, $length = 100)
                                                         <?php if ($role == 'Executive') : ?>
                                                             <div class="col-sm-2">
                                                                 <div class="form-group">
-                                                                    <label>Team</label>
+                                                                    <label>ทีม</label>
                                                                     <select class="custom-select select2" name="team">
                                                                         <option value="">เลือก</option>
                                                                         <?php foreach ($teams as $team) : ?>
@@ -456,7 +522,7 @@ function truncateText($text, $length = 100)
                                                         <?php endif; ?>
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
-                                                                <label>Product</label>
+                                                                <label>ผลิตภัณฑ์</label>
                                                                 <select class="custom-select select2" name="product">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($products as $product) { ?>
@@ -469,7 +535,7 @@ function truncateText($text, $length = 100)
                                                         </div>
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
-                                                                <label>Status</label>
+                                                                <label>สถานะโครงการ</label>
                                                                 <select class="custom-select select2" name="status">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($statuses as $status) { ?>
@@ -482,7 +548,7 @@ function truncateText($text, $length = 100)
                                                         </div>
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
-                                                                <label>Create By</label>
+                                                                <label>พนักงาน</label>
                                                                 <select class="custom-select select2" name="creator">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($creators as $creator) : ?>
@@ -496,7 +562,7 @@ function truncateText($text, $length = 100)
                                                         </div>
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
-                                                                <label>Customer</label>
+                                                                <label>ลูกค้า</label>
                                                                 <select class="custom-select select2" name="customer">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($customers as $customer) : ?>
@@ -509,7 +575,7 @@ function truncateText($text, $length = 100)
                                                         </div>
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
-                                                                <label>Year</label>
+                                                                <label>ปีที่เสนอขาย</label>
                                                                 <select class="custom-select select2" name="year">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($years as $year) : ?>
@@ -699,6 +765,38 @@ function truncateText($text, $length = 100)
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>
+
+    <!-- JavaScript สำหรับอัพเดตการแสดงผลแบบ Real-time: การค้นหาสถานะ -->
+    <script>
+        // เพิ่ม event listener สำหรับการเปลี่ยนแปลงค่าใน dropdown สถานะ
+        $(document).ready(function() {
+            $('select[name="status"]').on('change', function() {
+                // ส่งฟอร์มอัตโนมัติเมื่อมีการเปลี่ยนแปลงค่า
+                $(this).closest('form').submit();
+            });
+            $('select[name="team"]').on('change', function() {
+                // ส่งฟอร์มอัตโนมัติเมื่อมีการเปลี่ยนแปลงค่า
+                $(this).closest('form').submit();
+            });
+            $('select[name="product"]').on('change', function() {
+                // ส่งฟอร์มอัตโนมัติเมื่อมีการเปลี่ยนแปลงค่า
+                $(this).closest('form').submit();
+            });
+            $('select[name="customer"]').on('change', function() {
+                // ส่งฟอร์มอัตโนมัติเมื่อมีการเปลี่ยนแปลงค่า
+                $(this).closest('form').submit();
+            });
+            $('select[name="created_by"]').on('change', function() {
+                // ส่งฟอร์มอัตโนมัติเมื่อมีการเปลี่ยนแปลงค่า
+                $(this).closest('form').submit();
+            });
+            $('select[name="year"]').on('change', function() {
+                // ส่งฟอร์มอัตโนมัติเมื่อมีการเปลี่ยนแปลงค่า
+                $(this).closest('form').submit();
+            });
+        });
+    </script>
+
 
     <script>
         // Dropdown Select2
@@ -915,7 +1013,6 @@ function truncateText($text, $length = 100)
 
 
     <!-- แจ้งเตือน Import Error -->
-    // Add this to your project.php page
     <script>
         $(document).ready(function() {
             $('#importForm').on('submit', function(e) {

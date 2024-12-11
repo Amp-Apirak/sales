@@ -136,13 +136,13 @@ if (!empty($search_customer)) {
     $where_clause .= " AND p.customer_id = :search_customer";
     $params[':search_customer'] = $search_customer;
 }
-
-
-
 if (!empty($search_year)) {
     $where_clause .= " AND (
-        (YEAR(p.sales_date) = :search_year AND p.sales_date IS NOT NULL) OR 
-        (YEAR(p.created_at) = :search_year AND p.sales_date IS NULL)
+        CASE 
+            WHEN p.sales_date IS NOT NULL THEN YEAR(p.sales_date)
+            WHEN p.created_at IS NOT NULL THEN YEAR(p.created_at)
+            ELSE YEAR(CURRENT_DATE)
+        END = :search_year
     )";
     $params[':search_year'] = $search_year;
 }

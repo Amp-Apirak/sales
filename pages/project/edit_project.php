@@ -214,18 +214,26 @@ if (
             }
 
             $condb->commit();
-            $alert = "success|บันทึกข้อมูลโครงการเรียบร้อยแล้ว";
+            $response = [
+                'success' => true,
+                'message' => 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว',
+                'project_id' => $project_id  // เพิ่ม project_id ในการตอบกลับ
+            ];
         } catch (Exception $e) {
             $condb->rollBack();
-            $alert = "error|" . $e->getMessage();
+            $response = [
+                'success' => false,
+                'errors' => [$e->getMessage()],
+                'message' => $e->getMessage()
+            ];
         }
+    } else {
+        $response = [
+            'success' => false,
+            'errors' => $error_messages,
+            'message' => 'กรุณาตรวจสอบข้อมูลที่กรอก'
+        ];
     }
-
-    $response = [
-        'success' => empty($error_messages) && strpos($alert, 'success') !== false,
-        'errors' => $error_messages,
-        'message' => empty($error_messages) && strpos($alert, 'success') !== false ? 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว' : ''
-    ];
 
     header('Content-Type: application/json');
     echo json_encode($response);
@@ -717,7 +725,9 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 confirmButtonText: 'ตกลง'
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    window.location.href = 'project.php';
+                                    // เปลี่ยนการ redirect ไปยังหน้า view_project.php พร้อมส่ง project_id
+                                    window.location.href = 'view_project.php?project_id=' +
+                                        encodeURIComponent(encryptedProjectId);
                                 }
                             });
                         } else {
