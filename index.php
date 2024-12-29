@@ -208,10 +208,10 @@ try {
     $total_cost = 0;
     $total_sales = 0;
     if ($can_view_financial) {
-        $query = "SELECT SUM(p.cost_vat) as total_cost, SUM(p.sale_vat) as total_sales 
-                  FROM projects p
-                  LEFT JOIN users u ON p.created_by = u.user_id
-                  WHERE p.sales_date BETWEEN :start_date AND :end_date";
+        $query = "SELECT SUM(p.cost_no_vat) as total_cost, SUM(p.sale_no_vat) as total_sales 
+        FROM projects p
+        LEFT JOIN users u ON p.created_by = u.user_id
+        WHERE p.sales_date BETWEEN :start_date AND :end_date";
         $params = [
             ':start_date' => $filter_date_range[0],
             ':end_date' => $filter_date_range[1]
@@ -589,11 +589,11 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <!-- ส่วนแสดงข้อมูลทางการเงิน -->
                         <div class="row">
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-info">
+                                <div class="card bg-primary">
                                     <div class="card-header">
                                         <h3 class="card-title">
                                             <i class="fas fa-money-bill mr-1"></i>
-                                            ต้นทุนรวม Vat ทั้งหมด
+                                            ต้นทุนรวมทั้งหมด
                                         </h3>
                                         <div class="card-tools">
                                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -610,11 +610,11 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </div>
                             </div>
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-secondary">
+                                <div class="card bg-success">
                                     <div class="card-header">
                                         <h3 class="card-title">
                                             <i class="fas fa-chart-line mr-1"></i>
-                                            ยอดขายรวม Vat ทั้งหมด
+                                            ยอดขายรวมทั้งหมด
                                         </h3>
                                         <div class="card-tools">
                                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -631,7 +631,7 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </div>
                             </div>
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-success">
+                                <div class="card bg-yellow">
                                     <div class="card-header">
                                         <h3 class="card-title">
                                             <i class="fas fa-coins mr-1"></i>
@@ -858,16 +858,28 @@ $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             });
 
             // ฟังก์ชันสำหรับกรองพนักงานขายตามทีมที่เลือก
+            // แก้ไขฟังก์ชัน change ของ team_select
             $('#team_select').change(function() {
                 var selectedTeam = $(this).val();
                 var userSelect = $('#user_select');
+                var currentUserId = '<?php echo $filter_user_id; ?>'; // เก็บค่า user_id ที่เลือกไว้
+
                 userSelect.empty();
                 userSelect.append('<option value="">ทั้งหมด</option>');
 
                 <?php if ($can_view_all): ?>
                     <?php foreach ($team_members as $member): ?>
                         if (selectedTeam == '' || selectedTeam == '<?php echo $member['team_id']; ?>') {
-                            userSelect.append('<option value="<?php echo $member['user_id']; ?>"><?php echo $member['full_name']; ?></option>');
+                            var option = $('<option></option>')
+                                .val('<?php echo $member['user_id']; ?>')
+                                .text('<?php echo $member['full_name']; ?>');
+
+                            // เช็คว่าเป็น user ที่เลือกไว้หรือไม่
+                            if ('<?php echo $member['user_id']; ?>' == currentUserId) {
+                                option.prop('selected', true);
+                            }
+
+                            userSelect.append(option);
                         }
                     <?php endforeach; ?>
                 <?php endif; ?>

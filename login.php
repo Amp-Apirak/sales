@@ -87,6 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <!-- นำเข้า SweetAlert2 สำหรับการแสดงป๊อปอัพแจ้งเตือนที่สวยงาม -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="icon" type="image/x-icon" href="<?php echo BASE_URL; ?>assets/img/favicon.ico">
     <style>
         /* กำหนดสไตล์ CSS สำหรับหน้า Login */
         body {
