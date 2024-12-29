@@ -517,6 +517,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                                 <th>PART No.</th>
                                                 <th>Description</th>
                                                 <th>QTY.</th>
+                                                <th>Unit</th>
                                                 <th>Price / Unit</th>
                                                 <th>Total Amount</th>
                                                 <th>Cost / Unit</th>
@@ -531,15 +532,16 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                         <!-- แถวสำหรับกรอกข้อมูลใหม่ -->
                                         <tfoot>
                                             <tr>
-                                                <td><input type="text" id="typeInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="partNoInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="descriptionInput" class="form-control form-control-sm"></td>
-                                                <td><input type="number" id="qtyInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="priceInput" class="form-control form-control-sm"></td>
+                                                <td><input type="text" id="typeInput" class="form-control form-control-sm" placeholder="A, B, C"></td>
+                                                <td><input type="text" id="partNoInput" class="form-control form-control-sm" placeholder="Service, Hardware, Software"></td>
+                                                <td><input type="text" id="descriptionInput" class="form-control form-control-sm" placeholder="ใส่รายละเอียด"></td>
+                                                <td><input type="number" id="qtyInput" class="form-control form-control-sm" placeholder="จำนวนตัวเลข"></td>
+                                                <td><input type="text" id="unitInput" class="form-control form-control-sm" placeholder="เช่น วัน, คน, ชิ้น"></td>
+                                                <td><input type="text" id="priceInput" class="form-control form-control-sm" placeholder="ตั้งราคาขาย"></td>
                                                 <td><span id="totalAmountInput">0.00</span></td>
-                                                <td><input type="text" id="costInput" class="form-control form-control-sm"></td>
+                                                <td><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
                                                 <td><span id="totalCostInput">0.00</span></td>
-                                                <td><input type="text" id="supplierInput" class="form-control form-control-sm"></td>
+                                                <td><input type="text" id="supplierInput" class="form-control form-control-sm" placeholder=""></td>
                                                 <td><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
                                             </tr>
                                         </tfoot>
@@ -1865,6 +1867,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
             part_no: $('#partNoInput').val(),
             description: $('#descriptionInput').val(),
             quantity: parseFloat($('#qtyInput').val()),
+            unit: $('#unitInput').val(),
             price_per_unit: parseFormattedNumber($('#priceInput').val()),
             cost_per_unit: parseFormattedNumber($('#costInput').val()),
             supplier: $('#supplierInput').val()
@@ -1912,7 +1915,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
 
     // เพิ่มฟังก์ชันตรวจสอบการกรอกข้อมูล
     function validateInputs() {
-        const required = ['typeInput', 'partNoInput', 'descriptionInput', 'qtyInput', 'priceInput', 'costInput', 'supplierInput'];
+        const required = ['typeInput', 'partNoInput', 'descriptionInput', 'qtyInput', 'unitInput', 'priceInput', 'costInput', 'supplierInput'];
         return required.every(id => $('#' + id).val().trim() !== '');
     }
 
@@ -1944,6 +1947,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                         <td>${escapeHtml(cost.part_no)}</td>
                         <td>${escapeHtml(cost.description)}</td>
                         <td>${cost.quantity}</td>
+                        <td>${escapeHtml(cost.unit)}</td>
                         <td>${formatNumber(cost.price_per_unit)}</td>
                         <td>${formatNumber(cost.total_amount)}</td>
                         <td>${formatNumber(cost.cost_per_unit)}</td>
@@ -2081,6 +2085,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                     $('#partNoInput').val(cost.part_no);
                     $('#descriptionInput').val(cost.description);
                     $('#qtyInput').val(cost.quantity);
+                    $('#unitInput').val(cost.unit);
                     $('#priceInput').val(formatNumber(cost.price_per_unit));
                     $('#costInput').val(formatNumber(cost.cost_per_unit));
                     $('#supplierInput').val(cost.supplier);
@@ -2119,6 +2124,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
             part_no: $('#partNoInput').val(),
             description: $('#descriptionInput').val(),
             quantity: parseFloat($('#qtyInput').val()),
+            unit: $('#unitInput').val(),
             price_per_unit: parseFormattedNumber($('#priceInput').val()),
             cost_per_unit: parseFormattedNumber($('#costInput').val()),
             supplier: $('#supplierInput').val()

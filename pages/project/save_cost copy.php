@@ -28,7 +28,6 @@ try {
         'part_no' => $_POST['part_no'],
         'description' => $_POST['description'],
         'quantity' => $_POST['quantity'],
-        'unit' => $_POST['unit'],
         'price_per_unit' => $_POST['price_per_unit'],
         'cost_per_unit' => $_POST['cost_per_unit'],
         'supplier' => $_POST['supplier'],
@@ -36,10 +35,10 @@ try {
     ];
 
     $sql = "INSERT INTO project_costs 
-            (cost_id, project_id, type, part_no, description, quantity, unit,
+            (cost_id, project_id, type, part_no, description, quantity,
              price_per_unit, cost_per_unit, supplier, created_by)
             VALUES 
-            (:cost_id, :project_id, :type, :part_no, :description, :quantity, :unit,
+            (:cost_id, :project_id, :type, :part_no, :description, :quantity,
              :price_per_unit, :cost_per_unit, :supplier, :created_by)";
 
     $stmt = $condb->prepare($sql);

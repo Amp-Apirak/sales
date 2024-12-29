@@ -107,6 +107,25 @@ function getStatusClass($status)
             return '';
     }
 }
+
+
+// ดึงข้อมูลลูกค้าทั้งหมดในโครงการ
+// ดึงข้อมูลลูกค้าจาก projects (ลูกค้าหลัก) และ project_customers (ลูกค้าทั้งหมด)
+$sql_customers = "
+    SELECT DISTINCT c.customer_name, c.company, c.address, c.phone, c.email, c.position
+    FROM (
+        SELECT p.customer_id FROM projects p WHERE p.project_id = :project_id
+        UNION
+        SELECT pc.customer_id FROM project_customers pc WHERE pc.project_id = :project_id
+    ) AS customer_ids
+    JOIN customers c ON customer_ids.customer_id = c.customer_id";
+
+$stmt_customers = $condb->prepare($sql_customers); // เตรียมคำสั่ง SQL
+$stmt_customers->bindParam(':project_id', $project_id, PDO::PARAM_STR); // ผูกค่าพารามิเตอร์
+$stmt_customers->execute(); // ดำเนินการคำสั่ง SQL
+$project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึงผลลัพธ์ทั้งหมด
+
+
 ?>
 
 <!DOCTYPE html>
@@ -208,82 +227,7 @@ function getStatusClass($status)
                                             </div>
                                         </div>
 
-                                        <!-- ข้อมูลลูกค้า -->
-                                        <div class="row equal-height-cards">
-                                            <div class="col-md-12">
-                                                <div class="info-card">
-                                                    <div class="info-card-header">
-                                                        <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า (หลัก)</span>
-                                                    </div>
-                                                    <div class="info-card-body">
-                                                        <div class="info-item">
-                                                            <span class="info-label">ชื่อลูกค้า:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['customer_name']); ?></span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">ตำแหน่ง:</span>
-                                                            <span class="info-value"><?php echo isset($project['position']) ? htmlspecialchars($project['position']) : '-'; ?></span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">บริษัท:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['company']); ?></span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">ที่อยู่:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['address']); ?></span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">โทรศัพท์:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['customer_phone']); ?></span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">อีเมล:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['customer_email']); ?></span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- ข้อมูลผู้ขาย -->
-                                        <div class="row equal-height-cards">
-                                            <div class="col-md-12">
-                                                <div class="info-card">
-                                                    <div class="info-card-header">
-                                                        <i class="fas fa-user-tie mr-2"></i>ข้อมูลผู้ขาย
-                                                    </div>
-                                                    <div class="info-card-body">
-                                                        <div class="info-item">
-                                                            <span class="info-label">ชื่อผู้ขาย:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">อีเมล:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['seller_email']); ?></span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">โทรศัพท์:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['seller_phone']); ?></span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">ทีม:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['team_name']); ?></span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">หัวหน้าทีมฝ่ายขาย:</span>
-                                                            <span class="info-value">
-                                                                <?php
-                                                                if (isset($project['team_leader_first_name']) && isset($project['team_leader_last_name'])) {
-                                                                    echo htmlspecialchars($project['team_leader_first_name'] . ' ' . $project['team_leader_last_name']);
-                                                                } else {
-                                                                    echo 'ไม่ระบุ';
-                                                                }
-                                                                ?>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+
 
                                         <!-- ข้อมูลทางการเงิน -->
                                         <div class="info-card">
@@ -481,6 +425,84 @@ function getStatusClass($status)
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <!-- ข้อมูลลูกค้า -->
+                                        <div class="row equal-height-cards">
+                                            <div class="col-md-12">
+                                                <div class="info-card">
+                                                    <div class="info-card-header">
+                                                        <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า</span>
+                                                    </div>
+                                                    <div class="info-card-body">
+                                                        <table class="table table-striped">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>ชื่อลูกค้า</th>
+                                                                    <th>ตำแหน่ง</th>
+                                                                    <th>บริษัท</th>
+                                                                    <th>โทรศัพท์</th>
+                                                                    <th>อีเมล</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <?php foreach ($project_customers as $customer): ?>
+                                                                    <tr>
+                                                                        <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                                                        <td><?php echo htmlspecialchars($customer['position'] ?? 'ไม่ระบุ'); ?></td>
+                                                                        <td><?php echo htmlspecialchars($customer['company'] ?? 'ไม่ระบุ'); ?></td>
+                                                                        <td><?php echo htmlspecialchars($customer['phone'] ?? 'ไม่ระบุ'); ?></td>
+                                                                        <td><?php echo htmlspecialchars($customer['email'] ?? 'ไม่ระบุ'); ?></td>
+                                                                    </tr>
+                                                                <?php endforeach; ?>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        <!-- ข้อมูลผู้ขาย -->
+                                        <div class="row equal-height-cards">
+                                            <div class="col-md-12">
+                                                <div class="info-card">
+                                                    <div class="info-card-header">
+                                                        <i class="fas fa-user-tie mr-2"></i>ข้อมูลผู้ขาย
+                                                    </div>
+                                                    <div class="info-card-body">
+                                                        <div class="info-item">
+                                                            <span class="info-label">ชื่อผู้ขาย:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">อีเมล:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['seller_email']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">โทรศัพท์:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['seller_phone']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">ทีม:</span>
+                                                            <span class="info-value"><?php echo htmlspecialchars($project['team_name']); ?></span>
+                                                        </div>
+                                                        <div class="info-item">
+                                                            <span class="info-label">หัวหน้าทีมฝ่ายขาย:</span>
+                                                            <span class="info-value">
+                                                                <?php
+                                                                if (isset($project['team_leader_first_name']) && isset($project['team_leader_last_name'])) {
+                                                                    echo htmlspecialchars($project['team_leader_first_name'] . ' ' . $project['team_leader_last_name']);
+                                                                } else {
+                                                                    echo 'ไม่ระบุ';
+                                                                }
+                                                                ?>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </section>
                             </div>

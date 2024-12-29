@@ -11,10 +11,12 @@ try {
     // เตรียมข้อมูลสำหรับการอัพเดท
     $data = [
         'cost_id' => $_POST['cost_id'],
+        'project_id' => $_POST['project_id'],
         'type' => $_POST['type'],
         'part_no' => $_POST['part_no'],
         'description' => $_POST['description'],
         'quantity' => $_POST['quantity'],
+        'unit' => $_POST['unit'],
         'price_per_unit' => $_POST['price_per_unit'],
         'cost_per_unit' => $_POST['cost_per_unit'],
         'supplier' => $_POST['supplier'],
@@ -31,6 +33,7 @@ try {
                 part_no = :part_no,
                 description = :description,
                 quantity = :quantity,
+                unit = :unit,
                 price_per_unit = :price_per_unit,
                 cost_per_unit = :cost_per_unit,
                 total_amount = :total_amount,
@@ -38,7 +41,8 @@ try {
                 supplier = :supplier,
                 updated_by = :updated_by,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE cost_id = :cost_id";
+            WHERE cost_id = :cost_id
+            AND project_id = :project_id";
 
     $stmt = $condb->prepare($sql);
     if (!$stmt->execute($data)) {
@@ -46,7 +50,7 @@ try {
     }
 
     // อัพเดทข้อมูลสรุป
-    if (!updateProjectCostSummary($condb, $_POST['project_id'])) {
+    if (!updateProjectCostSummary($condb, $data['project_id'])) {
         throw new Exception("Failed to update cost summary");
     }
 
