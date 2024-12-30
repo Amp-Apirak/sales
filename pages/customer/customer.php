@@ -201,12 +201,17 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <!-- แสดงข้อมูลลูกค้า -->
                                             <?php foreach ($customers as $customer) { ?>
                                                 <tr>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['customer_name']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['position']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['phone']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['email']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['company']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($customer['customer_name']) ? htmlspecialchars($customer['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($customer['position']) ? htmlspecialchars($customer['position']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($customer['phone']) ? htmlspecialchars($customer['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($customer['email']) ? htmlspecialchars($customer['email']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($customer['company']) ? htmlspecialchars($customer['company']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap">
+                                                        <?php
+                                                        $creator_name = trim($customer['first_name'] . ' ' . $customer['last_name']);
+                                                        echo !empty($creator_name) ? htmlspecialchars($creator_name) : 'ไม่ระบุข้อมูล';
+                                                        ?>
+                                                    </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($customer['created_at']); ?></td>
                                                     <td class="text-nowrap">
                                                         <a href="view_customer.php?id=<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>" class="btn btn-sm btn-primary">

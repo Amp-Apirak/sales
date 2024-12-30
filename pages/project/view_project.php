@@ -1971,53 +1971,67 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                     $('#costTable').DataTable({
                         dom: 'Bfrtip',
                         buttons: [{
-                            extend: 'excel',
-                            text: '<i class="fas fa-file-excel"></i> Export Excel',
-                            className: 'btn btn-success btn-sm',
-                            title: 'Project Cost Report',
-                            filename: 'Project_Costs_' + new Date().toISOString().slice(0, 10),
-                            customize: function(xlsx) {
-                                var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                                extend: 'excel',
+                                text: '<i class="fas fa-file-excel"></i> Export Excel',
+                                className: 'btn btn-success btn-sm',
+                                title: 'Project Cost Report',
+                                filename: 'Project_Costs_' + new Date().toISOString().slice(0, 10),
+                                customize: function(xlsx) {
+                                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
 
-                                // เพิ่มข้อมูลสรุป
-                                var summaryData = [
-                                    ['Summary'],
-                                    ['Total Amount:', $('#totalAmount').text()],
-                                    ['VAT Amount:', $('#vatAmount').text()],
-                                    ['Grand Total:', $('#grandTotal').text()],
-                                    ['Total Cost:', $('#totalCost').text()],
-                                    ['Cost VAT Amount:', $('#costVatAmount').text()],
-                                    ['Total Cost with VAT:', $('#totalCostWithVat').text()],
-                                    ['Profit Amount:', $('#profitAmount').text()],
-                                    ['Profit Percentage:', $('#profitPercentage').text()]
-                                ];
+                                    // เพิ่มข้อมูลสรุป
+                                    var summaryData = [
+                                        ['Summary'],
+                                        ['Total Amount:', $('#totalAmount').text()],
+                                        ['VAT Amount:', $('#vatAmount').text()],
+                                        ['Grand Total:', $('#grandTotal').text()],
+                                        ['Total Cost:', $('#totalCost').text()],
+                                        ['Cost VAT Amount:', $('#costVatAmount').text()],
+                                        ['Total Cost with VAT:', $('#totalCostWithVat').text()],
+                                        ['Profit Amount:', $('#profitAmount').text()],
+                                        ['Profit Percentage:', $('#profitPercentage').text()]
+                                    ];
 
-                                // คำนวณตำแหน่งแถวสุดท้าย
-                                var lastRow = $('row', sheet).length;
+                                    // คำนวณตำแหน่งแถวสุดท้าย
+                                    var lastRow = $('row', sheet).length;
 
-                                // เพิ่มข้อมูลสรุป
-                                summaryData.forEach(function(data) {
-                                    lastRow++;
-                                    var row = sheet.createElement('row');
+                                    // เพิ่มข้อมูลสรุป
+                                    summaryData.forEach(function(data) {
+                                        lastRow++;
+                                        var row = sheet.createElement('row');
 
-                                    data.forEach(function(text, index) {
-                                        var cell = sheet.createElement('c');
-                                        var t = sheet.createElement('t');
-                                        t.textContent = text;
-                                        cell.appendChild(t);
-                                        if (index === 0) {
-                                            cell.setAttribute('s', '2'); // style สำหรับหัวข้อ
-                                        }
-                                        row.appendChild(cell);
+                                        data.forEach(function(text, index) {
+                                            var cell = sheet.createElement('c');
+                                            var t = sheet.createElement('t');
+                                            t.textContent = text;
+                                            cell.appendChild(t);
+                                            if (index === 0) {
+                                                cell.setAttribute('s', '2'); // style สำหรับหัวข้อ
+                                            }
+                                            row.appendChild(cell);
+                                        });
+
+                                        sheet.getElementsByTagName('sheetData')[0].appendChild(row);
                                     });
-
-                                    sheet.getElementsByTagName('sheetData')[0].appendChild(row);
-                                });
+                                },
+                                exportOptions: {
+                                    columns: ':not(:last-child)' // ไม่รวมคอลัมน์ Actions
+                                }
                             },
-                            exportOptions: {
-                                columns: ':not(:last-child)' // ไม่รวมคอลัมน์ Actions
+                            // *** ปุ่ม Print เพิ่มเข้ามาใหม่ ***
+                            {
+                                text: '<i class="fas fa-print"></i> Print',
+                                className: 'btn btn-primary btn-sm',
+                                action: function(e, dt, node, config) {
+                                    // เปิดหน้าต่างใหม่ cost_viewprint.php
+                                    // พร้อมส่ง project_id ที่เข้ารหัสอย่างปลอดภัย
+                                    window.open(
+                                        'cost_viewprint.php?project_id=<?php echo urlencode(encryptUserId($project_id)); ?>',
+                                        '_blank'
+                                    );
+                                }
                             }
-                        }],
+                        ],
                         pageLength: 10,
                         responsive: true,
                         ordering: true,
