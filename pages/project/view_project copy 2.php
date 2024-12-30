@@ -1500,11 +1500,6 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
         }
 
         /* ซ่อนองค์ประกอบที่ไม่ต้องการให้พิมพ์ */
-        .nav-pills,
-        .card-header p-2,
-        .nav.nav-pills,
-        .tab-content>.tab-pane:not(.active),
-        .nav-item,
         .edit-button,
         .btn-sm,
         .btn-info,
@@ -1517,7 +1512,6 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
             display: none !important;
             /* ไม่แสดงปุ่มหรือส่วนที่ไม่จำเป็น */
         }
-
 
         /* การจัดรูปแบบของ info-card และ row */
         .info-card {
