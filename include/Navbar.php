@@ -472,16 +472,16 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                     </li>
                 <?php endif; ?>
 
-                <!-- <?php if ($role != 'Engineer'): ?>
+                <?php if ($role != 'Engineer'): ?>
                     <li class="nav-item">
-                        <a href="<?php echo BASE_URL; ?>pages/setting/suppliers/suppliers.php" class="nav-link <?php if ($menu == "suppliers") {
+                        <a href="<?php echo BASE_URL; ?>pages/setting/employees/employees.php" class="nav-link <?php if ($menu == "employees") {
                                                                                                                     echo "active";
                                                                                                                 } ?>">
-                            <i class="nav-icon fas fa-truck"></i>
-                            <p>Suppliers</p>
+                            <i class="nav-icon fas fa-user"></i>
+                            <p>Employees</p>
                         </a>
                     </li>
-                <?php endif; ?> -->
+                <?php endif; ?>
 
                 <?php if ($role === 'Executive'): ?>
                     <li class="nav-item">
