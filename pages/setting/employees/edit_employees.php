@@ -1,48 +1,12 @@
 <?php
-// เริ่มต้น session และเชื่อมต่อฐานข้อมูล
+// เริ่ม session และเชื่อมต่อฐานข้อมูล
 session_start();
 include('../../../config/condb.php');
 
-// ---------------------------------------------------
-
-// ตรวจสอบว่า User ได้ login แล้วหรือยัง และตรวจสอบ Role
-if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor' && $_SESSION['role'] != 'Seller')) {
-    // ถ้า Role ไม่ใช่ Executive หรือ Sale Supervisor ให้ redirect ไปยังหน้าอื่น เช่น หน้า Dashboard
-    header("Location: " . BASE_URL . "index.php"); // เปลี่ยนเส้นทางไปหน้า Dashboard
-    exit(); // หยุดการทำงานของสคริปต์
-}
-
-// ตรวจสอบการตั้งค่า Session
-if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
-    echo "<script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>";
-    echo "<script>
-            setTimeout(function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'ไม่อนุญาต',
-                    text: 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้',
-                    confirmButtonText: 'ตกลง'
-                }).then(function() {
-                    window.location.href = 'login.php'; // กลับไปยังหน้า 
-                });
-            }, 100);
-          </script>";
-    exit;
-}
-
-// สร้างหรือดึง CSRF Token
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-$csrf_token = $_SESSION['csrf_token'];
-
-// ฟังก์ชันทำความสะอาดข้อมูล input
-function clean_input($data)
-{
-    // ทำความสะอาดข้อมูลแต่ยังคงเก็บอักขระพิเศษไว้
-    $data = trim($data);
-    // ป้องกัน SQL Injection โดยใช้ PDO parameters แทน
-    return $data;
+// ตรวจสอบการเข้าสู่ระบบและสิทธิ์การเข้าถึง
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Executive', 'Sale Supervisor', 'Engineer', 'Seller'])) {
+    header("Location: " . BASE_URL . "index.php");
+    exit();
 }
 
 // ดึงข้อมูลจาก session
@@ -50,7 +14,50 @@ $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];
 $user_id = $_SESSION['user_id'];
 
-// --------------------------------------------------
+// สร้าง CSRF Token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
+
+// ฟังก์ชันทำความสะอาดข้อมูล input
+function clean_input($data) {
+    return trim($data);
+}
+
+// ฟังก์ชันจัดการการอัปโหลดรูปภาพ
+function handleImageUpload($image) {
+    $target_dir = "../../../uploads/employee_images/";
+    
+    // สร้างโฟลเดอร์ถ้ายังไม่มี
+    if (!file_exists($target_dir)) {
+        mkdir($target_dir, 0777, true);
+    }
+    
+    // สร้างชื่อไฟล์ใหม่
+    $extension = pathinfo($image['name'], PATHINFO_EXTENSION);
+    $new_filename = uniqid() . '.' . $extension;
+    $target_file = $target_dir . $new_filename;
+
+    // ตรวจสอบประเภทไฟล์
+    $allowed_types = ['jpg', 'jpeg', 'png'];
+    $file_extension = strtolower($extension);
+    if (!in_array($file_extension, $allowed_types)) {
+        throw new Exception("อนุญาตเฉพาะไฟล์ JPG, JPEG และ PNG เท่านั้น");
+    }
+
+    // ตรวจสอบขนาดไฟล์
+    if ($image['size'] > 2 * 1024 * 1024) {
+        throw new Exception("ขนาดไฟล์ต้องไม่เกิน 2MB");
+    }
+
+    // อัปโหลดไฟล์
+    if (!move_uploaded_file($image['tmp_name'], $target_file)) {
+        throw new Exception("เกิดข้อผิดพลาดในการอัปโหลดไฟล์");
+    }
+
+    return $new_filename;
+}
 
 // ตรวจสอบว่ามีการส่ง ID มาหรือไม่
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -58,8 +65,31 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     exit();
 }
 
-//ถอดรหัส ID ที่ส่งมาจาก URL
+// ถอดรหัส ID
 $employee_id = decryptUserId($_GET['id']);
+
+// ดึงข้อมูลทีมทั้งหมด
+try {
+    $sql_teams = "SELECT team_id, team_name FROM teams ORDER BY team_name";
+    $stmt_teams = $condb->prepare($sql_teams);
+    $stmt_teams->execute();
+    $query_teams = $stmt_teams->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $_SESSION['error'] = "Error fetching teams: " . $e->getMessage();
+}
+
+// ดึงข้อมูลหัวหน้างาน
+try {
+    $sql_supervisors = "SELECT user_id, first_name, last_name 
+                       FROM users 
+                       WHERE role IN ('Executive', 'Sale Supervisor') 
+                       ORDER BY first_name, last_name";
+    $stmt_supervisors = $condb->prepare($sql_supervisors);
+    $stmt_supervisors->execute();
+    $supervisors = $stmt_supervisors->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $_SESSION['error'] = "Error fetching supervisors: " . $e->getMessage();
+}
 
 // ดึงข้อมูลพนักงานที่ต้องการแก้ไข
 try {
@@ -68,7 +98,6 @@ try {
     $employee = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$employee) {
-        // ถ้าไม่พบข้อมูลพนักงาน
         $_SESSION['error'] = "ไม่พบข้อมูลพนักงาน";
         header("Location: employees.php");
         exit();
@@ -79,11 +108,40 @@ try {
     exit();
 }
 
-// เพิ่มการจัดการการอัปเดตข้อมูล
+// ดึงข้อมูลแผนก (ถ้ามี)
+try {
+    $sql_departments = "SELECT DISTINCT department FROM employees WHERE department IS NOT NULL";
+    $stmt_departments = $condb->prepare($sql_departments);
+    $stmt_departments->execute();
+    $departments = $stmt_departments->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $_SESSION['error'] = "Error fetching departments: " . $e->getMessage();
+}
+
+// จัดการการอัปเดตข้อมูล
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // ใส่ Header สำหรับระบุว่าข้อมูลที่ส่งไปเป็น JSON
     header('Content-Type: application/json; charset=utf-8');
+    
     try {
+        $condb->beginTransaction();
+
+        // จัดการอัปโหลดรูปภาพ
+        if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
+            try {
+                $profile_image = handleImageUpload($_FILES['profile_image']);
+                
+                // ลบรูปภาพเก่า
+                if (!empty($employee['profile_image'])) {
+                    $old_image_path = "../../../uploads/employee_images/" . $employee['profile_image'];
+                    if (file_exists($old_image_path)) {
+                        unlink($old_image_path);
+                    }
+                }
+            } catch (Exception $e) {
+                throw new Exception("Image upload error: " . $e->getMessage());
+            }
+        }
+
         // เตรียมข้อมูลสำหรับอัปเดต
         $data = [
             'first_name_th' => $_POST['first_name_th'],
@@ -106,21 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'id' => $employee_id
         ];
 
-        // อัพโหลดรูปภาพใหม่ (ถ้ามี)
-        if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
-            $profile_image = handleImageUpload($_FILES['profile_image']);
-            $data['profile_image'] = $profile_image;
-
-            // ลบรูปภาพเก่า (ถ้ามี)
-            if (!empty($employee['profile_image'])) {
-                $old_image_path = "../../../uploads/employee_images/" . $employee['profile_image'];
-                if (file_exists($old_image_path)) {
-                    unlink($old_image_path);
-                }
-            }
-        }
-
-        // สร้าง SQL query สำหรับอัปเดต
+        // สร้าง SQL query
         $sql = "UPDATE employees SET 
                 first_name_th = :first_name_th,
                 last_name_th = :last_name_th,
@@ -140,29 +184,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 address = :address,
                 hire_date = :hire_date";
 
-        // เพิ่มการอัปเดตรูปภาพถ้ามีการอัปโหลดใหม่
-        if (isset($data['profile_image'])) {
+        // เพิ่มการอัปเดตรูปภาพ
+        if (isset($profile_image)) {
             $sql .= ", profile_image = :profile_image";
+            $data['profile_image'] = $profile_image;
         }
 
         $sql .= " WHERE id = :id";
 
+        // ประมวลผล query
         $stmt = $condb->prepare($sql);
         $stmt->execute($data);
+
+        $condb->commit();
 
         echo json_encode([
             'status' => 'success',
             'message' => 'บันทึกข้อมูลเรียบร้อยแล้ว'
         ], JSON_UNESCAPED_UNICODE);
         exit;
+
     } catch (Exception $e) {
-        header('Content-Type: application/json; charset=utf-8');
+        $condb->rollBack();
         echo json_encode([
             'status' => 'error',
             'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
+}
+
+// ดึงข้อมูลเพิ่มเติมที่จำเป็น (ถ้ามี)
+try {
+    // ดึงข้อมูลทีมปัจจุบันของพนักงาน
+    if (!empty($employee['team_id'])) {
+        $stmt = $condb->prepare("SELECT team_name FROM teams WHERE team_id = ?");
+        $stmt->execute([$employee['team_id']]);
+        $current_team = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // ดึงข้อมูลหัวหน้างานปัจจุบันของพนักงาน
+    if (!empty($employee['supervisor_id'])) {
+        $stmt = $condb->prepare("SELECT first_name, last_name FROM users WHERE user_id = ?");
+        $stmt->execute([$employee['supervisor_id']]);
+        $current_supervisor = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+} catch (PDOException $e) {
+    $_SESSION['error'] = "Error fetching additional data: " . $e->getMessage();
 }
 ?>
 
@@ -315,7 +383,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h3 class="card-title">Employee Information</h3>
                         </div>
                         <div class="card-body">
-                            <form id="addEmployeeForm" action="#" method="POST" enctype="multipart/form-data">
+                            <form id="editEmployeeForm" action="#" method="POST" enctype="multipart/form-data">
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                                 <div class="row">
                                     <!-- ข้อมูลส่วนตัว -->
@@ -403,7 +471,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <select class="form-control select2" name="team_id">
                                                 <option value="">เลือกทีม</option>
                                                 <?php foreach ($query_teams as $team): ?>
-                                                    <option value="<?php echo htmlspecialchars($team['team_id']); ?>">
+                                                    <option value="<?php echo htmlspecialchars($team['team_id']); ?>"
+                                                        <?php echo ($employee['team_id'] == $team['team_id']) ? 'selected' : ''; ?>>
                                                         <?php echo htmlspecialchars($team['team_name']); ?>
                                                     </option>
                                                 <?php endforeach; ?>
@@ -414,7 +483,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <select class="form-control select2" name="supervisor_id">
                                                 <option value="">เลือกหัวหน้างาน</option>
                                                 <?php foreach ($supervisors as $supervisor): ?>
-                                                    <option value="<?php echo htmlspecialchars($supervisor['user_id']); ?>">
+                                                    <option value="<?php echo htmlspecialchars($supervisor['user_id']); ?>"
+                                                        <?php echo ($employee['supervisor_id'] == $supervisor['user_id']) ? 'selected' : ''; ?>>
                                                         <?php echo htmlspecialchars($supervisor['first_name'] . ' ' . $supervisor['last_name']); ?>
                                                     </option>
                                                 <?php endforeach; ?>
@@ -444,7 +514,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <input type="file" class="custom-file-input" name="profile_image" id="profile_image" accept="image/*">
                                                 <label class="custom-file-label">เลือกไฟล์</label>
                                             </div>
-                                            <img id="imgPreview" src="#" alt="Preview" style="max-width: 200px; display: none; margin-top: 10px;">
+                                            <!-- <img id="imgPreview" src="#" alt="Preview" style="max-width: 200px; display: none; margin-top: 10px;"> -->
                                         </div>
                                     </div>
                                 </div>

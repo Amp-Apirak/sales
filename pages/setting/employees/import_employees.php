@@ -85,46 +85,53 @@ try {
 
         $row_num = $index + 3;
 
-        // ตรวจสอบข้อมูลที่จำเป็น
-        if (
-            empty($row[0]) || empty($row[1]) || empty($row[2]) || empty($row[3]) ||
-            empty($row[6]) || empty($row[8]) || empty($row[9]) || empty($row[10]) || empty($row[11])
-        ) {
-            $errors[] = "แถวที่ {$row_num}: กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน";
+        // ตรวจสอบข้อมูลที่จำเป็น (เฉพาะ First Name TH และ Last Name TH)
+        if (empty($row[0]) || empty($row[1])) {
+            $errors[] = "แถวที่ {$row_num}: กรุณากรอกชื่อ-นามสกุลภาษาไทยให้ครบถ้วน";
             continue;
         }
 
-        // ตรวจสอบเพศ
-        if (!in_array($row[6], $valid_genders)) {
+        // ตรวจสอบเพศ (ถ้ามีการกรอก)
+        if (!empty($row[6]) && !in_array($row[6], $valid_genders)) {
             $errors[] = "แถวที่ {$row_num}: เพศไม่ถูกต้อง (ต้องเป็น ชาย, หญิง หรือ อื่นๆ)";
             continue;
         }
 
-        // ตรวจสอบอีเมล
-        if (!filter_var($row[8], FILTER_VALIDATE_EMAIL) || !filter_var($row[9], FILTER_VALIDATE_EMAIL)) {
-            $errors[] = "แถวที่ {$row_num}: รูปแบบอีเมลไม่ถูกต้อง";
+        // ตรวจสอบอีเมล (ถ้ามีการกรอก)
+        if (!empty($row[8]) && !filter_var($row[8], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "แถวที่ {$row_num}: รูปแบบ Personal Email ไม่ถูกต้อง";
+            continue;
+        }
+        if (!empty($row[9]) && !filter_var($row[9], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "แถวที่ {$row_num}: รูปแบบ Company Email ไม่ถูกต้อง";
             continue;
         }
 
-        // ตรวจสอบ Personal Email ซ้ำ
-        if ($duplicate = checkDuplicateValue($condb, 'personal_email', trim($row[8]))) {
-            $errors[] = "แถวที่ {$row_num}: Personal Email '{$row[8]}' ซ้ำกับพนักงาน {$duplicate['first_name_th']} {$duplicate['last_name_th']}";
-            continue;
+        // ตรวจสอบ Personal Email ซ้ำ (ถ้ามีการกรอก)
+        if (!empty($row[8])) {
+            if ($duplicate = checkDuplicateValue($condb, 'personal_email', trim($row[8]))) {
+                $errors[] = "แถวที่ {$row_num}: Personal Email '{$row[8]}' ซ้ำกับพนักงาน {$duplicate['first_name_th']} {$duplicate['last_name_th']}";
+                continue;
+            }
         }
 
-        // ตรวจสอบ Company Email ซ้ำ  
-        if ($duplicate = checkDuplicateValue($condb, 'company_email', trim($row[9]))) {
-            $errors[] = "แถวที่ {$row_num}: Company Email '{$row[9]}' ซ้ำกับพนักงาน {$duplicate['first_name_th']} {$duplicate['last_name_th']}";
-            continue;
+        // ตรวจสอบ Company Email ซ้ำ (ถ้ามีการกรอก)
+        if (!empty($row[9])) {
+            if ($duplicate = checkDuplicateValue($condb, 'company_email', trim($row[9]))) {
+                $errors[] = "แถวที่ {$row_num}: Company Email '{$row[9]}' ซ้ำกับพนักงาน {$duplicate['first_name_th']} {$duplicate['last_name_th']}";
+                continue;
+            }
         }
 
-        // ตรวจสอบเบอร์โทรซ้ำ
-        if ($duplicate = checkDuplicateValue($condb, 'phone', trim($row[10]))) {
-            $errors[] = "แถวที่ {$row_num}: เบอร์โทรศัพท์ '{$row[10]}' ซ้ำกับพนักงาน {$duplicate['first_name_th']} {$duplicate['last_name_th']}";
-            continue;
+        // ตรวจสอบเบอร์โทรซ้ำ (ถ้ามีการกรอก)
+        if (!empty($row[10])) {
+            if ($duplicate = checkDuplicateValue($condb, 'phone', trim($row[10]))) {
+                $errors[] = "แถวที่ {$row_num}: เบอร์โทรศัพท์ '{$row[10]}' ซ้ำกับพนักงาน {$duplicate['first_name_th']} {$duplicate['last_name_th']}";
+                continue;
+            }
         }
 
-        // หา team_id
+        // หา team_id (ถ้ามีการกรอก)
         $team_id = null;
         if (!empty($row[13])) {
             $team_name_lower = strtolower(trim($row[13]));
@@ -136,7 +143,7 @@ try {
             }
         }
 
-        // หา supervisor_id
+        // หา supervisor_id (ถ้ามีการกรอก)
         $supervisor_id = null;
         if (!empty($row[14])) {
             $supervisor_name_lower = strtolower(trim($row[14]));
@@ -154,37 +161,37 @@ try {
             $id = generateUUID();
 
             $stmt = $condb->prepare("
-               INSERT INTO employees (
-                   id, first_name_th, last_name_th, first_name_en, last_name_en,
-                   nickname_th, nickname_en, gender, birth_date, personal_email,
-                   company_email, phone, position, department, team_id,
-                   supervisor_id, address, hire_date, created_by, created_at
-               ) VALUES (
-                   :id, :first_name_th, :last_name_th, :first_name_en, :last_name_en,
-                   :nickname_th, :nickname_en, :gender, :birth_date, :personal_email,
-                   :company_email, :phone, :position, :department, :team_id,
-                   :supervisor_id, :address, :hire_date, :created_by, NOW()
-               )
-           ");
+                INSERT INTO employees (
+                    id, first_name_th, last_name_th, first_name_en, last_name_en,
+                    nickname_th, nickname_en, gender, birth_date, personal_email,
+                    company_email, phone, position, department, team_id,
+                    supervisor_id, address, hire_date, created_by, created_at
+                ) VALUES (
+                    :id, :first_name_th, :last_name_th, :first_name_en, :last_name_en,
+                    :nickname_th, :nickname_en, :gender, :birth_date, :personal_email,
+                    :company_email, :phone, :position, :department, :team_id,
+                    :supervisor_id, :address, :hire_date, :created_by, NOW()
+                )
+            ");
 
             $result = $stmt->execute([
                 ':id' => $id,
                 ':first_name_th' => trim($row[0]),
                 ':last_name_th' => trim($row[1]),
-                ':first_name_en' => trim($row[2]),
-                ':last_name_en' => trim($row[3]),
-                ':nickname_th' => trim($row[4]),
-                ':nickname_en' => trim($row[5]),
-                ':gender' => trim($row[6]),
+                ':first_name_en' => !empty($row[2]) ? trim($row[2]) : null,
+                ':last_name_en' => !empty($row[3]) ? trim($row[3]) : null,
+                ':nickname_th' => !empty($row[4]) ? trim($row[4]) : null,
+                ':nickname_en' => !empty($row[5]) ? trim($row[5]) : null,
+                ':gender' => !empty($row[6]) ? trim($row[6]) : null,
                 ':birth_date' => !empty($row[7]) ? trim($row[7]) : null,
-                ':personal_email' => trim($row[8]),
-                ':company_email' => trim($row[9]),
-                ':phone' => trim($row[10]),
-                ':position' => trim($row[11]),
-                ':department' => trim($row[12]),
+                ':personal_email' => !empty($row[8]) ? trim($row[8]) : null,
+                ':company_email' => !empty($row[9]) ? trim($row[9]) : null,
+                ':phone' => !empty($row[10]) ? trim($row[10]) : null,
+                ':position' => !empty($row[11]) ? trim($row[11]) : null,
+                ':department' => !empty($row[12]) ? trim($row[12]) : null,
                 ':team_id' => $team_id,
                 ':supervisor_id' => $supervisor_id,
-                ':address' => trim($row[15]),
+                ':address' => !empty($row[15]) ? trim($row[15]) : null,
                 ':hire_date' => !empty($row[16]) ? trim($row[16]) : null,
                 ':created_by' => $created_by
             ]);

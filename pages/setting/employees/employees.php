@@ -13,7 +13,7 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSIO
 }
 
 // ตรวจสอบว่า User ได้ login แล้วหรือยัง และตรวจสอบ Role
-if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor' && $_SESSION['role'] != 'Seller')) {
+if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor' && $_SESSION['role'] != 'Engineer'  && $_SESSION['role'] != 'Seller')) {
     // ถ้า Role ไม่ใช่ Executive หรือ Sale Supervisor ให้ redirect ไปยังหน้าอื่น เช่น หน้า Dashboard
     header("Location: " . BASE_URL . "index.php"); // เปลี่ยนเส้นทางไปหน้า Dashboard
     exit(); // หยุดการทำงานของสคริปต์
@@ -268,16 +268,16 @@ $query_employees = $stmt->fetchAll();
                                         <tbody>
                                             <?php foreach ($query_employees as $employee) { ?>
                                                 <tr>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['first_name_th'] . ' ' . $employee['last_name_th']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['first_name_en'] . ' ' . $employee['last_name_en']); ?></td>
+                                                    <td class="text-nowrap "><?php echo htmlspecialchars($employee['first_name_th'] . ' ' . $employee['last_name_th']); ?></td>
+                                                    <td class="text-nowrap "><?php echo htmlspecialchars($employee['first_name_en'] . ' ' . $employee['last_name_en']); ?></td>
                                                     <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['nickname_th']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['nickname_en']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['position']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['team_name']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['supervisor_first_name'] . ' ' . $employee['supervisor_last_name']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['phone']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['personal_email']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['company_email']); ?></td>
+                                                    <td class="text-nowrap text-center"><?php echo !empty($employee['nickname_en']) ? htmlspecialchars($employee['nickname_en']): 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap text-center"><?php echo !empty($employee['position']) ? htmlspecialchars($employee['position']): 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap text-center"><?php echo !empty($employee['team_name']) ? htmlspecialchars($employee['team_name']): 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap text-center"><?php echo !empty($employee['supervisor_first_name']) ? htmlspecialchars($employee['supervisor_first_name'] . ' ' . $employee['supervisor_last_name']): 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap text-center"><?php echo !empty($employee['phone']) ? htmlspecialchars($employee['phone']): 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap text-center"><?php echo !empty($employee['personal_email']) ? htmlspecialchars($employee['personal_email']): 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap text-center"><?php echo !empty($employee['company_email']) ? htmlspecialchars($employee['company_email']): 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['created_at']); ?></td>
                                                     <td class="text-nowrap text-center">
                                                         <a href="view_employees.php?id=<?php echo urlencode(encryptUserId($employee['id'])); ?>" class="btn btn-sm btn-primary">

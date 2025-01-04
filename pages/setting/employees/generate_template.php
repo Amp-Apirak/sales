@@ -32,16 +32,16 @@ $sheet = $spreadsheet->getActiveSheet();
 $headers = [
     'First Name TH*',
     'Last Name TH*',
-    'First Name EN*',
-    'Last Name EN*',
+    'First Name EN',
+    'Last Name EN',
     'Nickname TH',
     'Nickname EN',
-    'Gender*',
+    'Gender',
     'Birth Date',
-    'Personal Email*',
-    'Company Email*',
-    'Phone*',
-    'Position*',
+    'Personal Email',
+    'Company Email',
+    'Phone',
+    'Position',
     'Department',
     'Team',
     'Supervisor',
@@ -66,23 +66,23 @@ $sheet->getStyle('A1:Q1')->applyFromArray([
 
 // ตัวอย่างข้อมูล
 $example = [
-    'สมชาย',
-    'ใจดี',
-    'Somchai',
-    'Jaidee',
-    'ชาย',
-    'Chai',
-    'ชาย',
-    '1990-01-01',
-    'somchai@email.com',
-    'somchai@company.com',
-    '0812345678',
-    'Sale Executive',
-    'Sales',
-    'Innovation_PIT',
-    'John Doe',
-    '123 ถนนสุขุมวิท กรุงเทพ 10110',
-    '2024-01-01'
+    'สมชาย',             // First Name TH*
+    'ใจดี',              // Last Name TH*
+    'Somchai',           // First Name EN
+    'Jaidee',           // Last Name EN
+    'ชาย',              // Nickname TH
+    'Chai',             // Nickname EN
+    'ชาย',              // Gender
+    '1990-01-01',       // Birth Date
+    'somchai@email.com', // Personal Email
+    'somchai@company.com', // Company Email
+    '0812345678',       // Phone
+    'Sale Executive',   // Position
+    'Sales',            // Department
+    'Innovation_PIT',   // Team
+    'John Doe',         // Supervisor
+    '123 ถนนสุขุมวิท กรุงเทพ 10110', // Address
+    '2024-01-01'        // Hire Date
 ];
 $sheet->fromArray([$example], NULL, 'A2');
 
@@ -123,9 +123,10 @@ foreach (range('A', 'Q') as $col) {
 }
 
 // คำอธิบาย
+// คำอธิบาย
 $sheet->insertNewRowBefore(1);
 $sheet->mergeCells('A1:Q1');
-$sheet->setCellValue('A1', 'คำแนะนำ: ช่องที่มีเครื่องหมาย * จำเป็นต้องกรอก, Gender ต้องเลือกจาก (ชาย,หญิง,อื่นๆ), Team และ Supervisor ต้องตรงกับที่มีในระบบ, วันที่ให้กรอกในรูปแบบ YYYY-MM-DD');
+$sheet->setCellValue('A1', 'คำแนะนำ: ช่องที่มีเครื่องหมาย * จำเป็นต้องกรอก (First Name TH และ Last Name TH), Gender ต้องเลือกจาก (ชาย,หญิง,อื่นๆ), Team และ Supervisor ต้องตรงกับที่มีในระบบ, วันที่ให้กรอกในรูปแบบ YYYY-MM-DD');
 $sheet->getStyle('A1')->getAlignment()->setWrapText(true);
 $sheet->getRowDimension(1)->setRowHeight(40);
 
