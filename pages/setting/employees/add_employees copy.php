@@ -14,8 +14,8 @@ $team_id = $_SESSION['team_id'];  // team_id ของผู้ใช้จา�
 $created_by = $_SESSION['user_id'];  // user_id ของผู้สร้างจาก session
 
 // จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
-if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller', 'Engineer'])) {
-    header("Location: index.php");
+if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
+    header("Location: unauthorized.php");
     exit();
 }
 
@@ -43,34 +43,23 @@ function generateUUID()
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
-// ดึงข้อมูลทีมทั้งหมด
-try {
-    $sql_teams = "SELECT team_id, team_name FROM teams ORDER BY team_name";
-    $stmt_teams = $condb->prepare($sql_teams);
-    $stmt_teams->execute();
-    $query_teams = $stmt_teams->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $_SESSION['error'] = "Error fetching teams: " . $e->getMessage();
-}
-
-// ดึงข้อมูลหัวหน้างาน
-try {
-    $sql_supervisors = "SELECT user_id, first_name, last_name 
-                       FROM users 
-                       WHERE role IN ('Executive', 'Sale Supervisor') 
-                       ORDER BY first_name, last_name";
-    $stmt_supervisors = $condb->prepare($sql_supervisors);
-    $stmt_supervisors->execute();
-    $supervisors = $stmt_supervisors->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $_SESSION['error'] = "Error fetching supervisors: " . $e->getMessage();
-}
-
 // ฟังก์ชันตรวจสอบความถูกต้องของเบอร์โทรศัพท์
 function isPhoneValid($phone)
 {
     // ตรวจสอบว่าเบอร์โทรศัพท์มีเฉพาะตัวเลขและมีความยาว 10 หลัก
     return preg_match('/^[0-9]{10}$/', $phone);
+}
+
+// ฟังก์ชันตรวจสอบสิทธิ์การเพิ่มผู้ใช้ตามบทบาท
+function canAddUser($currentUserRole, $newUserRole)
+{
+    $roleHierarchy = [
+        'Executive' => ['Executive', 'Sale Supervisor', 'Seller', 'Engineer'],
+        'Sale Supervisor' => ['Seller', 'Engineer'],
+        'Seller' => [],
+        'Engineer' => []
+    ];
+    return in_array($newUserRole, $roleHierarchy[$currentUserRole] ?? []);
 }
 
 // ฟังก์ชันตรวจสอบข้อมูลซ้ำ
@@ -84,6 +73,20 @@ function checkDuplicateData($condb, $field, $value, $table = 'employees')
     return $result['count'] > 0;
 }
 
+// ดึงข้อมูลทีมจากฐานข้อมูลตามบทบาทของผู้ใช้
+if ($role === 'Sale Supervisor') {
+    // Sale Supervisor จะเห็นเฉพาะทีมของตนเอง
+    $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
+    $stmt_teams = $condb->prepare($sql_teams);
+    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+    $stmt_teams->execute();
+} else {
+    // Executive และผู้ที่มีสิทธิ์สูงกว่า สามารถเห็นทีมทั้งหมด
+    $sql_teams = "SELECT team_id, team_name FROM teams";
+    $stmt_teams = $condb->prepare($sql_teams);
+    $stmt_teams->execute();
+}
+$query_teams = $stmt_teams->fetchAll();
 
 // ตัวแปรเก็บข้อความแจ้งเตือนสำหรับการตรวจสอบข้อมูล
 $error_messages = [];
@@ -106,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':gender' => clean_input($_POST['gender']),
             ':birth_date' => !empty($_POST['birth_date']) ? $_POST['birth_date'] : null,
             ':personal_email' => clean_input($_POST['personal_email']),
-            ':company_email' => !empty($_POST['company_email']) ? clean_input($_POST['company_email']) : null,
+            ':company_email' => clean_input($_POST['company_email']),
             ':phone' => clean_input($_POST['phone']),
             ':position' => clean_input($_POST['position']),
             ':department' => clean_input($_POST['department']),
@@ -157,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ดึงรายชื่อหัวหน้างานที่มีสิทธิ์เป็น supervisor
-$sql_supervisors = "SELECT user_id, first_name, last_name FROM users ";
+$sql_supervisors = "SELECT user_id, first_name, last_name FROM users WHERE role IN ('Executive', 'Sale Supervisor')";
 $stmt_supervisors = $condb->prepare($sql_supervisors);
 $stmt_supervisors->execute();
 $supervisors = $stmt_supervisors->fetchAll();
@@ -368,7 +371,7 @@ function handleImageUpload($file)
                                         </div>
                                         <div class="form-group">
                                             <label>เพศ<span class="text-danger">*</span></label>
-                                            <select class="form-control" name="gender" required>
+                                            <select class="form-control" name="gender">
                                                 <option value="male">ชาย</option>
                                                 <option value="female">หญิง</option>
                                                 <option value="other">อื่นๆ</option>
@@ -385,15 +388,15 @@ function handleImageUpload($file)
                                         <h4>ข้อมูลการติดต่อ</h4>
                                         <div class="form-group">
                                             <label>อีเมลส่วนตัว<span class="text-danger">*</span></label>
-                                            <input type="email" class="form-control" name="personal_email" required>
+                                            <input type="email" class="form-control" name="personal_email">
                                         </div>
                                         <div class="form-group">
-                                            <label>อีเมลบริษัท</label>
+                                            <label>อีเมลบริษัท<span class="text-danger">*</span></label>
                                             <input type="email" class="form-control" name="company_email">
                                         </div>
                                         <div class="form-group">
-                                            <label>เบอร์โทรศัพท์<span class="text-danger">*</span></label>
-                                            <input type="tel" class="form-control" name="phone" required>
+                                            <label>เบอร์โทรศัพท์</label>
+                                            <input type="tel" class="form-control" name="phone">
                                         </div>
                                         <div class="form-group">
                                             <label>ที่อยู่</label>
@@ -528,57 +531,19 @@ function handleImageUpload($file)
 
             // เพิ่มฟังก์ชันตรวจสอบเบอร์โทร
             function validatePhone(phone) {
-                // ลบเครื่องหมาย - ออกก่อนตรวจสอบความยาว
-                const cleanPhone = phone.replace(/-/g, '');
-
                 // ตรวจสอบว่าเป็นตัวเลขเท่านั้นและมีความยาว 10 หลัก
                 const phoneRegex = /^[0-9]{10}$/;
-
-                // ตรวจสอบรูปแบบเบอร์มือถือไทย (เริ่มต้นด้วย 06-09)
+                // ตรวจสอบรูปแบบเบอร์มือถือไทย
                 const thaiMobileRegex = /^0[6-9][0-9]{8}$/;
 
-                if (!phoneRegex.test(cleanPhone)) {
+                if (!phoneRegex.test(phone)) {
                     return 'กรุณากรอกเบอร์โทรเป็นตัวเลข 10 หลัก';
                 }
-                if (!thaiMobileRegex.test(cleanPhone)) {
+                if (!thaiMobileRegex.test(phone)) {
                     return 'กรุณากรอกเบอร์โทรให้ถูกต้องตามรูปแบบเบอร์มือถือไทย';
                 }
                 return null;
             }
-
-            // เพิ่ม event listener สำหรับการตรวจสอบขณะกรอกข้อมูล
-            $('input[name="phone"]').on('input', function(e) {
-                let input = e.target.value;
-
-                // อนุญาตเฉพาะตัวเลขและเครื่องหมาย -
-                let cleaned = input.replace(/[^0-9-]/g, '');
-
-                // จำกัดความยาวรวมไม่เกิน 12 ตัว (10 ตัวเลข + 2 เครื่องหมาย -)
-                if (cleaned.length > 12) {
-                    cleaned = cleaned.substring(0, 12);
-                }
-
-                // จัดรูปแบบอัตโนมัติ xxx-xxx-xxxx
-                if (cleaned.length >= 3 && cleaned.length <= 12) {
-                    let parts = [];
-                    let cleanNumber = cleaned.replace(/-/g, '');
-
-                    if (cleanNumber.length >= 3) {
-                        parts.push(cleanNumber.substring(0, 3));
-                    }
-                    if (cleanNumber.length >= 6) {
-                        parts.push(cleanNumber.substring(3, 6));
-                    }
-                    if (cleanNumber.length > 6) {
-                        parts.push(cleanNumber.substring(6));
-                    }
-
-                    cleaned = parts.join('-');
-                }
-
-                // อัพเดทค่าในช่องกรอก
-                $(this).val(cleaned);
-            });
 
 
             // จัดการการส่งฟอร์ม
@@ -614,12 +579,9 @@ function handleImageUpload($file)
                 }
 
                 // ตรวจสอบอีเมลบริษัทซ้ำ
-                // ตรวจสอบอีเมลบริษัทซ้ำเฉพาะเมื่อมีการกรอกข้อมูล
-                if (companyEmail && companyEmail.length > 0) { // เพิ่มเงื่อนไขตรวจสอบ
-                    const companyEmailCheck = await checkDuplicate('company_email', companyEmail);
-                    if (companyEmailCheck.isDuplicate) {
-                        duplicateErrors.push('อีเมลบริษัทนี้มีในระบบแล้ว');
-                    }
+                const companyEmailCheck = await checkDuplicate('company_email', companyEmail);
+                if (companyEmailCheck.isDuplicate) {
+                    duplicateErrors.push('อีเมลบริษัทนี้มีในระบบแล้ว');
                 }
 
                 // ตรวจสอบเบอร์โทรศัพท์ซ้ำ

@@ -21,21 +21,19 @@ if (empty($_SESSION['csrf_token'])) {
 $csrf_token = $_SESSION['csrf_token'];
 
 // ฟังก์ชันทำความสะอาดข้อมูล input
-function clean_input($data)
-{
+function clean_input($data) {
     return trim($data);
 }
 
 // ฟังก์ชันจัดการการอัปโหลดรูปภาพ
-function handleImageUpload($image)
-{
+function handleImageUpload($image) {
     $target_dir = "../../../uploads/employee_images/";
-
+    
     // สร้างโฟลเดอร์ถ้ายังไม่มี
     if (!file_exists($target_dir)) {
         mkdir($target_dir, 0777, true);
     }
-
+    
     // สร้างชื่อไฟล์ใหม่
     $extension = pathinfo($image['name'], PATHINFO_EXTENSION);
     $new_filename = uniqid() . '.' . $extension;
@@ -123,7 +121,7 @@ try {
 // จัดการการอัปเดตข้อมูล
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=utf-8');
-
+    
     try {
         $condb->beginTransaction();
 
@@ -131,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
             try {
                 $profile_image = handleImageUpload($_FILES['profile_image']);
-
+                
                 // ลบรูปภาพเก่า
                 if (!empty($employee['profile_image'])) {
                     $old_image_path = "../../../uploads/employee_images/" . $employee['profile_image'];
@@ -155,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'gender' => $_POST['gender'],
             'birth_date' => !empty($_POST['birth_date']) ? $_POST['birth_date'] : null,
             'personal_email' => $_POST['personal_email'],
-            'company_email' => !empty($_POST['company_email']) ? $_POST['company_email'] : null,
+            'company_email' => $_POST['company_email'],
             'phone' => $_POST['phone'],
             'position' => $_POST['position'],
             'department' => $_POST['department'],
@@ -205,6 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'message' => 'บันทึกข้อมูลเรียบร้อยแล้ว'
         ], JSON_UNESCAPED_UNICODE);
         exit;
+
     } catch (Exception $e) {
         $condb->rollBack();
         echo json_encode([
@@ -436,7 +435,7 @@ try {
                                             <input type="email" class="form-control" name="personal_email" value="<?php echo htmlspecialchars($employee['personal_email']); ?>">
                                         </div>
                                         <div class="form-group">
-                                            <label>อีเมลบริษัท</label>
+                                            <label>อีเมลบริษัท<span class="text-danger">*</span></label>
                                             <input type="email" class="form-control" name="company_email" value="<?php echo htmlspecialchars($employee['company_email']); ?>">
                                         </div>
                                         <div class="form-group">
@@ -697,9 +696,7 @@ try {
                 'first_name_en': 'First Name',
                 'last_name_en': 'Last Name',
                 'personal_email': 'อีเมลส่วนตัว',
-                'phone': 'เบอร์โทรศัพท์',
-                'gender': 'เพศ'
-
+                'company_email': 'อีเมลบริษัท'
             };
 
             const errors = [];
@@ -722,59 +719,13 @@ try {
             });
 
             // ตรวจสอบเบอร์โทรศัพท์
-            // เพิ่มฟังก์ชันตรวจสอบเบอร์โทร
-            function validatePhone(phone) {
-                // ลบเครื่องหมาย - ออกก่อนตรวจสอบความยาว
-                const cleanPhone = phone.replace(/-/g, '');
-
-                // ตรวจสอบว่าเป็นตัวเลขเท่านั้นและมีความยาว 10 หลัก
+            const phone = $('[name="phone"]').val()?.trim();
+            if (phone) {
                 const phoneRegex = /^[0-9]{10}$/;
-
-                // ตรวจสอบรูปแบบเบอร์มือถือไทย (เริ่มต้นด้วย 06-09)
-                const thaiMobileRegex = /^0[6-9][0-9]{8}$/;
-
-                if (!phoneRegex.test(cleanPhone)) {
-                    return 'กรุณากรอกเบอร์โทรเป็นตัวเลข 10 หลัก';
+                if (!phoneRegex.test(phone)) {
+                    errors.push('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)');
                 }
-                if (!thaiMobileRegex.test(cleanPhone)) {
-                    return 'กรุณากรอกเบอร์โทรให้ถูกต้องตามรูปแบบเบอร์มือถือไทย';
-                }
-                return null;
             }
-
-            // เพิ่ม event listener สำหรับการตรวจสอบขณะกรอกข้อมูล
-            $('input[name="phone"]').on('input', function(e) {
-                let input = e.target.value;
-
-                // อนุญาตเฉพาะตัวเลขและเครื่องหมาย -
-                let cleaned = input.replace(/[^0-9-]/g, '');
-
-                // จำกัดความยาวรวมไม่เกิน 12 ตัว (10 ตัวเลข + 2 เครื่องหมาย -)
-                if (cleaned.length > 12) {
-                    cleaned = cleaned.substring(0, 12);
-                }
-
-                // จัดรูปแบบอัตโนมัติ xxx-xxx-xxxx
-                if (cleaned.length >= 3 && cleaned.length <= 12) {
-                    let parts = [];
-                    let cleanNumber = cleaned.replace(/-/g, '');
-
-                    if (cleanNumber.length >= 3) {
-                        parts.push(cleanNumber.substring(0, 3));
-                    }
-                    if (cleanNumber.length >= 6) {
-                        parts.push(cleanNumber.substring(3, 6));
-                    }
-                    if (cleanNumber.length > 6) {
-                        parts.push(cleanNumber.substring(6));
-                    }
-
-                    cleaned = parts.join('-');
-                }
-
-                // อัพเดทค่าในช่องกรอก
-                $(this).val(cleaned);
-            });
 
             if (errors.length > 0) {
                 Swal.fire({
