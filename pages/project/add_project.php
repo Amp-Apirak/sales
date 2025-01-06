@@ -214,11 +214,11 @@ if ($role == 'Executive') {
     $customer_query .= " ORDER BY c.customer_name";
 } elseif ($role == 'Sale Supervisor') {
     $customer_query .= " INNER JOIN users u ON c.created_by = u.user_id
-                         WHERE u.team_id = :team_id
-                         ORDER BY c.customer_name";
+                       WHERE u.team_id = :team_id
+                       ORDER BY c.customer_name";
 } else {
     $customer_query .= " WHERE c.created_by = :user_id
-                         ORDER BY c.customer_name";
+                       ORDER BY c.customer_name";
 }
 
 $stmt = $condb->prepare($customer_query);
@@ -231,19 +231,21 @@ $stmt->execute();
 $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-// ฟังก์ชันดึงข้อมูลบริษัท
+// ฟังก์ชันดึงข้อมูลบริษัท// แก้ไขฟังก์ชัน getCompanyData โดยระบุชื่อตารางและ alias ให้ชัดเจน
 function getCompanyData($condb, $role, $team_id, $user_id)
 {
-    $query = "SELECT DISTINCT company, address, office_phone FROM customers";
+    $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
+             FROM customers c"; // เพิ่ม alias 'c' ให้กับตาราง customers
 
     // เงื่อนไขตาม Role
     if ($role == 'Sale Supervisor') {
-        $query .= " INNER JOIN users ON customers.created_by = users.user_id WHERE users.team_id = :team_id";
+        $query .= " INNER JOIN users u ON c.created_by = u.user_id 
+                   WHERE u.team_id = :team_id";
     } elseif ($role == 'Seller') {
-        $query .= " WHERE customers.created_by = :user_id";
+        $query .= " WHERE c.created_by = :user_id";
     }
 
-    $query .= " ORDER BY company ASC";
+    $query .= " ORDER BY c.company ASC";
     $stmt = $condb->prepare($query);
 
     if ($role == 'Sale Supervisor') {
@@ -252,8 +254,13 @@ function getCompanyData($condb, $role, $team_id, $user_id)
         $stmt->bindParam(':user_id', $user_id);
     }
 
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error in getCompanyData: " . $e->getMessage());
+        return array(); // ส่งคืนอาร์เรย์ว่างในกรณีที่มีข้อผิดพลาด
+    }
 }
 
 // ดึงข้อมูลบริษัท
@@ -474,7 +481,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>กำไรขั้นต้น/คิดเป็น %</label>
-                                                        <input type="int" name="potential" class="form-control" id="potential"  readonly style="background-color:#F8F8FF">
+                                                        <input type="int" name="potential" class="form-control" id="potential" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                             </div>
