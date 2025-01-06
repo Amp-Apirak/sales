@@ -7,6 +7,18 @@ $role = $_SESSION['role'] ?? '';
 $team_id = $_SESSION['team_id'] ?? 0;
 $created_by = $_SESSION['user_id'] ?? 0;
 
+// ฟังก์ชันสำหรับจัดการกับปี
+function getProjectYear($salesDate, $createdAt)
+{
+    if (!empty($salesDate)) {
+        return date('Y', strtotime($salesDate));
+    }
+    if (!empty($createdAt)) {
+        return date('Y', strtotime($createdAt));
+    }
+    return date('Y');
+}
+
 // ฟังก์ชันทำความสะอาดข้อมูล input
 function clean_input($data)
 {
@@ -52,8 +64,34 @@ $products = getDropdownData($condb, "SELECT DISTINCT p.product_id, pr.product_na
 $statuses = getDropdownData($condb, "SELECT DISTINCT status FROM projects p $where_clause_dropdown", $params_dropdown);
 $creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name FROM users u INNER JOIN projects p ON u.user_id = p.created_by $where_clause_dropdown ORDER BY u.first_name, u.last_name", $params_dropdown);
 $customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_name FROM customers c INNER JOIN projects p ON c.customer_id = p.customer_id $where_clause_dropdown", $params_dropdown);
+
 // ปรับปรุงการดึงข้อมูลปีจาก sales_date
-$years = getDropdownData($condb, "SELECT DISTINCT YEAR(sales_date) AS year FROM projects p $where_clause_dropdown ORDER BY year DESC", $params_dropdown);
+$years_sql = "
+    SELECT DISTINCT 
+        CASE 
+            WHEN p.sales_date IS NOT NULL AND YEAR(p.sales_date) != 0 THEN YEAR(p.sales_date)
+            WHEN p.created_at IS NOT NULL THEN YEAR(p.created_at)
+            ELSE YEAR(CURRENT_DATE)
+        END AS year 
+    FROM projects p 
+    $where_clause_dropdown 
+    HAVING year IS NOT NULL AND year != 0 
+    ORDER BY year DESC
+";
+$years = getDropdownData($condb, $years_sql, $params_dropdown);
+
+// เพิ่มปีปัจจุบันถ้าไม่มีในรายการ
+$current_year = date('Y');
+$has_current_year = false;
+foreach ($years as $year) {
+    if ($year['year'] == $current_year) {
+        $has_current_year = true;
+        break;
+    }
+}
+if (!$has_current_year) {
+    array_unshift($years, ['year' => $current_year]);
+}
 
 // Team Dropdown (เฉพาะ Executive หรือ Sale Supervisor)
 if ($role == 'Executive' || $role == 'Sale Supervisor') {
@@ -98,16 +136,37 @@ if (!empty($search_customer)) {
     $where_clause .= " AND p.customer_id = :search_customer";
     $params[':search_customer'] = $search_customer;
 }
+
+
+
 if (!empty($search_year)) {
-    $where_clause .= " AND YEAR(p.sales_date) = :search_year";
+    $where_clause .= " AND (
+        (YEAR(p.sales_date) = :search_year AND p.sales_date IS NOT NULL) OR 
+        (YEAR(p.created_at) = :search_year AND p.sales_date IS NULL)
+    )";
     $params[':search_year'] = $search_year;
 }
 
 // SQL query สำหรับดึงข้อมูลโปรเจกต์
 $sql_projects = "
-    SELECT p.*, u.first_name, u.last_name, c.customer_name, c.company, c.address, c.phone, c.email, t.team_name, pr.product_name,
-           seller.first_name AS seller_first_name, seller.last_name AS seller_last_name,
-           YEAR(p.sales_date) AS sales_year
+    SELECT 
+        p.*, 
+        u.first_name, 
+        u.last_name, 
+        c.customer_name, 
+        c.company, 
+        c.address, 
+        c.phone, 
+        c.email, 
+        t.team_name, 
+        pr.product_name,
+        seller.first_name AS seller_first_name, 
+        seller.last_name AS seller_last_name,
+        CASE 
+            WHEN p.sales_date IS NOT NULL THEN YEAR(p.sales_date)
+            WHEN p.created_at IS NOT NULL THEN YEAR(p.created_at)
+            ELSE YEAR(CURRENT_DATE)
+        END AS calculated_year
     FROM projects p
     LEFT JOIN customers c ON p.customer_id = c.customer_id
     LEFT JOIN users u ON p.created_by = u.user_id
@@ -155,6 +214,7 @@ function displayData($data, $format = null)
     }
     return 'ไม่ระบุข้อมูล';
 }
+
 
 // ฟังก์ชันคำนวณข้อมูลสำหรับการ์ด
 function calculateProjectMetrics($projects, $search_params = [])
@@ -579,8 +639,13 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                                 <select class="custom-select select2" name="year">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($years as $year) : ?>
-                                                                        <option value="<?php echo htmlspecialchars($year['year']); ?>" <?php echo ($search_year == $year['year']) ? 'selected' : ''; ?>>
-                                                                            <?php echo htmlspecialchars($year['year']); ?>
+                                                                        <?php
+                                                                        // ตรวจสอบค่าปีว่าเป็น 0 หรือ null หรือไม่
+                                                                        $yearValue = !empty($year['year']) ? $year['year'] : date('Y');
+                                                                        ?>
+                                                                        <option value="<?php echo htmlspecialchars($yearValue); ?>"
+                                                                            <?php echo ($search_year == $yearValue) ? 'selected' : ''; ?>>
+                                                                            <?php echo htmlspecialchars($yearValue); ?>
                                                                         </option>
                                                                     <?php endforeach; ?>
                                                                 </select>
