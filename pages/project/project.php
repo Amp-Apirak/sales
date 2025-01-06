@@ -171,12 +171,19 @@ $sql_projects = "
     LEFT JOIN products pr ON p.product_id = pr.product_id
     LEFT JOIN users seller ON p.seller = seller.user_id
     $where_clause
-    ORDER BY STR_TO_DATE(p.created_at, '%Y-%m-%d %H:%i:%s') DESC, p.project_id DESC
+    ORDER BY p.created_at DESC, p.project_id DESC;
 ";
+
 
 $stmt_projects = $condb->prepare($sql_projects);
 $stmt_projects->execute($params);
 $projects = $stmt_projects->fetchAll(PDO::FETCH_ASSOC);
+
+// // Debug: ตรวจสอบคำสั่ง SQL และพารามิเตอร์
+// echo "<pre>";
+// print_r($stmt_projects->queryString);
+// print_r($params);
+// echo "</pre>";
 
 // ฟังก์ชันสำหรับตัดข้อความให้สั้นลงและเพิ่ม ...
 function truncateText($text, $length = 100)
@@ -823,8 +830,10 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                 "scrollX": true,
                 "scrollCollapse": true,
                 "paging": true,
+                "order": [
+                    [1, "desc"]
+                ], // ปรับให้เรียงตามคอลัมน์ที่ 2 (Create Date) จากล่าสุดไปเก่าสุด
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
-
                 "fixedColumns": {
                     leftColumns: 2 // ตรึง 2 คอลัมน์ซ้าย
                 }
