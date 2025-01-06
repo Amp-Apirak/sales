@@ -395,29 +395,38 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                                             <div class="info-item">
                                                                 <span class="info-label text-success">จำนวนเงินที่ชำระแล้ว:</span>
                                                                 <span class="info-value text-success"><?php
-                                                                                                        // คำนวณจำนวนงวดที่ชำระแล้ว
+                                                                                                        // คำนวณจำนวนงวดที่ชำระแล้วและจำนวนงวดทั้งหมด
                                                                                                         $paidInstallments = 0;
-                                                                                                        $totalInstallments = count($payments); // จำนวนงวดทั้งหมด
+                                                                                                        $totalInstallments = count($payments);
+                                                                                                        $total_paid = 0;
+
                                                                                                         foreach ($payments as $payment) {
                                                                                                             if ($payment['status'] == 'Paid') {
                                                                                                                 $paidInstallments++;
+                                                                                                                $total_paid += $payment['amount'];
                                                                                                             }
                                                                                                         }
 
-                                                                                                        // คำนวณยอดเงินที่ชำระแล้วทั้งหมด
-                                                                                                        $total_paid = array_sum(array_column($payments, 'amount_paid'));
+                                                                                                        // แสดงผลจำนวนเงินที่ชำระแล้วและจำนวนงวด
                                                                                                         echo number_format($total_paid, 2);
-                                                                                                        ?> บาท (<?php echo $paidInstallments; ?>/<?php echo $totalInstallments; ?> งวด)</span>
+                                                                                                        ?> บาท (<?php echo $paidInstallments; ?>/<?php echo $totalInstallments; ?> งวด)
+                                                                </span>
                                                             </div>
-
-
                                                         </div>
                                                         <div class="col-md-4">
                                                             <div class="info-item">
                                                                 <span class="info-label text-danger">(%)ที่ยังไม่ได้แบ่งชำระ:</span>
                                                                 <span class="info-value text-danger"><?php
-                                                                                                        $remaining_percentage = 100 - $total_percentage_scheduled;
-                                                                                                        echo number_format($remaining_percentage, 2);
+                                                                                                        $pending_percentage = 0;
+
+                                                                                                        // หาผลรวมเปอร์เซ็นต์ที่ยังไม่ชำระ (Pending)
+                                                                                                        foreach ($payments as $payment) {
+                                                                                                            if ($payment['status'] == 'Pending') {
+                                                                                                                $pending_percentage += floatval($payment['payment_percentage']);
+                                                                                                            }
+                                                                                                        }
+
+                                                                                                        echo number_format($pending_percentage, 2);
                                                                                                         ?>%</span>
                                                             </div>
                                                         </div>
@@ -781,18 +790,17 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
 
     // ฟังก์ชันสำหรับคำนวณจำนวนเงินจากเปอร์เซ็นต์
     function calculateAmountFromPercentage() {
-        const percentage = parseFormattedNumber(document.getElementById('paymentPercentage').value);
+        const percentage = parseFloat($('#paymentPercentage').val().replace(/,/g, '')) || 0;
         const amount = (percentage / 100) * totalSaleAmount;
-        document.getElementById('amount').value = formatNumber(amount);
-        updateAmountPaid();
+        $('#amount').val(formatNumber(amount.toFixed(2)));
     }
+
 
     // ฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์จากจำนวนเงิน
     function calculatePercentageFromAmount() {
-        const amount = parseFormattedNumber(document.getElementById('amount').value);
+        const amount = parseFloat($('#amount').val().replace(/,/g, '')) || 0;
         const percentage = (amount / totalSaleAmount) * 100;
-        document.getElementById('paymentPercentage').value = formatNumber(percentage, 2);
-        updateAmountPaid();
+        $('#paymentPercentage').val(percentage.toFixed(2));
     }
 
     // ฟังก์ชันสำหรับอัปเดตจำนวนเงินที่ชำระแล้วตามสถานะการชำระเงิน
@@ -822,20 +830,13 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
             document.getElementById('paymentModalLabel').textContent = 'แก้ไขการชำระเงิน';
             document.getElementById('paymentId').value = payment.payment_id;
             document.getElementById('paymentNumber').value = payment.payment_number;
-            document.getElementById('paymentPercentage').value = formatNumber((payment.amount / totalSaleAmount) * 100);
+            document.getElementById('paymentPercentage').value = formatNumber(payment.payment_percentage);
             document.getElementById('amount').value = formatNumber(payment.amount);
             document.getElementById('dueDate').value = payment.due_date;
             document.getElementById('status').value = payment.status;
             document.getElementById('paymentDate').value = payment.payment_date || '';
             document.getElementById('amountPaid').value = formatNumber(payment.amount_paid);
             $('#paymentModal').modal('show');
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'ไม่พบข้อมูล',
-                text: 'ไม่พบข้อมูลการชำระเงินที่ต้องการแก้ไข',
-                confirmButtonText: 'ตกลง'
-            });
         }
     }
 
@@ -975,6 +976,19 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
         setupNumberInput('paymentPercentage');
         setupNumberInput('amount');
         document.getElementById('status').addEventListener('change', updateAmountPaid);
+        // ฟังก์ชันจัดการการป้อนข้อมูลเปอร์เซ็นต์
+        document.getElementById('paymentPercentage').addEventListener('input', calculateAmountFromPercentage);
+        // ฟังก์ชันจัดการการป้อนจำนวนเงิน  
+        document.getElementById('amount').addEventListener('input', calculatePercentageFromAmount);
+    });
+
+    // Event Listeners
+    $('#paymentPercentage').on('input', function() {
+        calculateAmountFromPercentage();
+    });
+
+    $('#amount').on('input', function() {
+        calculatePercentageFromAmount();
     });
 </script>
 <!-- 1. Modal สำหรับเพิ่ม/แก้ไขการชำระเงิน -->
