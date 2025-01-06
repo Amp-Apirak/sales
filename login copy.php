@@ -178,30 +178,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .animate-fade-in {
             animation: fadeIn 0.5s ease-out;
         }
-
-        /* แก้ไข input-group-text ให้เส้นขอบและสีชัดเจน */
-        .input-group .input-group-text:last-child {
-            border-top-right-radius: 25px;
-            border-bottom-right-radius: 25px;
-            border-left: 0;
-            background-color: #ffffff;
-            /* เพิ่มพื้นหลังสีขาว */
-            border: 1px solid #ced4da;
-            /* เพิ่มสีเส้นขอบให้ชัดเจน */
-        }
-
-        /* แก้ไข form-control เพื่อให้เส้นขอบสม่ำเสมอ */
-        .input-group .form-control {
-            border: 1px solid #ced4da;
-            /* กำหนดสีเส้นขอบ */
-            border-top-left-radius: 25px;
-            border-bottom-left-radius: 25px;
-            background-color: #ffffff;
-            /* เพิ่มพื้นหลังสีขาว */
-        }
-
-        /* ปรับเส้นขอบของฟิลด์ input ทั้งหมดในกรณี focus */
-        .input-group .form-con
     </style>
 </head>
 
@@ -234,13 +210,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="mb-4">
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
-                                <span class="input-group-text" id="togglePassword">
-                                    <i class="fas fa-eye" id="toggleIcon"></i>
-                                </span>
+                                <input type="password" class="form-control" name="password" placeholder="Password" required>
                             </div>
                         </div>
-
                         <!-- ปุ่ม Login -->
                         <div class="d-grid">
                             <button type="submit" class="btn btn-theme btn-block">Login</button>
@@ -264,41 +236,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 confirmButtonText: 'Try Again'
             });
         <?php endif; ?>
-    </script>
-
-    <!-- JavaScript สำหรับจัดการการแสดง/ซ่อนรหัสผ่านและจดจำ username -->
-    <script>
-        // จัดการการแสดง/ซ่อนรหัสผ่าน
-        document.getElementById('togglePassword').addEventListener('click', function() {
-            const passwordInput = document.getElementById('password');
-            const toggleIcon = document.getElementById('toggleIcon');
-
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.classList.remove('fa-eye');
-                toggleIcon.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.classList.remove('fa-eye-slash');
-                toggleIcon.classList.add('fa-eye');
-            }
-        });
-
-
-
-        // จดจำ username ที่กรอก
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedUsername = localStorage.getItem('rememberedUsername');
-            if (savedUsername) {
-                document.querySelector('input[name="username"]').value = savedUsername;
-            }
-        });
-
-        // บันทึก username เมื่อ submit form
-        document.querySelector('form').addEventListener('submit', function() {
-            const username = document.querySelector('input[name="username"]').value;
-            localStorage.setItem('rememberedUsername', username);
-        });
     </script>
 </body>
 
