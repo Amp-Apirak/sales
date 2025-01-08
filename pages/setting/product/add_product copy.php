@@ -48,10 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // รับข้อมูลจากฟอร์มและล้างข้อมูลด้วย htmlspecialchars เพื่อป้องกัน XSS
     $product_name = clean_input($_POST['product_name']);
     $product_description = clean_input($_POST['product_description']);
-    $unit = clean_input($_POST['unit']);
-    $cost_price = !empty($_POST['cost_price']) ? floatval($_POST['cost_price']) : NULL;
-    $selling_price = !empty($_POST['selling_price']) ? floatval($_POST['selling_price']) : NULL;
-    $supplier_id = !empty($_POST['supplier_id']) ? $_POST['supplier_id'] : NULL;
 
     // ตรวจสอบว่ามีชื่อสินค้าที่ซ้ำหรือไม่
     $checkproduct_sql = "SELECT * FROM products WHERE product_name = :product_name ";
@@ -120,36 +116,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
-            $sql = "INSERT INTO products (
-                product_id, 
-                product_name, 
-                product_description, 
-                unit,
-                cost_price,
-                selling_price,
-                supplier_id,
-                main_image, 
-                created_by
-            ) VALUES (
-                :product_id, 
-                :product_name, 
-                :product_description,
-                :unit,
-                :cost_price,
-                :selling_price,
-                :supplier_id,
-                :main_image, 
-                :created_by
-            )";
-
+            $sql = "INSERT INTO products (product_id, product_name, product_description, main_image, created_by) 
+                    VALUES (:product_id, :product_name, :product_description, :main_image, :created_by)";
             $stmt = $condb->prepare($sql);
             $stmt->bindParam(':product_id', $product_id, PDO::PARAM_STR);
             $stmt->bindParam(':product_name', $product_name, PDO::PARAM_STR);
             $stmt->bindParam(':product_description', $product_description, PDO::PARAM_STR);
-            $stmt->bindParam(':unit', $unit, PDO::PARAM_STR);
-            $stmt->bindParam(':cost_price', $cost_price, PDO::PARAM_STR);
-            $stmt->bindParam(':selling_price', $selling_price, PDO::PARAM_STR);
-            $stmt->bindParam(':supplier_id', $supplier_id, PDO::PARAM_STR);
             $stmt->bindParam(':main_image', $main_image, PDO::PARAM_STR);
             $stmt->bindParam(':created_by', $created_by, PDO::PARAM_STR);
             $stmt->execute();
@@ -174,7 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 ?>
-
 
 <div class="modal fade" id="addbtn">
     <div class="modal-dialog addbtn">
@@ -209,44 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label for="product_description">Description</label>
                             <textarea class="form-control" name="product_description" id="product_description" rows="4" placeholder="Description"></textarea>
                         </div>
-
-                        <!-- เพิ่มฟิลด์ใหม่ในฟอร์ม หลังจาก product_description -->
-                        <div class="form-group">
-                            <label for="unit">หน่วยนับ</label>
-                            <input type="text" name="unit" class="form-control" id="unit" placeholder="เช่น ชิ้น, อัน, ชุด">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="cost_price">ราคาต้นทุน</label>
-                            <input type="number" step="0.01" name="cost_price" class="form-control" id="cost_price">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="selling_price">ราคาขาย</label>
-                            <input type="number" step="0.01" name="selling_price" class="form-control" id="selling_price">
-                        </div>
-
-                        <div class="form-group ">
-                            <label for="supplier_id">ผู้จำหน่าย</label>
-                            <select name="supplier_id" class="form-control select2" id="supplier_id">
-                                <option value="">เลือกผู้จำหน่าย</option>
-                                <?php
-                                // เพิ่มโค้ดดึงข้อมูลผู้จำหน่าย
-                                $supplier_sql = "SELECT supplier_id, supplier_name, company FROM suppliers ORDER BY supplier_name";
-                                $supplier_stmt = $condb->prepare($supplier_sql);
-                                $supplier_stmt->execute();
-                                $suppliers = $supplier_stmt->fetchAll();
-                                foreach ($suppliers as $supplier) {
-                                    echo '<option value="' . $supplier['supplier_id'] . '">' .
-                                        htmlspecialchars($supplier['supplier_name']) .
-                                        ' (' . htmlspecialchars($supplier['company']) . ')</option>';
-                                }
-                                ?>
-                            </select>
-                        </div>
                     </div>
-
-
 
                     <div class="modal-footer justify-content-between">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -293,22 +227,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         margin-top: 10px;
     }
 </style>
-
-
-<script>
-    // เพิ่มฟังก์ชันคำนวณกำไรขั้นต้น
-    function calculateProfit() {
-        var costPrice = parseFloat($('#cost_price').val()) || 0;
-        var sellingPrice = parseFloat($('#selling_price').val()) || 0;
-        var profit = sellingPrice - costPrice;
-        var profitPercentage = costPrice > 0 ? (profit / costPrice * 100) : 0;
-
-        $('#profit_display').html(
-            'กำไรขั้นต้น: ' + profit.toFixed(2) + ' บาท (' +
-            profitPercentage.toFixed(2) + '%)'
-        );
-    }
-
-    // เรียกใช้ฟังก์ชันเมื่อมีการเปลี่ยนแปลงราคา
-    $('#cost_price, #selling_price').on('input', calculateProfit);
-</script>

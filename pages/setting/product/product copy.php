@@ -28,15 +28,10 @@ $user_id = $_SESSION['user_id'];
 $search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) : '';
 
 // Query พื้นฐานในการดึงข้อมูลสินค้า
-$sql_products = "SELECT p.*, 
-                        u.first_name AS creator_first_name, 
-                        u.last_name AS creator_last_name,
-                        s.supplier_name,
-                        s.company AS supplier_company
-                 FROM products p 
-                 LEFT JOIN users u ON p.created_by = u.user_id 
-                 LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
-                 WHERE 1=1";
+$sql_products = "SELECT p.*, u.first_name AS creator_first_name, u.last_name AS creator_last_name 
+                FROM products p 
+                LEFT JOIN users u ON p.created_by = u.user_id 
+                WHERE 1=1";
 
 // เพิ่มเงื่อนไขการค้นหาตามที่ผู้ใช้กรอกมา
 if (!empty($search_service)) {
@@ -341,26 +336,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="product-meta">
                                                             <strong>Created Date:</strong> <?php echo date('F j, Y', strtotime($product['created_at'])); ?>
                                                         </div>
-                                                        <div class="product-meta">
-                                                            <strong>หน่วยนับ:</strong> <?php echo htmlspecialchars($product['unit'] ?: '-'); ?>
-                                                        </div>
-                                                        <?php if ($role != 'Engineer'): // ตรวจสอบสิทธิ์ก่อนแสดงข้อมูลการเงิน 
-                                                        ?>
-                                                            <div class="product-meta">
-                                                                <strong>ราคาต้นทุน:</strong> <?php echo number_format($product['cost_price'], 2); ?> บาท
-                                                            </div>
-                                                            <div class="product-meta">
-                                                                <strong>ราคาขาย:</strong> <?php echo number_format($product['selling_price'], 2); ?> บาท
-                                                            </div>
-                                                        <?php endif; ?>
-                                                        <div class="product-meta">
-                                                            <strong>ผู้จำหน่าย:</strong>
-                                                            <?php
-                                                            echo htmlspecialchars($product['supplier_name'] ?
-                                                                $product['supplier_name'] . ' (' . $product['supplier_company'] . ')' :
-                                                                '-');
-                                                            ?>
-                                                        </div>
                                                         <div class="btn-action-group">
                                                             <a href="view_product.php?id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>"
                                                                 class="btn btn-sm btn-outline-primary">
@@ -390,13 +365,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php include('../../../include/footer.php'); ?>
     </div>
     <!-- ./wrapper -->
-
-    <!-- JS for Dropdown Select2 -->
-    <script>
-        $(function() {
-            $('.select2').select2();
-        });
-    </script>
 
 
     <!-- DataTables -->

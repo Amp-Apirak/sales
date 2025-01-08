@@ -130,26 +130,10 @@ if (!$product) {
                                 <p><?php echo htmlspecialchars($product['product_description']); ?></p>
 
                                 <hr>
-                                <h4>Customer</h4>
+                                <h4>Price</h4>
                                 <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                                    <label class="btn btn-default text-center active">
-                                        <input type="radio" name="color_option" id="color_option_a1" autocomplete="off" checked>
-                                        แสดงรูป Logo หรือ องค์กรของลูกค้า
-                                        <br>
-                                        <i class="fas fa-circle fa-2x text-green"></i>
-                                    </label>
+
                                 </div>
-
-
-                                <div class="bg-gray py-2 px-3 mt-4">
-                                    <h2 class="mb-0">
-                                        $00.00
-                                    </h2>
-                                    <h4 class="mt-0">
-                                        <small>Ex Tax: $00.00 </small>
-                                    </h4>
-                                </div>
-
                             </div>
                         </div>
                         <div class="row mt-4">
