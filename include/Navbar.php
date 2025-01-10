@@ -448,17 +448,18 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                         </p>
                     </a>
                 </li> -->
-                <!-- <li class="nav-item">
-                    <a href="<?php echo BASE_URL; ?>pages/inventory/inventory.php" class="nav-link <?php if ($menu == "inventory") {
-                                                                                                        echo "active";
-                                                                                                    } ?> ">
+
+                <li class="nav-header text-primary">Setting</li>
+                <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>pages/setting/suppliers/supplier.php" class="nav-link <?php if ($menu == "supplier") {
+                                                                                                                echo "active";
+                                                                                                            } ?> ">
                         <i class="nav-icon fas fa-desktop"></i>
                         <p>
-                            Inventory
+                            Supplier
                         </p>
                     </a>
-                </li> -->
-                <li class="nav-header text-primary">Setting</li>
+                </li>
                 <?php if ($role != 'Engineer'): ?>
                     <li class="nav-item">
                         <a href="<?php echo BASE_URL; ?>pages/setting/product/product.php" class="nav-link <?php if ($menu == "product") {
