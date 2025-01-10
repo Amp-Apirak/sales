@@ -144,6 +144,23 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 18px;
             color: #FF5733;
         }
+
+
+        /* ปรับแต่งการอัพโหลด */
+        .selected-file {
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .selected-file button {
+            padding: 0;
+            margin-left: 10px;
+        }
     </style>
 
     <!-- เพิ่ม CSS สำหรับ lightbox -->

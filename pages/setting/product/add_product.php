@@ -173,6 +173,138 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// เพิ่มการอัพโหลดเอกสาร
+if (!empty($_FILES['documents'])) {
+    $allowed_doc_types = [
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    $max_file_size = 10 * 1024 * 1024; // 10MB
+    $upload_dir = '../../../uploads/product_documents/';
+
+    // สร้างโฟลเดอร์ถ้ายังไม่มี
+    if (!file_exists($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
+
+    $document_files = $_FILES['documents'];
+    $file_count = count($document_files['name']);
+
+    for ($i = 0; $i < $file_count; $i++) {
+        if ($document_files['error'][$i] === UPLOAD_ERR_OK) {
+            $file_tmp = $document_files['tmp_name'][$i];
+            $file_name = basename($document_files['name'][$i]);
+            $file_size = $document_files['size'][$i];
+            $file_type = $document_files['type'][$i];
+            $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+
+            // ตรวจสอบประเภทไฟล์
+            if (!array_key_exists($file_ext, $allowed_doc_types) || !in_array($file_type, $allowed_doc_types)) {
+                echo "<script>
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ประเภทไฟล์ {$file_name} ไม่ได้รับอนุญาต',
+                    icon: 'error',
+                    confirmButtonText: 'ตกลง'
+                });
+                </script>";
+                continue;
+            }
+
+            // ตรวจสอบขนาดไฟล์
+            if ($file_size > $max_file_size) {
+                echo "<script>
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไฟล์ {$file_name} มีขนาดเกิน 10MB',
+                    icon: 'error',
+                    confirmButtonText: 'ตกลง'
+                });
+                </script>";
+                continue;
+            }
+
+            // สร้างชื่อไฟล์ใหม่
+            $new_file_name = generateUUID() . '.' . $file_ext;
+            $upload_path = $upload_dir . $new_file_name;
+
+            // กำหนดประเภทเอกสารตามนามสกุลไฟล์
+            $document_type = '';
+            switch ($file_ext) {
+                case 'pdf':
+                    $document_type = 'manual';
+                    break;
+                case 'doc':
+                case 'docx':
+                    $document_type = 'specification';
+                    break;
+                case 'xls':
+                case 'xlsx':
+                    $document_type = 'datasheet';
+                    break;
+                default:
+                    $document_type = 'other';
+            }
+
+            try {
+                if (move_uploaded_file($file_tmp, $upload_path)) {
+                    // บันทึกข้อมูลลงฐานข้อมูล
+                    $doc_sql = "INSERT INTO product_documents (
+                        id,
+                        product_id, 
+                        document_type, 
+                        file_path,
+                        file_name, 
+                        file_size,
+                        created_by
+                    ) VALUES (
+                        :id,
+                        :product_id, 
+                        :document_type,
+                        :file_path,
+                        :file_name,
+                        :file_size,
+                        :created_by
+                    )";
+
+                    $doc_id = generateUUID();
+                    $doc_stmt = $condb->prepare($doc_sql);
+                    $doc_stmt->execute([
+                        ':id' => $doc_id,
+                        ':product_id' => $product_id,
+                        ':document_type' => $document_type,
+                        ':file_path' => $upload_path,
+                        ':file_name' => $file_name,
+                        ':file_size' => $file_size,
+                        ':created_by' => $created_by
+                    ]);
+
+                    // บันทึกล็อกกิจกรรม
+                    logActivity(
+                        $created_by,
+                        'upload_document',
+                        "อัพโหลดเอกสาร {$file_name} สำหรับสินค้า {$product_name}"
+                    );
+                } else {
+                    throw new Exception("ไม่สามารถอัพโหลดไฟล์ {$file_name} ได้");
+                }
+            } catch (Exception $e) {
+                echo "<script>
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด',
+                    text: '{$e->getMessage()}',
+                    icon: 'error',
+                    confirmButtonText: 'ตกลง'
+                });
+                </script>";
+            }
+        }
+    }
+}
+
 ?>
 
 
@@ -216,14 +348,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="text" name="unit" class="form-control" id="unit" placeholder="เช่น ชิ้น, อัน, ชุด" required>
                         </div>
 
+                        <!-- เปลี่ยนจาก type="number" เป็น type="text" -->
                         <div class="form-group">
                             <label for="cost_price">ราคาต้นทุน</label>
-                            <input type="number" step="0.01" name="cost_price" class="form-control" id="cost_price">
+                            <input type="text" name="cost_price" class="form-control" id="cost_price">
                         </div>
 
                         <div class="form-group">
                             <label for="selling_price">ราคาขาย</label>
-                            <input type="number" step="0.01" name="selling_price" class="form-control" id="selling_price">
+                            <input type="text" name="selling_price" class="form-control" id="selling_price">
                         </div>
 
                         <div class="form-group ">
@@ -243,6 +376,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
                                 ?>
                             </select>
+                        </div>
+                        <!-- เพิ่มหลังจากส่วน main_image -->
+                        <div class="form-group">
+                            <label for="documents">เอกสารประกอบ (Data Sheet, Specification, etc.)</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="documents" name="documents[]" multiple
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx">
+                                <label class="custom-file-label" for="documents">เลือกไฟล์เอกสาร</label>
+                            </div>
+                            <small class="form-text text-muted">สามารถเลือกได้หลายไฟล์ (PDF, Word, Excel)</small>
+                            <div id="selected-files" class="mt-2"></div>
                         </div>
                     </div>
 
@@ -294,7 +438,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 </style>
 
-
 <script>
     // เพิ่มฟังก์ชันคำนวณกำไรขั้นต้น
     function calculateProfit() {
@@ -311,4 +454,121 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // เรียกใช้ฟังก์ชันเมื่อมีการเปลี่ยนแปลงราคา
     $('#cost_price, #selling_price').on('input', calculateProfit);
+</script>
+
+<!-- สำหรับอัพโหลดไฟล์ -->
+<script>
+    // เพิ่มในส่วน script
+    document.getElementById('documents').addEventListener('change', function(e) {
+        const fileList = Array.from(this.files);
+        const fileContainer = document.getElementById('selected-files');
+        fileContainer.innerHTML = '';
+
+        fileList.forEach((file, index) => {
+            const fileSize = (file.size / 1024 / 1024).toFixed(2); // แปลงเป็น MB
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'selected-file';
+            fileDiv.innerHTML = `
+            <i class="fas fa-file mr-2"></i>
+            ${file.name} (${fileSize} MB)
+            <button type="button" class="btn btn-sm btn-link text-danger" onclick="removeFile(${index})">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+            fileContainer.appendChild(fileDiv);
+        });
+    });
+
+    function removeFile(index) {
+        const input = document.getElementById('documents');
+        const dt = new DataTransfer();
+        const {
+            files
+        } = input;
+
+        for (let i = 0; i < files.length; i++) {
+            if (i !== index) {
+                dt.items.add(files[i]);
+            }
+        }
+
+        input.files = dt.files;
+        // ทริกเกอร์อีเวนต์ change เพื่ออัพเดทรายการไฟล์ที่แสดง
+        input.dispatchEvent(new Event('change'));
+    }
+</script>
+
+<!-- คอมม่า -->
+<script>
+    // ฟังก์ชันสำหรับจัดรูปแบบตัวเลขให้มีคอมม่า
+    function formatNumber(number) {
+        // แยกส่วนทศนิยม
+        let parts = number.toString().split('.');
+        // ใส่คอมม่าทุก 3 หลักในส่วนจำนวนเต็ม
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        // รวมส่วนจำนวนเต็มและทศนิยมกลับเข้าด้วยกัน
+        return parts.join('.');
+    }
+
+    // ฟังก์ชันสำหรับลบคอมม่าออกจากตัวเลข
+    function unformatNumber(number) {
+        return number.toString().replace(/,/g, '');
+    }
+
+    // ฟังก์ชันสำหรับจัดการการแสดงผลตัวเลขในช่องกรอก
+    function handleNumberInput(element) {
+        let value = unformatNumber(element.value);
+        // ตรวจสอบว่าเป็นตัวเลขเท่านั้น
+        if (!/^\d*\.?\d*$/.test(value)) {
+            value = value.replace(/[^\d.]/g, '');
+        }
+        if (value !== '') {
+            const numberValue = parseFloat(value);
+            if (!isNaN(numberValue)) {
+                element.value = formatNumber(value);
+            }
+        } else {
+            element.value = '';
+        }
+    }
+
+    // เพิ่มฟังก์ชันคำนวณกำไรขั้นต้น
+    function calculateProfit() {
+        var costPrice = parseFloat(unformatNumber($('#cost_price').val())) || 0;
+        var sellingPrice = parseFloat(unformatNumber($('#selling_price').val())) || 0;
+        var profit = sellingPrice - costPrice;
+        var profitPercentage = costPrice > 0 ? (profit / costPrice * 100) : 0;
+
+        $('#profit_display').html(
+            'กำไรขั้นต้น: ' + formatNumber(profit.toFixed(2)) + ' บาท (' +
+            profitPercentage.toFixed(2) + '%)'
+        );
+    }
+
+    // เพิ่ม Event Listener สำหรับช่องราคา
+    $('#cost_price, #selling_price').on('input', function() {
+        handleNumberInput(this);
+        calculateProfit();
+    });
+
+    // เพิ่มการจัดการก่อนส่งฟอร์ม
+    $('#addProductForm').on('submit', function(e) {
+        const costPrice = unformatNumber($('#cost_price').val());
+        const sellingPrice = unformatNumber($('#selling_price').val());
+
+        // ตรวจสอบว่าเป็นตัวเลขที่ถูกต้อง
+        if (isNaN(parseFloat(costPrice)) || isNaN(parseFloat(sellingPrice))) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'เกิดข้อผิดพลาด',
+                text: 'กรุณากรอกราคาให้ถูกต้อง',
+                icon: 'error',
+                confirmButtonText: 'ตกลง'
+            });
+            return false;
+        }
+
+        $('#cost_price').val(costPrice);
+        $('#selling_price').val(sellingPrice);
+    });
 </script>
