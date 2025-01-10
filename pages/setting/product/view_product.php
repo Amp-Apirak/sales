@@ -12,7 +12,7 @@ if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSIO
 
 // ดึงข้อมูลจาก session
 $role = $_SESSION['role'];
-$team_id = $_SESSION['team_id'];
+$team_id = $_SESSION['team_id']; // team_id ของผู้ใช้งานปัจจุบัน
 $user_id = $_SESSION['user_id'];
 
 // ตรวจสอบว่า product_id ถูกส่งมาจาก URL หรือไม่
@@ -25,7 +25,10 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $product_id = decryptUserId($_GET['id']);
 
 // ดึงข้อมูลสินค้าจากฐานข้อมูล
-$sql = "SELECT * FROM products WHERE product_id = :product_id";
+$sql = "SELECT p.*, u.team_id 
+        FROM products p
+        INNER JOIN users u ON p.created_by = u.user_id
+        WHERE p.product_id = :product_id";
 $stmt = $condb->prepare($sql);
 $stmt->bindParam(':product_id', $product_id, PDO::PARAM_STR);
 $stmt->execute();
