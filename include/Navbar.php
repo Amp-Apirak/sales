@@ -454,7 +454,7 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                     <a href="<?php echo BASE_URL; ?>pages/setting/suppliers/supplier.php" class="nav-link <?php if ($menu == "supplier") {
                                                                                                                 echo "active";
                                                                                                             } ?> ">
-                        <i class="nav-icon fas fa-desktop"></i>
+                        <i class="nav-icon fas fa-truck"></i>
                         <p>
                             Supplier
                         </p>

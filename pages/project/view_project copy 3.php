@@ -395,29 +395,38 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                                             <div class="info-item">
                                                                 <span class="info-label text-success">จำนวนเงินที่ชำระแล้ว:</span>
                                                                 <span class="info-value text-success"><?php
-                                                                                                        // คำนวณจำนวนงวดที่ชำระแล้ว
+                                                                                                        // คำนวณจำนวนงวดที่ชำระแล้วและจำนวนงวดทั้งหมด
                                                                                                         $paidInstallments = 0;
-                                                                                                        $totalInstallments = count($payments); // จำนวนงวดทั้งหมด
+                                                                                                        $totalInstallments = count($payments);
+                                                                                                        $total_paid = 0;
+
                                                                                                         foreach ($payments as $payment) {
                                                                                                             if ($payment['status'] == 'Paid') {
                                                                                                                 $paidInstallments++;
+                                                                                                                $total_paid += $payment['amount'];
                                                                                                             }
                                                                                                         }
 
-                                                                                                        // คำนวณยอดเงินที่ชำระแล้วทั้งหมด
-                                                                                                        $total_paid = array_sum(array_column($payments, 'amount_paid'));
+                                                                                                        // แสดงผลจำนวนเงินที่ชำระแล้วและจำนวนงวด
                                                                                                         echo number_format($total_paid, 2);
-                                                                                                        ?> บาท (<?php echo $paidInstallments; ?>/<?php echo $totalInstallments; ?> งวด)</span>
+                                                                                                        ?> บาท (<?php echo $paidInstallments; ?>/<?php echo $totalInstallments; ?> งวด)
+                                                                </span>
                                                             </div>
-
-
                                                         </div>
                                                         <div class="col-md-4">
                                                             <div class="info-item">
                                                                 <span class="info-label text-danger">(%)ที่ยังไม่ได้แบ่งชำระ:</span>
                                                                 <span class="info-value text-danger"><?php
-                                                                                                        $remaining_percentage = 100 - $total_percentage_scheduled;
-                                                                                                        echo number_format($remaining_percentage, 2);
+                                                                                                        $pending_percentage = 0;
+
+                                                                                                        // หาผลรวมเปอร์เซ็นต์ที่ยังไม่ชำระ (Pending)
+                                                                                                        foreach ($payments as $payment) {
+                                                                                                            if ($payment['status'] == 'Pending') {
+                                                                                                                $pending_percentage += floatval($payment['payment_percentage']);
+                                                                                                            }
+                                                                                                        }
+
+                                                                                                        echo number_format($pending_percentage, 2);
                                                                                                         ?>%</span>
                                                             </div>
                                                         </div>
@@ -517,6 +526,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                                 <th>PART No.</th>
                                                 <th>Description</th>
                                                 <th>QTY.</th>
+                                                <th>Unit</th>
                                                 <th>Price / Unit</th>
                                                 <th>Total Amount</th>
                                                 <th>Cost / Unit</th>
@@ -531,15 +541,16 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                         <!-- แถวสำหรับกรอกข้อมูลใหม่ -->
                                         <tfoot>
                                             <tr>
-                                                <td><input type="text" id="typeInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="partNoInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="descriptionInput" class="form-control form-control-sm"></td>
-                                                <td><input type="number" id="qtyInput" class="form-control form-control-sm"></td>
-                                                <td><input type="text" id="priceInput" class="form-control form-control-sm"></td>
+                                                <td><input type="text" id="typeInput" class="form-control form-control-sm" placeholder="A, B, C"></td>
+                                                <td><input type="text" id="partNoInput" class="form-control form-control-sm" placeholder="Service, Hardware, Software"></td>
+                                                <td><input type="text" id="descriptionInput" class="form-control form-control-sm" placeholder="ใส่รายละเอียด"></td>
+                                                <td><input type="number" id="qtyInput" class="form-control form-control-sm" placeholder="จำนวนตัวเลข"></td>
+                                                <td><input type="text" id="unitInput" class="form-control form-control-sm" placeholder="เช่น วัน, คน, ชิ้น"></td>
+                                                <td><input type="text" id="priceInput" class="form-control form-control-sm" placeholder="ตั้งราคาขาย"></td>
                                                 <td><span id="totalAmountInput">0.00</span></td>
-                                                <td><input type="text" id="costInput" class="form-control form-control-sm"></td>
+                                                <td><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
                                                 <td><span id="totalCostInput">0.00</span></td>
-                                                <td><input type="text" id="supplierInput" class="form-control form-control-sm"></td>
+                                                <td><input type="text" id="supplierInput" class="form-control form-control-sm" placeholder=""></td>
                                                 <td><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
                                             </tr>
                                         </tfoot>
@@ -779,18 +790,17 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
 
     // ฟังก์ชันสำหรับคำนวณจำนวนเงินจากเปอร์เซ็นต์
     function calculateAmountFromPercentage() {
-        const percentage = parseFormattedNumber(document.getElementById('paymentPercentage').value);
+        const percentage = parseFloat($('#paymentPercentage').val().replace(/,/g, '')) || 0;
         const amount = (percentage / 100) * totalSaleAmount;
-        document.getElementById('amount').value = formatNumber(amount);
-        updateAmountPaid();
+        $('#amount').val(formatNumber(amount.toFixed(2)));
     }
+
 
     // ฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์จากจำนวนเงิน
     function calculatePercentageFromAmount() {
-        const amount = parseFormattedNumber(document.getElementById('amount').value);
+        const amount = parseFloat($('#amount').val().replace(/,/g, '')) || 0;
         const percentage = (amount / totalSaleAmount) * 100;
-        document.getElementById('paymentPercentage').value = formatNumber(percentage, 2);
-        updateAmountPaid();
+        $('#paymentPercentage').val(percentage.toFixed(2));
     }
 
     // ฟังก์ชันสำหรับอัปเดตจำนวนเงินที่ชำระแล้วตามสถานะการชำระเงิน
@@ -820,20 +830,13 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
             document.getElementById('paymentModalLabel').textContent = 'แก้ไขการชำระเงิน';
             document.getElementById('paymentId').value = payment.payment_id;
             document.getElementById('paymentNumber').value = payment.payment_number;
-            document.getElementById('paymentPercentage').value = formatNumber((payment.amount / totalSaleAmount) * 100);
+            document.getElementById('paymentPercentage').value = formatNumber(payment.payment_percentage);
             document.getElementById('amount').value = formatNumber(payment.amount);
             document.getElementById('dueDate').value = payment.due_date;
             document.getElementById('status').value = payment.status;
             document.getElementById('paymentDate').value = payment.payment_date || '';
             document.getElementById('amountPaid').value = formatNumber(payment.amount_paid);
             $('#paymentModal').modal('show');
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'ไม่พบข้อมูล',
-                text: 'ไม่พบข้อมูลการชำระเงินที่ต้องการแก้ไข',
-                confirmButtonText: 'ตกลง'
-            });
         }
     }
 
@@ -973,6 +976,19 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
         setupNumberInput('paymentPercentage');
         setupNumberInput('amount');
         document.getElementById('status').addEventListener('change', updateAmountPaid);
+        // ฟังก์ชันจัดการการป้อนข้อมูลเปอร์เซ็นต์
+        document.getElementById('paymentPercentage').addEventListener('input', calculateAmountFromPercentage);
+        // ฟังก์ชันจัดการการป้อนจำนวนเงิน  
+        document.getElementById('amount').addEventListener('input', calculatePercentageFromAmount);
+    });
+
+    // Event Listeners
+    $('#paymentPercentage').on('input', function() {
+        calculateAmountFromPercentage();
+    });
+
+    $('#amount').on('input', function() {
+        calculatePercentageFromAmount();
     });
 </script>
 <!-- 1. Modal สำหรับเพิ่ม/แก้ไขการชำระเงิน -->
@@ -1498,6 +1514,11 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
         }
 
         /* ซ่อนองค์ประกอบที่ไม่ต้องการให้พิมพ์ */
+        .nav-pills,
+        .card-header p-2,
+        .nav.nav-pills,
+        .tab-content>.tab-pane:not(.active),
+        .nav-item,
         .edit-button,
         .btn-sm,
         .btn-info,
@@ -1510,6 +1531,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
             display: none !important;
             /* ไม่แสดงปุ่มหรือส่วนที่ไม่จำเป็น */
         }
+
 
         /* การจัดรูปแบบของ info-card และ row */
         .info-card {
@@ -1865,6 +1887,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
             part_no: $('#partNoInput').val(),
             description: $('#descriptionInput').val(),
             quantity: parseFloat($('#qtyInput').val()),
+            unit: $('#unitInput').val(),
             price_per_unit: parseFormattedNumber($('#priceInput').val()),
             cost_per_unit: parseFormattedNumber($('#costInput').val()),
             supplier: $('#supplierInput').val()
@@ -1912,7 +1935,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
 
     // เพิ่มฟังก์ชันตรวจสอบการกรอกข้อมูล
     function validateInputs() {
-        const required = ['typeInput', 'partNoInput', 'descriptionInput', 'qtyInput', 'priceInput', 'costInput', 'supplierInput'];
+        const required = ['typeInput', 'partNoInput', 'descriptionInput', 'qtyInput', 'unitInput', 'priceInput', 'costInput', 'supplierInput'];
         return required.every(id => $('#' + id).val().trim() !== '');
     }
 
@@ -1944,6 +1967,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                         <td>${escapeHtml(cost.part_no)}</td>
                         <td>${escapeHtml(cost.description)}</td>
                         <td>${cost.quantity}</td>
+                        <td>${escapeHtml(cost.unit)}</td>
                         <td>${formatNumber(cost.price_per_unit)}</td>
                         <td>${formatNumber(cost.total_amount)}</td>
                         <td>${formatNumber(cost.cost_per_unit)}</td>
@@ -1961,53 +1985,67 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                     $('#costTable').DataTable({
                         dom: 'Bfrtip',
                         buttons: [{
-                            extend: 'excel',
-                            text: '<i class="fas fa-file-excel"></i> Export Excel',
-                            className: 'btn btn-success btn-sm',
-                            title: 'Project Cost Report',
-                            filename: 'Project_Costs_' + new Date().toISOString().slice(0, 10),
-                            customize: function(xlsx) {
-                                var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                                extend: 'excel',
+                                text: '<i class="fas fa-file-excel"></i> Export Excel',
+                                className: 'btn btn-success btn-sm',
+                                title: 'Project Cost Report',
+                                filename: 'Project_Costs_' + new Date().toISOString().slice(0, 10),
+                                customize: function(xlsx) {
+                                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
 
-                                // เพิ่มข้อมูลสรุป
-                                var summaryData = [
-                                    ['Summary'],
-                                    ['Total Amount:', $('#totalAmount').text()],
-                                    ['VAT Amount:', $('#vatAmount').text()],
-                                    ['Grand Total:', $('#grandTotal').text()],
-                                    ['Total Cost:', $('#totalCost').text()],
-                                    ['Cost VAT Amount:', $('#costVatAmount').text()],
-                                    ['Total Cost with VAT:', $('#totalCostWithVat').text()],
-                                    ['Profit Amount:', $('#profitAmount').text()],
-                                    ['Profit Percentage:', $('#profitPercentage').text()]
-                                ];
+                                    // เพิ่มข้อมูลสรุป
+                                    var summaryData = [
+                                        ['Summary'],
+                                        ['Total Amount:', $('#totalAmount').text()],
+                                        ['VAT Amount:', $('#vatAmount').text()],
+                                        ['Grand Total:', $('#grandTotal').text()],
+                                        ['Total Cost:', $('#totalCost').text()],
+                                        ['Cost VAT Amount:', $('#costVatAmount').text()],
+                                        ['Total Cost with VAT:', $('#totalCostWithVat').text()],
+                                        ['Profit Amount:', $('#profitAmount').text()],
+                                        ['Profit Percentage:', $('#profitPercentage').text()]
+                                    ];
 
-                                // คำนวณตำแหน่งแถวสุดท้าย
-                                var lastRow = $('row', sheet).length;
+                                    // คำนวณตำแหน่งแถวสุดท้าย
+                                    var lastRow = $('row', sheet).length;
 
-                                // เพิ่มข้อมูลสรุป
-                                summaryData.forEach(function(data) {
-                                    lastRow++;
-                                    var row = sheet.createElement('row');
+                                    // เพิ่มข้อมูลสรุป
+                                    summaryData.forEach(function(data) {
+                                        lastRow++;
+                                        var row = sheet.createElement('row');
 
-                                    data.forEach(function(text, index) {
-                                        var cell = sheet.createElement('c');
-                                        var t = sheet.createElement('t');
-                                        t.textContent = text;
-                                        cell.appendChild(t);
-                                        if (index === 0) {
-                                            cell.setAttribute('s', '2'); // style สำหรับหัวข้อ
-                                        }
-                                        row.appendChild(cell);
+                                        data.forEach(function(text, index) {
+                                            var cell = sheet.createElement('c');
+                                            var t = sheet.createElement('t');
+                                            t.textContent = text;
+                                            cell.appendChild(t);
+                                            if (index === 0) {
+                                                cell.setAttribute('s', '2'); // style สำหรับหัวข้อ
+                                            }
+                                            row.appendChild(cell);
+                                        });
+
+                                        sheet.getElementsByTagName('sheetData')[0].appendChild(row);
                                     });
-
-                                    sheet.getElementsByTagName('sheetData')[0].appendChild(row);
-                                });
+                                },
+                                exportOptions: {
+                                    columns: ':not(:last-child)' // ไม่รวมคอลัมน์ Actions
+                                }
                             },
-                            exportOptions: {
-                                columns: ':not(:last-child)' // ไม่รวมคอลัมน์ Actions
+                            // *** ปุ่ม Print เพิ่มเข้ามาใหม่ ***
+                            {
+                                text: '<i class="fas fa-print"></i> Print',
+                                className: 'btn btn-primary btn-sm',
+                                action: function(e, dt, node, config) {
+                                    // เปิดหน้าต่างใหม่ cost_viewprint.php
+                                    // พร้อมส่ง project_id ที่เข้ารหัสอย่างปลอดภัย
+                                    window.open(
+                                        'cost_viewprint.php?project_id=<?php echo urlencode(encryptUserId($project_id)); ?>',
+                                        '_blank'
+                                    );
+                                }
                             }
-                        }],
+                        ],
                         pageLength: 10,
                         responsive: true,
                         ordering: true,
@@ -2081,6 +2119,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                     $('#partNoInput').val(cost.part_no);
                     $('#descriptionInput').val(cost.description);
                     $('#qtyInput').val(cost.quantity);
+                    $('#unitInput').val(cost.unit);
                     $('#priceInput').val(formatNumber(cost.price_per_unit));
                     $('#costInput').val(formatNumber(cost.cost_per_unit));
                     $('#supplierInput').val(cost.supplier);
@@ -2119,6 +2158,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
             part_no: $('#partNoInput').val(),
             description: $('#descriptionInput').val(),
             quantity: parseFloat($('#qtyInput').val()),
+            unit: $('#unitInput').val(),
             price_per_unit: parseFormattedNumber($('#priceInput').val()),
             cost_per_unit: parseFormattedNumber($('#costInput').val()),
             supplier: $('#supplierInput').val()

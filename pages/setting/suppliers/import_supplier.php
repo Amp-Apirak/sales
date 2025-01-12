@@ -1,12 +1,16 @@
 <?php
-include '../../include/Add_session.php';
-require '../../vendor/autoload.php';
+// เริ่มต้น session
+session_start();
+
+// เชื่อมต่อฐานข้อมูล
+include('../../../config/condb.php');
+require '../../../vendor/autoload.php';
 
 // ดึงข้อมูลผู้ใช้จาก session
 $role = $_SESSION['role'];
 $created_by = $_SESSION['user_id'];
 
-// เพิ่มฟังก์ชัน generateUUID
+// เพิ่มฟิลด์ remark ใน SQL INSERT statement
 function generateUUID()
 {
     if (function_exists('random_bytes')) {
@@ -29,7 +33,6 @@ function generateUUID()
         mt_rand(0, 0xffff)
     );
 }
-
 
 // ตรวจสอบการ POST และการอัปโหลดไฟล์
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["file"])) {
@@ -62,43 +65,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["file"])) {
         $worksheet = $spreadsheet->getActiveSheet();
         $data = $worksheet->toArray();
 
-        // ข้าม header row
-        array_shift($data);
+        // ข้ามเฉพาะ 2 แถวแรกที่เป็น header
+        array_shift($data); // ข้ามแถวอธิบาย (แถวที่ 1)
+        array_shift($data); // ข้ามแถว header (แถวที่ 2)
 
         // เริ่ม transaction
         $condb->beginTransaction();
 
         $importCount = 0; // นับจำนวนรายการที่นำเข้า
 
-        // วนลูปเพื่อนำเข้าข้อมูล
+        // วนลูปเพื่อนำเข้าข้อมูล - เริ่มจากข้อมูลจริงในแถวที่ 3
         foreach ($data as $row) {
             if (!empty($row[0])) { // ตรวจสอบว่ามีข้อมูลในแถว
                 // สร้าง unique ID
-                $customer_id = generateUUID();
+                $supplier_id = generateUUID();
 
                 // เตรียม SQL statement
-                $stmt = $condb->prepare("INSERT INTO customers (
-                    customer_id, customer_name, position, company, 
-                    phone, email, address, office_phone, extension,
-                    created_by, created_at
-                ) VALUES (
-                    :customer_id, :customer_name, :position, :company,
-                    :phone, :email, :address, :office_phone, :extension,
-                    :created_by, NOW()
-                )");
+                $stmt = $condb->prepare("INSERT INTO suppliers (
+            supplier_id, supplier_name, position, company, 
+            phone, email, address, office_phone, extension, remark,
+            created_by, created_at
+        ) VALUES (
+            :supplier_id, :supplier_name, :position, :company,
+            :phone, :email, :address, :office_phone, :extension, :remark,
+            :created_by, NOW()
+        )");
 
                 // Execute statement พร้อมข้อมูล
                 $stmt->execute([
-                    ':customer_id' => $customer_id,
-                    ':customer_name' => trim($row[0]),
-                    ':position' => trim($row[1]),
-                    ':company' => trim($row[2]),
-                    ':phone' => trim($row[3]),
-                    ':email' => trim($row[4]),
-                    ':address' => trim($row[5]),
-                    ':office_phone' => trim($row[6]),
-                    ':extension' => trim($row[7]),
-                    ':created_by' => $created_by
+                    ':supplier_id' => $supplier_id,
+                    ':supplier_name' => trim($row[0]),  // Supplier Name
+                    ':company' => trim($row[1]),        // Company
+                    ':position' => trim($row[2]),       // Position
+                    ':phone' => trim($row[3]),          // Phone
+                    ':email' => trim($row[4]),          // Email
+                    ':address' => trim($row[5]),        // Address
+                    ':office_phone' => trim($row[6]),   // Office Phone
+                    ':extension' => trim($row[7]),      // Extension
+                    ':remark' => trim($row[8]),         // Remark
+                    ':created_by' => $created_by        // created_by
                 ]);
 
                 $importCount++;
@@ -118,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["file"])) {
                     showConfirmButton: false,
                     timer: 1500
                 }).then(function() {
-                    window.location.href = 'customer.php';
+                    window.location.href = 'supplier.php';
                 });
             });
         </script>";
@@ -159,13 +164,13 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<?php $menu = "customer"; ?>
+<?php $menu = "supplier"; ?>
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Import Customers</title>
-    <?php include '../../include/header.php'; ?>
+    <title>Import Suppliers</title>
+    <?php include '../../../include/header.php'; ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .import-container {
@@ -227,14 +232,14 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
 
 <body class="sidebar-mini layout-fixed layout-navbar-fixed layout-footer-fixed">
     <div class="wrapper">
-        <?php include '../../include/navbar.php'; ?>
+        <?php include '../../../include/navbar.php'; ?>
 
         <div class="content-wrapper">
             <div class="content-header">
                 <div class="container-fluid">
                     <div class="page-header">
-                        <h1><i class="fas fa-file-import mr-2"></i>Import Customers</h1>
-                        <p class="mb-0">นำเข้าข้อมูลลูกค้าจากไฟล์ Excel หรือ CSV</p>
+                        <h1><i class="fas fa-file-import mr-2"></i>Import Suppliers</h1>
+                        <p class="mb-0">นำเข้าข้อมูล Supplier จากไฟล์ Excel หรือ CSV</p>
                     </div>
                 </div>
             </div>
@@ -252,8 +257,8 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
                                         </div>
                                         <div>
                                             <h5 class="card-title">ดาวน์โหลด Template</h5>
-                                            <p class="card-text mb-3">ดาวน์โหลดไฟล์ template สำหรับกรอกข้อมูลลูกค้า</p>
-                                            <a href="templates/customer_template.xlsx" class="btn btn-info">
+                                            <p class="card-text mb-3">ดาวน์โหลดไฟล์ template สำหรับกรอกข้อมูล Supplier</p>
+                                            <a href="templates/supplier_template.xlsx" class="btn btn-info">
                                                 <i class="fas fa-download mr-2"></i>Download Template
                                             </a>
                                         </div>
@@ -297,7 +302,7 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
                                         </div>
                                         <div class="instruction-item">
                                             <span class="step-number">2</span>
-                                            <div>กรอกข้อมูลลูกค้าตามลำดับคอลัมน์: Customer Name, Position, Company, Phone, Email, Address, Office Phone, Extension</div>
+                                            <div>กรอกข้อมูล Supplier ตามลำดับคอลัมน์: Supplier Name, Position, Company, Phone, Email, Address, Office Phone, Extension, Remark</div>
                                         </div>
                                         <div class="instruction-item">
                                             <span class="step-number">3</span>
@@ -320,7 +325,7 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
                 </div>
             </section>
         </div>
-        <?php include '../../include/footer.php'; ?>
+        <?php include '../../../include/footer.php'; ?>
     </div>
 
     <script>

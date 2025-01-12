@@ -190,6 +190,10 @@ $suppliers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <th class="text-nowrap text-center">Phone</th>
                                                 <th class="text-nowrap text-center">Email</th>
                                                 <th class="text-nowrap text-center">Company</th>
+                                                <th class="text-nowrap text-center">Office Phone</th>
+                                                <th class="text-nowrap text-center">Extension</th>
+                                                <th class="text-nowrap text-center">Address</th>
+                                                <th class="text-nowrap text-center">Remark</th>
                                                 <th class="text-nowrap text-center">Created By</th>
                                                 <th class="text-nowrap text-center">Created At</th>
                                                 <th class="text-nowrap text-center">Action</th>
@@ -204,6 +208,10 @@ $suppliers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <td class="text-nowrap"><?php echo !empty($supplier['phone']) ? htmlspecialchars($supplier['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo !empty($supplier['email']) ? htmlspecialchars($supplier['email']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo !empty($supplier['company']) ? htmlspecialchars($supplier['company']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($supplier['office_phone']) ? htmlspecialchars($supplier['office_phone']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($supplier['extension']) ? htmlspecialchars($supplier['extension']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($supplier['address']) ? htmlspecialchars($supplier['address']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo !empty($supplier['remark']) ? htmlspecialchars($supplier['remark']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap">
                                                         <?php
                                                         $creator_name = trim($supplier['first_name'] . ' ' . $supplier['last_name']);
@@ -228,6 +236,10 @@ $suppliers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <th>Phone</th>
                                                 <th>Email</th>
                                                 <th>Company</th>
+                                                <th>Office Phone</th>
+                                                <th>Extension</th>
+                                                <th>Address</th>
+                                                <th>Remark</th>
                                                 <th>Created By</th>
                                                 <th>Created At</th>
                                                 <th>Action</th>
