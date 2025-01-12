@@ -322,7 +322,11 @@ if (!empty($_FILES['documents'])) {
                 <form id="addProductForm" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="card-body">
-
+                        <!-- ต้องการใส่ข้อความ เป็นสีแดง หมายเหตุ -->
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                                ต้องการสร้าง Product จำเป็นจะต้องสร้าง Supplier ก่อน กรณียังไม่มีข้อมูล Supplier <a href="<?php echo BASE_URL; ?>pages/setting/suppliers/add_supplier.php">Add Supplier</a>
+                        </div>
                         <div class="form-group">
                             <label for="main_image">เลือกภาพสินค้าหลัก</label>
                             <div class="custom-file">
@@ -360,7 +364,7 @@ if (!empty($_FILES['documents'])) {
                         </div>
 
                         <div class="form-group ">
-                            <label for="supplier_id">ผู้จำหน่าย<span class="text-danger">*</span></label>
+                            <label for="supplier_id">ผู้จำหน่าย(Supplier)<span class="text-danger">*</span></label>
                             <select name="supplier_id" class="form-control select2" id="supplier_id" required>
                                 <option value="">เลือกผู้จำหน่าย</option>
                                 <?php

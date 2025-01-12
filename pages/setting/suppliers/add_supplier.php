@@ -337,7 +337,7 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text"><i class="fas fa-comment"></i></span>
                                                 </div>
-                                                <textarea name="remark" class="form-control" id="remark" placeholder="Remark"></textarea>
+                                                <textarea name="remark" class="form-control" id="remark" style="height: 150px;" placeholder="ระบุรายละเอียดสินค้า และบริการที่เกี่ยวข้องกับผู้ขาย Supplier"></textarea>
                                             </div>
                                         </div>
 
