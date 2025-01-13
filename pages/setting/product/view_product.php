@@ -69,6 +69,7 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+
     <style>
         /* ใช้ฟอนต์ Noto Sans Thai กับ label */
         th,
@@ -206,7 +207,6 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
             border: 1px solid #dee2e6;
         }
     </style>
-
 
     <style>
         /* กำหนดฟอนต์ให้ทั้งหน้า */
