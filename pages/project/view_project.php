@@ -137,13 +137,6 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SalePipeline | View Project</title>
     <?php include '../../include/header.php'; ?>
-    <!-- เพิ่ม jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- เพิ่ม Bootstrap JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- เพิ่ม Select2 สำหรับ dropdown แบบค้นหาได้ -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <!-- PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
@@ -167,7 +160,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                         <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
                         <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
                         <li class="nav-item">
-                            <a class="nav-link" data-toggle="tab" href="#tasks" role="tab">บริหารโครงการ</a>
+                            <a class="nav-link" href="#tasks" data-toggle="tab" role="tab">บริหารโครงการ</a>
                         </li>
                         <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab" data-tab="documents">เอกสารแนบ</a></li>
                         <li class="nav-item"><a class="nav-link" href="#links" data-toggle="tab" data-tab="links">แนบลิงค์เอกสารโครงการ</a></li>
@@ -668,7 +661,12 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                             </div>
 
                             <!-- แถบที่ 6 บริหารโครงการ -->
+                            <div class="tab-pane" id="tasks">
+                                <?php include 'management/project_tasks.php'; ?>
+                            </div>
 
+                            <!-- เพิ่ม JavaScript ที่จำเป็น -->
+                            <script src="management/js/task_management.js"></script>
 
                         </div>
                     </div>
@@ -2517,6 +2515,3 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
     }
 </style>
 <!-- 7 Modal สำหรับเพิ่ม/แก้ไขลิงก์เอกสาร -->
-
-<!-- 8 Modal แถบที่ 6 -->
-
