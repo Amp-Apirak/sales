@@ -738,6 +738,9 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             <?php endif; ?>
+                                                            <a href="management/project_management.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-warning">
+                                                                <i class="fas fa-project-diagram"></i>
+                                                            </a>
                                                         </td>
                                                     <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
@@ -887,7 +890,6 @@ $metrics = calculateProjectMetrics($projects, $search_params);
     </script>
 
     <!-- Modal สำหรับการ Import -->
-    <!-- Modal สำหรับนำเข้าไฟล์ -->
     <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">

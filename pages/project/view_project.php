@@ -662,11 +662,9 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
 
                             <!-- แถบที่ 6 บริหารโครงการ -->
                             <div class="tab-pane" id="tasks">
-                                <?php include 'management/project_tasks.php'; ?>
+                                <!--  -->
                             </div>
 
-                            <!-- เพิ่ม JavaScript ที่จำเป็น -->
-                            <script src="management/js/task_management.js"></script>
 
                         </div>
                     </div>
