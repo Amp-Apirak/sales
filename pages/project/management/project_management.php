@@ -537,7 +537,6 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
         // เพิ่มฟังก์ชันสำหรับ initialize Sortable
-        // อัพเดท initSortable function
         function initSortable() {
             const tbody = document.querySelector('#tasks-table tbody');
             new Sortable(tbody, {
@@ -550,19 +549,27 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     let newLevel = 0;
                     let newParentId = null;
-                    let newIndex = evt.newIndex;
 
+                    // ตรวจสอบว่า Task นี้ควรเป็น Sub Task ของ Task ก่อนหน้าหรือไม่
                     if (prevRow) {
                         const prevLevel = parseInt(prevRow.dataset.level || 0);
-                        newLevel = prevLevel;
 
-                        // ตรวจสอบระยะห่างจากขอบซ้ายเพื่อกำหนดว่าเป็น subtask หรือไม่
+                        // ตรวจสอบระยะห่างจากขอบซ้ายเพื่อกำหนดว่าเป็น Sub Task หรือไม่
                         const currentIndent = evt.item.querySelector('.task-handle').offsetLeft;
                         const prevIndent = prevRow.querySelector('.task-handle').offsetLeft;
 
                         if (currentIndent > prevIndent) {
+                            // ถ้าระยะห่างจากขอบซ้ายมากกว่า แสดงว่าเป็น Sub Task ของ Task ก่อนหน้า
                             newLevel = prevLevel + 1;
                             newParentId = prevRow.dataset.taskId;
+                        } else if (currentIndent < prevIndent) {
+                            // ถ้าระยะห่างจากขอบซ้ายน้อยกว่า แสดงว่าเป็น Task หลัก
+                            newLevel = prevLevel - 1;
+                            newParentId = prevRow.dataset.parentTaskId || null;
+                        } else {
+                            // ถ้าระยะห่างเท่ากัน แสดงว่าเป็น Task ระดับเดียวกัน
+                            newLevel = prevLevel;
+                            newParentId = prevRow.dataset.parentTaskId || null;
                         }
                     }
 
@@ -573,12 +580,15 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         data: {
                             task_id: taskId,
                             new_parent_id: newParentId,
-                            new_index: newIndex,
                             new_level: newLevel
                         },
                         success: function(response) {
                             try {
-                                response = typeof response === 'string' ? JSON.parse(response) : response;
+                                // ตรวจสอบว่า response เป็น JSON string
+                                if (typeof response === 'string') {
+                                    response = JSON.parse(response);
+                                }
+
                                 if (response.status === 'success') {
                                     // แสดงข้อความสำเร็จ
                                     const Toast = Swal.mixin({
@@ -595,7 +605,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     // โหลดข้อมูลใหม่
                                     loadTasks();
                                 } else {
-                                    throw new Error(response.message);
+                                    throw new Error(response.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
                                 }
                             } catch (e) {
                                 Swal.fire({
