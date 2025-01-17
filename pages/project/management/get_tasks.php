@@ -24,14 +24,13 @@ function getTasksHierarchy($condb, $project_id, $parent_id = null)
         WHERE t.project_id = ?
         AND (t.parent_task_id IS NULL AND ? IS NULL OR t.parent_task_id = ?)
         GROUP BY t.task_id
-        ORDER BY t.created_at ASC
+        ORDER BY t.task_order ASC, t.created_at ASC
     ");
 
     $stmt->execute([$project_id, $parent_id, $parent_id]);
     $tasks = [];
 
     while ($task = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        // ดึง sub-tasks recursively
         $task['sub_tasks'] = getTasksHierarchy($condb, $project_id, $task['task_id']);
         $tasks[] = $task;
     }

@@ -537,42 +537,85 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
         // เพิ่มฟังก์ชันสำหรับ initialize Sortable
+        // อัพเดท initSortable function
         function initSortable() {
-            // สร้าง Sortable instance สำหรับ task-container หลัก
-            new Sortable(document.getElementById('task-container'), {
-                handle: '.task-handle', // ใช้ไอคอนเป็นจุดจับลาก
+            const tbody = document.querySelector('#tasks-table tbody');
+            new Sortable(tbody, {
+                handle: '.task-handle',
                 animation: 150,
-                group: 'tasks', // กำหนดกลุ่มเพื่อให้สามารถลากระหว่างกลุ่มได้
-                draggable: '.task-item', // เลือกเฉพาะ elements ที่มี class task-item
-                ghostClass: 'sortable-ghost', // class สำหรับ placeholder
-                dragClass: 'sortable-drag', // class สำหรับ element ที่กำลังลาก
-
-                // เมื่อเริ่มลาก
-                onStart: function(evt) {
-                    console.log('เริ่มลาก:', evt.item.dataset.taskId);
-                },
-
-                // เมื่อปล่อยวาง
                 onEnd: function(evt) {
                     const taskId = evt.item.dataset.taskId;
-                    const newParentId = evt.to.dataset.parentId || null;
-                    const newIndex = evt.newIndex;
+                    const prevRow = evt.item.previousElementSibling;
+                    const nextRow = evt.item.nextElementSibling;
 
-                    // อัพเดทลำดับและ parent
-                    updateTaskPosition(taskId, newParentId, newIndex);
+                    let newLevel = 0;
+                    let newParentId = null;
+                    let newIndex = evt.newIndex;
+
+                    if (prevRow) {
+                        const prevLevel = parseInt(prevRow.dataset.level || 0);
+                        newLevel = prevLevel;
+
+                        // ตรวจสอบระยะห่างจากขอบซ้ายเพื่อกำหนดว่าเป็น subtask หรือไม่
+                        const currentIndent = evt.item.querySelector('.task-handle').offsetLeft;
+                        const prevIndent = prevRow.querySelector('.task-handle').offsetLeft;
+
+                        if (currentIndent > prevIndent) {
+                            newLevel = prevLevel + 1;
+                            newParentId = prevRow.dataset.taskId;
+                        }
+                    }
+
+                    // ส่งข้อมูลไปอัพเดทที่ฐานข้อมูล
+                    $.ajax({
+                        url: 'update_task_position.php',
+                        type: 'POST',
+                        data: {
+                            task_id: taskId,
+                            new_parent_id: newParentId,
+                            new_index: newIndex,
+                            new_level: newLevel
+                        },
+                        success: function(response) {
+                            try {
+                                response = typeof response === 'string' ? JSON.parse(response) : response;
+                                if (response.status === 'success') {
+                                    // แสดงข้อความสำเร็จ
+                                    const Toast = Swal.mixin({
+                                        toast: true,
+                                        position: 'top-end',
+                                        showConfirmButton: false,
+                                        timer: 1500,
+                                        timerProgressBar: true
+                                    });
+                                    Toast.fire({
+                                        icon: 'success',
+                                        title: 'บันทึกตำแหน่งสำเร็จ'
+                                    });
+                                    // โหลดข้อมูลใหม่
+                                    loadTasks();
+                                } else {
+                                    throw new Error(response.message);
+                                }
+                            } catch (e) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'เกิดข้อผิดพลาด',
+                                    text: e.message
+                                });
+                                loadTasks();
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: 'ไม่สามารถบันทึกตำแหน่งได้'
+                            });
+                            loadTasks();
+                        }
+                    });
                 }
-            });
-
-            // สร้าง Sortable instances สำหรับ sub-tasks containers
-            document.querySelectorAll('.sub-tasks').forEach(container => {
-                new Sortable(container, {
-                    handle: '.task-handle',
-                    animation: 150,
-                    group: 'tasks',
-                    draggable: '.task-item',
-                    ghostClass: 'sortable-ghost',
-                    dragClass: 'sortable-drag'
-                });
             });
         }
 
