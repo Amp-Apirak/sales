@@ -44,7 +44,6 @@ function renderTask($task, $level = 0)
     $indent = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $level);
     $taskId = htmlspecialchars($task['task_id']);
     $taskName = htmlspecialchars($task['task_name']);
-    $assignedUsers = htmlspecialchars($task['assigned_users'] ?? 'ไม่มีผู้รับผิดชอบ');
     $startDate = $task['start_date'] ? date('d/m/Y', strtotime($task['start_date'])) : '-';
     $endDate = $task['end_date'] ? date('d/m/Y', strtotime($task['end_date'])) : '-';
     $progress = (int)$task['progress'];
@@ -58,13 +57,40 @@ function renderTask($task, $level = 0)
         default => 'badge-secondary'
     };
 
+    // แยกรายชื่อผู้รับผิดชอบเป็น array
+    $assignedUsersArray = $task['assigned_users'] ? explode(', ', $task['assigned_users']) : [];
+
+    // สร้าง HTML สำหรับ avatars
+    $avatarsHtml = '<div class="avatar-group">';
+    foreach ($assignedUsersArray as $user) {
+        if (!empty($user)) {
+            // สร้างตัวย่อชื่อจากตัวอักษรแรกของชื่อและนามสกุล
+            $initials = implode('', array_map(function ($name) {
+                return strtoupper(substr($name, 0, 1));
+            }, explode(' ', $user)));
+
+            $avatarsHtml .= sprintf(
+                '<div class="avatar" data-toggle="tooltip" title="%s">
+                    <span class="avatar-text">%s</span>
+                </div>',
+                htmlspecialchars($user),
+                htmlspecialchars($initials)
+            );
+        }
+    }
+    $avatarsHtml .= '</div>';
+
+    // ถ้าไม่มีผู้รับผิดชอบ
+    if (empty($assignedUsersArray)) {
+        $avatarsHtml = '<div class="avatar-group"><div class="avatar"><span class="avatar-text">-</span></div></div>';
+    }
+
     $html = "
     <tr class='task-row' data-task-id='{$taskId}' data-level='{$level}'>
         <td>
             <i class='fas fa-grip-vertical task-handle mr-2' style='cursor: move;'></i>
             {$indent}";
 
-    // แสดงไอคอน expand/collapse ถ้ามี subtasks
     if (!empty($task['sub_tasks'])) {
         $html .= "<i class='fas fa-caret-right toggle-subtasks mr-1' style='cursor: pointer;'></i>";
     } else {
@@ -76,7 +102,7 @@ function renderTask($task, $level = 0)
         <td class='text-center'>{$progress}%</td>
         <td>{$startDate}</td>
         <td>{$endDate}</td>
-        <td>{$assignedUsers}</td>
+        <td>{$avatarsHtml}</td>
         <td>
             <div class='btn-group'>
                 <button type='button' class='btn btn-xs btn-info' onclick='editTask(\"{$taskId}\")'>
@@ -92,7 +118,6 @@ function renderTask($task, $level = 0)
         </td>
     </tr>";
 
-    // แสดง subtasks
     if (!empty($task['sub_tasks'])) {
         foreach ($task['sub_tasks'] as $subtask) {
             $html .= renderTask($subtask, $level + 1);

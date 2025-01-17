@@ -775,7 +775,70 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             });
         }
+
+        // แสดงชื่อผู้รับผิดชอบในรูปแบบ Avatar ในตาราง
+        $(document).ready(function() {
+            // เปิดใช้งาน tooltips
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // รีเฟรช tooltips หลังจากโหลดข้อมูลใหม่
+            $(document).ajaxComplete(function() {
+                $('[data-toggle="tooltip"]').tooltip();
+            });
+        });
     </script>
+
+    <!-- Avatar CSS -->
+    <style>
+        .avatar-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #4a90e2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .avatar:hover {
+            transform: scale(1.1);
+        }
+
+        .avatar-text {
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* สีพื้นหลังที่แตกต่างกันสำหรับแต่ละ avatar */
+        .avatar:nth-child(5n+1) {
+            background-color: #4a90e2;
+        }
+
+        .avatar:nth-child(5n+2) {
+            background-color: #50b794;
+        }
+
+        .avatar:nth-child(5n+3) {
+            background-color: #f39c12;
+        }
+
+        .avatar:nth-child(5n+4) {
+            background-color: #e74c3c;
+        }
+
+        .avatar:nth-child(5n+5) {
+            background-color: #8e44ad;
+        }
+    </style>
 
 
 </body>
