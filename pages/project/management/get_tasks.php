@@ -9,8 +9,9 @@ if (!$project_id) {
     exit('ไม่พบรหัสโครงการ');
 }
 
-// ฟังก์ชันสำหรับดึง Tasks แบบ recursive (ดึงทั้ง task หลักและ sub-tasks)
-function getTasksHierarchy($condb, $project_id, $parent_id = null) {
+// ฟังก์ชันสำหรับดึง Tasks แบบ recursive
+function getTasksHierarchy($condb, $project_id, $parent_id = null)
+{
     $stmt = $condb->prepare("
         SELECT 
             t.*,
@@ -20,129 +21,111 @@ function getTasksHierarchy($condb, $project_id, $parent_id = null) {
         LEFT JOIN project_task_assignments ta ON t.task_id = ta.task_id
         LEFT JOIN users u ON ta.user_id = u.user_id
         LEFT JOIN project_tasks st ON t.task_id = st.parent_task_id
-        WHERE t.project_id = ? 
+        WHERE t.project_id = ?
         AND (t.parent_task_id IS NULL AND ? IS NULL OR t.parent_task_id = ?)
         GROUP BY t.task_id
         ORDER BY t.created_at ASC
     ");
-    
+
     $stmt->execute([$project_id, $parent_id, $parent_id]);
     $tasks = [];
-    
+
     while ($task = $stmt->fetch(PDO::FETCH_ASSOC)) {
         // ดึง sub-tasks recursively
         $task['sub_tasks'] = getTasksHierarchy($condb, $project_id, $task['task_id']);
         $tasks[] = $task;
     }
-    
+
     return $tasks;
 }
 
 // ฟังก์ชันแสดงผล Task แต่ละรายการ
-function renderTask($task, $level = 0) {
-    // ทำความสะอาดข้อมูลก่อนแสดงผล
+function renderTask($task, $level = 0)
+{
+    $indent = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $level);
     $taskId = htmlspecialchars($task['task_id']);
     $taskName = htmlspecialchars($task['task_name']);
-    $description = htmlspecialchars($task['description'] ?? '');
     $assignedUsers = htmlspecialchars($task['assigned_users'] ?? 'ไม่มีผู้รับผิดชอบ');
     $startDate = $task['start_date'] ? date('d/m/Y', strtotime($task['start_date'])) : '-';
     $endDate = $task['end_date'] ? date('d/m/Y', strtotime($task['end_date'])) : '-';
     $progress = (int)$task['progress'];
-    
+
     // กำหนด class ตามสถานะ
-    $statusClass = match($task['status']) {
+    $statusClass = match ($task['status']) {
         'Pending' => 'badge-warning',
         'In Progress' => 'badge-info',
         'Completed' => 'badge-success',
         'Cancelled' => 'badge-danger',
         default => 'badge-secondary'
     };
-    
-    // กำหนด class ตามความสำคัญ
-    $priorityClass = match($task['priority']) {
-        'Low' => 'badge-success',
-        'Medium' => 'badge-info',
-        'High' => 'badge-warning',
-        'Urgent' => 'badge-danger',
-        default => 'badge-secondary'
-    };
 
-    // สร้าง HTML สำหรับ Task
     $html = "
-    <div class='task-item mb-3' id='task-{$taskId}' data-task-id='{$taskId}'>
-        <div class='card'>
-            <div class='card-header'>
-                <div class='d-flex justify-content-between align-items-center'>
-                    <div>
-                        <h5 class='mb-0 d-flex align-items-center'>
-                            <span class='task-name'>{$taskName}</span>
-                            <span class='badge {$statusClass} ml-2'>" . htmlspecialchars($task['status']) . "</span>
-                            <span class='badge {$priorityClass} ml-2'>" . htmlspecialchars($task['priority']) . "</span>
-                        </h5>
-                    </div>
-                    <div class='btn-group'>
-                        <button type='button' class='btn btn-sm btn-info' onclick='editTask(\"{$taskId}\")' title='แก้ไข'>
-                            <i class='fas fa-edit'></i>
-                        </button>
-                        <button type='button' class='btn btn-sm btn-primary' onclick='showAddTaskModal(\"{$taskId}\")' title='เพิ่ม Sub Task'>
-                            <i class='fas fa-plus'></i>
-                        </button>
-                        <button type='button' class='btn btn-sm btn-danger' onclick='deleteTask(\"{$taskId}\")' title='ลบ'>
-                            <i class='fas fa-trash'></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class='card-body'>
-                <div class='row'>
-                    <div class='col-md-6'>
-                        <p class='mb-1'><strong>รายละเอียด:</strong> {$description}</p>
-                        <p class='mb-1'><strong>ผู้รับผิดชอบ:</strong> {$assignedUsers}</p>
-                    </div>
-                    <div class='col-md-6'>
-                        <p class='mb-1'><strong>วันที่เริ่ม:</strong> {$startDate}</p>
-                        <p class='mb-1'><strong>วันที่สิ้นสุด:</strong> {$endDate}</p>
-                    </div>
-                </div>
-                <div class='progress mt-2' style='height: 5px;'>
-                    <div class='progress-bar' role='progressbar' 
-                         style='width: {$progress}%; background-color: " . ($progress == 100 ? '#28a745' : '#17a2b8') . "' 
-                         aria-valuenow='{$progress}' aria-valuemin='0' aria-valuemax='100'>
-                    </div>
-                </div>
-                <small class='text-muted'>ความคืบหน้า: {$progress}%</small>
-            </div>
-        </div>";
+    <tr class='task-row' data-task-id='{$taskId}' data-level='{$level}'>
+        <td>
+            <i class='fas fa-grip-vertical task-handle mr-2' style='cursor: move;'></i>
+            {$indent}";
 
-    // ถ้ามี sub-tasks ให้แสดงด้วย
+    // แสดงไอคอน expand/collapse ถ้ามี subtasks
     if (!empty($task['sub_tasks'])) {
-        $html .= "<div class='sub-tasks pl-4 mt-2'>";
-        foreach ($task['sub_tasks'] as $subTask) {
-            $html .= renderTask($subTask, $level + 1);
-        }
-        $html .= "</div>";
+        $html .= "<i class='fas fa-caret-right toggle-subtasks mr-1' style='cursor: pointer;'></i>";
+    } else {
+        $html .= "<i class='fas fa-minus mr-1'></i>";
     }
 
-    $html .= "</div>";
+    $html .= "{$taskName}</td>
+        <td><span class='badge {$statusClass}'>{$task['status']}</span></td>
+        <td class='text-center'>{$progress}%</td>
+        <td>{$startDate}</td>
+        <td>{$endDate}</td>
+        <td>{$assignedUsers}</td>
+        <td>
+            <div class='btn-group'>
+                <button type='button' class='btn btn-xs btn-info' onclick='editTask(\"{$taskId}\")'>
+                    <i class='fas fa-edit'></i>
+                </button>
+                <button type='button' class='btn btn-xs btn-primary' onclick='showAddTaskModal(\"{$taskId}\")'>
+                    <i class='fas fa-plus'></i>
+                </button>
+                <button type='button' class='btn btn-xs btn-danger' onclick='deleteTask(\"{$taskId}\")'>
+                    <i class='fas fa-trash'></i>
+                </button>
+            </div>
+        </td>
+    </tr>";
+
+    // แสดง subtasks
+    if (!empty($task['sub_tasks'])) {
+        foreach ($task['sub_tasks'] as $subtask) {
+            $html .= renderTask($subtask, $level + 1);
+        }
+    }
+
     return $html;
 }
 
-try {
-    // ดึงข้อมูล tasks ทั้งหมด
-    $tasks = getTasksHierarchy($condb, $project_id);
-    
-    // แสดงผล
-    if (empty($tasks)) {
-        echo "<div class='alert alert-info'>ยังไม่มีรายการงาน คลิกปุ่ม \"เพิ่มงานใหม่\" เพื่อเริ่มต้น</div>";
-    } else {
-        foreach ($tasks as $task) {
-            echo renderTask($task);
-        }
+// แสดงผลตาราง
+echo "<table class='table table-hover' id='tasks-table'>
+    <thead>
+        <tr>
+            <th>งาน</th>
+            <th>สถานะ</th>
+            <th class='text-center'>ความคืบหน้า</th>
+            <th>วันที่เริ่ม</th>
+            <th>วันที่สิ้นสุด</th>
+            <th>ผู้รับผิดชอบ</th>
+            <th>จัดการ</th>
+        </tr>
+    </thead>
+    <tbody>";
+
+// ดึงและแสดงข้อมูล tasks
+$tasks = getTasksHierarchy($condb, $project_id);
+if (empty($tasks)) {
+    echo "<tr><td colspan='7' class='text-center'>ยังไม่มีรายการงาน</td></tr>";
+} else {
+    foreach ($tasks as $task) {
+        echo renderTask($task);
     }
-} catch (Exception $e) {
-    // บันทึก error log
-    error_log("Error in get_tasks.php: " . $e->getMessage());
-    // แสดงข้อความ error แบบ user-friendly
-    echo "<div class='alert alert-danger'>เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง</div>";
 }
-?>
+
+echo "</tbody></table>";

@@ -39,6 +39,33 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project Task Management</title>
     <?php include '../../../include/header.php'; ?>
+
+    <!-- เพิ่ม SortableJS library -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <!-- เพิ่ม CSS สำหรับ Drag & Drop -->
+    <style>
+        .task-item.sortable-ghost {
+            opacity: 0.5;
+            background: #c8ebfb;
+        }
+
+        .task-item.sortable-drag {
+            cursor: move;
+        }
+
+        .task-handle {
+            cursor: move;
+            padding: 5px;
+            margin-right: 10px;
+            color: #6c757d;
+        }
+
+        .task-handle:hover {
+            color: #007bff;
+        }
+    </style>
+
     <!-- เพิ่ม CSS สำหรับ Tree View -->
     <style>
         .task-tree {
@@ -506,6 +533,204 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             // แสดง Modal
             $('#taskModal').modal('show');
+        }
+
+
+        // เพิ่มฟังก์ชันสำหรับ initialize Sortable
+        function initSortable() {
+            // สร้าง Sortable instance สำหรับ task-container หลัก
+            new Sortable(document.getElementById('task-container'), {
+                handle: '.task-handle', // ใช้ไอคอนเป็นจุดจับลาก
+                animation: 150,
+                group: 'tasks', // กำหนดกลุ่มเพื่อให้สามารถลากระหว่างกลุ่มได้
+                draggable: '.task-item', // เลือกเฉพาะ elements ที่มี class task-item
+                ghostClass: 'sortable-ghost', // class สำหรับ placeholder
+                dragClass: 'sortable-drag', // class สำหรับ element ที่กำลังลาก
+
+                // เมื่อเริ่มลาก
+                onStart: function(evt) {
+                    console.log('เริ่มลาก:', evt.item.dataset.taskId);
+                },
+
+                // เมื่อปล่อยวาง
+                onEnd: function(evt) {
+                    const taskId = evt.item.dataset.taskId;
+                    const newParentId = evt.to.dataset.parentId || null;
+                    const newIndex = evt.newIndex;
+
+                    // อัพเดทลำดับและ parent
+                    updateTaskPosition(taskId, newParentId, newIndex);
+                }
+            });
+
+            // สร้าง Sortable instances สำหรับ sub-tasks containers
+            document.querySelectorAll('.sub-tasks').forEach(container => {
+                new Sortable(container, {
+                    handle: '.task-handle',
+                    animation: 150,
+                    group: 'tasks',
+                    draggable: '.task-item',
+                    ghostClass: 'sortable-ghost',
+                    dragClass: 'sortable-drag'
+                });
+            });
+        }
+
+        // เพิ่มฟังก์ชันสำหรับอัพเดทตำแหน่งงาน
+        function updateTaskPosition(taskId, newParentId, newIndex) {
+            $.ajax({
+                url: 'update_task_position.php',
+                type: 'POST',
+                data: {
+                    task_id: taskId,
+                    new_parent_id: newParentId,
+                    new_index: newIndex
+                },
+                success: function(response) {
+                    try {
+                        if (typeof response === 'string') {
+                            response = JSON.parse(response);
+                        }
+
+                        if (response.status === 'success') {
+                            // แสดงข้อความสำเร็จแบบเบาๆ
+                            const Toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                timerProgressBar: true
+                            });
+
+                            Toast.fire({
+                                icon: 'success',
+                                title: 'อัพเดทตำแหน่งสำเร็จ'
+                            });
+                        } else {
+                            throw new Error(response.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+                        }
+                    } catch (e) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: e.message
+                        });
+
+                        // โหลดข้อมูลใหม่เมื่อเกิดข้อผิดพลาด
+                        loadTasks();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
+                    });
+                    loadTasks();
+                }
+            });
+        }
+
+        // เพิ่มการเรียกใช้ initSortable หลังจากโหลด tasks
+        function loadTasks() {
+            $.ajax({
+                url: 'get_tasks.php',
+                type: 'GET',
+                data: {
+                    project_id: '<?php echo $project_id; ?>'
+                },
+                success: function(response) {
+                    $('#task-container').html(response);
+                    // เรียกใช้ initSortable หลังจากโหลด tasks
+                    initSortable();
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .task-row[data-level] {
+            transition: background-color 0.3s;
+        }
+
+        .task-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .task-handle {
+            color: #ccc;
+        }
+
+        .task-handle:hover {
+            color: #666;
+        }
+
+        .toggle-subtasks {
+            transition: transform 0.2s;
+        }
+
+        .toggle-subtasks.expanded {
+            transform: rotate(90deg);
+        }
+
+        .btn-xs {
+            padding: 0.1rem 0.3rem;
+            font-size: 0.75rem;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+            // จัดการการ Toggle subtasks
+            $(document).on('click', '.toggle-subtasks', function() {
+                $(this).toggleClass('expanded');
+                const currentRow = $(this).closest('tr');
+                const currentLevel = parseInt(currentRow.data('level'));
+                let nextRow = currentRow.next();
+
+                while (nextRow.length && parseInt(nextRow.data('level')) > currentLevel) {
+                    nextRow.toggle();
+                    nextRow = nextRow.next();
+                }
+            });
+
+            // ซ่อน subtasks เมื่อโหลดหน้าเว็บ
+            $('.task-row').each(function() {
+                const level = parseInt($(this).data('level'));
+                if (level > 0) {
+                    $(this).hide();
+                }
+            });
+        });
+
+        // อัพเดท initSortable function
+        function initSortable() {
+            const tbody = document.querySelector('#tasks-table tbody');
+            new Sortable(tbody, {
+                handle: '.task-handle',
+                animation: 150,
+                onEnd: function(evt) {
+                    // อัพเดทลำดับและ parent
+                    const taskId = evt.item.dataset.taskId;
+                    const prevRow = evt.item.previousElementSibling;
+                    const nextRow = evt.item.nextElementSibling;
+
+                    let newLevel = 0;
+                    let newParentId = null;
+
+                    if (prevRow) {
+                        const prevLevel = parseInt(prevRow.dataset.level);
+                        newLevel = prevLevel;
+                        // ตรวจสอบว่าควรเป็น subtask หรือไม่
+                        if (evt.item.querySelector('.task-handle').offsetLeft > prevRow.querySelector('.task-handle').offsetLeft) {
+                            newLevel = prevLevel + 1;
+                            newParentId = prevRow.dataset.taskId;
+                        }
+                    }
+
+                    updateTaskPosition(taskId, newParentId, evt.newIndex, newLevel);
+                }
+            });
         }
     </script>
 
