@@ -103,12 +103,30 @@ if ($role == 'Executive' || $role == 'Sale Supervisor') {
 $where_clause = "WHERE 1=1";
 $params = array();
 
-if ($role == 'Sale Supervisor' || $role == 'Engineer') {
-    $where_clause .= " AND u.team_id = :team_id";
+if ($role == 'Sale Supervisor') {
+    $where_clause .= " AND (
+        u.team_id = :team_id 
+        OR EXISTS (
+            SELECT 1 
+            FROM project_members pm2 
+            WHERE pm2.project_id = p.project_id 
+            AND pm2.user_id = :user_id
+        )
+    )";
     $params[':team_id'] = $team_id;
+    $params[':user_id'] = $created_by;
 } elseif ($role != 'Executive') {
-    $where_clause .= " AND p.created_by = :created_by";
+    $where_clause .= " AND (
+        p.created_by = :created_by 
+        OR EXISTS (
+            SELECT 1 
+            FROM project_members pm2 
+            WHERE pm2.project_id = p.project_id 
+            AND pm2.user_id = :user_id
+        )
+    )";
     $params[':created_by'] = $created_by;
+    $params[':user_id'] = $created_by;
 }
 
 // เพิ่มเงื่อนไขการค้นหา
@@ -146,7 +164,7 @@ if (!empty($search_year)) {
 
 // SQL query สำหรับดึงข้อมูลโปรเจกต์
 $sql_projects = "
-    SELECT 
+    SELECT DISTINCT 
         p.*, 
         u.first_name, 
         u.last_name, 
@@ -170,6 +188,7 @@ $sql_projects = "
     LEFT JOIN teams t ON u.team_id = t.team_id
     LEFT JOIN products pr ON p.product_id = pr.product_id
     LEFT JOIN users seller ON p.seller = seller.user_id
+    LEFT JOIN project_members pm ON p.project_id = pm.project_id
     $where_clause
     ORDER BY p.created_at DESC, p.project_id DESC;
 ";
@@ -741,6 +760,12 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                             <a href="management/project_management.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-warning">
                                                                 <i class="fas fa-project-diagram"></i>
                                                             </a>
+                                                            <!-- เพิ่มปุ่มสำหรับจัดการสมาชิกโครงการตรงนี้ -->
+                                                            <a href="project_member/manage_members.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
+                                                                class="btn btn-secondary btn-sm"
+                                                                title="จัดการสมาชิกโครงการ">
+                                                                <i class="fas fa-users"></i>
+                                                            </a>
                                                         </td>
                                                     <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
@@ -800,7 +825,11 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                     </td>
                                                     <td class="text-nowrap"><?php echo isset($project['phone']) ? htmlspecialchars($project['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo isset($project['email']) ? htmlspecialchars($project['email']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['remark']) ? htmlspecialchars($project['remark']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap">
+                                                        <div class="truncate-text" title="<?php echo htmlspecialchars($project['remark'] ?? 'ไม่ระบุข้อมูล'); ?>">
+                                                            <?php echo isset($project['remark']) ? truncateText(htmlspecialchars($project['remark'])) : 'ไม่ระบุข้อมูล'; ?>
+                                                        </div>
+                                                    </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['end_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>

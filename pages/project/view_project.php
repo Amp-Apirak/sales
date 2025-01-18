@@ -9,23 +9,35 @@ $user_team_id = $_SESSION['team_id'] ?? 0;
 
 // ตรวจสอบว่า project_id ถูกส่งมาจาก URL หรือไม่
 if (!isset($_GET['project_id']) || empty($_GET['project_id'])) {
-    echo "ไม่พบข้อมูลโครงการ";
+    $_SESSION['error'] = "ไม่พบข้อมูลโครงการ";
+    header("Location: project.php");
     exit;
 }
 
-// รับ project_id จาก URL และทำการถอดรหัส
-$project_id = decryptUserId($_GET['project_id']);
-
 // ดึงข้อมูลโครงการและผู้สร้าง
 try {
-    $sql = "SELECT p.*, u.team_id as creator_team_id, 
+    // รับ project_id จาก URL และทำการถอดรหัส
+    $project_id = decryptUserId($_GET['project_id']);
+
+    try {
+        $sql = "SELECT p.*, 
+            u.team_id as creator_team_id, 
             u.first_name, u.last_name, u.email as seller_email, u.phone as seller_phone,
             pr.product_name, pr.product_description,
             c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
             t.team_name,
             tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
             creator.first_name as creator_first_name, creator.last_name as creator_last_name,
-            updater.first_name as updater_first_name, updater.last_name as updater_last_name
+            updater.first_name as updater_first_name, updater.last_name as updater_last_name,
+            CASE 
+                WHEN p.created_by = :user_id THEN true
+                WHEN EXISTS (
+                    SELECT 1 FROM project_members pm 
+                    WHERE pm.project_id = p.project_id 
+                    AND pm.user_id = :user_id
+                ) THEN true
+                ELSE false
+            END as has_access
             FROM projects p 
             LEFT JOIN users u ON p.seller = u.user_id 
             LEFT JOIN products pr ON p.product_id = pr.product_id 
@@ -36,13 +48,44 @@ try {
             LEFT JOIN users updater ON p.updated_by = updater.user_id
             WHERE p.project_id = :project_id";
 
-    $stmt = $condb->prepare($sql);
-    $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
-    $stmt->execute();
-    $project = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $condb->prepare($sql);
+        $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
+        $stmt->execute();
 
-    if (!$project) {
-        echo "ไม่พบโครงการที่ต้องการแสดง";
+        // เพิ่มบรรทัดนี้เพื่อดึงข้อมูลโครงการ
+        $project = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$project) {
+            $_SESSION['error'] = "ไม่พบโครงการที่ต้องการแสดง";
+            header("Location: project.php");
+            exit;
+        }
+
+        // ตรวจสอบสิทธิ์การเข้าถึง
+        $hasAccess = false;
+        switch ($role) {
+            case 'Executive':
+                $hasAccess = true;
+                break;
+            case 'Sale Supervisor':
+                // เข้าถึงได้ถ้าเป็นโครงการในทีมหรือเป็นสมาชิก
+                $hasAccess = ($user_team_id == $project['creator_team_id'] || $project['has_access']);
+                break;
+            case 'Seller':
+            case 'Engineer':
+                // เข้าถึงได้ถ้าเป็นผู้สร้างหรือเป็นสมาชิก
+                $hasAccess = $project['has_access'];
+                break;
+        }
+
+        if (!$hasAccess) {
+            $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
+            header("Location: project.php");
+            exit;
+        }
+    } catch (PDOException $e) {
+        echo "เกิดข้อผิดพลาด: " . $e->getMessage();
         exit;
     }
 
@@ -54,19 +97,32 @@ try {
             $hasAccess = true;
             break;
         case 'Sale Supervisor':
+            // หัวหน้าทีมสามารถเข้าถึงโครงการในทีมของตัวเอง
             if ($user_team_id == $project['creator_team_id']) {
                 $hasAccess = true;
             }
             break;
         case 'Seller':
-            if ($user_id == $project['created_by']) {
+        case 'Engineer':
+            // ผู้สร้างหรือสมาชิกโครงการสามารถเข้าถึงได้
+            if ($user_id == $project['created_by'] || $project['is_member']) {
                 $hasAccess = true;
             }
             break;
     }
 
+    // ถ้าไม่มีสิทธิ์เข้าถึง
     if (!$hasAccess) {
-        echo "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
+        $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
+        header("Location: project.php");
+        exit;
+    }
+
+    // ถ้าไม่มีสิทธิ์เข้าถึง
+    // ถ้าไม่มีสิทธิ์เข้าถึง
+    if (!$hasAccess) {
+        $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
+        header("Location: project.php");
         exit;
     }
 
@@ -662,7 +718,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
 
                             <!-- แถบที่ 6 บริหารโครงการ -->
                             <div class="tab-pane" id="tasks">
-                                <!--  -->
+                                 <?php include 'management/tab_management.php'; ?>
                             </div>
 
 

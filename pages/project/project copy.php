@@ -138,11 +138,8 @@ if (!empty($search_customer)) {
 }
 if (!empty($search_year)) {
     $where_clause .= " AND (
-        CASE 
-            WHEN p.sales_date IS NOT NULL THEN YEAR(p.sales_date)
-            WHEN p.created_at IS NOT NULL THEN YEAR(p.created_at)
-            ELSE YEAR(CURRENT_DATE)
-        END = :search_year
+        (YEAR(p.sales_date) = :search_year AND p.sales_date IS NOT NULL) OR 
+        (YEAR(p.created_at) = :search_year AND p.sales_date IS NULL)
     )";
     $params[':search_year'] = $search_year;
 }
@@ -174,12 +171,19 @@ $sql_projects = "
     LEFT JOIN products pr ON p.product_id = pr.product_id
     LEFT JOIN users seller ON p.seller = seller.user_id
     $where_clause
-    ORDER BY p.created_at DESC 
+    ORDER BY p.created_at DESC, p.project_id DESC;
 ";
+
 
 $stmt_projects = $condb->prepare($sql_projects);
 $stmt_projects->execute($params);
 $projects = $stmt_projects->fetchAll(PDO::FETCH_ASSOC);
+
+// // Debug: ตรวจสอบคำสั่ง SQL และพารามิเตอร์
+// echo "<pre>";
+// print_r($stmt_projects->queryString);
+// print_r($params);
+// echo "</pre>";
 
 // ฟังก์ชันสำหรับตัดข้อความให้สั้นลงและเพิ่ม ...
 function truncateText($text, $length = 100)
@@ -729,7 +733,20 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                                 <i class="fas fa-eye"></i>
                                                             </a>
                                                             <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                            <!-- <a href="" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a> -->
+                                                            <?php if ($project['created_by'] === $created_by): ?>
+                                                                <button class="btn btn-danger btn-sm" onclick="confirmDelete('<?php echo urlencode(encryptUserId($project['project_id'])); ?>', '<?php echo htmlspecialchars($project['project_name']); ?>')">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            <?php endif; ?>
+                                                            <a href="management/project_management.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-warning">
+                                                                <i class="fas fa-project-diagram"></i>
+                                                            </a>
+                                                            <!-- เพิ่มปุ่มสำหรับจัดการสมาชิกโครงการตรงนี้ -->
+                                                            <a href="project_member/manage_members.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
+                                                                class="btn btn-secondary btn-sm"
+                                                                title="จัดการสมาชิกโครงการ">
+                                                                <i class="fas fa-users"></i>
+                                                            </a>
                                                         </td>
                                                     <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
@@ -822,8 +839,10 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                 "scrollX": true,
                 "scrollCollapse": true,
                 "paging": true,
+                "order": [
+                    [1, "desc"]
+                ], // ปรับให้เรียงตามคอลัมน์ที่ 2 (Create Date) จากล่าสุดไปเก่าสุด
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
-
                 "fixedColumns": {
                     leftColumns: 2 // ตรึง 2 คอลัมน์ซ้าย
                 }
@@ -877,7 +896,6 @@ $metrics = calculateProjectMetrics($projects, $search_params);
     </script>
 
     <!-- Modal สำหรับการ Import -->
-    <!-- Modal สำหรับนำเข้าไฟล์ -->
     <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -1158,6 +1176,58 @@ $metrics = calculateProjectMetrics($projects, $search_params);
             });
         });
     </script>
+
+
+
+    <!-- ลบโครกงาร -->
+    <script>
+        function confirmDelete(projectId, projectName) {
+            Swal.fire({
+                title: 'คุณแน่ใจหรือไม่?',
+                text: `ที่จะลบโครงการ "${projectName}" นี้ คำเตือน: ข้อมูลที่เชื่อมโยงทั้งหมดจะถูกลบด้วย!!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'ลบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // ส่ง request ไปยัง delete_project.php
+                    fetch(`delete_project.php?project_id=${projectId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'สำเร็จ!',
+                                    text: `ลบโครงการ "${projectName}" สำเร็จแล้ว`,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    // Redirect ไปหน้า project.php
+                                    window.location.href = 'project.php';
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'เกิดข้อผิดพลาด!',
+                                    text: data.message,
+                                });
+                            }
+                        })
+                        .catch(() => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด!',
+                                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                            });
+                        });
+                }
+            });
+        }
+    </script>
+
 
 </body>
 

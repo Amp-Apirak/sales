@@ -240,6 +240,7 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php include '../../../include/footer.php'; ?>
     </div>
     <!-- ./wrapper -->
+     
     <!-- JS for Dropdown Select2 -->
     <script>
         $(function() {

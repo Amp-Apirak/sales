@@ -159,6 +159,9 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                     <ul class="nav nav-pills">
                         <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
                         <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tasks" data-toggle="tab" role="tab">บริหารโครงการ</a>
+                        </li>
                         <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab" data-tab="documents">เอกสารแนบ</a></li>
                         <li class="nav-item"><a class="nav-link" href="#links" data-toggle="tab" data-tab="links">แนบลิงค์เอกสารโครงการ</a></li>
                         <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
@@ -656,6 +659,12 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                     </table>
                                 </div>
                             </div>
+
+                            <!-- แถบที่ 6 บริหารโครงการ -->
+                            <div class="tab-pane" id="tasks">
+                                <!--  -->
+                            </div>
+
 
                         </div>
                     </div>
