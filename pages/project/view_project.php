@@ -578,20 +578,77 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                             <!-- แถบที่ 2 ต้นทุนโครงการ -->
                             <div class="tab-pane" id="project-cost">
                                 <div class="table-responsive">
+                                    <style>
+                                        /* กำหนดให้ทุก cell ในตาราง #costTable เป็น text-nowrap */
+                                        #costTable th,
+                                        #costTable td {
+                                            white-space: nowrap !important;
+                                        }
+
+                                        /* ทำให้ตารางสามารถ scroll ในแนวนอนได้เมื่อเนื้อหาเกินขอบ */
+                                        .table-responsive {
+                                            overflow-x: auto;
+                                        }
+
+                                        /* ปรับความกว้างขั้นต่ำของ column ให้เหมาะสม */
+                                        #costTable th {
+                                            min-width: 100px;
+                                            /* ปรับตามความเหมาะสม */
+                                        }
+
+                                        /* column ที่ต้องการความกว้างมากกว่า เช่น Description */
+                                        #costTable th:nth-child(3) {
+                                            min-width: 200px;
+                                        }
+
+                                        /* กำหนดความกว้างขั้นต่ำของแต่ละคอลัมน์ */
+                                        #costTable th:nth-child(1),
+                                        /* Type */
+                                        #costTable td:nth-child(1) {
+                                            min-width: 200px;
+                                            /* เพิ่มจาก 100px เป็น 150px */
+                                        }
+
+                                        #costTable th:nth-child(2),
+                                        /* PART No. */
+                                        #costTable td:nth-child(2) {
+                                            min-width: 200px;
+                                            /* เพิ่มจาก 100px เป็น 200px */
+                                        }
+
+                                        
+                                        #costTable th:nth-child(3),
+                                        /* PART No. */
+                                        #costTable td:nth-child(3) {
+                                            min-width: 600px;
+                                            /* เพิ่มจาก 100px เป็น 200px */
+                                        }
+
+                                        /* ทำให้ตารางสามารถ scroll ในแนวนอนได้เมื่อเนื้อหาเกินขอบ */
+                                        .table-responsive {
+                                            overflow-x: auto;
+                                        }
+
+                                        /* กำหนดให้ทุก cell ในตาราง #costTable เป็น text-nowrap */
+                                        #costTable th,
+                                        #costTable td {
+                                            white-space: nowrap !important;
+                                        }
+                                    </style>
                                     <table id="costTable" class="table table-bordered">
                                         <thead>
                                             <tr>
-                                                <th>Type</th>
-                                                <th>PART No.</th>
-                                                <th>Description</th>
-                                                <th>QTY.</th>
-                                                <th>Unit</th>
-                                                <th>Price / Unit</th>
-                                                <th>Total Amount</th>
-                                                <th>Cost / Unit</th>
-                                                <th>Total Cost</th>
-                                                <th>Supplier</th>
-                                                <th>Actions</th>
+                                                <th class="text-nowrap text-center" style="width: 10%">Type</th>
+                                                <th class="text-nowrap" style="width: 10%">PART No.</th>
+                                                <th class="text-nowrap" style="width: 50%">Description</th>
+                                                <th class="text-nowrap" style="width: 5%">QTY.</th>
+                                                <th class="text-nowrap" style="width: 5%">Unit</th>
+                                                <th class="text-nowrap" style="width: 10%">Price / Unit</th>
+                                                <th class="text-nowrap" style="width: 10%">Total Amount</th>
+                                                <th class="text-nowrap" style="width: 10%">Cost / Unit</th>
+                                                <th class="text-nowrap">Total Cost</th>
+                                                <th class="text-nowrap">Supplier</th>
+                                                <th class="text-nowrap">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody id="costTableBody">
@@ -600,17 +657,17 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                         <!-- แถวสำหรับกรอกข้อมูลใหม่ -->
                                         <tfoot>
                                             <tr>
-                                                <td><input type="text" id="typeInput" class="form-control form-control-sm" placeholder="A, B, C"></td>
-                                                <td><input type="text" id="partNoInput" class="form-control form-control-sm" placeholder="Service, Hardware, Software"></td>
-                                                <td><input type="text" id="descriptionInput" class="form-control form-control-sm" placeholder="ใส่รายละเอียด"></td>
-                                                <td><input type="number" id="qtyInput" class="form-control form-control-sm" placeholder="จำนวนตัวเลข"></td>
-                                                <td><input type="text" id="unitInput" class="form-control form-control-sm" placeholder="เช่น วัน, คน, ชิ้น"></td>
-                                                <td><input type="text" id="priceInput" class="form-control form-control-sm" placeholder="ตั้งราคาขาย"></td>
-                                                <td><span id="totalAmountInput">0.00</span></td>
-                                                <td><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
-                                                <td><span id="totalCostInput">0.00</span></td>
-                                                <td><input type="text" id="supplierInput" class="form-control form-control-sm" placeholder=""></td>
-                                                <td><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
+                                                <td class="text-nowrap"><input type="text" id="typeInput" class="form-control form-control-sm" placeholder="A, B, C"></td>
+                                                <td class="text-nowrap"><input type="text" id="partNoInput" class="form-control form-control-sm" placeholder="Service, Hardware, Software"></td>
+                                                <td class="text-nowrap"><input type="text" id="descriptionInput" class="form-control form-control-sm" placeholder="ใส่รายละเอียด"></td>
+                                                <td class="text-nowrap text-center"><input type="number" id="qtyInput" class="form-control form-control-sm" placeholder="จำนวนตัวเลข"></td>
+                                                <td class="text-nowrap"><input type="text" id="unitInput" class="form-control form-control-sm" placeholder="เช่น วัน, คน, ชิ้น"></td>
+                                                <td class="text-nowrap"><input type="text" id="priceInput" class="form-control form-control-sm" placeholder="ตั้งราคาขาย"></td>
+                                                <td class="text-nowrap"><span id="totalAmountInput">0.00</span></td>
+                                                <td class="text-nowrap"><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
+                                                <td class="text-nowrap"><span id="totalCostInput">0.00</span></td>
+                                                <td class="text-nowrap"><input type="text" id="supplierInput" class="form-control form-control-sm" placeholder=""></td>
+                                                <td class="text-nowrap"><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -718,7 +775,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
 
                             <!-- แถบที่ 6 บริหารโครงการ -->
                             <div class="tab-pane" id="tasks">
-                                 <?php include 'management/tab_management.php'; ?>
+                                <?php include 'management/tab_management.php'; ?>
                             </div>
 
 
@@ -2112,7 +2169,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                             }
                         ],
                         pageLength: 10,
-                        responsive: true,
+                        responsive: false,
                         ordering: true,
                         searching: true,
                         columnDefs: [{
