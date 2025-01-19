@@ -11,54 +11,6 @@ function generateUUID()
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
-// ฟังก์ชันคำนวณความคืบหน้าเฉลี่ยของ subtasks
-function calculateSubtasksProgress($condb, $task_id)
-{
-    $stmt = $condb->prepare("
-        SELECT AVG(progress) as avg_progress 
-        FROM project_tasks 
-        WHERE parent_task_id = ?
-    ");
-    $stmt->execute([$task_id]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result['avg_progress'] ?? 0;
-}
-
-// ฟังก์ชันอัพเดทความคืบหน้าของ parent tasks แบบ recursive
-function updateParentTaskProgress($condb, $task_id)
-{
-    // หา parent_task_id
-    $stmt = $condb->prepare("
-        SELECT parent_task_id, project_id 
-        FROM project_tasks 
-        WHERE task_id = ?
-    ");
-    $stmt->execute([$task_id]);
-    $task = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($task && $task['parent_task_id']) {
-        // คำนวณความคืบหน้าเฉลี่ยของ subtasks
-        $progress = calculateSubtasksProgress($condb, $task['parent_task_id']);
-
-        // อัพเดทความคืบหน้าของ parent task
-        $stmt = $condb->prepare("
-            UPDATE project_tasks 
-            SET progress = ?, 
-                updated_at = CURRENT_TIMESTAMP,
-                updated_by = ?
-            WHERE task_id = ?
-        ");
-        $stmt->execute([
-            round($progress),
-            $_SESSION['user_id'],
-            $task['parent_task_id']
-        ]);
-
-        // อัพเดท parent ถัดไปแบบ recursive
-        updateParentTaskProgress($condb, $task['parent_task_id']);
-    }
-}
-
 // ตรวจสอบว่าเป็น POST request
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -82,21 +34,6 @@ try {
     $isNewTask = empty($input['task_id']);
     $taskId = $isNewTask ? generateUUID() : $input['task_id'];
 
-    // คำนวณ task_order สำหรับการเพิ่มใหม่
-    if ($isNewTask) {
-        $stmt = $condb->prepare("
-            SELECT COALESCE(MAX(task_order), 0) + 1 as next_order 
-            FROM project_tasks 
-            WHERE project_id = ? AND (parent_task_id IS NULL OR parent_task_id = ?)
-        ");
-        $stmt->execute([
-            $input['project_id'],
-            $input['parent_task_id'] ?? null
-        ]);
-        $orderResult = $stmt->fetch(PDO::FETCH_ASSOC);
-        $taskOrder = $orderResult['next_order'];
-    }
-
     if ($isNewTask) {
         // SQL สำหรับเพิ่มข้อมูลใหม่
         $sql = "INSERT INTO project_tasks (
@@ -111,8 +48,7 @@ try {
                     progress,
                     priority,
                     created_by,
-                    created_at,
-                    task_order
+                    created_at
                 ) VALUES (
                     :task_id,
                     :project_id,
@@ -125,8 +61,7 @@ try {
                     :progress,
                     :priority,
                     :created_by,
-                    CURRENT_TIMESTAMP,
-                    :task_order
+                    CURRENT_TIMESTAMP
                 )";
 
         $stmt = $condb->prepare($sql);
@@ -141,8 +76,7 @@ try {
             ':status' => $input['status'] ?? 'Pending',
             ':progress' => $input['progress'] ?? 0,
             ':priority' => $input['priority'] ?? 'Medium',
-            ':created_by' => $_SESSION['user_id'],
-            ':task_order' => $taskOrder
+            ':created_by' => $_SESSION['user_id']
         ]);
     } else {
         // SQL สำหรับอัพเดทข้อมูล
@@ -199,11 +133,6 @@ try {
                 ]);
             }
         }
-    }
-
-    // อัพเดทความคืบหน้าของ parent tasks
-    if (!empty($input['parent_task_id'])) {
-        updateParentTaskProgress($condb, $taskId);
     }
 
     // Commit transaction

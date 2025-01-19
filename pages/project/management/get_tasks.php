@@ -9,22 +9,103 @@ if (!$project_id) {
     exit('ไม่พบรหัสโครงการ');
 }
 
+
+/**
+ * คำนวณจำนวนวันดำเนินการ
+ */
+function calculateDuration($startDate, $endDate)
+{
+    if (
+        empty($startDate) || empty($endDate) ||
+        $startDate == '0000-00-00' || $endDate == '0000-00-00'
+    ) {
+        return '<span class="text-muted">-</span>';
+    }
+
+    $start = new DateTime($startDate);
+    $end = new DateTime($endDate);
+    $interval = $start->diff($end);
+
+    // เพิ่ม 1 วันเพราะนับวันเริ่มต้นด้วย
+    $days = $interval->days + 1;
+
+    // ถ้าวันที่สิ้นสุดน้อยกว่าวันที่เริ่ม
+    if ($end < $start) {
+        return '<span class="text-danger" data-toggle="tooltip" title="วันที่ไม่ถูกต้อง">!</span>';
+    }
+
+    return '<span data-toggle="tooltip" title="' . $days . ' วัน">' .
+        number_format($days) . ' วัน</span>';
+}
+
+/**
+ * คำนวณความคืบหน้าเฉลี่ยของ tasks และ subtasks แบบ recursive
+ */
+function calculateTaskProgress($tasks)
+{
+    if (empty($tasks)) {
+        return 0;
+    }
+
+    $totalProgress = 0;
+    $count = 0;
+
+    foreach ($tasks as $task) {
+        if (!empty($task['sub_tasks'])) {
+            // คำนวณความคืบหน้าจาก subtasks
+            $subTaskProgress = calculateTaskProgress($task['sub_tasks']);
+            $totalProgress += $subTaskProgress;
+        } else {
+            // ใช้ค่าความคืบหน้าของตัวเอง
+            $totalProgress += floatval($task['progress']);
+        }
+        $count++;
+    }
+
+    return $count > 0 ? round($totalProgress / $count, 2) : 0;
+}
+
+
 // ฟังก์ชันสำหรับดึง Tasks แบบ recursive
 function getTasksHierarchy($condb, $project_id, $parent_id = null)
 {
     $stmt = $condb->prepare("
         SELECT 
             t.*,
-            GROUP_CONCAT(DISTINCT CONCAT(u.first_name, ' ', u.last_name) SEPARATOR ', ') as assigned_users,
-            COUNT(DISTINCT st.task_id) as subtask_count,
-            CONCAT(creator.first_name, ' ', creator.last_name) as creator_name
+            -- ผู้รับผิดชอบงาน
+            GROUP_CONCAT(
+                DISTINCT CONCAT(u.first_name, ' ', u.last_name) 
+                SEPARATOR ', '
+            ) as assigned_users,
+            
+            -- จำนวน subtasks
+            (
+                SELECT COUNT(*) 
+                FROM project_tasks st 
+                WHERE st.parent_task_id = t.task_id
+            ) as subtask_count,
+            
+            -- ผู้สร้างงาน
+            CONCAT(creator.first_name, ' ', creator.last_name) as creator_name,
+            
+            -- คำนวณความคืบหน้าเฉลี่ยจาก subtasks
+            COALESCE(
+                (
+                    SELECT AVG(st.progress)
+                    FROM project_tasks st
+                    WHERE st.parent_task_id = t.task_id
+                ),
+                t.progress
+            ) as avg_subtask_progress
+            
         FROM project_tasks t
         LEFT JOIN project_task_assignments ta ON t.task_id = ta.task_id
         LEFT JOIN users u ON ta.user_id = u.user_id
-        LEFT JOIN project_tasks st ON t.task_id = st.parent_task_id
         LEFT JOIN users creator ON t.created_by = creator.user_id
+        
         WHERE t.project_id = ?
         AND (t.parent_task_id IS NULL AND ? IS NULL OR t.parent_task_id = ?)
+        
         GROUP BY t.task_id
         ORDER BY t.task_order ASC, t.created_at ASC
     ");
@@ -33,7 +114,30 @@ function getTasksHierarchy($condb, $project_id, $parent_id = null)
     $tasks = [];
 
     while ($task = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        // ดึง subtasks แบบ recursive
         $task['sub_tasks'] = getTasksHierarchy($condb, $project_id, $task['task_id']);
+
+        // คำนวณความคืบหน้าที่แท้จริง
+        if (!empty($task['sub_tasks'])) {
+            // ถ้ามี subtasks ใช้ค่าเฉลี่ยจาก subtasks
+            $task['real_progress'] = calculateTaskProgress($task['sub_tasks']);
+            $task['has_subtasks'] = true;
+        } else {
+            // ถ้าไม่มี subtasks ใช้ค่าความคืบหน้าของตัวเอง
+            $task['real_progress'] = floatval($task['progress']);
+            $task['has_subtasks'] = false;
+        }
+
+        // จัดการวันที่
+        $task['start_date'] = !empty($task['start_date']) ? date('Y-m-d', strtotime($task['start_date'])) : null;
+        $task['end_date'] = !empty($task['end_date']) ? date('Y-m-d', strtotime($task['end_date'])) : null;
+
+        // ตรวจสอบความล่าช้า
+        if ($task['end_date'] && strtotime($task['end_date']) < time()) {
+            $task['is_overdue'] = true;
+            $task['days_overdue'] = floor((time() - strtotime($task['end_date'])) / (60 * 60 * 24));
+        }
+
         $tasks[] = $task;
     }
 
@@ -70,6 +174,28 @@ function renderTask($task, $level = 0)
             $endDateDisplay = date('d/m/Y', $endDate);
         }
     }
+
+    // กำหนดสีและ class สำหรับระดับความสำคัญ
+    $priorityClass = match ($task['priority']) {
+        'High' => 'badge-danger',
+        'Medium' => 'badge-warning',
+        'Low' => 'badge-info',
+        'Urgent' => 'badge-dark',
+        default => 'badge-secondary'
+    };
+
+    // แปลความหมายระดับความสำคัญเป็นภาษาไทย
+    $priorityText = match ($task['priority']) {
+        'High' => 'สูง',
+        'Medium' => 'ปานกลาง',
+        'Low' => 'ต่ำ',
+        'Urgent' => 'เร่งด่วน',
+        default => 'ไม่ระบุ'
+    };
+
+    // คำนวณจำนวนวันดำเนินการ
+    $duration = calculateDuration($task['start_date'], $task['end_date']);
+
 
     // กำหนด class ตามสถานะ
     $statusClass = match ($task['status']) {
@@ -113,6 +239,9 @@ function renderTask($task, $level = 0)
     }
     $avatarsHtml .= '</div>';
 
+    // ใช้ค่าความคืบหน้าที่คำนวณได้จาก subtasks
+    $progress = $task['has_subtasks'] ? $task['real_progress'] : (int)$task['progress'];
+
     // HTML สำหรับแต่ละแถว
     $html = "
     <tr class='task-row' data-task-id='{$taskId}' data-level='{$level}'>
@@ -149,8 +278,10 @@ function renderTask($task, $level = 0)
                 </div>
             </div>
         </td>
+        <td><span class='badge text-center {$priorityClass}'>{$priorityText}</span></td>
         <td class='text-nowrap'>{$startDateDisplay}</td>
         <td class='text-nowrap'>{$endDateDisplay}</td>
+        <td class='text-center text-nowrap'>{$duration}</td>
         <td>{$avatarsHtml}</td>
         <td>" . htmlspecialchars($task['creator_name'] ?? 'Systems Admin') . "</td>
         <td>
@@ -167,6 +298,7 @@ function renderTask($task, $level = 0)
             </div>
         </td>
     </tr>";
+
 
     // แสดง subtasks ถ้ามี
     if (!empty($task['sub_tasks'])) {
@@ -208,8 +340,10 @@ echo "<div class='table-responsive'>
     <th style='min-width: 300px;'>รายละเอียด</th>
     <th style='min-width: 100px;'>สถานะ</th>
     <th style='min-width: 150px;' class='text-center'>ความคืบหน้า</th>
+    <th style='min-width: 100px;' class='text-center text-nowrap'>ความสำคัญ</th>
     <th style='min-width: 100px;'>วันที่เริ่ม</th>
     <th style='min-width: 100px;'>วันที่สิ้นสุด</th>
+    <th style='min-width: 100px;' class='text-center text-nowrap'>ระยะเวลา</th>
     <th style='min-width: 150px;'>ผู้รับผิดชอบ</th>
     <th style='min-width: 150px;'>ผู้สร้าง</th>
     <th style='min-width: 100px;'>จัดการ</th>
