@@ -164,6 +164,32 @@ function getStatusClass($status)
     }
 }
 
+// ดึงข้อมูลสมาชิกในโครงการ
+$stmt = $condb->prepare("SELECT pm.*, u.first_name, u.last_name, pr.role_name
+                        FROM project_members pm
+                        JOIN users u ON pm.user_id = u.user_id
+                        JOIN project_roles pr ON pm.role_id = pr.role_id
+                        WHERE pm.project_id = ?
+                        ORDER BY pr.role_name, u.first_name");
+$stmt->execute([$project_id]);
+$members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ดึงข้อมูลบทบาททั้งหมด
+$stmt = $condb->prepare("SELECT * FROM project_roles ORDER BY role_name");
+$stmt->execute();
+$roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ดึงรายชื่อผู้ใช้ที่ยังไม่ได้เป็นสมาชิกในโครงการ
+$stmt = $condb->prepare("SELECT u.* 
+                        FROM users u 
+                        WHERE u.user_id NOT IN (
+                            SELECT pm.user_id 
+                            FROM project_members pm 
+                            WHERE pm.project_id = ?
+                        )
+                        ORDER BY u.first_name");
+$stmt->execute([$project_id]);
+$available_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ดึงข้อมูลลูกค้าทั้งหมดในโครงการ
 // ดึงข้อมูลลูกค้าจาก projects (ลูกค้าหลัก) และ project_customers (ลูกค้าทั้งหมด)
@@ -215,6 +241,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                 <div class="card-header p-2">
                     <ul class="nav nav-pills">
                         <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
+                        <li class="nav-item"><a class="nav-link " href="#members" data-toggle="tab" data-tab="project-member">แชร์โครงการ</a></li>
                         <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
                         <li class="nav-item">
                             <a class="nav-link" href="#tasks" data-toggle="tab" role="tab">บริหารโครงการ</a>
@@ -759,7 +786,64 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                 </div>
                             </div>
 
-
+                            <!-- แถบที่ 7 จัดการสมาชิก -->
+                            <div class="tab-pane" id="members">
+                                <!-- ตารางแสดงสมาชิกในโครงการ -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">สมาชิกในโครงการ</h3>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addMemberModal">
+                                                <i class="fas fa-user-plus"></i> เพิ่มสมาชิก
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <table id="membersTable" class="table table-bordered table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>ลำดับ</th>
+                                                    <th>ชื่อ-นามสกุล</th>
+                                                    <th>บทบาท</th>
+                                                    <th>วันที่เข้าร่วม</th>
+                                                    <th>สถานะ</th>
+                                                    <th>จัดการ</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($members as $index => $member): ?>
+                                                    <tr>
+                                                        <td><?php echo $index + 1; ?></td>
+                                                        <td><?php echo htmlspecialchars($member['first_name'] . ' ' . $member['last_name']); ?></td>
+                                                        <td><?php echo htmlspecialchars($member['role_name']); ?></td>
+                                                        <td><?php echo date('d/m/Y', strtotime($member['joined_date'])); ?></td>
+                                                        <td>
+                                                            <?php if ($member['is_active']): ?>
+                                                                <span class="badge badge-success">ยังเป็นสมาชิก</span>
+                                                            <?php else: ?>
+                                                                <span class="badge badge-danger">พ้นสภาพ</span>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                        <td>
+                                                            <button type="button" class="btn btn-info btn-sm"
+                                                                onclick="editMember('<?php echo $member['member_id']; ?>', 
+                                                                           '<?php echo $member['role_id']; ?>', 
+                                                                           <?php echo $member['is_active']; ?>)">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button type="button" class="btn btn-danger btn-sm"
+                                                                onclick="confirmDelete('<?php echo $member['member_id']; ?>', 
+                                                                             '<?php echo $member['first_name'] . ' ' . $member['last_name']; ?>')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
 
 
                         </div>
@@ -834,3 +918,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
 <!-- 8. การจัดการโครงการ -->
 <?php include 'management/tab_management.php'; ?>
 <!-- 8. การจัดการโครงการ -->
+
+<!-- 9. การจัดการสมาชิก -->
+<?php include 'project_member/tab_member.php'; ?>
+<!-- 9. การจัดการสมาชิก -->
