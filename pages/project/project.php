@@ -757,15 +757,15 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             <?php endif; ?>
-                                                            <a href="management/project_management.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-warning">
-                                                                <i class="fas fa-project-diagram"></i>
+                                                            <a href="management/project_management.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-warning" title="จัดการสมาชิกโครงการ">
+                                                                <i class="fas fa-project-diagram" ></i>
                                                             </a>
                                                             <!-- เพิ่มปุ่มสำหรับจัดการสมาชิกโครงการตรงนี้ -->
-                                                            <a href="project_member/manage_members.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
+                                                            <!-- <a href="project_member/manage_members.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
                                                                 class="btn btn-secondary btn-sm"
                                                                 title="จัดการสมาชิกโครงการ">
                                                                 <i class="fas fa-users"></i>
-                                                            </a>
+                                                            </a> -->
                                                         </td>
                                                     <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
@@ -1199,8 +1199,6 @@ $metrics = calculateProjectMetrics($projects, $search_params);
             });
         });
     </script>
-
-
 
     <!-- ลบโครกงาร -->
     <script>

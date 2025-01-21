@@ -137,6 +137,7 @@ try {
     exit;
 }
 
+
 // สร้างหรือดึง CSRF Token
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -163,6 +164,7 @@ function getStatusClass($status)
             return '';
     }
 }
+
 
 // ดึงข้อมูลสมาชิกในโครงการ
 $stmt = $condb->prepare("SELECT pm.*, u.first_name, u.last_name, pr.role_name
@@ -219,6 +221,9 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SalePipeline | View Project</title>
     <?php include '../../include/header.php'; ?>
+
+    <!-- เพิ่ม SortableJS library -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <!-- PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>

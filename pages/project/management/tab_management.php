@@ -1,5 +1,4 @@
- 
- 
+
  <!-- Modal สำหรับเพิ่ม/แก้ไขงาน -->
  <div class="modal fade" id="taskModal" tabindex="-1" role="dialog">
      <div class="modal-dialog modal-lg">
@@ -362,7 +361,7 @@
 
                  // ส่งข้อมูลไปอัพเดทที่ฐานข้อมูล
                  $.ajax({
-                     url: 'update_task_position.php',
+                     url: 'management/update_task_position.php',
                      type: 'POST',
                      data: {
                          task_id: taskId,
