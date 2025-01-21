@@ -718,7 +718,6 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
 
                             <!-- แถบที่ 6 บริหารโครงการ -->
                             <div class="tab-pane" id="tasks">
-
                                 <div class="card">
                                     <div class="card-header">
                                         <h3 class="card-title">
@@ -739,6 +738,7 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                         </div>
                                     </div>
                                 </div>
+
                                 <div class="card">
                                     <div class="card-header">
                                         <h3 class="card-title">
@@ -758,6 +758,8 @@ $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึง�
                                     </div>
                                 </div>
                             </div>
+
+
 
 
                         </div>
