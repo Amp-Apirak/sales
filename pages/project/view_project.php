@@ -89,42 +89,7 @@ try {
         exit;
     }
 
-    // ตรวจสอบสิทธิ์การเข้าถึง
-    $hasAccess = false;
-
-    switch ($role) {
-        case 'Executive':
-            $hasAccess = true;
-            break;
-        case 'Sale Supervisor':
-            // หัวหน้าทีมสามารถเข้าถึงโครงการในทีมของตัวเอง
-            if ($user_team_id == $project['creator_team_id']) {
-                $hasAccess = true;
-            }
-            break;
-        case 'Seller':
-        case 'Engineer':
-            // ผู้สร้างหรือสมาชิกโครงการสามารถเข้าถึงได้
-            if ($user_id == $project['created_by'] || $project['is_member']) {
-                $hasAccess = true;
-            }
-            break;
-    }
-
-    // ถ้าไม่มีสิทธิ์เข้าถึง
-    if (!$hasAccess) {
-        $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
-        header("Location: project.php");
-        exit;
-    }
-
-    // ถ้าไม่มีสิทธิ์เข้าถึง
-    if (!$hasAccess) {
-        $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
-        header("Location: project.php");
-        exit;
-    }
-
+  
     // ดึงข้อมูลการชำระเงินของโครงการ
     $sql_payments = "SELECT * FROM project_payments WHERE project_id = :project_id ORDER BY payment_number";
     $stmt_payments = $condb->prepare($sql_payments);
