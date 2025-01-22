@@ -591,84 +591,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             });
         }
 
-        $(document).ready(function() {
-            // Initialize DataTable with configurations
-            var taskTable = $('#tasks-table').DataTable({
-                "responsive": true,
-                "lengthChange": true,
-                "autoWidth": false,
-                "order": [], // Disable initial sorting
-                "pageLength": 25, // Show 25 entries per page
-                "buttons": [{
-                        extend: 'copy',
-                        text: '<i class="fas fa-copy"></i> Copy',
-                        className: 'btn btn-secondary btn-sm'
-                    },
-                    {
-                        extend: 'csv',
-                        text: '<i class="fas fa-file-csv"></i> CSV',
-                        className: 'btn btn-secondary btn-sm'
-                    },
-                    {
-                        extend: 'excel',
-                        text: '<i class="fas fa-file-excel"></i> Excel',
-                        className: 'btn btn-secondary btn-sm'
-                    },
-                    {
-                        extend: 'pdf',
-                        text: '<i class="fas fa-file-pdf"></i> PDF',
-                        className: 'btn btn-secondary btn-sm'
-                    },
-                    {
-                        extend: 'print',
-                        text: '<i class="fas fa-print"></i> Print',
-                        className: 'btn btn-secondary btn-sm'
-                    },
-                    {
-                        extend: 'colvis',
-                        text: '<i class="fas fa-columns"></i> Columns',
-                        className: 'btn btn-secondary btn-sm'
-                    }
-                ],
-                "language": {
-                    "search": "ค้นหา:",
-                    "lengthMenu": "แสดง _MENU_ รายการ",
-                    "info": "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
-                    "infoEmpty": "แสดง 0 ถึง 0 จาก 0 รายการ",
-                    "infoFiltered": "(กรองจากทั้งหมด _MAX_ รายการ)",
-                    "zeroRecords": "ไม่พบรายการที่ค้นหา",
-                    "paginate": {
-                        "first": "หน้าแรก",
-                        "last": "หน้าสุดท้าย",
-                        "next": "ถัดไป",
-                        "previous": "ก่อนหน้า"
-                    }
-                },
-                "dom": "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>" +
-                    "<'row'<'col-sm-12'tr>>" +
-                    "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
-                drawCallback: function(settings) {
-                    // Reinitialize tooltips after table redraw
-                    $('[data-toggle="tooltip"]').tooltip();
-
-                    // Reinitialize Sortable after table redraw
-                    initSortable();
-                }
-            });
-
-            // Place buttons container
-            taskTable.buttons().container().appendTo('#tasks-table_wrapper .col-md-6:eq(0)');
-
-            // Custom search functionality
-            $('#custom-search').on('keyup', function() {
-                taskTable.search(this.value).draw();
-            });
-
-            // Style the DataTable buttons
-            $('.dt-buttons .btn').removeClass('btn-secondary').addClass('btn-outline-primary');
-        });
-
-        // Modify loadTasks function to work with DataTable
+        // เพิ่มการเรียกใช้ initSortable หลังจากโหลด tasks
         function loadTasks() {
             $.ajax({
                 url: 'get_tasks.php',
@@ -678,23 +601,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 },
                 success: function(response) {
                     $('#task-container').html(response);
-                    // Destroy existing DataTable if it exists
-                    if ($.fn.DataTable.isDataTable('#tasks-table')) {
-                        $('#tasks-table').DataTable().destroy();
-                    }
-                    // Reinitialize DataTable
-                    $('#tasks-table').DataTable({
-                        "responsive": true,
-                        "lengthChange": true,
-                        "autoWidth": false,
-                        "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
-                        "language": {
-                            "search": "ค้นหา:",
-                            "lengthMenu": "แสดง _MENU_ รายการ"
-                        }
-                    }).buttons().container().appendTo('#tasks-table_wrapper .col-md-6:eq(0)');
-
-                    // Initialize Sortable after DataTable is created
+                    // เรียกใช้ initSortable หลังจากโหลด tasks
                     initSortable();
                 }
             });
