@@ -119,7 +119,6 @@ try {
     }
 
     // ถ้าไม่มีสิทธิ์เข้าถึง
-    // ถ้าไม่มีสิทธิ์เข้าถึง
     if (!$hasAccess) {
         $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
         header("Location: project.php");
@@ -165,7 +164,6 @@ function getStatusClass($status)
     }
 }
 
-
 // ดึงข้อมูลสมาชิกในโครงการ
 $stmt = $condb->prepare("SELECT pm.*, u.first_name, u.last_name, pr.role_name
                         FROM project_members pm
@@ -208,7 +206,6 @@ $stmt_customers = $condb->prepare($sql_customers); // เตรียมคำ�
 $stmt_customers->bindParam(':project_id', $project_id, PDO::PARAM_STR); // ผูกค่าพารามิเตอร์
 $stmt_customers->execute(); // ดำเนินการคำสั่ง SQL
 $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึงผลลัพธ์ทั้งหมด
-
 
 // ดึงข้อมูลผู้ใช้ทั้งหมดจากฐานข้อมูล
 $stmt_users = $condb->prepare("SELECT user_id, first_name, last_name FROM users ORDER BY first_name, last_name");
@@ -265,6 +262,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     <div class="card-body">
                         <div class="tab-content">
+                            
                             <!-- แถบที่ 1 ตารางแสดงข้อมูลรวม -->
                             <div class="active tab-pane" id="project-info">
                                 <section class="content">
