@@ -333,7 +333,7 @@ echo '<div class="modal fade" id="taskDetailsModal" tabindex="-1" role="dialog">
 
 // แสดงผลตาราง
 echo "<div class='table-responsive'>
-    <table class='table table-hover' id='tasks-table'>
+    <table class='table table-bordered table-striped' id='tasks-table'>
         <thead>
             <tr>
     <th style='min-width: 300px;'>งาน</th>

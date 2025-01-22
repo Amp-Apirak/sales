@@ -745,7 +745,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                         </thead>
                                         <tbody>
                                             <?php foreach ($projects as $project): ?>
-                                                <tr>
+                                                <tr onclick="window.location='view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>';" style="cursor: pointer;">
                                                     <?php if ($role != 'Engineer'): ?>
                                                         <td class="text-nowrap">
                                                             <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
@@ -758,7 +758,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                                 </button>
                                                             <?php endif; ?>
                                                             <a href="management/project_management.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-warning" title="จัดการสมาชิกโครงการ">
-                                                                <i class="fas fa-project-diagram" ></i>
+                                                                <i class="fas fa-project-diagram"></i>
                                                             </a>
                                                             <!-- เพิ่มปุ่มสำหรับจัดการสมาชิกโครงการตรงนี้ -->
                                                             <!-- <a href="project_member/manage_members.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
