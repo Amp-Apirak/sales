@@ -210,6 +210,12 @@ $stmt_customers->execute(); // ดำเนินการคำสั่ง SQL
 $project_customers = $stmt_customers->fetchAll(PDO::FETCH_ASSOC); // ดึงผลลัพธ์ทั้งหมด
 
 
+// ดึงข้อมูลผู้ใช้ทั้งหมดจากฐานข้อมูล
+$stmt_users = $condb->prepare("SELECT user_id, first_name, last_name FROM users ORDER BY first_name, last_name");
+$stmt_users->execute();
+$users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
+
+
 ?>
 
 <!DOCTYPE html>
