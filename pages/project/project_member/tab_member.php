@@ -71,8 +71,8 @@
                     <div class="form-group">
                         <label for="edit_is_active">สถานะ</label>
                         <select class="form-control" name="is_active" id="edit_is_active" required>
-                            <option value="1">ยังเป็นสมาชิก</option>
-                            <option value="0">พ้นสภาพ</option>
+                            <option value="1">สมาชิกในโครงการ</option>
+                            <option value="0">ร่วมบริหารโครงการ</option>
                         </select>
                     </div>
                 </div>

@@ -851,9 +851,9 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                         <td><?php echo date('d/m/Y', strtotime($member['joined_date'])); ?></td>
                                                         <td>
                                                             <?php if ($member['is_active']): ?>
-                                                                <span class="badge badge-success">ยังเป็นสมาชิก</span>
+                                                                <span class="badge badge-success">สมาชิกในโครงการ</span>
                                                             <?php else: ?>
-                                                                <span class="badge badge-danger">พ้นสภาพ</span>
+                                                                <span class="badge badge-danger">ร่วมบริหารโครงการ</span>
                                                             <?php endif; ?>
                                                         </td>
                                                         <td>
