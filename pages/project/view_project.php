@@ -89,7 +89,7 @@ try {
         exit;
     }
 
-  
+
     // ดึงข้อมูลการชำระเงินของโครงการ
     $sql_payments = "SELECT * FROM project_payments WHERE project_id = :project_id ORDER BY payment_number";
     $stmt_payments = $condb->prepare($sql_payments);
@@ -128,6 +128,45 @@ function getStatusClass($status)
             return '';
     }
 }
+
+// ตรวจสอบสิทธิ์การเข้าถึงข้อมูลทางการเงิน
+$hasAccessToFinancialInfo = false;
+
+// เงื่อนไข 1: Executive
+if ($role === 'Executive') {
+    $hasAccessToFinancialInfo = true;
+}
+// เงื่อนไข 2: Sale Supervisor และอยู่ในทีมเดียวกับผู้สร้าง
+elseif ($role === 'Sale Supervisor' && $user_team_id == $project['creator_team_id']) {
+    $hasAccessToFinancialInfo = true;
+}
+// เงื่อนไข 3: ผู้สร้างโครงการ
+elseif ($project['created_by'] == $user_id) {
+    $hasAccessToFinancialInfo = true;
+}
+
+
+// ตรวจสอบสิทธิ์การเข้าถึงข Tab ต้นทุนโครงการ
+$hasAccesstabInfo = true;
+
+// เงื่อนไข 1: ไม่ให้สิทธิ์ Engineer เข้าถึงข้อมูล
+if ($role === 'Engineer') {
+    $hasAccesstabInfo = false;
+}
+
+// ตรวจสอบสิทธิ์การเข้าถึงข้อมูลต้นทุนโครงการ
+$hasAccesscostInfo = true;
+
+// เงื่อนไข 1: Sale Supervisor ไม่ให้เห็น Cost
+if ($role === 'Sale Supervisor') {
+    $hasAccesscostInfo = false;
+}
+// เงื่อนไข 2: Sale Supervisor ไม่ให้เห็น Cost
+elseif ($role === 'Seller') {
+    $hasAccesscostInfo = false;
+}
+
+
 
 // ดึงข้อมูลสมาชิกในโครงการ
 $stmt = $condb->prepare("SELECT pm.*, u.first_name, u.last_name, pr.role_name
@@ -215,7 +254,9 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                     <ul class="nav nav-pills">
                         <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
                         <li class="nav-item"><a class="nav-link " href="#members" data-toggle="tab" data-tab="project-member">แชร์โครงการ</a></li>
-                        <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
+                        <?php if ($hasAccesstabInfo): ?>
+                            <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
+                        <?php endif; ?>
                         <li class="nav-item">
                             <a class="nav-link" href="#tasks" data-toggle="tab" role="tab">บริหารโครงการ</a>
                         </li>
@@ -227,7 +268,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     <div class="card-body">
                         <div class="tab-content">
-                            
+
                             <!-- แถบที่ 1 ตารางแสดงข้อมูลรวม -->
                             <div class="active tab-pane" id="project-info">
                                 <section class="content">
@@ -243,12 +284,14 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                         <div class="info-card">
                                             <div class="info-card-header">
                                                 <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ</span>
-                                                <button class="edit-button no-print" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
-                                                    <i class="fas fa-edit"></i> แก้ไข
-                                                </button>
-                                                <button class="edit-button no-print" onclick="generatePDF()">
-                                                    <i class="fas fa-file-pdf"></i> Save PDF
-                                                </button>
+                                                <?php if ($hasAccessToFinancialInfo): ?>
+                                                    <button class="edit-button no-print" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
+                                                        <i class="fas fa-edit"></i> แก้ไข
+                                                    </button>
+                                                    <button class="edit-button no-print" onclick="generatePDF()">
+                                                        <i class="fas fa-file-pdf"></i> Save PDF
+                                                    </button>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="info-card-body">
                                                 <div class="row">
@@ -288,213 +331,214 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                             </div>
                                         </div>
 
-
-
-                                        <!-- ข้อมูลทางการเงิน -->
-                                        <div class="info-card">
-                                            <div class="info-card-header">
-                                                <i class="fas fa-chart-bar mr-2"></i>ข้อมูลทางการเงิน
-                                            </div>
-                                            <div class="info-card-body">
-                                                <div class="row">
-                                                    <div class="col-md-6">
-                                                        <div class="info-item">
-                                                            <span class="info-label">ราคาขาย (รวมภาษี):</span>
-                                                            <span class="info-value"><?php echo number_format($project['sale_vat'], 2); ?> บาท</span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">ราคาขาย (ไม่รวมภาษี):</span>
-                                                            <span class="info-value"><?php echo number_format($project['sale_no_vat'], 2); ?> บาท</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <div class="info-item">
-                                                            <span class="info-label">ต้นทุน (รวมภาษี):</span>
-                                                            <span class="info-value"><?php echo number_format($project['cost_vat'], 2); ?> บาท</span>
-                                                        </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">ต้นทุน (ไม่รวมภาษี):</span>
-                                                            <span class="info-value"><?php echo number_format($project['cost_no_vat'], 2); ?> บาท</span>
-                                                        </div>
-                                                    </div>
+                                        <?php if ($hasAccessToFinancialInfo): ?>
+                                            <!-- ข้อมูลทางการเงิน -->
+                                            <div class="info-card">
+                                                <div class="info-card-header">
+                                                    <i class="fas fa-chart-bar mr-2"></i>ข้อมูลทางการเงิน
                                                 </div>
-                                                <div class="financial-summary">
-                                                    <div class="financial-item">
-                                                        <span class="financial-label">กำไรขั้นต้น:</span>
-                                                        <span class="financial-value profit-highlight"><?php echo number_format($project['gross_profit'], 2); ?> บาท</span>
-                                                    </div>
-                                                    <div class="financial-item">
-                                                        <span class="financial-label">กำไรขั้นต้น (%):</span>
-                                                        <span class="financial-value profit-highlight"><?php echo number_format($project['potential'], 2); ?>%</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- ข้อมูลการชำระเงิน -->
-                                        <div class="info-card">
-                                            <div class="info-card-header table-section">
-                                                <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลการชำระเงิน</span>
-                                                <button class="edit-button btn-sm" onclick="openAddPaymentModal()">
-                                                    <i class="fas fa-plus"></i> เพิ่ม
-                                                </button>
-                                            </div>
-                                            <div class="info-card-body table-section ">
-                                                <div class="payment-info">
-                                                    <div class="table-view d-none d-md-block">
-                                                        <table class="table table-striped">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>งวดที่</th>
-                                                                    <th>จำนวนเงิน</th>
-                                                                    <th>คิดเป็นเปอร์เซนต์</th>
-                                                                    <th>วันครบกำหนด</th>
-                                                                    <th>สถานะ</th>
-                                                                    <th>วันที่ชำระ</th>
-                                                                    <th>จำนวนเงินที่ชำระแล้ว</th>
-                                                                    <th class="no-print">การดำเนินการ</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php foreach ($payments as $payment): ?>
-                                                                    <tr>
-                                                                        <td><?php echo htmlspecialchars($payment['payment_number']); ?></td>
-                                                                        <td><?php echo number_format($payment['amount'], 2); ?> บาท</td>
-                                                                        <td><?php echo htmlspecialchars($payment['payment_percentage']); ?></td>
-                                                                        <td><?php echo htmlspecialchars($payment['due_date']); ?></td>
-                                                                        <td>
-                                                                            <span class="<?php echo getStatusClass($payment['status']); ?>">
-                                                                                <?php echo htmlspecialchars($payment['status']); ?>
-                                                                            </span>
-                                                                        </td>
-                                                                        <td><?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?></td>
-                                                                        <td><?php echo number_format($payment['amount_paid'], 2); ?> บาท</td>
-                                                                        <td>
-                                                                            <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
-                                                                                <i class="fas fa-edit"></i>
-                                                                            </button>
-                                                                            <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
-                                                                                <i class="fas fa-trash"></i>
-                                                                            </button>
-                                                                        </td>
-                                                                    </tr>
-                                                                <?php endforeach; ?>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-
-                                                    <div class="card-view d-md-none">
-                                                        <?php foreach ($payments as $payment): ?>
-                                                            <div class="payment-card mb-3">
-                                                                <div class="card">
-                                                                    <div class="card-body">
-                                                                        <h5 class="card-title">งวดที่ <?php echo htmlspecialchars($payment['payment_number']); ?></h5>
-                                                                        <p class="card-text">
-                                                                            <strong>จำนวนเงิน:</strong> <?php echo number_format($payment['amount'], 2); ?> บาท<br>
-                                                                            <strong>คิดเป็นเปอร์เซนต์:</strong> <?php echo htmlspecialchars($payment['payment_percentage']); ?><br>
-                                                                            <strong>วันครบกำหนด:</strong> <?php echo htmlspecialchars($payment['due_date']); ?><br>
-                                                                            <strong>สถานะ:</strong> <span class="<?php echo getStatusClass($payment['status']); ?>"><?php echo htmlspecialchars($payment['status']); ?></span><br>
-                                                                            <strong>วันที่ชำระ:</strong> <?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?><br>
-                                                                            <strong>จำนวนเงินที่ชำระแล้ว:</strong> <?php echo number_format($payment['amount_paid'], 2); ?> บาท
-                                                                        </p>
-                                                                        <div class="btn-group" role="group">
-                                                                            <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
-                                                                                <i class="fas fa-edit"></i> แก้ไข
-                                                                            </button>
-                                                                            <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
-                                                                                <i class="fas fa-trash"></i> ลบ
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
+                                                <div class="info-card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <div class="info-item">
+                                                                <span class="info-label">ราคาขาย (รวมภาษี):</span>
+                                                                <span class="info-value"><?php echo number_format($project['sale_vat'], 2); ?> บาท</span>
                                                             </div>
-                                                        <?php endforeach; ?>
-                                                    </div>
-                                                </div>
-
-                                                <!-- สรุปข้อมูลการชำระเงิน -->
-                                                <div class="mt-3">
-                                                    <strong>สรุปการชำระเงิน:</strong>
-                                                    <div class="row mt-2">
-                                                        <div class="col-md-4">
                                                             <div class="info-item">
                                                                 <span class="info-label">ราคาขาย (ไม่รวมภาษี):</span>
                                                                 <span class="info-value"><?php echo number_format($project['sale_no_vat'], 2); ?> บาท</span>
                                                             </div>
                                                         </div>
-                                                        <div class="col-md-4">
+                                                        <div class="col-md-6">
                                                             <div class="info-item">
-                                                                <span class="info-label">จำนวนเงินรวมงวดชำระ :</span>
-                                                                <span class="info-value"><?php
-                                                                                            $total_scheduled_payments = array_sum(array_column($payments, 'amount'));
-                                                                                            echo number_format($total_scheduled_payments, 2);
-                                                                                            ?> บาท</span>
+                                                                <span class="info-label">ต้นทุน (รวมภาษี):</span>
+                                                                <span class="info-value"><?php echo number_format($project['cost_vat'], 2); ?> บาท</span>
                                                             </div>
-                                                        </div>
-                                                        <div class="col-md-4">
                                                             <div class="info-item">
-                                                                <span class="info-label">(%)รวมงวดชำระ :</span>
-                                                                <span class="info-value"><?php
-                                                                                            $total_percentage_scheduled = array_sum(array_column($payments, 'payment_percentage'));
-                                                                                            echo number_format($total_percentage_scheduled, 2);
-                                                                                            ?>%</span>
+                                                                <span class="info-label">ต้นทุน (ไม่รวมภาษี):</span>
+                                                                <span class="info-value"><?php echo number_format($project['cost_no_vat'], 2); ?> บาท</span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="row">
-                                                        <div class="col-md-4">
-                                                            <div class="info-item">
-                                                                <span class="info-label">จำนวนภาษีมูลค่าเพิ่ม (VAT 7%):</span>
-                                                                <span class="info-value"><?php
-                                                                                            $vat_rate = 7; // กำหนดอัตรา VAT เป็น 7%
-                                                                                            $vat_amount = ($project['sale_no_vat'] * $vat_rate) / 100;
-                                                                                            echo number_format($vat_amount, 2);
-                                                                                            ?> บาท</span>
+                                                    <div class="financial-summary">
+                                                        <div class="financial-item">
+                                                            <span class="financial-label">กำไรขั้นต้น:</span>
+                                                            <span class="financial-value profit-highlight"><?php echo number_format($project['gross_profit'], 2); ?> บาท</span>
+                                                        </div>
+                                                        <div class="financial-item">
+                                                            <span class="financial-label">กำไรขั้นต้น (%):</span>
+                                                            <span class="financial-value profit-highlight"><?php echo number_format($project['potential'], 2); ?>%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+                                            <!-- ข้อมูลการชำระเงิน -->
+                                            <div class="info-card">
+                                                <div class="info-card-header table-section">
+                                                    <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลการชำระเงิน</span>
+                                                    <button class="edit-button btn-sm" onclick="openAddPaymentModal()">
+                                                        <i class="fas fa-plus"></i> เพิ่ม
+                                                    </button>
+                                                </div>
+                                                <div class="info-card-body table-section ">
+                                                    <div class="payment-info">
+                                                        <div class="table-view d-none d-md-block">
+                                                            <table class="table table-striped">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>งวดที่</th>
+                                                                        <th>จำนวนเงิน</th>
+                                                                        <th>คิดเป็นเปอร์เซนต์</th>
+                                                                        <th>วันครบกำหนด</th>
+                                                                        <th>สถานะ</th>
+                                                                        <th>วันที่ชำระ</th>
+                                                                        <th>จำนวนเงินที่ชำระแล้ว</th>
+                                                                        <th class="no-print">การดำเนินการ</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <?php foreach ($payments as $payment): ?>
+                                                                        <tr>
+                                                                            <td><?php echo htmlspecialchars($payment['payment_number']); ?></td>
+                                                                            <td><?php echo number_format($payment['amount'], 2); ?> บาท</td>
+                                                                            <td><?php echo htmlspecialchars($payment['payment_percentage']); ?></td>
+                                                                            <td><?php echo htmlspecialchars($payment['due_date']); ?></td>
+                                                                            <td>
+                                                                                <span class="<?php echo getStatusClass($payment['status']); ?>">
+                                                                                    <?php echo htmlspecialchars($payment['status']); ?>
+                                                                                </span>
+                                                                            </td>
+                                                                            <td><?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?></td>
+                                                                            <td><?php echo number_format($payment['amount_paid'], 2); ?> บาท</td>
+                                                                            <td>
+                                                                                <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
+                                                                                    <i class="fas fa-edit"></i>
+                                                                                </button>
+                                                                                <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
+                                                                                    <i class="fas fa-trash"></i>
+                                                                                </button>
+                                                                            </td>
+                                                                        </tr>
+                                                                    <?php endforeach; ?>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+
+                                                        <div class="card-view d-md-none">
+                                                            <?php foreach ($payments as $payment): ?>
+                                                                <div class="payment-card mb-3">
+                                                                    <div class="card">
+                                                                        <div class="card-body">
+                                                                            <h5 class="card-title">งวดที่ <?php echo htmlspecialchars($payment['payment_number']); ?></h5>
+                                                                            <p class="card-text">
+                                                                                <strong>จำนวนเงิน:</strong> <?php echo number_format($payment['amount'], 2); ?> บาท<br>
+                                                                                <strong>คิดเป็นเปอร์เซนต์:</strong> <?php echo htmlspecialchars($payment['payment_percentage']); ?><br>
+                                                                                <strong>วันครบกำหนด:</strong> <?php echo htmlspecialchars($payment['due_date']); ?><br>
+                                                                                <strong>สถานะ:</strong> <span class="<?php echo getStatusClass($payment['status']); ?>"><?php echo htmlspecialchars($payment['status']); ?></span><br>
+                                                                                <strong>วันที่ชำระ:</strong> <?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?><br>
+                                                                                <strong>จำนวนเงินที่ชำระแล้ว:</strong> <?php echo number_format($payment['amount_paid'], 2); ?> บาท
+                                                                            </p>
+                                                                            <div class="btn-group" role="group">
+                                                                                <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
+                                                                                    <i class="fas fa-edit"></i> แก้ไข
+                                                                                </button>
+                                                                                <button class="btn btn-sm btn-danger" onclick="deletePayment('<?php echo $payment['payment_id']; ?>')">
+                                                                                    <i class="fas fa-trash"></i> ลบ
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- สรุปข้อมูลการชำระเงิน -->
+                                                    <div class="mt-3">
+                                                        <strong>สรุปการชำระเงิน:</strong>
+                                                        <div class="row mt-2">
+                                                            <div class="col-md-4">
+                                                                <div class="info-item">
+                                                                    <span class="info-label">ราคาขาย (ไม่รวมภาษี):</span>
+                                                                    <span class="info-value"><?php echo number_format($project['sale_no_vat'], 2); ?> บาท</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="info-item">
+                                                                    <span class="info-label">จำนวนเงินรวมงวดชำระ :</span>
+                                                                    <span class="info-value"><?php
+                                                                                                $total_scheduled_payments = array_sum(array_column($payments, 'amount'));
+                                                                                                echo number_format($total_scheduled_payments, 2);
+                                                                                                ?> บาท</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="info-item">
+                                                                    <span class="info-label">(%)รวมงวดชำระ :</span>
+                                                                    <span class="info-value"><?php
+                                                                                                $total_percentage_scheduled = array_sum(array_column($payments, 'payment_percentage'));
+                                                                                                echo number_format($total_percentage_scheduled, 2);
+                                                                                                ?>%</span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div class="col-md-4">
-                                                            <div class="info-item">
-                                                                <span class="info-label text-success">จำนวนเงินที่ชำระแล้ว:</span>
-                                                                <span class="info-value text-success"><?php
-                                                                                                        // คำนวณจำนวนงวดที่ชำระแล้วและจำนวนงวดทั้งหมด
-                                                                                                        $paidInstallments = 0;
-                                                                                                        $totalInstallments = count($payments);
-                                                                                                        $total_paid = 0;
-
-                                                                                                        foreach ($payments as $payment) {
-                                                                                                            if ($payment['status'] == 'Paid') {
-                                                                                                                $paidInstallments++;
-                                                                                                                $total_paid += $payment['amount'];
-                                                                                                            }
-                                                                                                        }
-
-                                                                                                        // แสดงผลจำนวนเงินที่ชำระแล้วและจำนวนงวด
-                                                                                                        echo number_format($total_paid, 2);
-                                                                                                        ?> บาท (<?php echo $paidInstallments; ?>/<?php echo $totalInstallments; ?> งวด)
-                                                                </span>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="info-item">
+                                                                    <span class="info-label">จำนวนภาษีมูลค่าเพิ่ม (VAT 7%):</span>
+                                                                    <span class="info-value"><?php
+                                                                                                $vat_rate = 7; // กำหนดอัตรา VAT เป็น 7%
+                                                                                                $vat_amount = ($project['sale_no_vat'] * $vat_rate) / 100;
+                                                                                                echo number_format($vat_amount, 2);
+                                                                                                ?> บาท</span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        <div class="col-md-4">
-                                                            <div class="info-item">
-                                                                <span class="info-label text-danger">(%)ที่ยังไม่ได้แบ่งชำระ:</span>
-                                                                <span class="info-value text-danger"><?php
-                                                                                                        $pending_percentage = 0;
+                                                            <div class="col-md-4">
+                                                                <div class="info-item">
+                                                                    <span class="info-label text-success">จำนวนเงินที่ชำระแล้ว:</span>
+                                                                    <span class="info-value text-success"><?php
+                                                                                                            // คำนวณจำนวนงวดที่ชำระแล้วและจำนวนงวดทั้งหมด
+                                                                                                            $paidInstallments = 0;
+                                                                                                            $totalInstallments = count($payments);
+                                                                                                            $total_paid = 0;
 
-                                                                                                        // หาผลรวมเปอร์เซ็นต์ที่ยังไม่ชำระ (Pending)
-                                                                                                        foreach ($payments as $payment) {
-                                                                                                            if ($payment['status'] == 'Pending') {
-                                                                                                                $pending_percentage += floatval($payment['payment_percentage']);
+                                                                                                            foreach ($payments as $payment) {
+                                                                                                                if ($payment['status'] == 'Paid') {
+                                                                                                                    $paidInstallments++;
+                                                                                                                    $total_paid += $payment['amount'];
+                                                                                                                }
                                                                                                             }
-                                                                                                        }
 
-                                                                                                        echo number_format($pending_percentage, 2);
-                                                                                                        ?>%</span>
+                                                                                                            // แสดงผลจำนวนเงินที่ชำระแล้วและจำนวนงวด
+                                                                                                            echo number_format($total_paid, 2);
+                                                                                                            ?> บาท (<?php echo $paidInstallments; ?>/<?php echo $totalInstallments; ?> งวด)
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="info-item">
+                                                                    <span class="info-label text-danger">(%)ที่ยังไม่ได้แบ่งชำระ:</span>
+                                                                    <span class="info-value text-danger"><?php
+                                                                                                            $pending_percentage = 0;
+
+                                                                                                            // หาผลรวมเปอร์เซ็นต์ที่ยังไม่ชำระ (Pending)
+                                                                                                            foreach ($payments as $payment) {
+                                                                                                                if ($payment['status'] == 'Pending') {
+                                                                                                                    $pending_percentage += floatval($payment['payment_percentage']);
+                                                                                                                }
+                                                                                                            }
+
+                                                                                                            echo number_format($pending_percentage, 2);
+                                                                                                            ?>%</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        <?php endif; ?>
 
                                         <!-- ข้อมูลลูกค้า -->
                                         <div class="row equal-height-cards">
@@ -576,6 +620,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                     </div>
                                 </section>
                             </div>
+
                             <!-- แถบที่ 2 ต้นทุนโครงการ -->
                             <div class="tab-pane" id="project-cost">
                                 <div class="table-responsive">
@@ -589,10 +634,14 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                 <th class="text-nowrap" style="width: 5%">Unit</th>
                                                 <th class="text-nowrap" style="width: 10%">Price / Unit</th>
                                                 <th class="text-nowrap" style="width: 10%">Total Amount</th>
-                                                <th class="text-nowrap" style="width: 10%">Cost / Unit</th>
-                                                <th class="text-nowrap">Total Cost</th>
+                                                <?php if ($hasAccesscostInfo): ?>
+                                                    <th class="text-nowrap" style="width: 10%">Cost / Unit</th>
+                                                    <th class="text-nowrap">Total Cost</th>
+                                                <?php endif; ?>
                                                 <th class="text-nowrap">Supplier</th>
-                                                <th class="text-nowrap">Actions</th>
+                                                <?php if ($hasAccesscostInfo): ?>
+                                                    <th class="text-nowrap">Actions</th>
+                                                <?php endif; ?>
                                             </tr>
                                         </thead>
                                         <tbody id="costTableBody">
@@ -608,14 +657,19 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                 <td class="text-nowrap"><input type="text" id="unitInput" class="form-control form-control-sm" placeholder="เช่น วัน, คน, ชิ้น"></td>
                                                 <td class="text-nowrap"><input type="text" id="priceInput" class="form-control form-control-sm" placeholder="ตั้งราคาขาย"></td>
                                                 <td class="text-nowrap"><span id="totalAmountInput">0.00</span></td>
-                                                <td class="text-nowrap"><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
-                                                <td class="text-nowrap"><span id="totalCostInput">0.00</span></td>
+                                                <?php if ($hasAccesscostInfo): ?>
+                                                    <td class="text-nowrap"><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
+                                                    <td class="text-nowrap"><span id="totalCostInput">0.00</span></td>
+                                                <?php endif; ?>
                                                 <td class="text-nowrap"><input type="text" id="supplierInput" class="form-control form-control-sm" placeholder=""></td>
-                                                <td class="text-nowrap"><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
+                                                <?php if ($hasAccesscostInfo): ?>
+                                                    <td class="text-nowrap"><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
+                                                <?php endif; ?>
                                             </tr>
                                         </tfoot>
                                     </table>
                                 </div>
+
 
                                 <!-- Total Section -->
                                 <div class="totals-section">
@@ -627,15 +681,17 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                     <p>Vat (7%): <span id="vatAmount">0.00</span> บาท</p>
                                                     <p>Grand Total: <span id="grandTotal">0.00</span> บาท</p>
                                                 </div>
-                                                <div class="col-md-4">
-                                                    <p>Total Cost: <span id="totalCost">0.00</span> บาท</p>
-                                                    <p>Cost Vat (7%): <span id="costVatAmount">0.00</span> บาท</p>
-                                                    <p>Total Cost with Vat: <span id="totalCostWithVat">0.00</span> บาท</p>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <p>Profit: <span id="profitAmount">0.00</span> บาท</p>
-                                                    <p>Profit Percentage: <span id="profitPercentage">0.00</span>%</p>
-                                                </div>
+                                                <?php if ($hasAccesscostInfo): ?>
+                                                    <div class="col-md-4">
+                                                        <p>Total Cost: <span id="totalCost">0.00</span> บาท</p>
+                                                        <p>Cost Vat (7%): <span id="costVatAmount">0.00</span> บาท</p>
+                                                        <p>Total Cost with Vat: <span id="totalCostWithVat">0.00</span> บาท</p>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <p>Profit: <span id="profitAmount">0.00</span> บาท</p>
+                                                        <p>Profit Percentage: <span id="profitPercentage">0.00</span>%</p>
+                                                    </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -766,11 +822,13 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="card">
                                     <div class="card-header">
                                         <h3 class="card-title">สมาชิกในโครงการ</h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addMemberModal">
-                                                <i class="fas fa-user-plus"></i> เพิ่มสมาชิก
-                                            </button>
-                                        </div>
+                                        <?php if ($hasAccessToFinancialInfo): ?>
+                                            <div class="card-tools">
+                                                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addMemberModal">
+                                                    <i class="fas fa-user-plus"></i> เพิ่มสมาชิก
+                                                </button>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="card-body">
                                         <table id="membersTable" class="table table-bordered table-striped">
@@ -799,17 +857,19 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                             <?php endif; ?>
                                                         </td>
                                                         <td>
-                                                            <button type="button" class="btn btn-info btn-sm"
-                                                                onclick="editMember('<?php echo $member['member_id']; ?>', 
+                                                            <?php if ($hasAccessToFinancialInfo): ?>
+                                                                <button type="button" class="btn btn-info btn-sm"
+                                                                    onclick="editMember('<?php echo $member['member_id']; ?>', 
                                                                            '<?php echo $member['role_id']; ?>', 
                                                                            <?php echo $member['is_active']; ?>)">
-                                                                <i class="fas fa-edit"></i>
-                                                            </button>
-                                                            <button type="button" class="btn btn-danger btn-sm"
-                                                                onclick="confirmDelete('<?php echo $member['member_id']; ?>', 
+                                                                    <i class="fas fa-edit"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-danger btn-sm"
+                                                                    onclick="confirmDelete('<?php echo $member['member_id']; ?>', 
                                                                              '<?php echo $member['first_name'] . ' ' . $member['last_name']; ?>')">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            <?php endif; ?>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
