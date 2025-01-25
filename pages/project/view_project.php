@@ -21,32 +21,34 @@ try {
 
     try {
         $sql = "SELECT p.*, 
-            u.team_id as creator_team_id, 
-            u.first_name, u.last_name, u.email as seller_email, u.phone as seller_phone,
-            pr.product_name, pr.product_description,
-            c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
-            t.team_name,
-            tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
-            creator.first_name as creator_first_name, creator.last_name as creator_last_name,
-            updater.first_name as updater_first_name, updater.last_name as updater_last_name,
-            CASE 
-                WHEN p.created_by = :user_id THEN true
-                WHEN EXISTS (
-                    SELECT 1 FROM project_members pm 
-                    WHERE pm.project_id = p.project_id 
-                    AND pm.user_id = :user_id
-                ) THEN true
-                ELSE false
-            END as has_access
-            FROM projects p 
-            LEFT JOIN users u ON p.seller = u.user_id 
-            LEFT JOIN products pr ON p.product_id = pr.product_id 
-            LEFT JOIN customers c ON p.customer_id = c.customer_id 
-            LEFT JOIN teams t ON u.team_id = t.team_id 
-            LEFT JOIN users tl ON t.team_leader = tl.user_id
-            LEFT JOIN users creator ON p.created_by = creator.user_id
-            LEFT JOIN users updater ON p.updated_by = updater.user_id
-            WHERE p.project_id = :project_id";
+        u.team_id as creator_team_id, 
+        u.first_name, u.last_name, u.email as seller_email, u.phone as seller_phone,
+        pr.product_name, pr.product_description,
+        c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
+        t.team_name,
+        tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
+        creator.first_name as creator_first_name, creator.last_name as creator_last_name,
+        updater.first_name as updater_first_name, updater.last_name as updater_last_name,
+        pm.is_active, -- เพิ่มการดึงค่า is_active จากตาราง project_members
+        CASE 
+            WHEN p.created_by = :user_id THEN true
+            WHEN EXISTS (
+                SELECT 1 FROM project_members pm 
+                WHERE pm.project_id = p.project_id 
+                AND pm.user_id = :user_id
+            ) THEN true
+            ELSE false
+        END as has_access
+        FROM projects p 
+        LEFT JOIN users u ON p.seller = u.user_id 
+        LEFT JOIN products pr ON p.product_id = pr.product_id 
+        LEFT JOIN customers c ON p.customer_id = c.customer_id 
+        LEFT JOIN teams t ON u.team_id = t.team_id 
+        LEFT JOIN users tl ON t.team_leader = tl.user_id
+        LEFT JOIN users creator ON p.created_by = creator.user_id
+        LEFT JOIN users updater ON p.updated_by = updater.user_id
+        LEFT JOIN project_members pm ON p.project_id = pm.project_id AND pm.user_id = :user_id -- เช็ค is_active ของสมาชิก
+        WHERE p.project_id = :project_id";
 
         $stmt = $condb->prepare($sql);
         $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
@@ -130,7 +132,7 @@ function getStatusClass($status)
 }
 
 // ตรวจสอบสิทธิ์การเข้าถึงข้อมูลทางการเงิน
-$hasAccessToFinancialInfo = false;
+$hasAccessToFinancialInfo = true;
 
 // เงื่อนไข 1: Executive
 if ($role === 'Executive') {
@@ -145,25 +147,19 @@ elseif ($project['created_by'] == $user_id) {
     $hasAccessToFinancialInfo = true;
 }
 
-
-// ตรวจสอบสิทธิ์การเข้าถึงข Tab ต้นทุนโครงการ
-$hasAccesstabInfo = true;
-
-// เงื่อนไข 1: ไม่ให้สิทธิ์ Engineer เข้าถึงข้อมูล
-if ($role === 'Engineer') {
-    $hasAccesstabInfo = false;
+// เงื่อนไข 4: สมาชิกที่ถูกเชิญและมี is_active = 0 Full
+elseif (isset($project['is_active']) && $project['is_active'] == 0) {
+    $hasAccessToFinancialInfo = true;
 }
 
-// ตรวจสอบสิทธิ์การเข้าถึงข้อมูลต้นทุนโครงการ
-$hasAccesscostInfo = true;
-
-// เงื่อนไข 1: Sale Supervisor ไม่ให้เห็น Cost
-if ($role === 'Sale Supervisor') {
-    $hasAccesscostInfo = false;
+// เงื่อนไข 4: สมาชิกที่ถูกเชิญและมี is_active = 1 View
+elseif (isset($project['is_active']) && $project['is_active'] == 1) {
+    $hasAccessToFinancialInfo = false;
 }
-// เงื่อนไข 2: Sale Supervisor ไม่ให้เห็น Cost
-elseif ($role === 'Seller') {
-    $hasAccesscostInfo = false;
+
+// เงื่อนไข 4: สมาชิกที่ถูกเชิญและมี is_active = 2  Half
+elseif (isset($project['is_active']) && $project['is_active'] == 2) {
+    $hasAccessToFinancialInfo = false;
 }
 
 
@@ -252,17 +248,27 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
             <div class="card">
                 <div class="card-header p-2">
                     <ul class="nav nav-pills">
-                        <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
-                        <li class="nav-item"><a class="nav-link " href="#members" data-toggle="tab" data-tab="project-member">แชร์โครงการ</a></li>
-                        <?php if ($hasAccesstabInfo): ?>
-                            <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
+
+                            <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
+
+                        <?php if ($hasAccessToFinancialInfo): ?>
+                            <li class="nav-item"><a class="nav-link " href="#members" data-toggle="tab" data-tab="project-member">แชร์โครงการ</a></li>
                         <?php endif; ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tasks" data-toggle="tab" role="tab">บริหารโครงการ</a>
-                        </li>
-                        <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab" data-tab="documents">เอกสารแนบ</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#links" data-toggle="tab" data-tab="links">แนบลิงค์เอกสารโครงการ</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
+
+                            <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
+
+                        <?php if ($hasAccessToFinancialInfo): ?>
+                            <li class="nav-item"><a class="nav-link" href="#tasks" data-toggle="tab" role="tab">บริหารโครงการ</a></li>
+                        <?php endif; ?>
+                        <?php if ($hasAccessToFinancialInfo): ?>
+                            <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab" data-tab="documents">เอกสารแนบ</a></li>
+                        <?php endif; ?>
+                        <?php if ($hasAccessToFinancialInfo): ?>
+                            <li class="nav-item"><a class="nav-link" href="#links" data-toggle="tab" data-tab="links">แนบลิงค์เอกสารโครงการ</a></li>
+                        <?php endif; ?>
+                        <?php if ($hasAccessToFinancialInfo): ?>
+                            <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
+                        <?php endif; ?>
 
                     </ul
                         </div>
@@ -634,12 +640,12 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                 <th class="text-nowrap" style="width: 5%">Unit</th>
                                                 <th class="text-nowrap" style="width: 10%">Price / Unit</th>
                                                 <th class="text-nowrap" style="width: 10%">Total Amount</th>
-                                                <?php if ($hasAccesscostInfo): ?>
+                                                <?php if ($hasAccessToFinancialInfo): ?>
                                                     <th class="text-nowrap" style="width: 10%">Cost / Unit</th>
                                                     <th class="text-nowrap">Total Cost</th>
                                                 <?php endif; ?>
                                                 <th class="text-nowrap">Supplier</th>
-                                                <?php if ($hasAccesscostInfo): ?>
+                                                <?php if ($hasAccessToFinancialInfo): ?>
                                                     <th class="text-nowrap">Actions</th>
                                                 <?php endif; ?>
                                             </tr>
@@ -657,12 +663,12 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                 <td class="text-nowrap"><input type="text" id="unitInput" class="form-control form-control-sm" placeholder="เช่น วัน, คน, ชิ้น"></td>
                                                 <td class="text-nowrap"><input type="text" id="priceInput" class="form-control form-control-sm" placeholder="ตั้งราคาขาย"></td>
                                                 <td class="text-nowrap"><span id="totalAmountInput">0.00</span></td>
-                                                <?php if ($hasAccesscostInfo): ?>
+                                                <?php if ($hasAccessToFinancialInfo): ?>
                                                     <td class="text-nowrap"><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
                                                     <td class="text-nowrap"><span id="totalCostInput">0.00</span></td>
                                                 <?php endif; ?>
                                                 <td class="text-nowrap"><input type="text" id="supplierInput" class="form-control form-control-sm" placeholder=""></td>
-                                                <?php if ($hasAccesscostInfo): ?>
+                                                <?php if ($hasAccessToFinancialInfo): ?>
                                                     <td class="text-nowrap"><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
                                                 <?php endif; ?>
                                             </tr>
@@ -681,7 +687,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                     <p>Vat (7%): <span id="vatAmount">0.00</span> บาท</p>
                                                     <p>Grand Total: <span id="grandTotal">0.00</span> บาท</p>
                                                 </div>
-                                                <?php if ($hasAccesscostInfo): ?>
+                                                <?php if ($hasAccessToFinancialInfo): ?>
                                                     <div class="col-md-4">
                                                         <p>Total Cost: <span id="totalCost">0.00</span> บาท</p>
                                                         <p>Cost Vat (7%): <span id="costVatAmount">0.00</span> บาท</p>
@@ -839,7 +845,9 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                     <th>บทบาท</th>
                                                     <th>วันที่เข้าร่วม</th>
                                                     <th>สถานะ</th>
-                                                    <th>จัดการ</th>
+                                                    <?php if ($hasAccessToFinancialInfo): ?>
+                                                        <th>จัดการ</th>
+                                                    <?php endif; ?>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -850,14 +858,16 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                         <td><?php echo htmlspecialchars($member['role_name']); ?></td>
                                                         <td><?php echo date('d/m/Y', strtotime($member['joined_date'])); ?></td>
                                                         <td>
-                                                            <?php if ($member['is_active']): ?>
-                                                                <span class="badge badge-success">สมาชิกในโครงการ</span>
+                                                            <?php if ($member['is_active'] == 1): ?>
+                                                                <span class="badge badge-success">View</span>
+                                                            <?php elseif ($member['is_active'] == 2): ?>
+                                                                <span class="badge badge-primary">Half Acesss</span>
                                                             <?php else: ?>
-                                                                <span class="badge badge-danger">ร่วมบริหารโครงการ</span>
+                                                                <span class="badge badge-danger">Full Access</span>
                                                             <?php endif; ?>
                                                         </td>
-                                                        <td>
-                                                            <?php if ($hasAccessToFinancialInfo): ?>
+                                                        <?php if ($hasAccessToFinancialInfo): ?>
+                                                            <td>
                                                                 <button type="button" class="btn btn-info btn-sm"
                                                                     onclick="editMember('<?php echo $member['member_id']; ?>', 
                                                                            '<?php echo $member['role_id']; ?>', 
@@ -869,8 +879,8 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                                              '<?php echo $member['first_name'] . ' ' . $member['last_name']; ?>')">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
-                                                            <?php endif; ?>
-                                                        </td>
+                                                            </td>
+                                                        <?php endif; ?>
                                                     </tr>
                                                 <?php endforeach; ?>
                                             </tbody>
