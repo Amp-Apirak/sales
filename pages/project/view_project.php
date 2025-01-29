@@ -256,10 +256,8 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
 
                         <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
                         <li class="nav-item"><a class="nav-link " href="#members" data-toggle="tab" data-tab="project-member">แชร์โครงการ</a></li>
+                        <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
 
-                        <?php if ($hasFullAccess): ?>
-                            <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
-                        <?php endif; ?>
 
                         <?php if ($hasFullAccess || $hasHalfAccess): ?>
                             <li class="nav-item"><a class="nav-link" href="#tasks" data-toggle="tab" role="tab">บริหารโครงการ</a></li>
@@ -636,81 +634,93 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
 
                             <!-- แถบที่ 2 ต้นทุนโครงการ -->
                             <div class="tab-pane" id="project-cost">
-                                <div class="table-responsive">
-                                    <table id="costTable" class="table table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <!-- คอลัมน์พื้นฐานที่ทุกคนเห็น -->
-                                                <th class="text-nowrap text-center" style="width: 10%">Type</th>
-                                                <th class="text-nowrap" style="width: 10%">PART No.</th>
-                                                <th class="text-nowrap" style="width: 50%">Description</th>
-                                                <th class="text-nowrap" style="width: 5%">QTY.</th>
-                                                <th class="text-nowrap" style="width: 5%">Unit</th>
-                                                <th class="text-nowrap" style="width: 10%">Price / Unit</th>
-                                                <th class="text-nowrap" style="width: 10%">Total Amount</th>
-                                                <!-- คอลัมน์ที่เฉพาะผู้มีสิทธิ์เท่านั้นที่จะเห็น -->
-                                                <?php if ($hasAccessToFinancialInfo): ?>
-                                                    <th class="text-nowrap" style="width: 10%">Cost / Unit</th>
-                                                    <th class="text-nowrap">Total Cost</th>
-                                                    <th class="text-nowrap">Supplier</th>
-                                                <?php endif; ?>
-                                                <th class="text-nowrap">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="costTableBody">
-                                            <!-- ข้อมูลจะถูกเพิ่มที่นี่ด้วย JavaScript -->
-                                        </tbody>
-                                        <!-- แถวสำหรับกรอกข้อมูลใหม่ -->
-                                        <tfoot>
-                                            <tr>
-                                                <!-- ฟิลด์พื้นฐานที่ทุกคนเห็น -->
-                                                <td class="text-nowrap"><input type="text" id="typeInput" class="form-control form-control-sm" placeholder="A, B, C"></td>
-                                                <td class="text-nowrap"><input type="text" id="partNoInput" class="form-control form-control-sm" placeholder="Service, Hardware, Software"></td>
-                                                <td class="text-nowrap"><input type="text" id="descriptionInput" class="form-control form-control-sm" placeholder="ใส่รายละเอียด"></td>
-                                                <td class="text-nowrap text-center"><input type="number" id="qtyInput" class="form-control form-control-sm" placeholder="จำนวนตัวเลข"></td>
-                                                <td class="text-nowrap"><input type="text" id="unitInput" class="form-control form-control-sm" placeholder="เช่น วัน, คน, ชิ้น"></td>
-                                                <td class="text-nowrap"><input type="text" id="priceInput" class="form-control form-control-sm" placeholder="ตั้งราคาขาย"></td>
-                                                <td class="text-nowrap"><span id="totalAmountInput">0.00</span></td>
-                                                <!-- ฟิลด์ที่เฉพาะผู้มีสิทธิ์เท่านั้นที่จะเห็น -->
-                                                <?php if ($hasAccessToFinancialInfo): ?>
-                                                    <td class="text-nowrap"><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
-                                                    <td class="text-nowrap"><span id="totalCostInput">0.00</span></td>
-                                                    <td class="text-nowrap"><input type="text" id="supplierInput" class="form-control form-control-sm" placeholder=""></td>
-                                                <?php endif; ?>
-                                                <td class="text-nowrap"><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
+                                <?php
+                                // เช็คเงื่อนไข is_active
+                                if (isset($project['is_active']) && $project['is_active'] == 1) {
+                                    // ถ้าเป็น View Only ให้ include หน้า sale_price.php
+                                    include 'report/sale_price.php';
+                                } else {
+                                    // ถ้าไม่ใช่ View Only ให้แสดงเนื้อหาปกติ
+                                ?>
+                                    <div class="table-responsive">
+                                        <table id="costTable" class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <!-- คอลัมน์พื้นฐานที่ทุกคนเห็น -->
+                                                    <th class="text-nowrap text-center" style="width: 10%">Type</th>
+                                                    <th class="text-nowrap" style="width: 10%">PART No.</th>
+                                                    <th class="text-nowrap" style="width: 50%">Description</th>
+                                                    <th class="text-nowrap" style="width: 5%">QTY.</th>
+                                                    <th class="text-nowrap" style="width: 5%">Unit</th>
+                                                    <th class="text-nowrap" style="width: 10%">Price / Unit</th>
+                                                    <th class="text-nowrap" style="width: 10%">Total Amount</th>
+                                                    <!-- คอลัมน์ที่เฉพาะผู้มีสิทธิ์เท่านั้นที่จะเห็น -->
+                                                    <?php if ($hasAccessToFinancialInfo): ?>
+                                                        <th class="text-nowrap" style="width: 10%">Cost / Unit</th>
+                                                        <th class="text-nowrap">Total Cost</th>
+                                                        <th class="text-nowrap">Supplier</th>
+                                                        <th class="text-nowrap">Actions</th>
+                                                    <?php endif; ?>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="costTableBody">
+                                                <!-- ข้อมูลจะถูกเพิ่มที่นี่ด้วย JavaScript -->
+                                            </tbody>
+                                            <!-- แถวสำหรับกรอกข้อมูลใหม่ -->
+                                            <tfoot>
+                                                <tr>
+                                                    <!-- ฟิลด์พื้นฐานที่ทุกคนเห็น -->
+                                                    <td class="text-nowrap"><input type="text" id="typeInput" class="form-control form-control-sm" placeholder="A, B, C"></td>
+                                                    <td class="text-nowrap"><input type="text" id="partNoInput" class="form-control form-control-sm" placeholder="Service, Hardware, Software"></td>
+                                                    <td class="text-nowrap"><input type="text" id="descriptionInput" class="form-control form-control-sm" placeholder="ใส่รายละเอียด"></td>
+                                                    <td class="text-nowrap text-center"><input type="number" id="qtyInput" class="form-control form-control-sm" placeholder="จำนวนตัวเลข"></td>
+                                                    <td class="text-nowrap"><input type="text" id="unitInput" class="form-control form-control-sm" placeholder="เช่น วัน, คน, ชิ้น"></td>
+                                                    <td class="text-nowrap"><input type="text" id="priceInput" class="form-control form-control-sm" placeholder="ตั้งราคาขาย"></td>
+                                                    <td class="text-nowrap"><span id="totalAmountInput">0.00</span></td>
+                                                    <!-- ฟิลด์ที่เฉพาะผู้มีสิทธิ์เท่านั้นที่จะเห็น -->
+                                                    <?php if ($hasAccessToFinancialInfo): ?>
+                                                        <td class="text-nowrap"><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
+                                                        <td class="text-nowrap"><span id="totalCostInput">0.00</span></td>
+                                                        <td class="text-nowrap"><input type="text" id="supplierInput" class="form-control form-control-sm" placeholder=""></td>
+                                                        <td class="text-nowrap"><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
+                                                    <?php endif; ?>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
 
-                                <!-- Total Section -->
-                                <div class="totals-section">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <!-- ส่วนที่ทุกคนเห็น -->
-                                                <div class="col-md-4">
-                                                    <p>Total Amount: <span id="totalAmount">0.00</span> บาท</p>
-                                                    <p>Vat (7%): <span id="vatAmount">0.00</span> บาท</p>
-                                                    <p>Grand Total: <span id="grandTotal">0.00</span> บาท</p>
+                                    <!-- Total Section -->
+                                    <div class="totals-section">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <!-- ส่วนที่ทุกคนเห็น -->
+                                                    <div class="col-md-4">
+                                                        <p>Total Amount: <span id="totalAmount">0.00</span> บาท</p>
+                                                        <p>Vat (7%): <span id="vatAmount">0.00</span> บาท</p>
+                                                        <p>Grand Total: <span id="grandTotal">0.00</span> บาท</p>
+                                                    </div>
+
+                                                    <!-- ส่วนที่เฉพาะผู้มีสิทธิ์เท่านั้นที่จะเห็น -->
+                                                    <?php if ($hasAccessToFinancialInfo): ?>
+                                                        <div class="col-md-4">
+                                                            <p>Total Cost: <span id="totalCost">0.00</span> บาท</p>
+                                                            <p>Cost Vat (7%): <span id="costVatAmount">0.00</span> บาท</p>
+                                                            <p>Total Cost with Vat: <span id="totalCostWithVat">0.00</span> บาท</p>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <p>Profit: <span id="profitAmount">0.00</span> บาท</p>
+                                                            <p>Profit Percentage: <span id="profitPercentage">0.00</span>%</p>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
-
-                                                <!-- ส่วนที่เฉพาะผู้มีสิทธิ์เท่านั้นที่จะเห็น -->
-                                                <?php if ($hasAccessToFinancialInfo): ?>
-                                                    <div class="col-md-4">
-                                                        <p>Total Cost: <span id="totalCost">0.00</span> บาท</p>
-                                                        <p>Cost Vat (7%): <span id="costVatAmount">0.00</span> บาท</p>
-                                                        <p>Total Cost with Vat: <span id="totalCostWithVat">0.00</span> บาท</p>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <p>Profit: <span id="profitAmount">0.00</span> บาท</p>
-                                                        <p>Profit Percentage: <span id="profitPercentage">0.00</span>%</p>
-                                                    </div>
-                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+
+                                <?php
+                                }
+                                ?>
                             </div>
 
                             <!-- แถบที่ 3 ตารางแสดงไฟล์เอกสาร -->
