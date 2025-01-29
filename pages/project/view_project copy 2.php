@@ -132,39 +132,34 @@ function getStatusClass($status)
 }
 
 // ตรวจสอบสิทธิ์การเข้าถึงข้อมูลทางการเงิน
-$hasAccessToFinancialInfo = false; // ตั้งค่าเริ่มต้นเป็น false
-$hasFullAccess = false; // สำหรับสิทธิ์เต็ม
-$hasHalfAccess = false; // สำหรับสิทธิ์ครึ่งเดียว
+$hasAccessToFinancialInfo = true;
 
-// เงื่อนไข 1: Executive มีสิทธิ์เต็ม
+// เงื่อนไข 1: Executive
 if ($role === 'Executive') {
     $hasAccessToFinancialInfo = true;
-    $hasFullAccess = true;
 }
 // เงื่อนไข 2: Sale Supervisor และอยู่ในทีมเดียวกับผู้สร้าง
 elseif ($role === 'Sale Supervisor' && $user_team_id == $project['creator_team_id']) {
     $hasAccessToFinancialInfo = true;
-    $hasFullAccess = true;
 }
 // เงื่อนไข 3: ผู้สร้างโครงการ
 elseif ($project['created_by'] == $user_id) {
     $hasAccessToFinancialInfo = true;
-    $hasFullAccess = true;
 }
-// เงื่อนไข 4: สมาชิกที่ถูกเชิญ
-elseif (isset($project['is_active'])) {
-    switch ($project['is_active']) {
-        case 0: // Full Access
-            $hasAccessToFinancialInfo = true;
-            $hasFullAccess = true;
-            break;
-        case 1: // View Only
-            $hasAccessToFinancialInfo = false;
-            break;
-        case 2: // Half Access
-            $hasHalfAccess = true;
-            break;
-    }
+
+// เงื่อนไข 4: สมาชิกที่ถูกเชิญและมี is_active = 0 Full
+elseif (isset($project['is_active']) && $project['is_active'] == 0) {
+    $hasAccessToFinancialInfo = true;
+}
+
+// เงื่อนไข 4: สมาชิกที่ถูกเชิญและมี is_active = 1 View
+elseif (isset($project['is_active']) && $project['is_active'] == 1) {
+    $hasAccessToFinancialInfo = false;
+}
+
+// เงื่อนไข 4: สมาชิกที่ถูกเชิญและมี is_active = 2  Half
+elseif (isset($project['is_active']) && $project['is_active'] == 2) {
+    $hasAccessToFinancialInfo = false;
 }
 
 
@@ -255,25 +250,23 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                     <ul class="nav nav-pills">
 
                         <li class="nav-item"><a class="nav-link active" href="#project-info" data-toggle="tab" data-tab="project-info">ข้อมูลโครงการ</a></li>
-                        <li class="nav-item"><a class="nav-link " href="#members" data-toggle="tab" data-tab="project-member">แชร์โครงการ</a></li>
 
-                        <?php if ($hasFullAccess): ?>
-                            <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
+                        <?php if ($hasAccessToFinancialInfo): ?>
+                            <li class="nav-item"><a class="nav-link " href="#members" data-toggle="tab" data-tab="project-member">แชร์โครงการ</a></li>
                         <?php endif; ?>
 
-                        <?php if ($hasFullAccess || $hasHalfAccess): ?>
+                        <li class="nav-item"><a class="nav-link " href="#project-cost" data-toggle="tab" data-tab="project-cost">ต้นทุนโครงการ</a></li>
+
+                        <?php if ($hasAccessToFinancialInfo): ?>
                             <li class="nav-item"><a class="nav-link" href="#tasks" data-toggle="tab" role="tab">บริหารโครงการ</a></li>
                         <?php endif; ?>
-
-                        <?php if ($hasFullAccess || $hasHalfAccess): ?>
+                        <?php if ($hasAccessToFinancialInfo): ?>
                             <li class="nav-item"><a class="nav-link" href="#documents" data-toggle="tab" data-tab="documents">เอกสารแนบ</a></li>
                         <?php endif; ?>
-
-                        <?php if ($hasFullAccess || $hasHalfAccess): ?>
+                        <?php if ($hasAccessToFinancialInfo): ?>
                             <li class="nav-item"><a class="nav-link" href="#links" data-toggle="tab" data-tab="links">แนบลิงค์เอกสารโครงการ</a></li>
                         <?php endif; ?>
-
-                        <?php if ($hasFullAccess || $hasHalfAccess): ?>
+                        <?php if ($hasAccessToFinancialInfo): ?>
                             <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
                         <?php endif; ?>
 
@@ -297,7 +290,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                         <div class="info-card">
                                             <div class="info-card-header">
                                                 <span><i class="fas fa-info-circle mr-2"></i>ข้อมูลโครงการ</span>
-                                                <?php if ($hasFullAccess): ?>
+                                                <?php if ($hasAccessToFinancialInfo): ?>
                                                     <button class="edit-button no-print" onclick="location.href='edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>'">
                                                         <i class="fas fa-edit"></i> แก้ไข
                                                     </button>
@@ -640,7 +633,6 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                     <table id="costTable" class="table table-bordered">
                                         <thead>
                                             <tr>
-                                                <!-- คอลัมน์พื้นฐานที่ทุกคนเห็น -->
                                                 <th class="text-nowrap text-center" style="width: 10%">Type</th>
                                                 <th class="text-nowrap" style="width: 10%">PART No.</th>
                                                 <th class="text-nowrap" style="width: 50%">Description</th>
@@ -648,13 +640,12 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                 <th class="text-nowrap" style="width: 5%">Unit</th>
                                                 <th class="text-nowrap" style="width: 10%">Price / Unit</th>
                                                 <th class="text-nowrap" style="width: 10%">Total Amount</th>
-                                                <!-- คอลัมน์ที่เฉพาะผู้มีสิทธิ์เท่านั้นที่จะเห็น -->
                                                 <?php if ($hasAccessToFinancialInfo): ?>
                                                     <th class="text-nowrap" style="width: 10%">Cost / Unit</th>
                                                     <th class="text-nowrap">Total Cost</th>
                                                     <th class="text-nowrap">Supplier</th>
+                                                    <th class="text-nowrap">Actions</th>
                                                 <?php endif; ?>
-                                                <th class="text-nowrap">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody id="costTableBody">
@@ -663,7 +654,6 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                         <!-- แถวสำหรับกรอกข้อมูลใหม่ -->
                                         <tfoot>
                                             <tr>
-                                                <!-- ฟิลด์พื้นฐานที่ทุกคนเห็น -->
                                                 <td class="text-nowrap"><input type="text" id="typeInput" class="form-control form-control-sm" placeholder="A, B, C"></td>
                                                 <td class="text-nowrap"><input type="text" id="partNoInput" class="form-control form-control-sm" placeholder="Service, Hardware, Software"></td>
                                                 <td class="text-nowrap"><input type="text" id="descriptionInput" class="form-control form-control-sm" placeholder="ใส่รายละเอียด"></td>
@@ -671,31 +661,28 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                 <td class="text-nowrap"><input type="text" id="unitInput" class="form-control form-control-sm" placeholder="เช่น วัน, คน, ชิ้น"></td>
                                                 <td class="text-nowrap"><input type="text" id="priceInput" class="form-control form-control-sm" placeholder="ตั้งราคาขาย"></td>
                                                 <td class="text-nowrap"><span id="totalAmountInput">0.00</span></td>
-                                                <!-- ฟิลด์ที่เฉพาะผู้มีสิทธิ์เท่านั้นที่จะเห็น -->
                                                 <?php if ($hasAccessToFinancialInfo): ?>
                                                     <td class="text-nowrap"><input type="text" id="costInput" class="form-control form-control-sm" placeholder="ตั้งราคาต้นทุน"></td>
                                                     <td class="text-nowrap"><span id="totalCostInput">0.00</span></td>
                                                     <td class="text-nowrap"><input type="text" id="supplierInput" class="form-control form-control-sm" placeholder=""></td>
+                                                    <td class="text-nowrap"><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
                                                 <?php endif; ?>
-                                                <td class="text-nowrap"><button class="btn btn-sm btn-success" onclick="saveCost()">เพิ่ม</button></td>
                                             </tr>
                                         </tfoot>
                                     </table>
                                 </div>
+
 
                                 <!-- Total Section -->
                                 <div class="totals-section">
                                     <div class="card">
                                         <div class="card-body">
                                             <div class="row">
-                                                <!-- ส่วนที่ทุกคนเห็น -->
                                                 <div class="col-md-4">
                                                     <p>Total Amount: <span id="totalAmount">0.00</span> บาท</p>
                                                     <p>Vat (7%): <span id="vatAmount">0.00</span> บาท</p>
                                                     <p>Grand Total: <span id="grandTotal">0.00</span> บาท</p>
                                                 </div>
-
-                                                <!-- ส่วนที่เฉพาะผู้มีสิทธิ์เท่านั้นที่จะเห็น -->
                                                 <?php if ($hasAccessToFinancialInfo): ?>
                                                     <div class="col-md-4">
                                                         <p>Total Cost: <span id="totalCost">0.00</span> บาท</p>
@@ -711,6 +698,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
 
                             <!-- แถบที่ 3 ตารางแสดงไฟล์เอกสาร -->

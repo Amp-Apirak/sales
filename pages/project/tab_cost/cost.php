@@ -241,7 +241,6 @@
     }
 
     // ฟังก์ชันโหลดข้อมูลต้นทุน
-    // แทนที่ฟังก์ชัน loadCosts เดิมด้วยโค้ดนี้
     function loadCosts() {
         $.ajax({
             url: 'get_costs.php',
@@ -271,9 +270,11 @@
                         <td>${escapeHtml(cost.unit)}</td>
                         <td>${formatNumber(cost.price_per_unit)}</td>
                         <td>${formatNumber(cost.total_amount)}</td>
-                        <td>${formatNumber(cost.cost_per_unit)}</td>
-                        <td>${formatNumber(cost.total_cost)}</td>
-                        <td>${escapeHtml(cost.supplier)}</td>
+                        <?php if ($hasAccessToFinancialInfo): ?>
+                            <td>${formatNumber(cost.cost_per_unit)}</td>
+                            <td>${formatNumber(cost.total_cost)}</td>
+                            <td>${escapeHtml(cost.supplier)}</td>
+                        <?php endif; ?>
                         <td>
                             <button class="btn btn-sm btn-info mr-1" onclick="editCost('${cost.cost_id}')">แก้ไข</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteCost('${cost.cost_id}')">ลบ</button>
