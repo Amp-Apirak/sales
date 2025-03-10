@@ -249,7 +249,7 @@ try {
 
     // ปรับข้อความแสดงผลตาม Role
     $team_label = ($role === 'Executive') ? "จำนวนทีมทั้งหมด" : "จำนวนทีมที่ฉันอยู่";
-    $member_label = ($role === 'Executive' || $role === 'Sale Supervisor') ? "จำนวนคนทั้งหมด" : "จำนวนคนในทีมของฉัน";
+    $member_label = ($role === 'Executive' || $role === 'Sale Supervisor') ? "จำนวนคนในทีมทั้งหมด" : "จำนวนคนในทีมของฉัน";
 } catch (PDOException $e) {
     // บันทึกข้อผิดพลาดถ้ามีปัญหาในการดึงข้อมูล
     error_log("Database query error: " . $e->getMessage());
@@ -413,205 +413,6 @@ if ($filter_team_id && $can_view_all) {
 $stmt->execute();
 $team_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-
-// ส่วนที่ 7: การดึงข้อมูลนับจำนวนโครงการตามสถานะ
-// --------------------------------------------------------
-
-// ฟังก์ชันสำหรับนับจำนวนโครงการตามสถานะ
-function countProjectsByStatus($condb, $status_list, $role, $team_id, $user_id, $filter_team_id = null, $filter_user_id = null, $filter_date_range = null)
-{
-    // เริ่มต้นสร้างคำสั่ง SQL พื้นฐาน
-    $query = "SELECT COUNT(*) as count FROM projects p
-              LEFT JOIN users u ON p.created_by = u.user_id
-              WHERE p.status IN (" . implode(',', array_map(function ($status) {
-        return "'$status'";
-    }, $status_list)) . ")";
-
-    // เพิ่มเงื่อนไขการกรองตามช่วงวันที่
-    if ($filter_date_range) {
-        $query .= " AND p.sales_date BETWEEN :start_date AND :end_date";
-    }
-
-    // เพิ่มเงื่อนไขการกรองตามสิทธิ์การเข้าถึง
-    if ($filter_team_id && $role === 'Executive') {
-        $query .= " AND u.team_id = :team_id";
-    } elseif ($role === 'Sale Supervisor') {
-        $query .= " AND u.team_id = :team_id";
-    } elseif ($role === 'Seller') {
-        $query .= " AND p.created_by = :user_id";
-    }
-
-    // เพิ่มเงื่อนไขการกรองตาม user_id ที่เลือก
-    if ($filter_user_id) {
-        $query .= " AND p.created_by = :filter_user_id";
-    }
-
-    $stmt = $condb->prepare($query);
-
-    // Binding parameters
-    if ($filter_date_range) {
-        $stmt->bindParam(':start_date', $filter_date_range[0]);
-        $stmt->bindParam(':end_date', $filter_date_range[1]);
-    }
-
-    if ($filter_team_id && $role === 'Executive') {
-        $stmt->bindParam(':team_id', $filter_team_id);
-    } elseif ($role === 'Sale Supervisor') {
-        $stmt->bindParam(':team_id', $team_id);
-    } elseif ($role === 'Seller') {
-        $stmt->bindParam(':user_id', $user_id);
-    }
-
-    if ($filter_user_id) {
-        $stmt->bindParam(':filter_user_id', $filter_user_id);
-    }
-
-    $stmt->execute();
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result['count'];
-}
-
-// เรียกใช้ฟังก์ชันเพื่อนับจำนวนโครงการแต่ละสถานะ
-try {
-    // นับจำนวนโครงการสถานะชนะ (Win)
-    $win_projects = countProjectsByStatus(
-        $condb,
-        ['ชนะ (Win)'],
-        $role,
-        $team_id,
-        $user_id,
-        $filter_team_id,
-        $filter_user_id,
-        $filter_date_range
-    );
-
-    // นับจำนวนโครงการที่กำลังดำเนินการ
-    $ongoing_projects = countProjectsByStatus(
-        $condb,
-        ['นำเสนอโครงการ (Presentations)', 'ใบเสนอราคา (Quotation)', 'ยื่นประมูล (Bidding)', 'รอการพิจารณา (On Hold)'],
-        $role,
-        $team_id,
-        $user_id,
-        $filter_team_id,
-        $filter_user_id,
-        $filter_date_range
-    );
-
-    // นับจำนวนโครงการสถานะแพ้ (Loss)
-    $loss_projects = countProjectsByStatus(
-        $condb,
-        ['แพ้ (Loss)'],
-        $role,
-        $team_id,
-        $user_id,
-        $filter_team_id,
-        $filter_user_id,
-        $filter_date_range
-    );
-
-    // นับจำนวนโครงการสถานะยกเลิก (Cancled)
-    $canceled_projects = countProjectsByStatus(
-        $condb,
-        ['ยกเลิก (Cancled)'], // เฉพาะสถานะยกเลิกเท่านั้น
-        $role,
-        $team_id,
-        $user_id,
-        $filter_team_id,
-        $filter_user_id,
-        $filter_date_range,
-    );
-} catch (PDOException $e) {
-    // จัดการข้อผิดพลาด
-    error_log("Error counting projects by status: " . $e->getMessage());
-    $win_projects = $ongoing_projects = $loss_projects = $total_all_projects = 0;
-}
-
-
-
-// ส่วนที่ 8: การดึงข้อมูลนับจำนวนโครงการตามสถานะ Win (ชนะ) เพื่อ Sum ตัวเลข
-// --------------------------------------------------------
-
-// ฟังก์ชันดึงข้อมูลสรุปโครงการที่มีสถานะชนะ (Win)
-function getWinProjectSummary($condb, $role, $team_id, $user_id, $filter_team_id = null, $filter_user_id = null, $filter_date_range = null)
-{
-    // สร้างคำสั่ง SQL พื้นฐานเพื่อดึงข้อมูลเฉพาะโครงการที่มีสถานะชนะ (Win)
-    $query = "SELECT 
-                SUM(sale_no_vat) as total_win_sales, 
-                SUM(cost_no_vat) as total_win_cost, 
-                SUM(gross_profit) as total_win_profit
-             FROM projects p
-             LEFT JOIN users u ON p.created_by = u.user_id
-             WHERE p.status = 'ชนะ (Win)'";
-
-    // เพิ่มเงื่อนไขกรองตามช่วงวันที่
-    if ($filter_date_range) {
-        $query .= " AND p.sales_date BETWEEN :start_date AND :end_date";
-    }
-
-    // เพิ่มเงื่อนไขการกรองตามสิทธิ์การเข้าถึง
-    if ($filter_team_id && $role === 'Executive') {
-        $query .= " AND u.team_id = :team_id";
-    } elseif ($role === 'Sale Supervisor') {
-        $query .= " AND u.team_id = :team_id";
-    } elseif ($role === 'Seller') {
-        $query .= " AND p.created_by = :user_id";
-    }
-
-    // เพิ่มเงื่อนไขกรองตาม user_id ที่เลือก
-    if ($filter_user_id) {
-        $query .= " AND p.created_by = :filter_user_id";
-    }
-
-    $stmt = $condb->prepare($query);
-
-    // ผูกค่าตัวแปรกับพารามิเตอร์
-    if ($filter_date_range) {
-        $stmt->bindParam(':start_date', $filter_date_range[0]);
-        $stmt->bindParam(':end_date', $filter_date_range[1]);
-    }
-
-    if ($filter_team_id && $role === 'Executive') {
-        $stmt->bindParam(':team_id', $filter_team_id);
-    } elseif ($role === 'Sale Supervisor') {
-        $stmt->bindParam(':team_id', $team_id);
-    } elseif ($role === 'Seller') {
-        $stmt->bindParam(':user_id', $user_id);
-    }
-
-    if ($filter_user_id) {
-        $stmt->bindParam(':filter_user_id', $filter_user_id);
-    }
-
-    $stmt->execute();
-    return $stmt->fetch(PDO::FETCH_ASSOC);
-}
-
-// เรียกใช้ฟังก์ชันเพื่อดึงข้อมูล
-try {
-    $win_summary = getWinProjectSummary(
-        $condb,
-        $role,
-        $team_id,
-        $user_id,
-        $filter_team_id,
-        $filter_user_id,
-        $filter_date_range
-    );
-
-    // กำหนดค่าให้กับตัวแปร หรือให้เป็น 0 ถ้าไม่มีข้อมูล
-    $win_sales = $win_summary['total_win_sales'] ?? 0;
-    $win_cost = $win_summary['total_win_cost'] ?? 0;
-    $win_profit = $win_summary['total_win_profit'] ?? 0;
-
-    // คำนวณเปอร์เซ็นต์กำไร
-    $win_profit_percentage = ($win_sales > 0) ? ($win_profit / $win_sales) * 100 : 0;
-} catch (PDOException $e) {
-    // จัดการข้อผิดพลาด
-    error_log("Error getting win project summary: " . $e->getMessage());
-    $win_sales = $win_cost = $win_profit = $win_profit_percentage = 0;
-}
-
 ?>
 
 
@@ -631,8 +432,7 @@ try {
     <?php include 'css_dashboard.php' ?>
 
     <!-- เพิ่ม CSS สำหรับ Date Range Picker -->
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/daterangepicker/3.1.0/daterangepicker.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/daterangepicker/3.1.0/daterangepicker.min.css" />
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -673,8 +473,7 @@ try {
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text">ทีม:</span>
                                                 </div>
-                                                <select class="form-control form-control-sm" id="team_select"
-                                                    name="team_id">
+                                                <select class="form-control form-control-sm" id="team_select" name="team_id">
                                                     <option value="">ทั้งหมด</option>
                                                     <?php foreach ($teams as $team): ?>
                                                         <option value="<?php echo htmlspecialchars($team['team_id']); ?>"
@@ -692,10 +491,10 @@ try {
                                             <div class="input-group-prepend">
                                                 <span class="input-group-text">ช่วงเวลา:</span>
                                             </div>
-                                            <input type="text" class="form-control form-control-sm" id="date_range"
-                                                name="date_range" value="<?php echo htmlspecialchars(implode(' - ', array_map(function ($date) {
-                                                                                return date('d/m/Y', strtotime($date));
-                                                                            }, $filter_date_range))); ?>">
+                                            <input type="text" class="form-control form-control-sm" id="date_range" name="date_range"
+                                                value="<?php echo htmlspecialchars(implode(' - ', array_map(function ($date) {
+                                                            return date('d/m/Y', strtotime($date));
+                                                        }, $filter_date_range))); ?>">
                                         </div>
                                     </div>
 
@@ -705,8 +504,7 @@ try {
                                                 <div class="input-group-prepend">
                                                     <span class="input-group-text">พนักงานขาย:</span>
                                                 </div>
-                                                <select class="form-control form-control-sm" id="user_select"
-                                                    name="user_id">
+                                                <select class="form-control form-control-sm" id="user_select" name="user_id">
                                                     <option value="">ทั้งหมด</option>
                                                     <?php foreach ($team_members as $member): ?>
                                                         <option value="<?php echo htmlspecialchars($member['user_id']); ?>"
@@ -727,11 +525,9 @@ try {
                         </div>
                     </div>
 
-
-
                     <!-- ส่วนแสดงผล KPIs -->
                     <div class="row">
-                        <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
                             <div class="card card-statistic">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
@@ -741,12 +537,11 @@ try {
                                         <h6 class="card-title text-muted mb-0 ml-3"><?php echo $team_label; ?></h6>
                                     </div>
                                     <h2 class="font-weight-bold mb-1"><?php echo number_format($total_teams); ?></h2>
-                                    <p class="mb-0 text-muted"><span class="text-success mr-2"><i
-                                                class="fa fa-arrow-up"></i> 3.48%</span> จากเดือนที่แล้ว</p>
+                                    <p class="mb-0 text-muted"><span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 3.48%</span> จากเดือนที่แล้ว</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
                             <div class="card card-statistic">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
@@ -755,221 +550,125 @@ try {
                                         </div>
                                         <h6 class="card-title text-muted mb-0 ml-3"><?php echo $member_label; ?></h6>
                                     </div>
-                                    <h2 class="font-weight-bold mb-1"><?php echo number_format($total_team_members); ?>
-                                    </h2>
-                                    <p class="mb-0 text-muted"><span class="text-success mr-2"><i
-                                                class="fa fa-arrow-up"></i> 5.27%</span> จากเดือนที่แล้ว</p>
+                                    <h2 class="font-weight-bold mb-1"><?php echo number_format($total_team_members); ?></h2>
+                                    <p class="mb-0 text-muted"><span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 5.27%</span> จากเดือนที่แล้ว</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
                             <div class="card card-statistic">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="icon-circle bg-danger">
                                             <i class="fas fa-project-diagram"></i>
                                         </div>
-                                        <h6 class="card-title text-muted mb-0 ml-3">จำนวนโครงการทั้งหมด</h6>
+                                        <h6 class="card-title text-muted mb-0 ml-3">จำนวน Project ของทีม</h6>
                                     </div>
                                     <h2 class="font-weight-bold mb-1"><?php echo number_format($total_projects); ?></h2>
-                                    <p class="mb-0 text-muted"><span class="text-danger mr-2"><i
-                                                class="fa fa-arrow-down"></i> 1.08%</span> จากเดือนที่แล้ว</p>
+                                    <p class="mb-0 text-muted"><span class="text-danger mr-2"><i class="fa fa-arrow-down"></i> 1.08%</span> จากเดือนที่แล้ว</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
+                        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
                             <div class="card card-statistic">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="icon-circle bg-warning">
                                             <i class="fas fa-box"></i>
                                         </div>
-                                        <h6 class="card-title text-muted mb-0 ml-3">จำนวนสินค้าที่ขายทั้งหมด</h6>
+                                        <h6 class="card-title text-muted mb-0 ml-3">จำนวน Product ทั้งหมด</h6>
                                     </div>
                                     <h2 class="font-weight-bold mb-1"><?php echo number_format($total_products); ?></h2>
-                                    <p class="mb-0 text-muted"><span class="text-success mr-2"><i
-                                                class="fa fa-arrow-up"></i> 2.37%</span> จากเดือนที่แล้ว</p>
+                                    <p class="mb-0 text-muted"><span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 2.37%</span> จากเดือนที่แล้ว</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- เพิ่มส่วนแสดงผลการ์ดสรุปสถานะโครงการ -->
                     <?php if ($can_view_financial): ?>
+                        <!-- ส่วนแสดงข้อมูลทางการเงิน -->
                         <div class="row">
-                            <!-- การ์ดแสดงจำนวนโครงการสถานะชนะ (Win) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card card-statistic">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="icon-circle bg-success">
-                                                <i class="fas fa-trophy"></i>
-                                            </div>
-                                            <h6 class="card-title text-muted mb-0 ml-3">โครงการที่ชนะ (WIN)</h6>
-                                        </div>
-                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($win_projects); ?></h2>
-                                        <p class="mb-0 text-muted"><span class="text-success mr-2"><i
-                                                    class="fa fa-arrow-up"></i> 2.5%</span> จากเดือนที่แล้ว</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- การ์ดแสดงจำนวนโครงการที่กำลังดำเนินการ -->
-                            <div class="col-lg-3 col-6">
-                                <div class="card card-statistic">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="icon-circle bg-warning">
-                                                <i class="fas fa-hourglass-half"></i>
-                                            </div>
-                                            <h6 class="card-title text-muted mb-0 ml-3">โครงการกำลังดำเนินการ</h6>
-                                        </div>
-                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($ongoing_projects); ?>
-                                        </h2>
-                                        <p class="mb-0 text-muted"><span class="text-warning mr-2"><i
-                                                    class="fa fa-arrow-right"></i> 1.2%</span> จากเดือนที่แล้ว</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- การ์ดแสดงจำนวนโครงการสถานะแพ้ (Loss) -->
-                            <div class="col-lg-3 col-6">
-                                <div class="card card-statistic">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="icon-circle bg-danger">
+                                <div class="card bg-primary">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-money-bill mr-1"></i>
+                                            ต้นทุนรวมทั้งหมด
+                                        </h3>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-tool" data-card-widget="remove">
                                                 <i class="fas fa-times"></i>
-                                            </div>
-                                            <h6 class="card-title text-muted mb-0 ml-3">โครงการที่แพ้</h6>
+                                            </button>
                                         </div>
-                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($loss_projects); ?></h2>
-                                        <p class="mb-0 text-muted"><span class="text-danger mr-2"><i
-                                                    class="fa fa-arrow-down"></i> 0.8%</span> จากเดือนที่แล้ว</p>
                                     </div>
-                                </div>
-                            </div>
-
-                            <!-- การ์ดแสดงจำนวนโครงการทั้งหมด -->
-                            <div class="col-lg-3 col-6">
-
-                                <div class="card card-statistic">
                                     <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="icon-circle bg-info">
-                                                <i class="fas fa-project-diagram"></i>
-                                            </div>
-                                            <h6 class="card-title text-muted mb-0 ml-3">โครงการที่ยกเลิก</h6>
-                                        </div>
-                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($canceled_projects); ?>
-                                        </h2>
-                                        <p class="mb-0 text-muted"><span class="text-info mr-2"><i
-                                                    class="fa fa-arrow-up"></i> 3.0%</span> จากเดือนที่แล้ว</p>
+                                        <h3>฿<?php echo number_format($total_cost, 2); ?></h3>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- ส่วนการแสดงผล Card ใหม่ -->
-                    <?php if ($can_view_financial): ?>
-                        <!-- แถวแสดงข้อมูลสรุปโครงการที่มีสถานะชนะ (Win) -->
-                        <div class="row">
-                            <!-- Card 1: Win ยอดขายรวม (No vat) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-success" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                    <div class="card-header" style="background: linear-gradient(to right, #28a745, #20c997); border-radius: 15px 15px 0 0; border: none;">
-                                        <h3 class="card-title" style="font-weight: 600; color: white;">
-                                            <i class="fas fa-chart-line mr-2"></i>
-                                            Win ยอดขายรวม (No vat)
+                                <div class="card bg-success">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-chart-line mr-1"></i>
+                                            ยอดขายรวมทั้งหมด
                                         </h3>
                                         <div class="card-tools">
                                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                                <i class="fas fa-minus" style="color: white;"></i>
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                <i class="fas fa-times"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="card-body text-center">
-                                        <h3 style="font-size: 2rem; font-weight: 700; color: white;">
-                                            ฿<?php echo number_format($win_sales, 2); ?>
-                                        </h3>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.8);">
-                                            <i class="fas fa-trophy mr-1"></i> เฉพาะโครงการสถานะชนะ
-                                        </p>
+                                    <div class="card-body">
+                                        <h3>฿<?php echo number_format($total_sales, 2); ?></h3>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Card 2: Win ต้นทุนรวม (No Vat) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-primary" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                    <div class="card-header" style="background: linear-gradient(to right, #007bff, #17a2b8); border-radius: 15px 15px 0 0; border: none;">
-                                        <h3 class="card-title" style="font-weight: 600; color: white;">
-                                            <i class="fas fa-shopping-cart mr-2"></i>
-                                            Win ต้นทุนรวม (No Vat)
+                                <div class="card bg-yellow">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-coins mr-1"></i>
+                                            กำไรทั้งสิ้น
                                         </h3>
                                         <div class="card-tools">
                                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                                <i class="fas fa-minus" style="color: white;"></i>
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                <i class="fas fa-times"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="card-body text-center">
-                                        <h3 style="font-size: 2rem; font-weight: 700; color: white;">
-                                            ฿<?php echo number_format($win_cost, 2); ?>
-                                        </h3>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.8);">
-                                            <i class="fas fa-tags mr-1"></i> ต้นทุนโครงการสถานะชนะ
-                                        </p>
+                                    <div class="card-body">
+                                        <h3>฿<?php echo number_format($total_profit, 2); ?></h3>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Card 3: Win กำไรรวม (No Vat) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-warning" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                    <div class="card-header" style="background: linear-gradient(to right, #ffc107, #fd7e14); border-radius: 15px 15px 0 0; border: none;">
-                                        <h3 class="card-title" style="font-weight: 600; color: white;">
-                                            <i class="fas fa-coins mr-2"></i>
-                                            Win กำไรรวม (No Vat)
+                                <div class="card bg-light">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-percentage mr-1"></i>
+                                            คิดเป็น %
                                         </h3>
                                         <div class="card-tools">
                                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                                <i class="fas fa-minus" style="color: white;"></i>
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                <i class="fas fa-times"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="card-body text-center">
-                                        <h3 style="font-size: 2rem; font-weight: 700; color: white;">
-                                            ฿<?php echo number_format($win_profit, 2); ?>
-                                        </h3>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.8);">
-                                            <i class="fas fa-piggy-bank mr-1"></i> กำไรโครงการสถานะชนะ
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Card 4: Win กำไร (No Vat %) -->
-                            <div class="col-lg-3 col-6">
-                                <div class="card bg-danger" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                    <div class="card-header" style="background: linear-gradient(to right, #dc3545, #e83e8c); border-radius: 15px 15px 0 0; border: none;">
-                                        <h3 class="card-title" style="font-weight: 600; color: white;">
-                                            <i class="fas fa-percentage mr-2"></i>
-                                            Win กำไร (No Vat %)
-                                        </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                                <i class="fas fa-minus" style="color: white;"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body text-center">
-                                        <h3 style="font-size: 2rem; font-weight: 700; color: white;">
-                                            <?php echo number_format($win_profit_percentage, 2); ?>%
-                                        </h3>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.8);">
-                                            <i class="fas fa-chart-pie mr-1"></i> เปอร์เซ็นต์กำไรจากโครงการชนะ
-                                        </p>
+                                    <div class="card-body">
+                                        <h3><?php echo number_format($profit_percentage, 2); ?>%</h3>
                                     </div>
                                 </div>
                             </div>
@@ -1151,9 +850,7 @@ try {
                     toLabel: 'ถึง',
                     customRangeLabel: 'กำหนดเอง',
                     daysOfWeek: ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'],
-                    monthNames: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.',
-                        'ต.ค.', 'พ.ย.', 'ธ.ค.'
-                    ],
+                    monthNames: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'],
                     firstDay: 1
                 },
                 startDate: moment("<?php echo $filter_date_range[0]; ?>"),
@@ -1369,8 +1066,7 @@ try {
                     data: <?php echo json_encode(array_map(function ($item) {
                                 return floatval($item['total_sales']);
                             }, $yearly_sales_data)); ?>,
-                    backgroundColor: chartColors.generateColors(
-                        <?php echo count($yearly_sales_data); ?>),
+                    backgroundColor: chartColors.generateColors(<?php echo count($yearly_sales_data); ?>),
                     borderColor: chartColors.borderColors(),
                     borderWidth: 1
                 }]
@@ -1421,8 +1117,7 @@ try {
                     data: <?php echo json_encode(array_map(function ($item) {
                                 return floatval($item['total_sales']);
                             }, $employee_sales_data)); ?>,
-                    backgroundColor: chartColors.generateColors(
-                        <?php echo count($employee_sales_data); ?>),
+                    backgroundColor: chartColors.generateColors(<?php echo count($employee_sales_data); ?>),
                     borderColor: chartColors.borderColors(),
                     borderWidth: 1
                 }]
@@ -1454,8 +1149,7 @@ try {
                     data: <?php echo json_encode(array_map(function ($item) {
                                 return floatval($item['total_sales']);
                             }, $team_sales_data)); ?>,
-                    backgroundColor: chartColors.generateColors(
-                        <?php echo count($team_sales_data); ?>),
+                    backgroundColor: chartColors.generateColors(<?php echo count($team_sales_data); ?>),
                     borderColor: chartColors.borderColors(),
                     borderWidth: 1
                 }]
@@ -1487,8 +1181,7 @@ try {
                     data: <?php echo json_encode(array_map(function ($item) {
                                 return intval($item['count']);
                             }, $top_products_data)); ?>,
-                    backgroundColor: chartColors.generateColors(
-                        <?php echo count($top_products_data); ?>),
+                    backgroundColor: chartColors.generateColors(<?php echo count($top_products_data); ?>),
                     borderColor: chartColors.borderColors(),
                     borderWidth: 1
                 }]
