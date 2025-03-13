@@ -2,56 +2,90 @@
 // เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
 
-// ดึงข้อมูลผู้ใช้จาก session เช่น role, team_id, user_id เป็นต้น
+// ดึงข้อมูลผู้ใช้จาก session
 $role = $_SESSION['role'] ?? '';
 $team_id = $_SESSION['team_id'] ?? 0;
 $created_by = $_SESSION['user_id'] ?? 0;
 $user_id = $_SESSION['user_id'] ?? 0;
 
-// ตรวจสอบสิทธิ์ในการเข้าถึงหน้านี้
-// หาก role ของผู้ใช้ไม่ใช่ Executive, Sale Supervisor หรือ Seller ให้ redirect ไปที่หน้าห้ามเข้าถึง
+
+// ตรวจสอบสิทธิ์การเข้าถึง
 if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
     header("Location: unauthorized.php");
     exit();
 }
 
-// สร้าง CSRF Token หากยังไม่มีใน session เพื่อใช้ป้องกัน CSRF attack
-// โดยจะเป็น token แบบสุ่ม
+// สร้างหรือดึง CSRF Token สำหรับป้องกันการโจมตี CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 $csrf_token = $_SESSION['csrf_token'];
 
-// ฟังก์ชันสำหรับทำความสะอาด input ให้ปลอดภัยขึ้น
+// ฟังก์ชันทำความสะอาดข้อมูล input
 function clean_input($data)
 {
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
-// ฟังก์ชันสำหรับสร้าง UUID เวอร์ชัน 4 (แบบสุ่ม) เพื่อใช้เป็น project_id หรือค่าอื่นที่ต้องการ unique
+// ฟังก์ชันสำหรับสร้าง UUID
 function generateUUID()
 {
     $data = random_bytes(16);
-    // กำหนดค่า bits เพื่อให้เป็น UUID v4 ตามมาตรฐาน
     $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
     $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
-$alert = ''; // ตัวแปรสำหรับเก็บข้อความสถานะ เช่น การบันทึกสำเร็จหรือเกิดข้อผิดพลาด
-$error_messages = []; // เก็บข้อความข้อผิดพลาดหากมี
+$alert = '';
+$error_messages = [];
 
-// ตรวจสอบว่ามีการส่งข้อมูลผ่าน method POST และเป็น AJAX request หรือไม่
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-    // ตรวจสอบว่า CSRF Token ตรงกันหรือไม่
+// ตรวจสอบว่ามีการส่ง project_id มาหรือไม่
+if (empty($_GET['project_id'])) {
+    die("ไม่มีการระบุ project_id");
+}
+
+// ใช้ project_id จาก GET โดยตรง
+$encrypted_project_id = urldecode($_GET['project_id']);
+$project_id = decryptUserId($encrypted_project_id);
+
+// หากถอดรหัส project_id ไม่ได้หรือได้ค่าว่าง ให้หยุด
+if (empty($project_id)) {
+    die("ไม่สามารถถอดรหัส project_id ได้");
+}
+
+// โหลดข้อมูลโครงการจากฐานข้อมูล
+$stmt = $condb->prepare("SELECT * FROM projects WHERE project_id = :project_id");
+$stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
+$stmt->execute();
+$project = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// หากไม่พบโครงการ ให้แจ้งเตือนและหยุด
+if (!$project) {
+    die("ไม่พบข้อมูลโครงการที่ต้องการแก้ไข");
+}
+
+// โหลดข้อมูลลูกค้าเพิ่มเติม (ถ้ามี)
+$stmt = $condb->prepare("SELECT pc.*, c.customer_name, c.company 
+                        FROM project_customers pc
+                        JOIN customers c ON pc.customer_id = c.customer_id
+                        WHERE pc.project_id = :project_id");
+$stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
+$stmt->execute();
+$old_customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// หากเป็นการส่งข้อมูลแบบ POST + AJAX เพื่ออัพเดท
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest'
+) {
+
+    // ตรวจสอบ CSRF Token
     if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
         die("Invalid CSRF token");
     }
 
-    // สร้าง UUID สำหรับใช้เป็น project_id ให้กับโครงการใหม่
-    $project_id = generateUUID();
-
-    // ทำความสะอาดข้อมูลที่ได้รับจาก POST
+    // ทำความสะอาดข้อมูลฟอร์ม
     $project_name = clean_input($_POST['project_name']);
     $sales_date = clean_input($_POST['sales_date']);
     $date_start = clean_input($_POST['date_start']);
@@ -60,8 +94,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     $contract_no = clean_input($_POST['con_number']);
     $product_id = clean_input($_POST['product_id']);
     $customer_id = clean_input($_POST['customer_id']);
-
-    // แปลงค่าที่เกี่ยวกับตัวเลขและคำนวณเพื่อกรอง, ลบ comma ออก และแปลงเป็น float
     $sale_vat = filter_var(str_replace(',', '', $_POST['sale_vat']), FILTER_VALIDATE_FLOAT);
     $sale_no_vat = filter_var(str_replace(',', '', $_POST['sale_no_vat']), FILTER_VALIDATE_FLOAT);
     $cost_vat = filter_var(str_replace(',', '', $_POST['cost_vat']), FILTER_VALIDATE_FLOAT);
@@ -74,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     $remark = clean_input($_POST['remark']);
     $vat = filter_var($_POST['vat'], FILTER_VALIDATE_FLOAT);
 
-    // ดึงข้อมูล project_customers ที่ส่งมาในรูปแบบ JSON แล้วแปลงเป็น array
+    // ถอดรหัส JSON ของ project_customers
     $project_customers = [];
     if (!empty($_POST['project_customers'])) {
         $project_customers = json_decode($_POST['project_customers'], true);
@@ -83,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
         }
     }
 
-    // ตรวจสอบข้อมูลที่จำเป็นว่าครบหรือไม่
+    // ตรวจสอบข้อมูลที่จำเป็น
     if (empty($project_name)) {
         $error_messages[] = "กรุณากรอกชื่อโครงการ";
     }
@@ -94,30 +126,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
         $error_messages[] = "กรุณาเลือกสินค้าที่ขาย";
     }
 
-    // หากไม่มีข้อผิดพลาด ให้ทำการบันทึกข้อมูลลงฐานข้อมูล
     if (empty($error_messages)) {
         try {
-            // เริ่มต้น transaction เพื่อให้การ Insert หรือ Update หลายคำสั่งเป็น atomic operation
             $condb->beginTransaction();
 
-            // ตรวจสอบว่ามีโครงการชื่อซ้ำหรือไม่
-            $stmt = $condb->prepare("SELECT COUNT(*) FROM projects WHERE project_name = :project_name");
+            // ตรวจสอบว่ามีโครงการชื่อซ้ำหรือไม่ (ยกเว้นตัวเอง)
+            $stmt = $condb->prepare("SELECT COUNT(*) FROM projects WHERE project_name = :project_name AND project_id <> :project_id");
             $stmt->bindParam(':project_name', $project_name, PDO::PARAM_STR);
+            $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
             $stmt->execute();
             if ($stmt->fetchColumn() > 0) {
                 throw new Exception("มีโครงการชื่อนี้อยู่แล้ว");
             }
 
-            // เตรียมคำสั่ง SQL สำหรับ Insert ข้อมูลโครงการลงในตาราง projects
-            $sql = "INSERT INTO projects (
-                        project_id, project_name, start_date, end_date, status, contract_no, product_id, customer_id, 
-                        sale_vat, sale_no_vat, cost_vat, cost_no_vat, gross_profit, potential, sales_date,
-                        es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at, seller
-                    ) VALUES (
-                        :project_id, :project_name, :start_date, :end_date, :status, :contract_no, :product_id, :customer_id, 
-                        :sale_vat, :sale_no_vat, :cost_vat, :cost_no_vat, :gross_profit, :potential, :sales_date,
-                        :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW(), :seller
-                    )";
+            // Update ข้อมูลในตาราง projects
+            $sql = "UPDATE projects SET 
+                    project_name = :project_name, 
+                    start_date = :start_date, 
+                    end_date = :end_date, 
+                    status = :status, 
+                    contract_no = :contract_no,
+                    product_id = :product_id,
+                    customer_id = :customer_id,
+                    sale_vat = :sale_vat,
+                    sale_no_vat = :sale_no_vat,
+                    cost_vat = :cost_vat,
+                    cost_no_vat = :cost_no_vat,
+                    gross_profit = :gross_profit,
+                    potential = :potential,
+                    sales_date = :sales_date,
+                    es_sale_no_vat = :es_sale_no_vat,
+                    es_cost_no_vat = :es_cost_no_vat,
+                    es_gp_no_vat = :es_gp_no_vat,
+                    remark = :remark,
+                    vat = :vat,
+                    updated_by = :updated_by,
+                    updated_at = NOW(),
+                    seller = :seller
+                    WHERE project_id = :project_id";
 
             $stmt = $condb->prepare($sql);
             $stmt->execute([
@@ -128,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                 ':status' => $status,
                 ':contract_no' => $contract_no,
                 ':product_id' => $product_id,
-                ':customer_id' => $customer_id ?: null, // หากไม่มีค่า customer_id ให้เป็น null
+                ':customer_id' => $customer_id ?: null,
                 ':sale_vat' => $sale_vat,
                 ':sale_no_vat' => $sale_no_vat,
                 ':cost_vat' => $cost_vat,
@@ -141,11 +187,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                 ':es_gp_no_vat' => $es_gp_no_vat,
                 ':remark' => $remark,
                 ':vat' => $vat,
-                ':created_by' => $created_by,
+                ':updated_by' => $created_by,
                 ':seller' => $created_by
             ]);
 
-            // หากมีรายการลูกค้าเพิ่มเติม ให้บันทึกลงตาราง project_customers
+            // ลบ project_customers เดิมออก
+            $stmt = $condb->prepare("DELETE FROM project_customers WHERE project_id = :project_id");
+            $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
+            $stmt->execute();
+
+            // Insert ข้อมูลลูกค้าใหม่
             if (!empty($project_customers)) {
                 $sql_cust = "INSERT INTO project_customers (id, project_id, customer_id, is_primary, created_at) 
                              VALUES (:id, :project_id, :customer_id, :is_primary, NOW())";
@@ -162,63 +213,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                 }
             }
 
-            // หากทุกอย่างไม่มีปัญหา ให้ commit transaction
             $condb->commit();
-
-            // เข้ารหัส project_id เพื่อส่งไปยัง view_project.php
-            $encrypted_project_id = encryptUserId($project_id);
-
-            // ส่ง response กลับไปพร้อม redirect URL
             $response = [
                 'success' => true,
                 'message' => 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว',
-                'redirect_url' => "view_project.php?project_id=" . urlencode($encrypted_project_id)
+                'project_id' => $project_id  // เพิ่ม project_id ในการตอบกลับ
             ];
-            echo json_encode($response);
-            exit();
         } catch (Exception $e) {
             $condb->rollBack();
             $response = [
                 'success' => false,
-                'errors' => [$e->getMessage()]
+                'errors' => [$e->getMessage()],
+                'message' => $e->getMessage()
             ];
-            echo json_encode($response);
-            exit();
         }
+    } else {
+        $response = [
+            'success' => false,
+            'errors' => $error_messages,
+            'message' => 'กรุณาตรวจสอบข้อมูลที่กรอก'
+        ];
     }
 
-    // เตรียมข้อมูลสำหรับส่งกลับในรูปแบบ JSON ไปยัง AJAX
-    $response = [
-        'success' => empty($error_messages) && strpos($alert, 'success') !== false,
-        'errors' => $error_messages,
-        'message' => empty($error_messages) && strpos($alert, 'success') !== false ? 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว' : ''
-    ];
-
-    // ส่งข้อมูลเป็น JSON และยุติการทำงานของ PHP Script
     header('Content-Type: application/json');
     echo json_encode($response);
     exit;
 }
 
-// ถ้าไม่ได้มาทาง POST AJAX ให้ดึงข้อมูล dropdown ปกติ
-// ดึงข้อมูล product สำหรับเลือกสินค้าที่จะใช้ในโครงการ
+// ดึงข้อมูลสำหรับ dropdowns
 $stmt = $condb->query("SELECT product_id, product_name FROM products");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ดึงข้อมูลลูกค้าให้เหมาะสมกับ role ของ user
-// หากเป็น Executive สามารถเห็นลูกค้าทั้งหมด
-// หากเป็น Sale Supervisor เห็นเฉพาะลูกค้าที่สร้างโดยผู้ใช้ในทีมเดียวกัน
-// หากเป็น Seller เห็นเฉพาะลูกค้าที่ตนเองสร้าง
+// ดึงข้อมูลลูกค้าให้สอดคล้องกับบทบาทผู้ใช้งาน
 $customer_query = "SELECT DISTINCT c.* FROM customers c";
 if ($role == 'Executive') {
     $customer_query .= " ORDER BY c.customer_name";
 } elseif ($role == 'Sale Supervisor') {
     $customer_query .= " INNER JOIN users u ON c.created_by = u.user_id
-                       WHERE u.team_id = :team_id
-                       ORDER BY c.customer_name";
+                         WHERE u.team_id = :team_id
+                         ORDER BY c.customer_name";
 } else {
     $customer_query .= " WHERE c.created_by = :user_id
-                       ORDER BY c.customer_name";
+                         ORDER BY c.customer_name";
 }
 
 $stmt = $condb->prepare($customer_query);
@@ -228,46 +264,9 @@ if ($role == 'Sale Supervisor') {
     $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
 }
 $stmt->execute();
-$customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
-// ฟังก์ชันดึงข้อมูลบริษัท// แก้ไขฟังก์ชัน getCompanyData โดยระบุชื่อตารางและ alias ให้ชัดเจน
-function getCompanyData($condb, $role, $team_id, $user_id)
-{
-    $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
-             FROM customers c"; // เพิ่ม alias 'c' ให้กับตาราง customers
-
-    // เงื่อนไขตาม Role
-    if ($role == 'Sale Supervisor') {
-        $query .= " INNER JOIN users u ON c.created_by = u.user_id 
-                   WHERE u.team_id = :team_id";
-    } elseif ($role == 'Seller') {
-        $query .= " WHERE c.created_by = :user_id";
-    }
-
-    $query .= " ORDER BY c.company ASC";
-    $stmt = $condb->prepare($query);
-
-    if ($role == 'Sale Supervisor') {
-        $stmt->bindParam(':team_id', $team_id);
-    } elseif ($role == 'Seller') {
-        $stmt->bindParam(':user_id', $user_id);
-    }
-
-    try {
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log("Error in getCompanyData: " . $e->getMessage());
-        return array(); // ส่งคืนอาร์เรย์ว่างในกรณีที่มีข้อผิดพลาด
-    }
-}
-
-// ดึงข้อมูลบริษัท
-$companies = getCompanyData($condb, $role, $team_id, $user_id);
+$customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<!-- ส่วน HTML ด้านล่างเป็น Form UI และ JavaScript เพื่อใช้งานในหน้า Add Project -->
 <!DOCTYPE html>
 <html lang="en">
 <?php $menu = "project"; ?>
@@ -275,10 +274,10 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SalePipeline | Add Project</title>
+    <title>SalePipeline | Edit Project</title>
     <?php include  '../../include/header.php'; ?>
 
-    <!-- ใช้ฟอนต์ Noto Sans Thai -->
+    <!-- ฟอนต์ Noto Sans Thai -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
@@ -345,71 +344,76 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
         <div class="content-wrapper">
             <div class="content-header">
                 <div class="container-fluid">
-                    <!-- ส่วนหัวของหน้า -->
                     <div class="row mb-2">
                         <div class="col-sm-6">
-                            <h1 class="m-0">Add Project</h1>
+                            <h1 class="m-0">Edit Project</h1>
                         </div>
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
                                 <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">Home</a></li>
-                                <li class="breadcrumb-item active">Add Project</li>
+                                <li class="breadcrumb-item active">Edit Project</li>
                             </ol>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- SweetAlert2 สำหรับแจ้งเตือน -->
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
             <section class="content">
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-12 mb-5">
-                            <!-- ฟอร์มสำหรับเพิ่มโครงการ -->
-                            <form id="addProjectForm" action="#" method="POST" enctype="multipart/form-data">
+                            <form id="editProjectForm" action="#" method="POST" enctype="multipart/form-data">
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
                                 <div class="col col-sm-12">
                                     <div class="card card-primary ">
                                         <div class="card-header ">
-                                            <h3 class="card-title">Project descriptions</h3>
+                                            <h3 class="card-title">Edit Project descriptions</h3>
                                         </div>
                                         <div class="card-body">
-                                            <!-- ส่วนกรอกข้อมูลทั่วไปของโครงการ -->
+                                            <!-- แสดงข้อมูลที่โหลดมาจากฐานข้อมูล -->
                                             <div class="row">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>วันเปิดการขาย</label>
-                                                        <input type="date" name="sales_date" class="form-control">
+                                                        <input type="date" name="sales_date" class="form-control" value="<?php echo htmlspecialchars($project['sales_date'] ?? ''); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>สถานะโครงการ<span class="text-danger">*</span></label>
-                                                        <!-- Dropdown สถานะ -->
                                                         <select class="form-control select2" name="status" id="status" style="width: 100%;">
-                                                            <option selected="selected">Select</option>
-                                                            <option>นำเสนอโครงการ (Presentations)</option>
-                                                            <option>ใบเสนอราคา (Quotation)</option>
-                                                            <option>ยื่นประมูล (Bidding)</option>
-                                                            <option>ชนะ (Win)</option>
-                                                            <option>แพ้ (Loss)</option>
-                                                            <option>รอการพิจารณา (On Hold)</option>
-                                                            <option>ยกเลิก (Cancled)</option>
+                                                            <option>Select</option>
+                                                            <?php
+                                                            $statuses = [
+                                                                "นำเสนอโครงการ (Presentations)",
+                                                                "ใบเสนอราคา (Quotation)",
+                                                                "ยื่นประมูล (Bidding)",
+                                                                "ชนะ (Win)",
+                                                                "แพ้ (Loss)",
+                                                                "รอการพิจารณา (On Hold)",
+                                                                "ยกเลิก (Cancled)"
+                                                            ];
+                                                            foreach ($statuses as $st) {
+                                                                $selected = ($project['status'] == $st) ? 'selected' : '';
+                                                                echo "<option $selected>$st</option>";
+                                                            }
+                                                            ?>
                                                         </select>
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>สินค้าที่ขาย<span class="text-danger">*</span></label>
-                                                        <!-- Dropdown สินค้าที่ขาย -->
                                                         <select name="product_id" class="form-control select2">
                                                             <option value="">Select Product</option>
-                                                            <?php foreach ($products as $product): ?>
-                                                                <option value="<?php echo htmlspecialchars($product['product_id']); ?>">
-                                                                    <?php echo htmlspecialchars($product['product_name']); ?>
+                                                            <?php foreach ($products as $prod):
+                                                                $selected = ($project['product_id'] == $prod['product_id']) ? 'selected' : '';
+                                                            ?>
+                                                                <option value="<?php echo htmlspecialchars($prod['product_id']); ?>" <?php echo $selected; ?>>
+                                                                    <?php echo htmlspecialchars($prod['product_name']); ?>
                                                                 </option>
                                                             <?php endforeach; ?>
                                                         </select>
@@ -418,7 +422,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>เลขที่สัญญา</label>
-                                                        <input type="text" name="con_number" class="form-control" placeholder="เลขที่สัญญา">
+                                                        <input type="text" name="con_number" class="form-control" value="<?php echo htmlspecialchars($project['contract_no'] ?? ''); ?>" placeholder="เลขที่สัญญา">
                                                     </div>
                                                 </div>
                                             </div>
@@ -427,19 +431,19 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-6">
                                                     <div class="form-group">
                                                         <label>ชื่อโครงการ<span class="text-danger">*</span></label>
-                                                        <input type="text" name="project_name" class="form-control" placeholder="ชื่อโครงการ">
+                                                        <input type="text" name="project_name" class="form-control" value="<?php echo htmlspecialchars($project['project_name'] ?? ''); ?>" placeholder="ชื่อโครงการ">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>วันเริ่มโครงการ</label>
-                                                        <input type="date" name="date_start" class="form-control">
+                                                        <input type="date" name="date_start" class="form-control" value="<?php echo htmlspecialchars($project['start_date'] ?? ''); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>วันสิ้นสุดโครงการ</label>
-                                                        <input type="date" name="date_end" class="form-control">
+                                                        <input type="date" name="date_end" class="form-control" value="<?php echo htmlspecialchars($project['end_date'] ?? ''); ?>">
                                                     </div>
                                                 </div>
                                             </div>
@@ -448,26 +452,28 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-12">
                                                     <div class="form-group">
                                                         <label>Remark</label>
-                                                        <textarea class="form-control" name="remark" rows="4"></textarea>
+                                                        <textarea class="form-control" name="remark" rows="4"><?php echo htmlspecialchars($project['remark'] ?? ''); ?></textarea>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- ส่วนของ Cost Project และ Estimate Potential -->
+                                        <!-- ส่วน Cost Project -->
                                         <div class="card-body">
-                                            <h5><b><span class="text-primary">Estimate </span></b></h5>
+                                            <h5><b><span class="text-primary">Cost Project</span></b></h5>
                                             <hr>
                                             <div class="row">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ตั้งการคำนวณ Vat (%)</label>
                                                         <select class="form-control select2" name="vat" id="vat" style="width: 100%;">
-                                                            <option value="7">7%</option>
-                                                            <option value="0">0%</option>
-                                                            <option value="3">3%</option>
-                                                            <option value="5">5%</option>
-                                                            <option value="15">15%</option>
+                                                            <?php
+                                                            $vat_options = [7, 0, 3, 5, 15];
+                                                            foreach ($vat_options as $v) {
+                                                                $selected = ($project['vat'] == $v) ? 'selected' : '';
+                                                                echo "<option value='$v' $selected>$v%</option>";
+                                                            }
+                                                            ?>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -475,13 +481,13 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>กำไรขั้นต้น/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="gross_profit" class="form-control" id="gross_profit" readonly style="background-color:#F8F8FF">
+                                                        <input type="int" name="gross_profit" class="form-control" id="gross_profit" style="background-color:#F8F8FF" value="<?php echo htmlspecialchars(number_format($project['gross_profit'] ?? 0, 2)); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>กำไรขั้นต้น/คิดเป็น %</label>
-                                                        <input type="int" name="potential" class="form-control" id="potential" readonly style="background-color:#F8F8FF">
+                                                        <input type="int" name="potential" class="form-control" id="potential" style="background-color:#F8F8FF" value="<?php echo htmlspecialchars(($project['potential'] ?? 0) . '%'); ?>">
                                                     </div>
                                                 </div>
                                             </div>
@@ -490,56 +496,53 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ราคาขาย/รวมภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="sale_vat" class="form-control" id="sale_vat">
+                                                        <input type="int" name="sale_vat" class="form-control" id="sale_vat" value="<?php echo number_format($project['sale_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control">
+                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control" value="<?php echo number_format($project['sale_no_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="cost_vat" id="cost_vat" class="form-control">
+                                                        <input type="int" name="cost_vat" id="cost_vat" class="form-control" value="<?php echo number_format($project['cost_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="cost_no_vat" id="cost_no_vat" class="form-control">
+                                                        <input type="int" name="cost_no_vat" id="cost_no_vat" class="form-control" value="<?php echo number_format($project['cost_no_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div id="estimate-potential-section">
-                                                <h5><b><span class="text-primary">Potential</span></b></h5>
-                                                <hr>
-                                            </div>
+                                            <h5><b><span class="text-primary">Estimate Potential</span></b></h5>
+                                            <hr>
                                             <div class="row mb-4">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ประมาณการยอดขาย (No Vat)</label>
-                                                        <input type="text" name="es_sale_no_vat" class="form-control" id="es_sale_no_vat" readonly style="background-color:#F8F8FF">
+                                                        <input type="text" name="es_sale_no_vat" class="form-control" id="es_sale_no_vat" style="background-color:#F8F8FF" value="<?php echo number_format($project['es_sale_no_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ประมาณการต้นทุน (No Vat)</label>
-                                                        <input type="text" name="es_cost_no_vat" class="form-control" id="es_cost_no_vat" readonly style="background-color:#F8F8FF">
+                                                        <input type="text" name="es_cost_no_vat" class="form-control" id="es_cost_no_vat" style="background-color:#F8F8FF" value="<?php echo number_format($project['es_cost_no_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>กำไรที่คาดการณ์ (No Vat)</label>
-                                                        <input type="text" name="es_gp_no_vat" class="form-control" id="es_gp_no_vat" readonly style="background-color:#F8F8FF">
+                                                        <input type="text" name="es_gp_no_vat" class="form-control" id="es_gp_no_vat" style="background-color:#F8F8FF" value="<?php echo number_format($project['es_gp_no_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- ส่วนของ Customer Project -->
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <h5><b><span class="text-primary">Customer Project</span></b></h5>
@@ -555,9 +558,11 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                         <label>ข้อมูลลูกค้า (บทบาทดูแลควบคุมโครงการทุกภาคส่วน)</label>
                                                         <select name="customer_id" class="form-control select2">
                                                             <option value="">เลือกลูกค้า</option>
-                                                            <?php foreach ($customers as $customer): ?>
-                                                                <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>">
-                                                                    <?php echo htmlspecialchars($customer['customer_name'] . ' - ' . $customer['company']); ?>
+                                                            <?php foreach ($customers_data as $cust):
+                                                                $selected = ($project['customer_id'] == $cust['customer_id']) ? 'selected' : '';
+                                                            ?>
+                                                                <option value="<?php echo htmlspecialchars($cust['customer_id']); ?>" <?php echo $selected; ?>>
+                                                                    <?php echo htmlspecialchars($cust['customer_name'] . ' - ' . $cust['company']); ?>
                                                                 </option>
                                                             <?php endforeach; ?>
                                                         </select>
@@ -566,9 +571,46 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                             </div>
 
                                             <hr>
-                                            <!-- ส่วนการเพิ่มรายชื่อลูกค้าเพิ่มเติม -->
                                             <div id="customer-list">
-                                                <div class="selected-customers"></div>
+                                                <div class="selected-customers">
+                                                    <?php
+                                                    // แสดงลูกค้าเพิ่มเติมที่เคยเลือกไว้
+                                                    foreach ($old_customers as $oc) {
+                                                    ?>
+                                                        <div class="customer-row row mt-3">
+                                                            <div class="col-md-6">
+                                                                <select class="form-control select2 customer-select" name="project_customers[]">
+                                                                    <option value="">เลือกลูกค้า</option>
+                                                                    <?php
+                                                                    foreach ($customers_data as $c) {
+                                                                        $sel = ($oc['customer_id'] == $c['customer_id']) ? 'selected' : '';
+                                                                        echo "<option value='" . htmlspecialchars($c['customer_id']) . "' $sel>" .
+                                                                            htmlspecialchars($c['customer_name'] . ' - ' . $c['company']) .
+                                                                            "</option>";
+                                                                    }
+                                                                    ?>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="form-check">
+                                                                    <?php
+                                                                    $checked = ($oc['is_primary'] == 1) ? 'checked' : '';
+                                                                    ?>
+                                                                    <input type="checkbox" class="form-check-input primary-customer" name="is_primary[]" <?php echo $checked; ?>>
+                                                                    <label class="form-check-label">ลูกค้าหลัก</label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-2">
+                                                                <button type="button" class="btn btn-danger remove-customer">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    <?php
+                                                    }
+                                                    ?>
+                                                </div>
+
                                                 <button type="button" class="btn btn-sm btn-primary mt-3" id="add-customer-btn">
                                                     <i class="fas fa-plus"></i> เลือกรายชื่อลูกค้า
                                                 </button>
@@ -578,9 +620,9 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                         <div class="col-md-6">
                                                             <select class="form-control select2 customer-select" name="project_customers[]">
                                                                 <option value="">เลือกลูกค้า</option>
-                                                                <?php foreach ($customers as $customer): ?>
-                                                                    <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>">
-                                                                        <?php echo htmlspecialchars($customer['customer_name'] . ' - ' . $customer['company']); ?>
+                                                                <?php foreach ($customers_data as $cd): ?>
+                                                                    <option value="<?php echo htmlspecialchars($cd['customer_id']); ?>">
+                                                                        <?php echo htmlspecialchars($cd['customer_name'] . ' - ' . $cd['company']); ?>
                                                                     </option>
                                                                 <?php endforeach; ?>
                                                             </select>
@@ -605,7 +647,6 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                             <div class="row">
                                                 <div class="col col-sm-12">
                                                     <div class="form-group text-center">
-                                                        <!-- ปุ่ม Save บันทึกข้อมูลโครงการ -->
                                                         <button type="submit" name="submit" value="submit" class="btn btn-success">Save</button>
                                                     </div>
                                                 </div>
@@ -615,6 +656,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                         <div class="card-footer"></div>
                                     </div>
                                 </div>
+
                             </form>
                         </div>
                     </div>
@@ -623,19 +665,124 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
         <?php include  '../../include/footer.php'; ?>
     </div>
 
-    <!-- เรียกใช้ SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        $(function() {
-            // ใช้ plugin select2 กับ dropdown
-            $('.select2').select2();
+        $(document).ready(function() {
+            var encryptedProjectId = '<?php echo addslashes($_GET['project_id']); ?>';
+
+            $('#editProjectForm').on('submit', function(e) {
+                e.preventDefault();
+
+                Swal.fire({
+                    title: 'กำลังบันทึกข้อมูล...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    },
+                });
+
+                var formData = new FormData(this);
+
+                const customers = [];
+                const mainCustomerId = $('select[name="customer_id"]').val();
+                if (mainCustomerId) {
+                    customers.push({
+                        customer_id: mainCustomerId,
+                        is_primary: 1
+                    });
+                }
+
+                $('.customer-row').each(function() {
+                    const customerId = $(this).find('.customer-select').val();
+                    const isPrimary = $(this).find('.primary-customer').is(':checked') ? 1 : 0;
+                    if (customerId && customerId !== mainCustomerId) {
+                        customers.push({
+                            customer_id: customerId,
+                            is_primary: isPrimary
+                        });
+                    }
+                });
+
+                const customersJson = JSON.stringify(customers);
+                formData.append('project_customers', customersJson);
+
+                $.ajax({
+                    url: 'edit_project.php?project_id=' + encodeURIComponent(encryptedProjectId),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    success: function(response) {
+                        Swal.close();
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'บันทึกสำเร็จ',
+                                text: response.message,
+                                confirmButtonText: 'ตกลง'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // เปลี่ยนการ redirect ไปยังหน้า view_project.php พร้อมส่ง project_id
+                                    window.location.href = 'view_project.php?project_id=' +
+                                        encodeURIComponent(encryptedProjectId);
+                                }
+                            });
+                        } else {
+                            var errorMessage = response.errors.join('<br>');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                html: errorMessage,
+                                confirmButtonText: 'ตกลง'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.close();
+                        console.error(xhr.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
+                            confirmButtonText: 'ตกลง'
+                        });
+                    }
+                });
+            });
         });
     </script>
 
     <script>
+        $(function() {
+            $('.select2').select2();
+        });
+
+        <?php
+        if (!empty($alert)) {
+            list($status, $msg) = explode('|', $alert);
+            echo "
+        Swal.fire({
+            icon: '$status',
+            title: '" . ($status == 'success' ? 'สำเร็จ!' : 'เกิดข้อผิดพลาด!') . "',
+            text: '$msg',
+            confirmButtonText: 'ตกลง'
+        }).then((result) => {
+            if (result.isConfirmed && '$status' === 'success') {
+                window.location.href = 'project.php';
+            }
+        });
+        ";
+        }
+        ?>
+    </script>
+
+    <script>
         $(document).ready(function() {
-            // เมื่อคลิกปุ่ม เลือกรายชื่อลูกค้า เพิ่มคอลัมน์สำหรับเลือกข้อมูลลูกค้าเพิ่มเติม
+
+            // จัดการการเพิ่มลูกค้า
             $('#add-customer-btn').click(function() {
                 const mainCustomer = $('select[name="customer_id"]').val();
                 if (!mainCustomer) {
@@ -672,7 +819,6 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                     placeholder: 'เลือกลูกค้า'
                 });
 
-                // ตรวจสอบการเลือกไม่ให้ซ้ำกันหรือซ้ำกับลูกค้าหลัก
                 newSelect.on('select2:select', function(e) {
                     const selectedId = e.params.data.id;
                     const mainCustomerId = $('select[name="customer_id"]').val();
@@ -708,7 +854,6 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                 });
             });
 
-            // ลบลูกค้าเพิ่มเติมออกจากรายการ
             $(document).on('click', '.remove-customer', function() {
                 const row = $(this).closest('.customer-row');
                 Swal.fire({
@@ -725,7 +870,6 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                 });
             });
 
-            // หากมีการเปลี่ยนลูกค้าหลัก ให้ตรวจสอบว่าลูกค้าหลักนั้นไม่ได้อยู่ในลูกค้าเพิ่มเติมด้วย
             $('select[name="customer_id"]').on('change', function() {
                 const mainCustomerId = $(this).val();
                 $('.customer-select').each(function() {
@@ -743,91 +887,9 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                 });
             });
 
-            // เมื่อกด Save Project จะส่งข้อมูลผ่าน AJAX
-            $('#addProjectForm').on('submit', function(e) {
-                e.preventDefault();
-
-                Swal.fire({
-                    title: 'กำลังบันทึกข้อมูล...',
-                    allowOutsideClick: false,
-                    showConfirmButton: false,
-                    willOpen: () => {
-                        Swal.showLoading();
-                    },
-                });
-
-                var formData = new FormData(this);
-
-                // เตรียมข้อมูล customers หลักและเพิ่มเติม
-                const customers = [];
-                const mainCustomerId = $('select[name="customer_id"]').val();
-                if (mainCustomerId) {
-                    customers.push({
-                        customer_id: mainCustomerId,
-                        is_primary: 1
-                    });
-                }
-
-                $('.customer-row').each(function() {
-                    const customerId = $(this).find('.customer-select').val();
-                    const isPrimary = $(this).find('.primary-customer').is(':checked') ? 1 : 0;
-                    if (customerId && customerId !== mainCustomerId) {
-                        customers.push({
-                            customer_id: customerId,
-                            is_primary: isPrimary
-                        });
-                    }
-                });
-
-                const customersJson = JSON.stringify(customers);
-                formData.append('project_customers', customersJson);
-
-                // AJAX ส่งข้อมูลไปที่ add_project.php (ไฟล์นี้เอง)
-                $.ajax({
-                    url: 'add_project.php',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    dataType: 'json',
-                    success: function(response) {
-                        Swal.close();
-                        if (response.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'บันทึกสำเร็จ',
-                                text: response.message,
-                                confirmButtonText: 'ตกลง'
-                            }).then(() => {
-                                window.location.href = response.redirect_url; // เปลี่ยนเส้นทางไปยังหน้ารายละเอียดโครงการ
-                            });
-                        } else {
-                            var errorMessage = response.errors.join('<br>');
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'เกิดข้อผิดพลาด',
-                                html: errorMessage,
-                                confirmButtonText: 'ตกลง'
-                            });
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        Swal.close();
-                        console.error(xhr.responseText);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'เกิดข้อผิดพลาด',
-                            text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
-                            confirmButtonText: 'ตกลง'
-                        });
-                    }
-                });
-            });
-
         });
     </script>
 
-    <!-- ฟังก์ชันการจัดการเลขด้วย Commas -->
     <script>
         function addCommas(nStr) {
             nStr += '';
@@ -864,9 +926,9 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
         });
     </script>
 
-    <!-- คำนวณ cost และค่า Estimate ต่าง ๆ ตามการเปลี่ยนแปลงข้อมูล -->
     <script>
         $(document).ready(function() {
+            // คำนวณ Cost Project ตามเงื่อนไขเหมือนใน add_project.php
             function formatNumber(num) {
                 return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             }
@@ -879,81 +941,17 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                 return priceNoVat * (1 + (vat / 100));
             }
 
-            // คำนวณ Gross Profit และ Potential%
-            // ปรับปรุงฟังก์ชัน calculateGrossProfit
             function calculateGrossProfit() {
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
                 var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
-                var status = $("#status").val();
-
-                // เงื่อนไขใหม่: หากสถานะเป็น "ชนะ (Win)" และมีการกรอกราคาขาย ให้คำนวณกำไรโดยใช้ต้นทุน = 0 (ถ้าไม่มีการกรอก)
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
-                    var grossProfit = saleNoVat - costNoVat; // costNoVat จะเป็น 0 ถ้าไม่ได้กรอกค่า
-                    $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
-
-                    var grossProfitPercentage = (grossProfit / saleNoVat) * 100;
-                    $("#potential").val(grossProfitPercentage.toFixed(2) + "%");
-                }
-                // กรณีปกติ: คำนวณเมื่อมีทั้งราคาขายและต้นทุน
-                else if (saleNoVat && costNoVat) {
+                if (saleNoVat && costNoVat) {
                     var grossProfit = saleNoVat - costNoVat;
                     $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
-
                     var grossProfitPercentage = (grossProfit / saleNoVat) * 100;
                     $("#potential").val(grossProfitPercentage.toFixed(2) + "%");
                 }
             }
 
-            // เพิ่ม event listener สำหรับการเปลี่ยนสถานะ
-            $("#status").on("change", function() {
-                var status = $(this).val();
-                var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
-
-                // เมื่อสถานะเปลี่ยนเป็น "ชนะ (Win)" และมีการกรอกราคาขาย
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
-                    calculateGrossProfit(); // เรียกใช้ฟังก์ชันคำนวณกำไรขั้นต้น
-                }
-            });
-
-            // อัพเดท event listener สำหรับราคาขาย
-            $("#sale_vat").on("input", function() {
-                var saleVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
-                var vat = parseFloat($("#vat").val()) || 0;
-                var saleNoVat = calculateNoVatPrice(saleVat, vat);
-                $("#sale_no_vat").val(formatNumber(saleNoVat.toFixed(2)));
-
-                // เช็คสถานะเพื่อคำนวณกำไรขั้นต้นทันทีหากเป็น "ชนะ (Win)"
-                var status = $("#status").val();
-                if (status === 'ชนะ (Win)') {
-                    calculateGrossProfit();
-                } else {
-                    calculateGrossProfit(); // กรณีปกติ
-                }
-
-                recalculateEstimate();
-            });
-
-            // ทำเช่นเดียวกันกับ event listener ของ sale_no_vat
-            $("#sale_no_vat").on("input", function() {
-                var saleNoVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
-                var vat = parseFloat($("#vat").val()) || 0;
-                if (saleNoVat && vat) {
-                    var saleVat = calculateWithVatPrice(saleNoVat, vat);
-                    $("#sale_vat").val(formatNumber(saleVat.toFixed(2)));
-                }
-
-                // เช็คสถานะเพื่อคำนวณกำไรขั้นต้นทันทีหากเป็น "ชนะ (Win)"
-                var status = $("#status").val();
-                if (status === 'ชนะ (Win)') {
-                    calculateGrossProfit();
-                } else {
-                    calculateGrossProfit(); // กรณีปกติ
-                }
-
-                recalculateEstimate();
-            });
-
-            // คำนวณค่าประมาณการ (Estimate) ตามสถานะโครงการ
             function recalculateEstimate() {
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
                 var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
@@ -994,7 +992,6 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                 $("#es_gp_no_vat").val(formatNumber((estimateSaleNoVat - estimateCostNoVat).toFixed(2)));
             }
 
-            // Event ต่าง ๆ เมื่อกรอกข้อมูลคำนวณ Vat, No Vat, Update ตัวเลขและ Estimate
             $("#sale_vat").on("input", function() {
                 var saleVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
                 var vat = parseFloat($("#vat").val()) || 0;
@@ -1044,6 +1041,15 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
 
             $("#status").on("change", function() {
                 recalculateEstimate();
+            });
+
+            // Initialize select2 สำหรับลูกค้าที่โหลดมาแล้ว
+            $('.customer-select').each(function() {
+                $(this).select2({
+                    width: '100%',
+                    dropdownAutoWidth: true,
+                    placeholder: 'เลือกลูกค้า'
+                });
             });
         });
     </script>
@@ -1176,20 +1182,16 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="company">ชื่อบริษัท<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="company" name="company" list="companyList" placeholder="กรุณากรอกชื่อบริษัท">
-                                    <datalist id="companyList">
-                                        <?php foreach ($companies as $company): ?>
-                                            <option value="<?php echo htmlspecialchars($company['company']); ?>"
-                                                data-address="<?php echo htmlspecialchars($company['address']); ?>"
-                                                data-phone="<?php echo htmlspecialchars($company['office_phone']); ?>">
-                                                <?php echo htmlspecialchars($company['company']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </datalist>
+                                    <label>ชื่อบริษัท</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-building"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="company"
+                                            placeholder="กรุณากรอกชื่อบริษัท">
+                                    </div>
                                 </div>
                             </div>
-
 
                             <!-- ข้อมูลติดต่อ -->
                             <div class="col-md-6">
@@ -1237,7 +1239,8 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                         <span class="input-group-text">
                                             <i class="fas fa-phone-office"></i>
                                         </span>
-                                        <input type="text" class="form-control" id="office_phone" name="office_phone" placeholder="กรุณากรอกเบอร์หน่วยงาน">
+                                        <input type="text" class="form-control" name="office_phone"
+                                            placeholder="กรุณากรอกเบอร์หน่วยงาน">
                                     </div>
                                 </div>
                             </div>
@@ -1250,7 +1253,8 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                         <span class="input-group-text">
                                             <i class="fas fa-map-marker-alt"></i>
                                         </span>
-                                        <textarea class="form-control" id="address" name="address" placeholder="Address"></textarea>
+                                        <textarea class="form-control" name="address" rows="3"
+                                            placeholder="กรุณากรอกที่อยู่"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -1478,88 +1482,6 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
             });
         });
     </script>
-
-    <!-- การจัดการ JavaScript (เพื่ออัปเดตฟิลด์ Address และ Phone อัตโนมัติ) -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const companyInput = document.getElementById('company');
-            const addressInput = document.getElementById('address');
-            const phoneInput = document.getElementById('office_phone');
-
-            companyInput.addEventListener('input', function() {
-                const selectedOption = Array.from(document.querySelectorAll('#companyList option')).find(option => option.value === companyInput.value);
-
-                if (selectedOption) {
-                    addressInput.value = selectedOption.getAttribute('data-address') || '';
-                    phoneInput.value = selectedOption.getAttribute('data-phone') || '';
-                } else {
-                    addressInput.value = '';
-                    phoneInput.value = '';
-                }
-            });
-        });
-    </script>
-
-    <!-- เงื่อนไขการซ่อนฟิลด์จากสถานะ -->
-    <script>
-        $(document).ready(function() {
-            // ฟังก์ชันสำหรับการแสดง/ซ่อนฟิลด์ตามสถานะโครงการ
-            function toggleFieldsByStatus() {
-                const status = $('#status').val(); // ดึงค่าของสถานะโครงการ
-                if (status === 'ชนะ (Win)') {
-                    // แสดงฟิลด์เลขที่สัญญา, วันเริ่มโครงการ, และวันสิ้นสุดโครงการ
-                    $('input[name="con_number"]').closest('.form-group').show();
-                    $('input[name="date_start"]').closest('.form-group').show();
-                    $('input[name="date_end"]').closest('.form-group').show();
-                    // ซ่อนหัวข้อ Estimate Potential และฟิลด์ประกอบ
-                    $('#es_sale_no_vat').closest('.form-group').hide();
-                    $('#es_cost_no_vat').closest('.form-group').hide();
-                    $('#es_gp_no_vat').closest('.form-group').hide();
-                } else {
-                    // ซ่อนฟิลด์เลขที่สัญญา, วันเริ่มโครงการ, และวันสิ้นสุดโครงการ
-                    $('input[name="con_number"]').closest('.form-group').hide();
-                    $('input[name="date_start"]').closest('.form-group').hide();
-                    $('input[name="date_end"]').closest('.form-group').hide();
-                    // แสดงหัวข้อ Estimate Potential และฟิลด์ประกอบ
-                    $('#es_sale_no_vat').closest('.form-group').show();
-                    $('#es_cost_no_vat').closest('.form-group').show();
-                    $('#es_gp_no_vat').closest('.form-group').show();
-                }
-            }
-
-            // เรียกฟังก์ชันเมื่อเปลี่ยนค่าใน dropdown สถานะโครงการ
-            $('#status').on('change', toggleFieldsByStatus);
-
-            // เรียกฟังก์ชันเมื่อโหลดหน้า
-            toggleFieldsByStatus();
-        });
-
-        $(document).ready(function() {
-            // ฟังก์ชันควบคุมการแสดง/ซ่อน
-            function toggleFieldsByStatus() {
-                const status = $('#status').val(); // ดึงค่าของสถานะโครงการ
-                if (status === 'ชนะ (Win)') {
-                    $('#estimate-potential-section').hide(); // ซ่อน
-                } else {
-                    $('#estimate-potential-section').show(); // แสดง
-                }
-            }
-
-            // เรียกฟังก์ชันเมื่อสถานะเปลี่ยน
-            $('#status').on('change', toggleFieldsByStatus);
-
-            // เรียกฟังก์ชันเมื่อโหลดหน้า
-            toggleFieldsByStatus();
-        });
-    </script>
-
-    <style>
-        #estimate-potential-section {
-            display: none;
-            /* ซ่อนหัวข้อและเนื้อหา */
-        }
-    </style>
-    <!-- /เงื่อนไขการซ่อนฟิลด์จากสถานะ -->
 
 
 </body>

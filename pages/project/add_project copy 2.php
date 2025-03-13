@@ -880,22 +880,11 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
             }
 
             // คำนวณ Gross Profit และ Potential%
-            // ปรับปรุงฟังก์ชัน calculateGrossProfit
             function calculateGrossProfit() {
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
                 var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
-                var status = $("#status").val();
 
-                // เงื่อนไขใหม่: หากสถานะเป็น "ชนะ (Win)" และมีการกรอกราคาขาย ให้คำนวณกำไรโดยใช้ต้นทุน = 0 (ถ้าไม่มีการกรอก)
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
-                    var grossProfit = saleNoVat - costNoVat; // costNoVat จะเป็น 0 ถ้าไม่ได้กรอกค่า
-                    $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
-
-                    var grossProfitPercentage = (grossProfit / saleNoVat) * 100;
-                    $("#potential").val(grossProfitPercentage.toFixed(2) + "%");
-                }
-                // กรณีปกติ: คำนวณเมื่อมีทั้งราคาขายและต้นทุน
-                else if (saleNoVat && costNoVat) {
+                if (saleNoVat && costNoVat) {
                     var grossProfit = saleNoVat - costNoVat;
                     $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
 
@@ -903,55 +892,6 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                     $("#potential").val(grossProfitPercentage.toFixed(2) + "%");
                 }
             }
-
-            // เพิ่ม event listener สำหรับการเปลี่ยนสถานะ
-            $("#status").on("change", function() {
-                var status = $(this).val();
-                var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
-
-                // เมื่อสถานะเปลี่ยนเป็น "ชนะ (Win)" และมีการกรอกราคาขาย
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
-                    calculateGrossProfit(); // เรียกใช้ฟังก์ชันคำนวณกำไรขั้นต้น
-                }
-            });
-
-            // อัพเดท event listener สำหรับราคาขาย
-            $("#sale_vat").on("input", function() {
-                var saleVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
-                var vat = parseFloat($("#vat").val()) || 0;
-                var saleNoVat = calculateNoVatPrice(saleVat, vat);
-                $("#sale_no_vat").val(formatNumber(saleNoVat.toFixed(2)));
-
-                // เช็คสถานะเพื่อคำนวณกำไรขั้นต้นทันทีหากเป็น "ชนะ (Win)"
-                var status = $("#status").val();
-                if (status === 'ชนะ (Win)') {
-                    calculateGrossProfit();
-                } else {
-                    calculateGrossProfit(); // กรณีปกติ
-                }
-
-                recalculateEstimate();
-            });
-
-            // ทำเช่นเดียวกันกับ event listener ของ sale_no_vat
-            $("#sale_no_vat").on("input", function() {
-                var saleNoVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
-                var vat = parseFloat($("#vat").val()) || 0;
-                if (saleNoVat && vat) {
-                    var saleVat = calculateWithVatPrice(saleNoVat, vat);
-                    $("#sale_vat").val(formatNumber(saleVat.toFixed(2)));
-                }
-
-                // เช็คสถานะเพื่อคำนวณกำไรขั้นต้นทันทีหากเป็น "ชนะ (Win)"
-                var status = $("#status").val();
-                if (status === 'ชนะ (Win)') {
-                    calculateGrossProfit();
-                } else {
-                    calculateGrossProfit(); // กรณีปกติ
-                }
-
-                recalculateEstimate();
-            });
 
             // คำนวณค่าประมาณการ (Estimate) ตามสถานะโครงการ
             function recalculateEstimate() {

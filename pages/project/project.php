@@ -745,7 +745,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                         </thead>
                                         <tbody>
                                             <?php foreach ($projects as $project): ?>
-                                                <tr onclick="window.location='view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>';" style="cursor: pointer;">
+                                                <tr>
                                                     <?php if ($role != 'Engineer'): ?>
                                                         <td class="text-nowrap">
                                                             <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>" class="btn btn-sm btn-primary">
@@ -794,7 +794,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                         ?>
                                                     </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['contract_no']) ? htmlspecialchars($project['contract_no']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap">
+                                                    <td class="text-nowrap" onclick="window.location='view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>';" style="cursor: pointer;">
                                                         <div class="truncate-text-project" title="<?php echo htmlspecialchars($project['project_name']); ?>">
                                                             <?php
                                                             echo truncateText(htmlspecialchars($project['project_name']), 300); // เปลี่ยนค่า length เป็น 300

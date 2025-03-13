@@ -941,16 +941,67 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 return priceNoVat * (1 + (vat / 100));
             }
 
+            // ปรับปรุงฟังก์ชัน calculateGrossProfit
             function calculateGrossProfit() {
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
                 var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
-                if (saleNoVat && costNoVat) {
-                    var grossProfit = saleNoVat - costNoVat;
+                var status = $("#status").val();
+
+                // เงื่อนไขพิเศษสำหรับสถานะ "ชนะ (Win)"
+                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
+                    // คำนวณกำไรโดยใช้ต้นทุนเป็น 0 หากไม่ได้กรอกค่า
+                    var grossProfit = saleNoVat - costNoVat; // costNoVat จะเป็น 0 ถ้าไม่ได้กรอกค่า
                     $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
+
+                    // คำนวณเปอร์เซ็นต์กำไร
+                    var grossProfitPercentage = (grossProfit / saleNoVat) * 100;
+                    $("#potential").val(grossProfitPercentage.toFixed(2) + "%");
+                }
+                // กรณีปกติ: คำนวณเมื่อมีทั้งราคาขายและต้นทุน
+                else if (saleNoVat > 0) {
+                    var grossProfit = saleNoVat - costNoVat; // costNoVat เป็น 0 ถ้าไม่มีการกรอก
+                    $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
+
                     var grossProfitPercentage = (grossProfit / saleNoVat) * 100;
                     $("#potential").val(grossProfitPercentage.toFixed(2) + "%");
                 }
             }
+
+            // เพิ่ม event listener สำหรับการเปลี่ยนสถานะ
+            $("#status").on("change", function() {
+                var status = $(this).val();
+                var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
+
+                // เมื่อสถานะเปลี่ยนเป็น "ชนะ (Win)" และมีการกรอกราคาขาย
+                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
+                    calculateGrossProfit(); // เรียกใช้ฟังก์ชันคำนวณกำไรขั้นต้น
+                }
+            });
+
+            // อัพเดท event listener สำหรับราคาขาย
+            $("#sale_vat").on("input", function() {
+                var saleVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
+                var vat = parseFloat($("#vat").val()) || 0;
+                var saleNoVat = calculateNoVatPrice(saleVat, vat);
+                $("#sale_no_vat").val(formatNumber(saleNoVat.toFixed(2)));
+
+                // เช็คสถานะเพื่อคำนวณกำไรขั้นต้นทันที
+                calculateGrossProfit();
+                recalculateEstimate();
+            });
+
+            $("#sale_no_vat").on("input", function() {
+                var saleNoVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
+                var vat = parseFloat($("#vat").val()) || 0;
+                if (saleNoVat && vat) {
+                    var saleVat = calculateWithVatPrice(saleNoVat, vat);
+                    $("#sale_vat").val(formatNumber(saleVat.toFixed(2)));
+                }
+
+                // คำนวณกำไรขั้นต้นทันที
+                calculateGrossProfit();
+                recalculateEstimate();
+            });
 
             function recalculateEstimate() {
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
