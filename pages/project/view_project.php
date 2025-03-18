@@ -22,14 +22,15 @@ try {
     try {
         $sql = "SELECT p.*, 
         u.team_id as creator_team_id, 
-        u.first_name, u.last_name, u.email as seller_email, u.phone as seller_phone,
+        /* เปลี่ยนจากใช้ seller เป็น created_by ตรงนี้ */
+        creator.first_name, creator.last_name, creator.email as seller_email, creator.phone as seller_phone,
         pr.product_name, pr.product_description,
         c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
         t.team_name,
         tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
         creator.first_name as creator_first_name, creator.last_name as creator_last_name,
         updater.first_name as updater_first_name, updater.last_name as updater_last_name,
-        pm.is_active, -- เพิ่มการดึงค่า is_active จากตาราง project_members
+        pm.is_active,
         CASE 
             WHEN p.created_by = :user_id THEN true
             WHEN EXISTS (
@@ -40,14 +41,17 @@ try {
             ELSE false
         END as has_access
         FROM projects p 
-        LEFT JOIN users u ON p.seller = u.user_id 
+        /* เปลี่ยนจาก p.seller เป็น p.created_by */
+        LEFT JOIN users creator ON p.created_by = creator.user_id 
         LEFT JOIN products pr ON p.product_id = pr.product_id 
         LEFT JOIN customers c ON p.customer_id = c.customer_id 
-        LEFT JOIN teams t ON u.team_id = t.team_id 
+        /* เปลี่ยนจาก u.team_id เป็น creator.team_id */
+        LEFT JOIN teams t ON creator.team_id = t.team_id 
         LEFT JOIN users tl ON t.team_leader = tl.user_id
-        LEFT JOIN users creator ON p.created_by = creator.user_id
+        /* เก็บ creator ไว้เหมือนเดิมเพื่อใช้ในส่วนอื่น */
+        LEFT JOIN users u ON p.created_by = u.user_id
         LEFT JOIN users updater ON p.updated_by = updater.user_id
-        LEFT JOIN project_members pm ON p.project_id = pm.project_id AND pm.user_id = :user_id -- เช็ค is_active ของสมาชิก
+        LEFT JOIN project_members pm ON p.project_id = pm.project_id AND pm.user_id = :user_id
         WHERE p.project_id = :project_id";
 
         $stmt = $condb->prepare($sql);
