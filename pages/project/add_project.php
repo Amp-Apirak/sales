@@ -501,14 +501,14 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="cost_vat" id="cost_vat" class="form-control">
+                                                        <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                        <input type="int" name="cost_no_vat" id="cost_no_vat" class="form-control">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="cost_no_vat" id="cost_no_vat" class="form-control">
+                                                        <label>ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <input type="int" name="cost_vat" id="cost_vat" class="form-control">
                                                     </div>
                                                 </div>
                                             </div>

@@ -561,16 +561,16 @@ if (!empty($_FILES['documents'])) {
         const sellingPrice = unformatNumber($('#selling_price').val());
 
         // ตรวจสอบว่าเป็นตัวเลขที่ถูกต้อง
-        if (isNaN(parseFloat(costPrice)) || isNaN(parseFloat(sellingPrice))) {
-            e.preventDefault();
-            Swal.fire({
-                title: 'เกิดข้อผิดพลาด',
-                text: 'กรุณากรอกราคาให้ถูกต้อง',
-                icon: 'error',
-                confirmButtonText: 'ตกลง'
-            });
-            return false;
-        }
+        // if (isNaN(parseFloat(costPrice)) || isNaN(parseFloat(sellingPrice))) {
+        //     e.preventDefault();
+        //     Swal.fire({
+        //         title: 'เกิดข้อผิดพลาด',
+        //         text: 'กรุณากรอกราคาให้ถูกต้อง',
+        //         icon: 'error',
+        //         confirmButtonText: 'ตกลง'
+        //     });
+        //     return false;
+        // }
 
         $('#cost_price').val(costPrice);
         $('#selling_price').val(sellingPrice);

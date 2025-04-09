@@ -24,14 +24,66 @@ $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];
 $user_id = $_SESSION['user_id'];
 
+/**
+ * ฟังก์ชันตรวจสอบสิทธิ์การแก้ไขข้อมูลสินค้า
+ * @param string $role บทบาทของผู้ใช้
+ * @param string $user_id รหัสผู้ใช้ปัจจุบัน
+ * @param string $creator_id รหัสผู้สร้างสินค้า
+ * @param string $team_id ทีมของผู้ใช้ปัจจุบัน
+ * @param string $product_team_id ทีมของผู้สร้างสินค้า
+ * @return boolean
+ */
+function canEditProduct($role, $user_id, $creator_id, $team_id, $product_team_id)
+{
+    // Executive สามารถแก้ไขได้ทั้งหมด
+    if ($role === 'Executive') {
+        return true;
+    }
+
+    // ผู้สร้างสามารถแก้ไขสินค้าของตัวเองได้
+    if ($user_id === $creator_id) {
+        return true;
+    }
+
+    // Sale Supervisor สามารถแก้ไขได้เฉพาะทีมตัวเอง
+    if ($role === 'Sale Supervisor' && $team_id === $product_team_id) {
+        return true;
+    }
+
+    // กรณีอื่นๆ ไม่สามารถแก้ไขได้
+    return false;
+}
+
 // รับค่าการค้นหาจากฟอร์ม (method="GET")
 $search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) : '';
 
+// เพิ่มฟังก์ชันสำหรับตรวจสอบสิทธิ์การเข้าถึงข้อมูลต้นทุน
+function canViewCostPrice($role, $team_id, $product_team_id)
+{
+    if ($role === 'Executive') {
+        // Executive สามารถดูข้อมูลได้ทั้งหมด
+        return true;
+    } elseif (($role === 'Sale Supervisor' || $role === 'Seller') && $team_id === $product_team_id) {
+        // Sale Supervisor และ Seller ดูได้เฉพาะทีมตัวเอง
+        return true;
+    }
+    // Role อื่นๆ ไม่สามารถดูได้
+    return false;
+}
+
+
 // Query พื้นฐานในการดึงข้อมูลสินค้า
-$sql_products = "SELECT p.*, u.first_name AS creator_first_name, u.last_name AS creator_last_name 
-                FROM products p 
-                LEFT JOIN users u ON p.created_by = u.user_id 
-                WHERE 1=1";
+$sql_products = "SELECT p.*, 
+                        u.first_name AS creator_first_name, 
+                        u.last_name AS creator_last_name,
+                        u.team_id AS creator_team_id,
+                        p.created_by, -- เพิ่มการดึง created_by
+                        s.supplier_name,
+                        s.company AS supplier_company
+                 FROM products p 
+                 LEFT JOIN users u ON p.created_by = u.user_id 
+                 LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
+                 WHERE 1=1";
 
 // เพิ่มเงื่อนไขการค้นหาตามที่ผู้ใช้กรอกมา
 if (!empty($search_service)) {
@@ -68,6 +120,10 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>SalePipeline | Product Magement</title>
     <?php include '../../../include/header.php' ?>
 
+    <!-- เพิ่มส่วนนี้ในส่วน <head> ของไฟล์ product.php -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <!-- ใช้ฟอนต์ Noto Sans Thai กับ label -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,6 +143,23 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-weight: 600;
             font-size: 18px;
             color: #FF5733;
+        }
+
+
+        /* ปรับแต่งการอัพโหลด */
+        .selected-file {
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .selected-file button {
+            padding: 0;
+            margin-left: 10px;
         }
     </style>
 
@@ -226,7 +299,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div><br>
                             <!-- //Section ปุ่มเพิ่มข้อมูล -->
 
-                            <!-- Section ตารางแสดงผล -->
+
                             <!-- Section ตารางแสดงผล -->
                             <div class="card">
                                 <div class="card-header">
@@ -330,6 +403,37 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <td class="product-details">
                                                         <div class="product-title"><?php echo htmlspecialchars($product['product_name']); ?></div>
                                                         <div class="product-description"><?php echo htmlspecialchars($product['product_description']); ?></div>
+
+                                                        <!-- แสดงหน่วยนับเสมอ -->
+                                                        <div class="product-meta">
+                                                            <strong>หน่วยนับ:</strong> <?php echo htmlspecialchars($product['unit'] ?: '-'); ?>
+                                                        </div>
+
+                                                        <?php
+                                                        // ตรวจสอบสิทธิ์การแสดงราคาต้นทุน
+                                                        if (canViewCostPrice($role, $team_id, $product['creator_team_id'])): ?>
+                                                            <div class="product-meta">
+                                                                <strong>ราคาต้นทุน:</strong> <?php echo number_format($product['cost_price'], 2); ?> บาท
+                                                            </div>
+                                                        <?php endif; ?>
+
+
+                                                        <!-- แสดงราคาขายสำหรับทุก Role ยกเว้น Engineer -->
+                                                        <?php if ($role != 'Engineer'): ?>
+                                                            <div class="product-meta">
+                                                                <strong>ราคาขาย:</strong> <?php echo number_format($product['selling_price'], 2); ?> บาท
+                                                            </div>
+                                                        <?php endif; ?>
+
+                                                        <div class="product-meta">
+                                                            <strong>ผู้จำหน่าย:</strong>
+                                                            <?php
+                                                            echo htmlspecialchars($product['supplier_name'] ?
+                                                                $product['supplier_name'] . ' (' . $product['supplier_company'] . ')' :
+                                                                '-');
+                                                            ?>
+                                                        </div>
+
                                                         <div class="product-meta">
                                                             <strong>Created By:</strong> <?php echo htmlspecialchars($product['creator_first_name'] . " " . $product['creator_last_name']); ?>
                                                         </div>
@@ -341,10 +445,28 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                                 class="btn btn-sm btn-outline-primary">
                                                                 <i class="fas fa-eye"></i> View
                                                             </a>
-                                                            <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>"
-                                                                class="btn btn-sm btn-outline-primary">
-                                                                <i class="fas fa-pencil-alt"></i> Edit
-                                                            </a>
+                                                            <?php
+                                                            // ตรวจสอบสิทธิ์การแก้ไข
+                                                            if (canEditProduct(
+                                                                $role,
+                                                                $user_id,
+                                                                $product['created_by'],
+                                                                $team_id,
+                                                                $product['creator_team_id']
+                                                            )): ?>
+                                                                <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>"
+                                                                    class="btn btn-sm btn-outline-primary">
+                                                                    <i class="fas fa-pencil-alt"></i> Edit
+                                                                </a>
+                                                            <?php endif; ?>
+
+                                                            <?php if ($role === 'Executive' || $user_id === $product['created_by']): ?>
+                                                                <!-- เพิ่มไอคอนแสดงสถานะผู้สร้าง -->
+                                                                <span class="badge badge-info ml-2" title="คุณเป็นผู้สร้างรายการนี้">
+                                                                    <i class="fas fa-user-edit"></i>
+                                                                    <?php echo ($role === 'Executive' && $user_id !== $product['created_by']) ? 'Admin' : 'Creator'; ?>
+                                                                </span>
+                                                            <?php endif; ?>
                                                     </td>
                                                 </tr>
                                             <?php } ?>
@@ -366,14 +488,22 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
     <!-- ./wrapper -->
 
+    <!-- JS for Dropdown Select2 -->
+    <script>
+        $(function() {
+            $('.select2').select2();
+        });
+    </script>
+
 
     <!-- DataTables -->
     <script>
         $(function() {
-            $("#example1").DataTable({
+            var productTable = $("#example1").DataTable({
                 "responsive": true,
                 "lengthChange": false,
                 "autoWidth": false,
+                "pageLength": 10,
                 "language": {
                     "search": "ค้นหา:",
                     "paginate": {
@@ -387,7 +517,12 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     "infoFiltered": "(กรองจากทั้งหมด _MAX_ รายการ)",
                     "zeroRecords": "ไม่พบข้อมูลที่ตรงกัน"
                 }
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+            });
+
+            // เพิ่มฟังก์ชันสำหรับรีเฟรชตาราง
+            window.refreshProductTable = function() {
+                productTable.ajax.reload(null, false);
+            };
         });
     </script>
 
