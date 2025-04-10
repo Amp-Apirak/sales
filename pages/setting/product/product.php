@@ -832,7 +832,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <!-- /.Products Section -->
 
                     <!-- ปุ่มเพิ่มสินค้า (ลอยอยู่ด้านล่างขวา) -->
-                    <a href="#" class="btn-add-product" data-toggle="modal" data-target="#addbtn">
+                    <a href="add_product.php" class="btn-add-product" >
                         <i class="fas fa-plus"></i>
                     </a>
 
@@ -846,9 +846,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php include('../../../include/footer.php'); ?>
     </div>
     <!-- ./wrapper -->
-
-    <!-- Add Product Modal -->
-    <?php include 'add_product.php'; ?>
 
     <!-- JS สำหรับ Lightbox -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
