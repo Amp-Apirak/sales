@@ -247,7 +247,6 @@ try {
     $total_profit = $total_sales - $total_cost;
     $profit_percentage = ($total_sales > 0) ? ($total_profit / $total_sales) * 100 : 0;
 
-
     // ปรับข้อความแสดงผลตาม Role
     $team_label = ($role === 'Executive') ? "จำนวนทีมทั้งหมด" : "จำนวนทีมที่ฉันอยู่";
     $member_label = ($role === 'Executive' || $role === 'Sale Supervisor') ? "จำนวนคนทั้งหมด" : "จำนวนคนในทีมของฉัน";
@@ -870,119 +869,6 @@ try {
                             </div>
                         </div>
                     <?php endif; ?>
-
-
-
-                    <!-- ส่วนแสดงผล KPIs มีอยู่แล้ว -->
-                    <!-- ส่วนแสดงผลการ์ดสรุปสถานะโครงการมีอยู่แล้ว -->
-
-                    <!-- เพิ่มส่วนนี้ก่อนถึงส่วนของ "ส่วนแสดงข้อมูลสรุปโครงการที่มีสถานะชนะ (Win)" -->
-                    <?php if ($can_view_financial): ?>
-                        <!-- แถวแสดงข้อมูลภาพรวมทั้งหมด -->
-                        <div class="row">
-                            <!-- Card 1: ยอดขายรวมทั้งหมด (No vat) -->
-                            <div class="col-lg-3 col-6">
-                                <div class="card bg-info" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                    <div class="card-header" style="background: linear-gradient(to right, #17a2b8, #3498db); border-radius: 15px 15px 0 0; border: none;">
-                                        <h3 class="card-title" style="font-weight: 600; color: white;">
-                                            <i class="fas fa-chart-line mr-2"></i>
-                                            ยอดขายรวมทั้งหมด (No vat)
-                                        </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                                <i class="fas fa-minus" style="color: white;"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body text-center">
-                                        <h3 style="font-size: 2rem; font-weight: 700; color: white;">
-                                            ฿<?php echo number_format($total_sales, 2); ?>
-                                        </h3>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.8);">
-                                            <i class="fas fa-signal mr-1"></i> ยอดขายจากทุกโครงการ
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Card 2: ต้นทุนรวมทั้งหมด (No vat) -->
-                            <div class="col-lg-3 col-6">
-                                <div class="card bg-secondary" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                    <div class="card-header" style="background: linear-gradient(to right, #6c757d, #495057); border-radius: 15px 15px 0 0; border: none;">
-                                        <h3 class="card-title" style="font-weight: 600; color: white;">
-                                            <i class="fas fa-money-bill mr-2"></i>
-                                            ต้นทุนรวมทั้งหมด (No vat)
-                                        </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                                <i class="fas fa-minus" style="color: white;"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body text-center">
-                                        <h3 style="font-size: 2rem; font-weight: 700; color: white;">
-                                            ฿<?php echo number_format($total_cost, 2); ?>
-                                        </h3>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.8);">
-                                            <i class="fas fa-tags mr-1"></i> ต้นทุนจากทุกโครงการ
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Card 3: กำไรรวมทั้งหมด (No Vat) -->
-                            <div class="col-lg-3 col-6">
-                                <div class="card bg-primary" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                    <div class="card-header" style="background: linear-gradient(to right, #007bff, #0056b3); border-radius: 15px 15px 0 0; border: none;">
-                                        <h3 class="card-title" style="font-weight: 600; color: white;">
-                                            <i class="fas fa-hand-holding-usd mr-2"></i>
-                                            กำไรรวมทั้งหมด (No Vat)
-                                        </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                                <i class="fas fa-minus" style="color: white;"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body text-center">
-                                        <h3 style="font-size: 2rem; font-weight: 700; color: white;">
-                                            ฿<?php echo number_format($total_profit, 2); ?>
-                                        </h3>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.8);">
-                                            <i class="fas fa-calculator mr-1"></i> กำไรรวมจากทุกโครงการ
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Card 4: กำไรรวมทั้งหมด (No Vat %) -->
-                            <div class="col-lg-3 col-6">
-                                <div class="card bg-purple" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                                    <div class="card-header" style="background: linear-gradient(to right, #6f42c1, #563d7c); border-radius: 15px 15px 0 0; border: none;">
-                                        <h3 class="card-title" style="font-weight: 600; color: white;">
-                                            <i class="fas fa-percentage mr-2"></i>
-                                            กำไรรวมทั้งหมด (No Vat %)
-                                        </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                                <i class="fas fa-minus" style="color: white;"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body text-center">
-                                        <h3 style="font-size: 2rem; font-weight: 700; color: white;">
-                                            <?php echo number_format($profit_percentage, 2); ?>%
-                                        </h3>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.8);">
-                                            <i class="fas fa-chart-pie mr-1"></i> เปอร์เซ็นต์กำไรจากทุกโครงการ
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- ส่วนแสดงข้อมูลสรุปโครงการที่มีสถานะชนะ (Win) ที่มีอยู่แล้ว -->
 
                     <!-- ส่วนการแสดงผล Card ใหม่ -->
                     <?php if ($can_view_financial): ?>
