@@ -236,7 +236,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 ':file_size' => $file_size,
                                                 ':created_by' => $created_by
                                             ]);
-
                                         }
                                     } else {
                                         throw new Exception("ไฟล์ {$file_name} มีขนาดเกิน 10MB");
@@ -251,9 +250,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Commit transaction
                     $condb->commit();
 
+                    $_SESSION['new_product_id'] = $product_id;
 
                     // ข้อความแจ้งเตือนสำเร็จ
                     $success_message = "เพิ่มสินค้าสำเร็จแล้ว";
+
+                    // เพิ่มการ redirect ด้วย PHP
+                    header("Location: view_product.php?id=" . urlencode(encryptUserId($product_id)));
+                    exit();
 
                     // สร้าง CSRF Token ใหม่
                     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -538,10 +542,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     title: 'สำเร็จ!',
                     text: '<?php echo $success_message; ?>',
                     icon: 'success',
-                    confirmButtonText: 'ตกลง'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = 'product.php';
+                    showConfirmButton: false,
+                    timer: 1500,
+                    willClose: () => {
+                        window.location.href = 'view_product.php?id=<?php echo urlencode(encryptUserId($_SESSION['new_product_id'])); ?>';
                     }
                 });
             <?php endif; ?>
