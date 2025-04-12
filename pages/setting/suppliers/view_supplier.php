@@ -7,27 +7,27 @@ include('../../../config/condb.php');
 
 // ตรวจสอบว่ามีการส่ง id มาหรือไม่
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    // ถ้าไม่มี id ให้ redirect กลับไปหน้า customer.php
-    header("Location: customer.php");
+    // ถ้าไม่มี id ให้ redirect กลับไปหน้า supplier.php
+    header("Location: supplier.php");
     exit();
 }
 
 // ถอดรหัส id
-$customer_id = decryptUserId($_GET['id']);
+$supplier_id = decryptUserId($_GET['id']);
 
-// ดึงข้อมูลลูกค้าจากฐานข้อมูล
+// ดึงข้อมูลซัพพลายเออร์จากฐานข้อมูล
 try {
-    $stmt = $condb->prepare("SELECT c.*, u.first_name, u.last_name 
-                             FROM customers c
-                             LEFT JOIN users u ON c.created_by = u.user_id
-                             WHERE c.customer_id = :id");
-    $stmt->bindParam(':id', $customer_id, PDO::PARAM_INT);
+    $stmt = $condb->prepare("SELECT s.*, u.first_name, u.last_name 
+                             FROM suppliers s
+                             LEFT JOIN users u ON s.created_by = u.user_id
+                             WHERE s.supplier_id = :id");
+    $stmt->bindParam(':id', $supplier_id, PDO::PARAM_INT);
     $stmt->execute();
-    $customer = $stmt->fetch(PDO::FETCH_ASSOC);
+    $supplier = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$customer) {
-        // ถ้าไม่พบข้อมูลลูกค้า ให้ redirect กลับไปหน้า customer.php
-        header("Location: customer.php");
+    if (!$supplier) {
+        // ถ้าไม่พบข้อมูลซัพพลายเออร์ ให้ redirect กลับไปหน้า supplier.php
+        header("Location: supplier.php");
         exit();
     }
 } catch (PDOException $e) {
@@ -36,23 +36,26 @@ try {
 }
 
 // กำหนด path ของรูปภาพ
-$image_path = !empty($customer['customers_image'])
-    ? BASE_URL . 'uploads/customer_images/' . $customer['customers_image']
+$image_path = !empty($supplier['suppliers_image'])
+    ? BASE_URL . 'uploads/supplier_images/' . $supplier['suppliers_image']
     : BASE_URL . 'assets/img/gallery-img3.jpg';
 
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-<?php $menu = "customer"; ?>
+<?php $menu = "supplier"; ?>
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SalePipeline | View Customer</title>
+    <title>SalePipeline | View Supplier</title>
     <?php include '../../../include/header.php'; ?>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
     <style>
-        .customer-image {
+        .supplier-image {
             width: 200px;
             height: 200px;
             object-fit: cover;
@@ -109,6 +112,15 @@ $image_path = !empty($customer['customers_image'])
             cursor: pointer;
         }
     </style>
+    <!-- ส่วน CSS สำหรับตาราง -->
+    <style>
+        th {
+            font-family: 'Noto Sans Thai', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -119,13 +131,13 @@ $image_path = !empty($customer['customers_image'])
                 <div class="container-fluid">
                     <div class="row mb-2">
                         <div class="col-sm-6">
-                            <h1 class="m-0">View Customer</h1>
+                            <h1 class="m-0">View Supplier</h1>
                         </div>
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
                                 <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">Home</a></li>
-                                <li class="breadcrumb-item"><a href="customer.php">Customers</a></li>
-                                <li class="breadcrumb-item active">View Customer</li>
+                                <li class="breadcrumb-item"><a href="supplier.php">Suppliers</a></li>
+                                <li class="breadcrumb-item active">View Supplier</li>
                             </ol>
                         </div>
                     </div>
@@ -139,10 +151,10 @@ $image_path = !empty($customer['customers_image'])
                             <div class="card card-primary card-outline h-100">
                                 <div class="card-body box-profile">
                                     <div class="text-center">
-                                        <img class="customer-image" src="<?php echo $image_path; ?>" alt="Customer Image" id="customerImage">
+                                        <img class="supplier-image" src="<?php echo $image_path; ?>" alt="Supplier Image" id="supplierImage">
                                     </div>
                                     <p></p>
-                                    <p class="text-muted text-center"><?php echo htmlspecialchars($customer['company']); ?></p>
+                                    <p class="text-muted text-center"><?php echo htmlspecialchars($supplier['company']); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -150,7 +162,7 @@ $image_path = !empty($customer['customers_image'])
                             <div class="card card-primary card-outline h-100">
                                 <div class="card-body p-0 box-profile">
                                     <div class="text-right p-3">
-                                        <a href="edit_customer.php?customer_id=<?php echo urlencode($_GET['id']); ?>" class="btn btn-primary btn-sm btn-edit">
+                                        <a href="edit_supplier.php?supplier_id=<?php echo urlencode($_GET['id']); ?>" class="btn btn-primary btn-sm btn-edit">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
                                     </div>
@@ -159,31 +171,31 @@ $image_path = !empty($customer['customers_image'])
                                             <div class="d-flex w-100 justify-content-between">
                                                 <h6 class="mb-1"><i class="fas fa-map-marker-alt text-primary mr-2"></i>Address</h6>
                                             </div>
-                                            <p class="mb-1 text-muted"><?php echo nl2br(htmlspecialchars($customer['address'])); ?></p>
+                                            <p class="mb-1 text-muted"><?php echo nl2br(htmlspecialchars($supplier['address'])); ?></p>
                                         </li>
                                         <li class="list-group-item">
                                             <div class="d-flex w-100 justify-content-between">
                                                 <h6 class="mb-1"><i class="fas fa-phone text-success mr-2"></i>Contact</h6>
                                             </div>
-                                            <p class="mb-1"><small class="text-muted">Customer Name:</small> <?php echo htmlspecialchars($customer['customer_name']); ?></p>
-                                            <p class="mb-1"><small class="text-muted">Phone:</small> <?php echo htmlspecialchars($customer['phone']); ?></p>
-                                            <p class="mb-1"><small class="text-muted">Office Phone:</small> <?php echo htmlspecialchars($customer['office_phone']); ?></p>
-                                            <p class="mb-1"><small class="text-muted">Extension:</small> <?php echo htmlspecialchars($customer['extension']); ?></p>
-                                            <p class="mb-1"><small class="text-muted">Email:</small> <?php echo htmlspecialchars($customer['email']); ?></p>
+                                            <p class="mb-1"><small class="text-muted">Supplier Name:</small> <?php echo htmlspecialchars($supplier['supplier_name']); ?></p>
+                                            <p class="mb-1"><small class="text-muted">Phone:</small> <?php echo htmlspecialchars($supplier['phone']); ?></p>
+                                            <p class="mb-1"><small class="text-muted">Office Phone:</small> <?php echo htmlspecialchars($supplier['office_phone']); ?></p>
+                                            <p class="mb-1"><small class="text-muted">Extension:</small> <?php echo htmlspecialchars($supplier['extension']); ?></p>
+                                            <p class="mb-1"><small class="text-muted">Email:</small> <?php echo htmlspecialchars($supplier['email']); ?></p>
                                         </li>
                                         <li class="list-group-item">
                                             <div class="d-flex w-100 justify-content-between">
                                                 <h6 class="mb-1"><i class="fas fa-info-circle text-info mr-2"></i>Additional Info</h6>
                                             </div>
-                                            <p class="mb-1"><small class="text-muted">Created by:</small> <?php echo htmlspecialchars($customer['first_name'] . ' ' . $customer['last_name']); ?></p>
-                                            <p class="mb-1"><small class="text-muted">Created on:</small> <?php echo date('F j, Y', strtotime($customer['created_at'])); ?></p>
+                                            <p class="mb-1"><small class="text-muted">Created by:</small> <?php echo htmlspecialchars($supplier['first_name'] . ' ' . $supplier['last_name']); ?></p>
+                                            <p class="mb-1"><small class="text-muted">Created on:</small> <?php echo date('F j, Y', strtotime($supplier['created_at'])); ?></p>
                                         </li>
-                                        <?php if (!empty($customer['remark'])): ?>
+                                        <?php if (!empty($supplier['remark'])): ?>
                                             <li class="list-group-item">
                                                 <div class="d-flex w-100 justify-content-between">
                                                     <h6 class="mb-1"><i class="fas fa-comment text-warning mr-2"></i>Remark</h6>
                                                 </div>
-                                                <p class="mb-1 text-muted"><?php echo nl2br(htmlspecialchars($customer['remark'])); ?></p>
+                                                <p class="mb-1 text-muted"><?php echo nl2br(htmlspecialchars($supplier['remark'])); ?></p>
                                             </li>
                                         <?php endif; ?>
                                     </ul>
@@ -191,11 +203,90 @@ $image_path = !empty($customer['customers_image'])
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card card-primary card-outline">
+                                <div class="card-header">
+                                    <h3 class="card-title">รายการสินค้าของซัพพลายเออร์</h3>
+                                    <div class="card-tools">
+                                        <a href="add_product.php?supplier_id=<?php echo urlencode($_GET['id']); ?>" class="btn btn-success btn-sm">
+                                            <i class="fas fa-plus"></i> เพิ่มสินค้า
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <table id="example1" class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-nowrap text-center">ลำดับ</th>
+                                                <th class="text-nowrap text-center">ชื่อสินค้า</th>
+                                                <th class="text-nowrap text-center">หมวดหมู่</th>
+                                                <th class="text-nowrap text-center">ราคา</th>
+                                                <th class="text-nowrap text-center">จำนวน</th>
+                                                <th class="text-nowrap text-center">การกระทำ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                            // ดึงรายการสินค้าของซัพพลายเออร์จากฐานข้อมูล
+                                            $stmt = $condb->prepare("SELECT * FROM products WHERE supplier_id = :supplier_id");
+                                            $stmt->bindParam(':supplier_id', $supplier_id, PDO::PARAM_INT);
+                                            $stmt->execute();
+                                            $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                                            if (!empty($products)) {
+                                                foreach ($products as $index => $product) {
+                                            ?>
+                                                    <tr>
+                                                        <td class="text-nowrap text-center"><?php echo $index + 1; ?></td>
+                                                        <td class="text-nowrap"><?php echo !empty($product['product_name']) ? htmlspecialchars($product['product_name']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo !empty($product['category']) ? htmlspecialchars($product['category']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo !empty($product['price']) ? htmlspecialchars($product['price']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo !empty($product['quantity']) ? htmlspecialchars($product['quantity']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                        <td class="text-nowrap text-center">
+                                                            <a href="view_product.php?product_id=<?php echo urlencode($product['product_id']); ?>" class="btn btn-sm btn-primary">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="edit_product.php?product_id=<?php echo urlencode($product['product_id']); ?>" class="btn btn-info btn-sm">
+                                                                <i class="fas fa-pencil-alt"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                <?php
+                                                }
+                                            } else {
+                                                ?>
+                                                <tr>
+                                                    <td colspan="6" class="text-center">ไม่มีสินค้าที่เกี่ยวข้องกับซัพพลายเออร์นี้</td>
+                                                </tr>
+                                            <?php
+                                            }
+                                            ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </section>
         </div>
         <?php include '../../../include/footer.php'; ?>
     </div>
+
+    <!-- เพิ่ม JavaScript สำหรับ DataTables -->
+    <script>
+        $(function() {
+            $("#example1").DataTable({
+                "responsive": true,
+                "lengthChange": false,
+                "autoWidth": false,
+                "order": [], // ปิดการเรียงลำดับอัตโนมัติ
+                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+        });
+    </script>
 
     <!-- The Modal -->
     <div id="imageModal" class="modal">
@@ -208,7 +299,7 @@ $image_path = !empty($customer['customers_image'])
         var modal = document.getElementById("imageModal");
 
         // Get the image and insert it inside the modal
-        var img = document.getElementById("customerImage");
+        var img = document.getElementById("supplierImage");
         var modalImg = document.getElementById("img01");
         img.onclick = function() {
             modal.style.display = "block";

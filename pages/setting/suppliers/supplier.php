@@ -199,26 +199,47 @@ $suppliers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <th class="text-nowrap text-center">Action</th>
                                             </tr>
                                         </thead>
+                                        <!-- filepath: c:\xampp\htdocs\sales\pages\setting\suppliers\supplier.php -->
                                         <tbody>
                                             <!-- แสดงข้อมูล supplier -->
                                             <?php foreach ($suppliers as $supplier) { ?>
-                                                <tr>
-                                                    <td class="text-nowrap"><?php echo !empty($supplier['supplier_name']) ? htmlspecialchars($supplier['supplier_name']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($supplier['position']) ? htmlspecialchars($supplier['position']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($supplier['phone']) ? htmlspecialchars($supplier['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($supplier['email']) ? htmlspecialchars($supplier['email']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($supplier['company']) ? htmlspecialchars($supplier['company']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($supplier['office_phone']) ? htmlspecialchars($supplier['office_phone']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($supplier['extension']) ? htmlspecialchars($supplier['extension']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($supplier['address']) ? htmlspecialchars($supplier['address']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($supplier['remark']) ? htmlspecialchars($supplier['remark']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                <tr style="cursor: pointer;">
                                                     <td class="text-nowrap">
+                                                        <?php echo !empty($supplier['supplier_name']) ? htmlspecialchars($supplier['supplier_name']) : 'ไม่ระบุข้อมูล'; ?>
+                                                    </td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
+                                                        <?php echo !empty($supplier['position']) ? htmlspecialchars($supplier['position']) : 'ไม่ระบุข้อมูล'; ?>
+                                                    </td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
+                                                        <?php echo !empty($supplier['phone']) ? htmlspecialchars($supplier['phone']) : 'ไม่ระบุข้อมูล'; ?>
+                                                    </td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
+                                                        <?php echo !empty($supplier['email']) ? htmlspecialchars($supplier['email']) : 'ไม่ระบุข้อมูล'; ?>
+                                                    </td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
+                                                        <?php echo !empty($supplier['company']) ? htmlspecialchars($supplier['company']) : 'ไม่ระบุข้อมูล'; ?>
+                                                    </td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
+                                                        <?php echo !empty($supplier['office_phone']) ? htmlspecialchars($supplier['office_phone']) : 'ไม่ระบุข้อมูล'; ?>
+                                                    </td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
+                                                        <?php echo !empty($supplier['extension']) ? htmlspecialchars($supplier['extension']) : 'ไม่ระบุข้อมูล'; ?>
+                                                    </td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
+                                                        <?php echo !empty($supplier['address']) ? htmlspecialchars($supplier['address']) : 'ไม่ระบุข้อมูล'; ?>
+                                                    </td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
+                                                        <?php echo !empty($supplier['remark']) ? htmlspecialchars($supplier['remark']) : 'ไม่ระบุข้อมูล'; ?>
+                                                    </td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
                                                         <?php
                                                         $creator_name = trim($supplier['first_name'] . ' ' . $supplier['last_name']);
                                                         echo !empty($creator_name) ? htmlspecialchars($creator_name) : 'ไม่ระบุข้อมูล';
                                                         ?>
                                                     </td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($supplier['created_at']); ?></td>
+                                                    <td class="text-nowrap" onclick="window.location.href='view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>'">
+                                                        <?php echo htmlspecialchars($supplier['created_at']); ?>
+                                                    </td>
                                                     <td class="text-nowrap">
                                                         <a href="view_supplier.php?id=<?php echo urlencode(encryptUserId($supplier['supplier_id'])); ?>" class="btn btn-sm btn-primary">
                                                             <i class="fas fa-eye"></i>
