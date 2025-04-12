@@ -86,11 +86,11 @@ $sql_products = "SELECT p.*,
                         u.last_name AS creator_last_name,
                         u.team_id AS creator_team_id,
                         p.created_by, -- เพิ่มการดึง created_by
-                        t.team_name,
-                        t.team_description
+                        s.supplier_name,
+                        s.company AS supplier_company
                  FROM products p 
                  LEFT JOIN users u ON p.created_by = u.user_id 
-                 LEFT JOIN teams t ON p.team_id = t.team_id
+                 LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
                  WHERE 1=1";
 
 // สร้าง SQL สำหรับนับจำนวนรายการทั้งหมดเพื่อใช้ใน pagination
@@ -665,24 +665,20 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                                             <!-- ส่วนรายละเอียดสินค้า -->
                                             <div class="card-body">
-                                                <a href="view_product.php?id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="text-decoration-none">
-                                                    <h5 class="product-title"><?php echo htmlspecialchars($product['product_name']); ?></h5>
-                                                </a>
-                                                <a href="view_product.php?id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="text-decoration-none">
-                                                    <p class="product-description">
-                                                        <?php
-                                                        if (!empty($product['product_description'])) {
-                                                            echo htmlspecialchars(
-                                                                strlen($product['product_description']) > 100 ?
-                                                                    substr($product['product_description'], 0, 97) . '...' :
-                                                                    $product['product_description']
-                                                            );
-                                                        } else {
-                                                            echo '<span class="no-data">ไม่มีคำอธิบายสินค้า</span>';
-                                                        }
-                                                        ?>
-                                                    </p>
-                                                </a>
+                                                <h5 class="product-title"><?php echo htmlspecialchars($product['product_name']); ?></h5>
+                                                <p class="product-description">
+                                                    <?php
+                                                    if (!empty($product['product_description'])) {
+                                                        echo htmlspecialchars(
+                                                            strlen($product['product_description']) > 100 ?
+                                                                substr($product['product_description'], 0, 97) . '...' :
+                                                                $product['product_description']
+                                                        );
+                                                    } else {
+                                                        echo '<span class="no-data">ไม่มีคำอธิบายสินค้า</span>';
+                                                    }
+                                                    ?>
+                                                </p>
 
                                                 <div class="product-details">
                                                     <div class="detail-item">
@@ -711,14 +707,14 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <?php endif; ?>
 
                                                     <div class="detail-item">
-                                                        <span class="detail-label">ทีมขาย (เจ้าของ):</span>
+                                                        <span class="detail-label">ผู้จำหน่าย:</span>
                                                         <span class="detail-value">
                                                             <?php
-                                                            if (!empty($product['team_name'])) {
-                                                                echo htmlspecialchars($product['team_name']);
+                                                            if (!empty($product['supplier_name'])) {
+                                                                echo htmlspecialchars($product['supplier_name']);
 
-                                                                if (!empty($product['team_description'])) {
-                                                                    echo ' (' . htmlspecialchars($product['team_description']) . ')';
+                                                                if (!empty($product['supplier_company'])) {
+                                                                    echo ' (' . htmlspecialchars($product['supplier_company']) . ')';
                                                                 }
                                                             } else {
                                                                 echo '<span class="no-data">ไม่ระบุ</span>';
@@ -780,23 +776,23 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <i class="fas fa-chevron-left"></i> Previous
                                                 </a>
                                             </li>
-
+                                            
                                             <!-- ลิงก์หน้าต่างๆ -->
                                             <?php
                                             // แสดงลิงก์หน้าไม่เกิน 5 หน้า
                                             $start_page = max(1, $current_page - 2);
                                             $end_page = min($total_pages, $current_page + 2);
-
+                                            
                                             // ถ้าอยู่หน้าท้ายๆ ให้แสดงหน้าแรกๆ มากขึ้น
                                             if ($current_page > $total_pages - 2) {
                                                 $start_page = max(1, $total_pages - 4);
                                             }
-
+                                            
                                             // ถ้าอยู่หน้าแรกๆ ให้แสดงหน้าท้ายๆ มากขึ้น
                                             if ($current_page < 3) {
                                                 $end_page = min($total_pages, 5);
                                             }
-
+                                            
                                             // แสดงหน้าแรก
                                             if ($start_page > 1) {
                                                 echo '<li class="page-item"><a class="page-link" href="?page=1' . (!empty($search_service) ? '&searchservice=' . urlencode($search_service) : '') . '">1</a></li>';
@@ -804,14 +800,14 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     echo '<li class="page-item disabled"><a class="page-link" href="#">...</a></li>';
                                                 }
                                             }
-
+                                            
                                             // แสดงหน้าปัจจุบันและหน้าใกล้เคียง
                                             for ($i = $start_page; $i <= $end_page; $i++) {
                                                 echo '<li class="page-item ' . ($i == $current_page ? 'active' : '') . '">
                                                         <a class="page-link" href="?page=' . $i . (!empty($search_service) ? '&searchservice=' . urlencode($search_service) : '') . '">' . $i . '</a>
                                                       </li>';
                                             }
-
+                                            
                                             // แสดงหน้าสุดท้าย
                                             if ($end_page < $total_pages) {
                                                 if ($end_page < $total_pages - 1) {
@@ -820,7 +816,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 echo '<li class="page-item"><a class="page-link" href="?page=' . $total_pages . (!empty($search_service) ? '&searchservice=' . urlencode($search_service) : '') . '">' . $total_pages . '</a></li>';
                                             }
                                             ?>
-
+                                            
                                             <!-- ปุ่ม Next -->
                                             <li class="page-item <?php echo ($current_page >= $total_pages) ? 'disabled' : ''; ?>">
                                                 <a class="page-link" href="<?php echo ($current_page < $total_pages) ? '?page=' . ($current_page + 1) . (!empty($search_service) ? '&searchservice=' . urlencode($search_service) : '') : '#'; ?>">
@@ -836,7 +832,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <!-- /.Products Section -->
 
                     <!-- ปุ่มเพิ่มสินค้า (ลอยอยู่ด้านล่างขวา) -->
-                    <a href="add_product.php" class="btn-add-product">
+                    <a href="add_product.php" class="btn-add-product" >
                         <i class="fas fa-plus"></i>
                     </a>
 

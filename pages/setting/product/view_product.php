@@ -274,7 +274,7 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
                     <div class="card-body">
                         <div class="row">
                             <div class="col-12 col-sm-6">
-                                <h3 class="d-inline-block d-sm-none">LOWA Men’s Renegade GTX Mid Hiking Boots Review</h3>
+                                <h3 class="d-inline-block d-sm-none"><?php echo htmlspecialchars($product['product_name']); ?></h3>
                                 <div class="col-12">
                                     <img src="<?php echo !empty($product['main_image']) ? '../../../uploads/product_images/' . $product['main_image'] : '../../../assets/img/pit.png'; ?>" class="product-image" alt="Product Image">
                                 </div>
@@ -287,7 +287,15 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
                                 </div>
                             </div>
                             <div class="col-12 col-sm-6">
-                                <h3 class="my-3"><?php echo htmlspecialchars($product['product_name']); ?></h3>
+                                <h3 class=" my-3 product-title d-flex align-items-center">
+                                    <?php echo htmlspecialchars($product['product_name']); ?>
+                                    <?php if ($show_edit_delete): ?>
+                                    <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product_id)); ?>"
+                                        class="btn btn-sm btn-outline-primary ml-3">
+                                        <i class="fas fa-pencil-alt"></i> แก้ไข
+                                    </a>
+                                    <?php endif; ?>
+                                </h3>
                                 <p><?php echo htmlspecialchars($product['product_description']); ?></p>
 
                                 <hr>
@@ -319,39 +327,44 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
 
                                 <!-- แสดงข้อมูลผู้จำหน่าย -->
                                 <?php if ($show_supplier_info): ?>
-                                    <div class="supplier-info-container mb-4">
-                                        <h4 class="font-weight-bold mb-3">ข้อมูลผู้จำหน่าย</h4>
+                                    <div class="team-info-container mb-4">
+                                        <h4 class="font-weight-bold mb-3">ข้อมูลทีมขาย (เจ้าของ)</h4>
                                         <?php
-                                        // ดึงข้อมูลผู้จำหน่าย
-                                        $supplier_sql = "SELECT s.* FROM suppliers s 
-                         INNER JOIN products p ON s.supplier_id = p.supplier_id 
-                         WHERE p.product_id = :product_id";
-                                        $supplier_stmt = $condb->prepare($supplier_sql);
-                                        $supplier_stmt->bindParam(':product_id', $product_id);
-                                        $supplier_stmt->execute();
-                                        $supplier = $supplier_stmt->fetch();
+                                        // ดึงข้อมูลทีม
+                                        $team_sql = "SELECT t.*, u.first_name, u.last_name FROM teams t 
+                 LEFT JOIN users u ON t.team_leader = u.user_id
+                 INNER JOIN products p ON t.team_id = p.team_id 
+                 WHERE p.product_id = :product_id";
+                                        $team_stmt = $condb->prepare($team_sql);
+                                        $team_stmt->bindParam(':product_id', $product_id);
+                                        $team_stmt->execute();
+                                        $team = $team_stmt->fetch();
                                         ?>
                                         <div class="bg-light p-4 rounded">
-                                            <?php if ($supplier): ?>
-                                                <div class="supplier-info">
+                                            <?php if ($team): ?>
+                                                <div class="team-info">
                                                     <div class="d-flex align-items-center">
-                                                        <i class="fas fa-building"></i>
-                                                        <span class="text-muted">บริษัท:</span>
-                                                        <span class="flex-grow-1"><?php echo htmlspecialchars($supplier['company']); ?></span>
+                                                        <i class="fas fa-users"></i>&nbsp;
+                                                        <span class="text-muted">ชื่อทีม:</span>
+                                                        <span class="flex-grow-1"><?php echo htmlspecialchars($team['team_name']); ?></span>
                                                     </div>
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-user"></i>
-                                                        <span class="text-muted">ชื่อผู้ติดต่อ:</span>
-                                                        <span class="flex-grow-1"><?php echo htmlspecialchars($supplier['supplier_name']); ?></span>
-                                                    </div>
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-phone"></i>
-                                                        <span class="text-muted">เบอร์โทร:</span>
-                                                        <span class="flex-grow-1"><?php echo htmlspecialchars($supplier['phone']); ?></span>
-                                                    </div>
+                                                    <?php if (!empty($team['team_description'])): ?>
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-info-circle"></i>&nbsp;
+                                                            <span class="text-muted">รายละเอียด:</span>&nbsp;
+                                                            <span class="flex-grow-1"><?php echo htmlspecialchars($team['team_description']); ?></span>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                    <?php if (!empty($team['first_name'])): ?>
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-user-tie"></i>&nbsp;
+                                                            <span class="text-muted">หัวหน้าทีม:</span>&nbsp;
+                                                            <span class="flex-grow-1"><?php echo htmlspecialchars($team['first_name'] . ' ' . $team['last_name']); ?></span>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
                                             <?php else: ?>
-                                                <p class="text-muted">ไม่พบข้อมูลผู้จำหน่าย</p>
+                                                <p class="text-muted">ไม่พบข้อมูลทีม</p>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -364,8 +377,9 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
                 <div class="row mt-4">
                     <nav class="w-100">
                         <div class="nav nav-tabs" id="product-tab" role="tablist">
-                            <a class="nav-item nav-link active" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">Link | Presentation</a>
-                            <a class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="false">Document & Data Sheet</a>
+                            <a class="nav-item nav-link active" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">แนบลิงค์</a>
+                            <a class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="false">แนบไฟล์</a>
+                            <a class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-price" role="tab" aria-controls="product-price" aria-selected="false">รายการสินค้าในโครงการ</a>
                         </div>
                     </nav>
                     <div class="tab-content p-3" id="nav-tabContent">
@@ -376,7 +390,7 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
                             <!-- ส่วนควบคุมการเพิ่มเอกสาร -->
                             <?php if ($show_edit_delete): ?>
                                 <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-pencil-alt"></i> Edit
+                                    <i class="fas fa-pencil-alt"></i> Add|Edit
                                 </a>
                             <?php endif; ?>
 

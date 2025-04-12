@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
         $unit = clean_input($_POST['unit']);
         $cost_price = !empty($_POST['cost_price']) ? floatval(str_replace(',', '', $_POST['cost_price'])) : NULL;
         $selling_price = !empty($_POST['selling_price']) ? floatval(str_replace(',', '', $_POST['selling_price'])) : NULL;
-        $team_id = !empty($_POST['team_id']) ? $_POST['team_id'] : NULL;
+        $supplier_id = !empty($_POST['supplier_id']) ? $_POST['supplier_id'] : NULL;
 
         // ตรวจสอบว่ามีชื่อสินค้าซ้ำหรือไม่
         $checkproduct_sql = "SELECT * FROM products WHERE product_name = :product_name AND product_id != :product_id";
@@ -119,15 +119,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 
                 // อัพเดทข้อมูลสินค้า
                 $update_sql = "UPDATE products SET 
-                product_name = :product_name, 
-                product_description = :product_description,
-                unit = :unit,
-                cost_price = :cost_price,
-                selling_price = :selling_price,
-                team_id = :team_id,
-                updated_by = :updated_by,
-                updated_at = CURRENT_TIMESTAMP 
-                WHERE product_id = :product_id";
+                    product_name = :product_name, 
+                    product_description = :product_description,
+                    unit = :unit,
+                    cost_price = :cost_price,
+                    selling_price = :selling_price,
+                    supplier_id = :supplier_id,
+                    updated_by = :updated_by,
+                    updated_at = CURRENT_TIMESTAMP 
+                    WHERE product_id = :product_id";
 
                 $stmt = $condb->prepare($update_sql);
                 $stmt->bindParam(':product_name', $product_name, PDO::PARAM_STR);
@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
                 $stmt->bindParam(':unit', $unit, PDO::PARAM_STR);
                 $stmt->bindParam(':cost_price', $cost_price, PDO::PARAM_STR);
                 $stmt->bindParam(':selling_price', $selling_price, PDO::PARAM_STR);
-                $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+                $stmt->bindParam(':supplier_id', $supplier_id, PDO::PARAM_STR);
                 $stmt->bindParam(':updated_by', $updated_by, PDO::PARAM_STR);
                 $stmt->bindParam(':product_id', $product_id, PDO::PARAM_STR);
                 $stmt->execute();
@@ -240,10 +240,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
                 $condb->commit();
 
                 $success_message = "แก้ไขข้อมูลสินค้าสำเร็จแล้ว!";
-
-                // เพิ่มการ redirect ด้วย PHP
-                header("Location: view_product.php?id=" . urlencode(encryptUserId($product_id)));
-                exit();
 
                 // บันทึกล็อกกิจกรรม
                 //logActivity($user_id, 'edit_product', "Edited product: $product_name (ID: $product_id)");
@@ -365,20 +361,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
 
                                         <!-- ผู้จำหน่าย -->
                                         <div class="form-group">
-                                            <label for="team_id">ทีมขายของบริษัท (เจ้าของ)<span class="text-danger">*</span></label>
-                                            <select name="team_id" class="form-control select2" id="team_id" required>
-                                                <option value="">เลือกทีมขาย</option>
+                                            <label for="supplier_id">ผู้จำหน่าย<span class="text-danger">*</span></label>
+                                            <select name="supplier_id" class="form-control select2" id="supplier_id" required>
+                                                <option value="">เลือกผู้จำหน่าย</option>
                                                 <?php
-                                                $team_sql = "SELECT team_id, team_name, team_description FROM teams ORDER BY team_name";
-                                                $team_stmt = $condb->prepare($team_sql);
-                                                $team_stmt->execute();
-                                                $teams = $team_stmt->fetchAll();
-                                                foreach ($teams as $team) {
-                                                    $selected = ($team['team_id'] == $product['team_id']) ? 'selected' : '';
-                                                    echo '<option value="' . $team['team_id'] . '" ' . $selected . '>' .
-                                                        htmlspecialchars($team['team_name']) .
-                                                        (!empty($team['team_description']) ? ' (' . htmlspecialchars($team['team_description']) . ')' : '') .
-                                                        '</option>';
+                                                $supplier_sql = "SELECT supplier_id, supplier_name, company FROM suppliers ORDER BY supplier_name";
+                                                $supplier_stmt = $condb->prepare($supplier_sql);
+                                                $supplier_stmt->execute();
+                                                $suppliers = $supplier_stmt->fetchAll();
+                                                foreach ($suppliers as $supplier) {
+                                                    $selected = ($supplier['supplier_id'] == $product['supplier_id']) ? 'selected' : '';
+                                                    echo '<option value="' . $supplier['supplier_id'] . '" ' . $selected . '>' .
+                                                        htmlspecialchars($supplier['supplier_name']) .
+                                                        ' (' . htmlspecialchars($supplier['company']) . ')</option>';
                                                 }
                                                 ?>
                                             </select>

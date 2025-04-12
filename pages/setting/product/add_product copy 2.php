@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $unit = clean_input($_POST['unit']);
         $cost_price = !empty($_POST['cost_price']) ? floatval(str_replace(',', '', $_POST['cost_price'])) : NULL;
         $selling_price = !empty($_POST['selling_price']) ? floatval(str_replace(',', '', $_POST['selling_price'])) : NULL;
-        $team_id = !empty($_POST['team_id']) ? $_POST['team_id'] : NULL;
+        $supplier_id = !empty($_POST['supplier_id']) ? $_POST['supplier_id'] : NULL;
 
         // ตรวจสอบว่ามีชื่อสินค้าที่ซ้ำหรือไม่
         $checkproduct_sql = "SELECT * FROM products WHERE product_name = :product_name ";
@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         unit,
                         cost_price,
                         selling_price,
-                        team_id,
+                        supplier_id,
                         main_image, 
                         created_by,
                         created_at
@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         :unit,
                         :cost_price,
                         :selling_price,
-                        :team_id,
+                        :supplier_id,
                         :main_image, 
                         :created_by,
                         NOW()
@@ -144,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->bindParam(':unit', $unit, PDO::PARAM_STR);
                     $stmt->bindParam(':cost_price', $cost_price, PDO::PARAM_STR);
                     $stmt->bindParam(':selling_price', $selling_price, PDO::PARAM_STR);
-                    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+                    $stmt->bindParam(':supplier_id', $supplier_id, PDO::PARAM_STR);
                     $stmt->bindParam(':main_image', $main_image, PDO::PARAM_STR);
                     $stmt->bindParam(':created_by', $created_by, PDO::PARAM_STR);
                     $stmt->execute();
@@ -465,20 +465,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                         <!-- ผู้จำหน่าย (Supplier) -->
                                         <div class="form-group mt-3">
-                                            <label for="team_id">ทีมขายของบริษัท (เจ้าของ)<span class="text-danger">*</span></label>
-                                            <select name="team_id" class="form-control select2" id="team_id" required>
-                                                <option value="">เลือกทีมขาย</option>
+                                            <label for="supplier_id">ผู้จำหน่าย (Supplier)<span class="text-danger">*</span></label>
+                                            <select name="supplier_id" class="form-control select2" id="supplier_id" required>
+                                                <option value="">เลือกผู้จำหน่าย</option>
                                                 <?php
-                                                // ดึงข้อมูลทีม
-                                                $team_sql = "SELECT team_id, team_name, team_description FROM teams ORDER BY team_name";
-                                                $team_stmt = $condb->prepare($team_sql);
-                                                $team_stmt->execute();
-                                                $teams = $team_stmt->fetchAll();
-                                                foreach ($teams as $team) {
-                                                    echo '<option value="' . $team['team_id'] . '">' .
-                                                        htmlspecialchars($team['team_name']) .
-                                                        (!empty($team['team_description']) ? ' (' . htmlspecialchars($team['team_description']) . ')' : '') .
-                                                        '</option>';
+                                                // ดึงข้อมูลผู้จำหน่าย
+                                                $supplier_sql = "SELECT supplier_id, supplier_name, company FROM suppliers ORDER BY supplier_name";
+                                                $supplier_stmt = $condb->prepare($supplier_sql);
+                                                $supplier_stmt->execute();
+                                                $suppliers = $supplier_stmt->fetchAll();
+                                                foreach ($suppliers as $supplier) {
+                                                    echo '<option value="' . $supplier['supplier_id'] . '">' .
+                                                        htmlspecialchars($supplier['supplier_name']) .
+                                                        ' (' . htmlspecialchars($supplier['company']) . ')</option>';
                                                 }
                                                 ?>
                                             </select>
