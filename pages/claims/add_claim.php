@@ -14,10 +14,11 @@ $_SESSION['csrf_token'] = $_SESSION['csrf_token'] ?? bin2hex(random_bytes(32));
 $csrf_token = $_SESSION['csrf_token'];
 
 // ฟังก์ชันดึงข้อมูลโครงการตามบทบาทผู้ใช้
-function fetchProjects($condb, $role, $team_id, $user_id) {
+function fetchProjects($condb, $role, $team_id, $user_id)
+{
     $sql = "SELECT project_id, project_name FROM projects WHERE 1=1";
     $params = [];
-    
+
     if ($role === 'Sale Supervisor') {
         $sql .= " AND (created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) OR created_by = :user_id OR seller = :user_id)";
         $params[':team_id'] = $team_id;
@@ -26,7 +27,7 @@ function fetchProjects($condb, $role, $team_id, $user_id) {
         $sql .= " AND (created_by = :user_id OR seller = :user_id)";
         $params[':user_id'] = $user_id;
     }
-    
+
     $sql .= " ORDER BY project_name ASC";
     $stmt = $condb->prepare($sql);
     $stmt->execute($params);
@@ -34,7 +35,8 @@ function fetchProjects($condb, $role, $team_id, $user_id) {
 }
 
 // ฟังก์ชันดึงข้อมูลประเภทค่าใช้จ่าย
-function fetchExpenseTypes($condb) {
+function fetchExpenseTypes($condb)
+{
     $sql = "SELECT type_id, type_name FROM expense_types WHERE is_active = 1 ORDER BY type_name ASC";
     $stmt = $condb->prepare($sql);
     $stmt->execute();
@@ -42,7 +44,8 @@ function fetchExpenseTypes($condb) {
 }
 
 // ฟังก์ชันดึงวงเงินอนุมัติตามบทบาทผู้ใช้
-function fetchApprovalLimit($condb, $role) {
+function fetchApprovalLimit($condb, $role)
+{
     $sql = "SELECT max_amount FROM expense_approval_limits WHERE role = :role";
     $stmt = $condb->prepare($sql);
     $stmt->bindParam(':role', $role, PDO::PARAM_STR);
@@ -51,7 +54,8 @@ function fetchApprovalLimit($condb, $role) {
 }
 
 // ฟังก์ชันคำนวณยอดรวมค่าใช้จ่าย
-function calculateTotalAmount($form_data) {
+function calculateTotalAmount($form_data)
+{
     $total = 0;
     if (isset($form_data['amount']) && is_array($form_data['amount'])) {
         foreach ($form_data['amount'] as $amount) {
@@ -62,17 +66,20 @@ function calculateTotalAmount($form_data) {
 }
 
 // ฟังก์ชันตรวจสอบ CSRF token
-function verifyCsrfToken($token) {
+function verifyCsrfToken($token)
+{
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 // ฟังก์ชันทำความสะอาดข้อมูลที่รับจากฟอร์ม
-function sanitizeInput($input) {
+function sanitizeInput($input)
+{
     return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
 }
 
 // ฟังก์ชันตรวจสอบฟิลด์ที่ต้องกรอกและเอกสารแนบ
-function validateFormData($form_data, $item_count, $files) {
+function validateFormData($form_data, $item_count, $files)
+{
     $errors = [];
 
     // ตรวจสอบฟิลด์หลัก
@@ -84,7 +91,7 @@ function validateFormData($form_data, $item_count, $files) {
     }
 
     // ตรวจสอบรายการค่าใช้จ่าย
-    for ($i = 1; $i<= $item_count; $i++) {
+    for ($i = 1; $i <= $item_count; $i++) {
         if (empty($form_data['expense_type'][$i])) {
             $errors[] = "รายการที่ {$i}: กรุณาเลือกประเภทค่าใช้จ่าย";
         }
@@ -200,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrfToken($_POST['csrf_token'
     } elseif (isset($_POST['submit'])) {
         // ตรวจสอบฟิลด์ที่ต้องกรอกและเอกสารแนบ
         $validation_errors = validateFormData($form_data, $item_count, $_FILES);
-        
+
         if (!empty($validation_errors)) {
             // แสดงข้อผิดพลาดทั้งหมด
             $error_message = 'กรุณากรอกข้อมูลให้ครบถ้วน:<br>' . implode('<br>', $validation_errors);
@@ -228,6 +235,7 @@ $total_amount = calculateTotalAmount($form_data);
 <!DOCTYPE html>
 <html lang="th">
 <?php $menu = "claims"; ?>
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -458,41 +466,36 @@ $total_amount = calculateTotalAmount($form_data);
                                                 <div class="row">
                                                     <div class="col-md-6">
                                                         <div class="form-group">
-                                                            <label for="origin_<?php echo $i; ?>" class="required-field">ต้นทาง</label>
-                                                            <input type="text" class="form-control" id="origin_<?php echo $i; ?>" name="origin[<?php echo $i; ?>]"
-                                                                value="<?php echo htmlspecialchars($form_data['origin'][$i] ?? ''); ?>" placeholder="ระบุสถานที่ต้นทาง" <?php echo $show_travel ? 'required' : ''; ?>>
+                                                            <label for="origin_<?php echo $i; ?>" class="required-field">เลขไมค์ต้นทาง</label>
+                                                            <input type="text" class="form-control travel-origin" id="origin_<?php echo $i; ?>" name="origin[<?php echo $i; ?>]"
+                                                                value="<?php echo htmlspecialchars($form_data['origin'][$i] ?? ''); ?>" placeholder="ระบุสถานที่ต้นทาง" <?php echo $show_travel ? 'required' : ''; ?>
+                                                                data-item-id="<?php echo $i; ?>">
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <div class="form-group">
-                                                            <label for="destination_<?php echo $i; ?>" class="required-field">ปลายทาง</label>
-                                                            <input type="text" class="form-control" id="destination_<?php echo $i; ?>" name="destination[<?php echo $i; ?>]"
-                                                                value="<?php echo htmlspecialchars($form_data['destination'][$i] ?? ''); ?>" placeholder="ระบุสถานที่ปลายทาง" <?php echo $show_travel ? 'required' : ''; ?>>
+                                                            <label for="destination_<?php echo $i; ?>" class="required-field">เลขไมค์ปลายทาง</label>
+                                                            <input type="text" class="form-control travel-destination" id="destination_<?php echo $i; ?>" name="destination[<?php echo $i; ?>]"
+                                                                value="<?php echo htmlspecialchars($form_data['destination'][$i] ?? ''); ?>" placeholder="ระบุสถานที่ปลายทาง" <?php echo $show_travel ? 'required' : ''; ?>
+                                                                data-item-id="<?php echo $i; ?>">
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div class="row">
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-6">
                                                         <div class="form-group">
                                                             <label for="distance_<?php echo $i; ?>" class="required-field">ระยะทาง (กิโลเมตร)</label>
-                                                            <input type="number" step="0.1" min="0" class="form-control" id="distance_<?php echo $i; ?>" name="distance[<?php echo $i; ?>]"
-                                                                value="<?php echo htmlspecialchars($form_data['distance'][$i] ?? ''); ?>" placeholder="0.0" <?php echo $show_travel ? 'required' : ''; ?>>
+                                                            <input type="number" step="0.1" min="0" class="form-control travel-distance" id="distance_<?php echo $i; ?>" name="distance[<?php echo $i; ?>]"
+                                                                value="<?php echo htmlspecialchars($form_data['distance'][$i] ?? ''); ?>" placeholder="0.0" <?php echo $show_travel ? 'required' : ''; ?>
+                                                                data-item-id="<?php echo $i; ?>">
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-6">
                                                         <div class="form-group">
                                                             <label for="rate_<?php echo $i; ?>" class="required-field">อัตรา (บาท/กม.)</label>
-                                                            <input type="number" step="0.01" min="0" class="form-control" id="rate_<?php echo $i; ?>" name="rate[<?php echo $i; ?>]"
-                                                                value="<?php echo htmlspecialchars($form_data['rate'][$i] ?? '6.00'); ?>" placeholder="0.00" <?php echo $show_travel ? 'required' : ''; ?>>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <div class="form-group">
-                                                            <label>คำนวณค่าเดินทาง</label>
-                                                            <button type="submit" name="calculate" class="btn btn-warning btn-block">
-                                                                <i class="fas fa-calculator mr-2"></i>คำนวณ
-                                                            </button>
-                                                            <input type="hidden" name="calculate_item_id" value="<?php echo $i; ?>">
+                                                            <input type="number" step="0.01" min="0" class="form-control travel-rate" id="rate_<?php echo $i; ?>" name="rate[<?php echo $i; ?>]"
+                                                                value="<?php echo htmlspecialchars($form_data['rate'][$i] ?? '6.00'); ?>" placeholder="0.00" <?php echo $show_travel ? 'required' : ''; ?>
+                                                                data-item-id="<?php echo $i; ?>">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -721,6 +724,109 @@ $total_amount = calculateTotalAmount($form_data);
                 this.value = this.value.replace(/,/g, '');
             });
         });
+
+
+
+
+        // คำนวณระยะทางและจำนวนเงินอัตโนมัติ
+        $(function() {
+            // คำนวณเมื่อมีการเปลี่ยนแปลงต้นทางหรือปลายทาง
+            $(document).on('input', '.travel-origin, .travel-destination', function() {
+                const itemId = $(this).data('item-id');
+                if (itemId) {
+                    calculateDistance(itemId);
+                }
+            });
+
+            // คำนวณจำนวนเงินเมื่อมีการเปลี่ยนแปลงอัตรา
+            $(document).on('input', '.travel-rate', function() {
+                const itemId = $(this).data('item-id');
+                if (itemId) {
+                    calculateTravelAmount(itemId);
+                }
+            });
+
+            // อัพเดทค่าแบบ manual เมื่อมีการเปลี่ยนแปลงระยะทางโดยตรง
+            $(document).on('input', '.travel-distance', function() {
+                const itemId = $(this).data('item-id');
+                if (itemId) {
+                    calculateTravelAmount(itemId);
+                }
+            });
+        });
+
+        // ฟังก์ชันคำนวณระยะทางจากต้นทางและปลายทาง (ปลายทาง - ต้นทาง)
+        function calculateDistance(itemId) {
+            // รับค่าต้นทางและปลายทาง
+            const origin = parseFloat($(`#origin_${itemId}`).val()) || 0;
+            const destination = parseFloat($(`#destination_${itemId}`).val()) || 0;
+
+            // คำนวณระยะทางโดยเอาปลายทาง - ต้นทาง (ใช้ค่าสัมบูรณ์เพื่อให้ได้ค่าเป็นบวกเสมอ)
+            if (!isNaN(origin) && !isNaN(destination)) {
+                const distance = Math.abs(destination - origin).toFixed(1);
+
+                // ใส่ค่าระยะทางที่คำนวณได้ลงในฟิลด์
+                $(`#distance_${itemId}`).val(distance);
+
+                // คำนวณจำนวนเงินหลังจากได้ระยะทาง
+                calculateTravelAmount(itemId);
+            }
+        }
+
+        // ฟังก์ชันคำนวณจำนวนเงินจากระยะทางและอัตรา
+        function calculateTravelAmount(itemId) {
+            const distance = parseFloat($(`#distance_${itemId}`).val()) || 0;
+            const rate = parseFloat($(`#rate_${itemId}`).val()) || 0;
+
+            if (distance > 0 && rate > 0) {
+                const amount = (distance * rate).toFixed(2);
+                $(`#amount_${itemId}`).val(addCommas(amount));
+                updateTotal();
+            }
+        }
+
+        // ฟังก์ชันแสดง/ซ่อนฟิลด์ค่าเดินทาง
+        function showTravelFields(itemId, selectedType) {
+            const travelSection = document.getElementById(`travel-expense-${itemId}`);
+            const isTravelExpense = ['ค่าเดินทาง', 'ค่าน้ำมัน'].includes(selectedType);
+            travelSection.style.display = isTravelExpense ? 'block' : 'none';
+
+            // รีเซ็ตค่าในฟิลด์เมื่อเปลี่ยนประเภท
+            if (!isTravelExpense) {
+                $(`#origin_${itemId}`).val('');
+                $(`#destination_${itemId}`).val('');
+                $(`#distance_${itemId}`).val('');
+                $(`#rate_${itemId}`).val('4.00');
+                $(`#amount_${itemId}`).val('');
+                updateTotal();
+            }
+        }
+
+        // ฟังก์ชันฟอร์แมตตัวเลขด้วยเครื่องหมายคอมม่า
+        function addCommas(num) {
+            if (num === '' || num === null) return '';
+            const parts = num.toString().replace(/,/g, '').split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parts.length > 1 ? `${parts[0]}.${parts[1].substring(0, 2)}` : parts[0];
+        }
+
+        // ฟังก์ชันอัพเดทยอดรวม
+        function updateTotal() {
+            let sum = 0;
+            $('.amount-input').each(function() {
+                const val = $(this).val().replace(/,/g, '');
+                if (val !== '') sum += parseFloat(val);
+            });
+            $('#total-amount').text(addCommas(sum.toFixed(2)));
+        }
+
+        // ลบเครื่องหมายคอมม่าก่อนส่งฟอร์ม
+        $('#expenseForm').on('submit', function() {
+            $('.amount-input').each(function() {
+                this.value = this.value.replace(/,/g, '');
+            });
+        });
     </script>
 </body>
+
 </html>
