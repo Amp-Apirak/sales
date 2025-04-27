@@ -1,8 +1,8 @@
 <footer class="main-footer text-sm">
-    <strong>Copyright &copy; 2014-2021 <a href="https://adminlte.io">AdminLTE.io</a>.</strong>
+    <strong>Copyright &copy; 2024-2025 <a href="https://pointit.co.th">AMP_Apirak</a>.</strong>
     All rights reserved.
     <div class="float-right d-none d-sm-inline-block">
-        <b>Version</b> 3.2.0
+        <b>Version</b> 1.0.0
     </div>
 </footer>
 
@@ -53,4 +53,11 @@
 <script src="<?php echo BASE_URL; ?>assets/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
 <!-- sweetalert -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert-dev.min.js"></script>
+<!-- Select2 -->
+<script src="<?php echo BASE_URL; ?>assets/plugins/select2/js/select2.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Toastr -->
+<script src="<?php echo BASE_URL; ?>assets/plugins/toastr/toastr.min.js"></script>
+
 </body>

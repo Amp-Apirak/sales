@@ -13,30 +13,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute();
     $user = $stmt->fetch();
 
-    // ตรวจสอบว่ามีผู้ใช้นี้หรือไม่ และตรวจสอบรหัสผ่าน
+    // แก้ไขส่วนการ query และการเก็บค่าใน session
     if ($user && password_verify($password, $user['password'])) {
-        // เก็บข้อมูลผู้ใช้ใน session
-        $_SESSION['user_id'] = $user['user_id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['team_id'] = $user['team_id'];
 
-        // แสดง SweetAlert เมื่อเข้าสู่ระบบสำเร็จ
-        echo "<script>
-                setTimeout(function() {
-                    Swal.fire({
-                        title: 'สำเร็จ!',
-                        text: 'เข้าสู่ระบบเรียบร้อยแล้ว!',
-                        icon: 'success',
-                        confirmButtonText: 'ตกลง'
-                    }).then(function() {
-                        window.location.href = 'pages/account/account.php'; // นำไปยังหน้าถัดไปหลังจาก SweetAlert
-                    });
-                }, 100);
-              </script>";
+        // ดึงข้อมูล team_name จากตาราง teams
+        try {
+            $stmt = $condb->prepare("
+            SELECT t.team_name 
+            FROM teams t 
+            INNER JOIN users u ON u.team_id = t.team_id 
+            WHERE u.user_id = :user_id
+        ");
+            $stmt->bindParam(':user_id', $user['user_id']);
+            $stmt->execute();
+            $team = $stmt->fetch();
+
+            // เก็บข้อมูลใน session
+            $_SESSION['team_name'] = $team['team_name'];
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['team_id'] = $user['team_id'];
+            $_SESSION['first_name'] = $user['first_name'];
+            $_SESSION['last_name'] = $user['last_name'];
+            $_SESSION['profile_image'] = $user['profile_image'];
+
+            // แสดง SweetAlert เมื่อเข้าสู่ระบบสำเร็จ
+            echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    title: 'Login success.',
+                    text: 'Welcome to login Sale Service.',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(function() {
+                    window.location.href = 'index.php';
+                });
+            }, 100);
+        </script>";
+        } catch (PDOException $e) {
+            // จัดการ error
+            echo "Error: " . $e->getMessage();
+        }
     } else {
-        // กรณีไม่พบผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
-        $error = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        // แสดง error เมื่อ login ไม่สำเร็จ
+        echo "<script>
+        setTimeout(function() {
+            Swal.fire({
+                title: 'Oop.....!', 
+                text: 'Invalid username or password, please try again.',
+                icon: 'warning',
+            }).then(function() {
+                window.location.href = 'login.php';
+            });
+        }, 100);
+    </script>";
     }
 }
 ?>
@@ -45,88 +76,230 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 
 <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <meta name="keywords" content="">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
-    <!-- Meta Responsive tag -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
-    <!-- Custom style.css -->
-    <link rel="stylesheet" href="assets/css/quicksand.css">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="assets/css/fontawesome-all.min.css">
-    <link rel="stylesheet" href="assets/css/fontawesome.css">
-
-    <!-- SweetAlert2 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Point IT Sales Management - Login</title>
+    <!-- นำเข้า Bootstrap 5 CSS สำหรับการจัดรูปแบบหน้าเว็บ -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- นำเข้า Font Awesome 6 สำหรับไอคอน -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- นำเข้า Google Fonts (Poppins) สำหรับฟอนต์ที่สวยงาม -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- นำเข้า SweetAlert2 สำหรับการแสดงป๊อปอัพแจ้งเตือนที่สวยงาม -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <title>Login</title>
+    <link rel="icon" type="image/x-icon" href="<?php echo BASE_URL; ?>assets/img/favicon.ico">
+    <style>
+        /* กำหนดสไตล์ CSS สำหรับหน้า Login */
+        body {
+            font-family: 'Poppins', sans-serif;
+            /* ใช้ฟอนต์ Poppins */
+            background: linear-gradient(120deg, #2980b9, #8e44ad);
+            /* พื้นหลังแบบ gradient */
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, .6);
+            overflow: hidden;
+            max-width: 850px;
+            width: 100%;
+        }
+
+        .login-box-info {
+            background: #4e73df;
+            color: white;
+            padding: 40px;
+        }
+
+        .login-box-form {
+            padding: 40px;
+        }
+
+        .form-control {
+            border-radius: 25px;
+        }
+
+        .btn-theme {
+            background: #4e73df;
+            color: white;
+            border-radius: 25px;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-theme:hover {
+            background: #2e59d9;
+            color: white;
+        }
+
+        .login-title {
+            font-weight: 600;
+            color: #4e73df;
+        }
+
+        .input-group-text {
+            background: transparent;
+            border-right: none;
+        }
+
+        .form-control {
+            border-left: none;
+        }
+
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #ced4da;
+        }
+
+        /* กำหนด animation สำหรับ fade-in effect */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* แก้ไข input-group-text ให้เส้นขอบและสีชัดเจน */
+        .input-group .input-group-text:last-child {
+            border-top-right-radius: 25px;
+            border-bottom-right-radius: 25px;
+            border-left: 0;
+            background-color: #ffffff;
+            /* เพิ่มพื้นหลังสีขาว */
+            border: 1px solid #ced4da;
+            /* เพิ่มสีเส้นขอบให้ชัดเจน */
+        }
+
+        /* แก้ไข form-control เพื่อให้เส้นขอบสม่ำเสมอ */
+        .input-group .form-control {
+            border: 1px solid #ced4da;
+            /* กำหนดสีเส้นขอบ */
+            border-top-left-radius: 25px;
+            border-bottom-left-radius: 25px;
+            background-color: #ffffff;
+            /* เพิ่มพื้นหลังสีขาว */
+        }
+
+        /* ปรับเส้นขอบของฟิลด์ input ทั้งหมดในกรณี focus */
+        .input-group .form-con
+    </style>
 </head>
 
-<body class="login-body">
-
-    <!-- Login Wrapper -->
+<body>
+    <!-- ส่วนหลักของหน้า Login -->
     <div class="container-fluid login-wrapper">
-        <div class="login-box">
-            <h1 class="text-center mb-5"><i class="fas fa-handshake text-primary"></i> Point IT Sales Management</h1>
-            <div class="row">
-                <!-- Login Box Info -->
-                <div class="col-md-6 col-sm-6 col-12 login-box-info">
-                    <img src="assets/img/cp.jpg" width="100%" height="100%" alt="Company Logo">
-                </div>
-                <!-- Login Box Form -->
-                <div class="col-md-6 col-sm-6 col-12 login-box-form p-4">
-                    <h3 class="mb-2">Login</h3>
-                    <small class="text-muted bc-description"></small>
-
-                    <?php if (!empty($error)) : ?>
-                        <div class="alert alert-danger"><?php echo $error; ?></div>
-                    <?php endif; ?>
-
-                    <form action="login.php" method="post" class="mt-2">
-                        <!-- Username Input -->
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text" id="basic-addon1"><i class="fa fa-user"></i></span>
+        <div class="login-box row g-0">
+            <!-- ส่วนแสดงรูปภาพและข้อความต้อนรับ (แสดงเฉพาะบนจอขนาดใหญ่) -->
+            <div class="col-lg-6 login-box-info d-none d-lg-block">
+                <h2 class="text-center mb-4 animate-fade-in">Welcome Back!</h2>
+                <img src="assets/img/cp.jpg" class="img-fluid rounded animate-fade-in" alt="Company Logo">
+            </div>
+            <!-- ส่วนฟอร์ม Login -->
+            <div class="col-lg-6 login-box-form">
+                <div class="p-4 p-md-5">
+                    <img src="assets/img/pit.png" class="img-fluid rounded animate-fade-in" alt="Company Logo">
+                    <h5 class="login-title text-center mb-4 animate-fade-in">
+                        <i class="fas fa-handshake"></i> Point IT Sales Management
+                    </h5>
+                    <!-- ฟอร์ม Login -->
+                    <form action="login.php" method="post" class="animate-fade-in">
+                        <!-- ช่องกรอก Username -->
+                        <div class="mb-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" name="username" placeholder="Username" required>
                             </div>
-                            <input type="text" class="form-control mt-0" name="username" placeholder="username"
-                                aria-label="username" required aria-describedby="basic-addon1">
                         </div>
-                        <!-- Password Input -->
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text" id="basic-addon1"><i class="fa fa-lock"></i></span>
+                        <!-- ช่องกรอก Password -->
+                        <div class="mb-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                                <span class="input-group-text" id="togglePassword">
+                                    <i class="fas fa-eye" id="toggleIcon"></i>
+                                </span>
                             </div>
-                            <input type="password" class="form-control mt-0" name="password" placeholder="password"
-                                aria-label="password" required aria-describedby="basic-addon1">
                         </div>
-                        <!-- Login Button -->
-                        <div class="form-group">
-                            <button class="btn btn-theme btn-block p-2 mb-1">Login</button>
+
+                        <!-- ปุ่ม Login -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-theme btn-block">Login</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Login Wrapper -->
 
-    <!-- Page JavaScript Files -->
-    <script src="assets/js/jquery.min.js"></script>
-    <script src="assets/js/jquery-1.12.4.min.js"></script>
-    <!-- Popper JS -->
-    <script src="assets/js/popper.min.js"></script>
-    <!-- Bootstrap -->
-    <script src="assets/js/bootstrap.min.js"></script>
+    <!-- นำเข้า Bootstrap 5 JS Bundle with Popper สำหรับฟังก์ชันการทำงานของ Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ส่วนของ PHP สำหรับจัดการการ Login
+        <?php if (isset($loginError)): ?>
+            // ใช้ SweetAlert2 เพื่อแสดงข้อความแจ้งเตือนเมื่อ Login ไม่สำเร็จ
+            Swal.fire({
+                title: 'Oops...',
+                text: '<?php echo $loginError; ?>',
+                icon: 'error',
+                confirmButtonText: 'Try Again'
+            });
+        <?php endif; ?>
+    </script>
 
-    <!-- Custom Js Script -->
-    <script src="assets/js/custom.js"></script>
+    <!-- JavaScript สำหรับจัดการการแสดง/ซ่อนรหัสผ่านและจดจำ username -->
+    <script>
+        // จัดการการแสดง/ซ่อนรหัสผ่าน
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('toggleIcon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        });
+
+
+
+        // จดจำ username ที่กรอก
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUsername = localStorage.getItem('rememberedUsername');
+            if (savedUsername) {
+                document.querySelector('input[name="username"]').value = savedUsername;
+            }
+        });
+
+        // บันทึก username เมื่อ submit form
+        document.querySelector('form').addEventListener('submit', function() {
+            const username = document.querySelector('input[name="username"]').value;
+            localStorage.setItem('rememberedUsername', username);
+        });
+    </script>
 </body>
 
 </html>

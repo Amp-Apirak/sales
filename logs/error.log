@@ -1,0 +1,129 @@
+[2024-10-19 09:08:48] Database Error: SQLSTATE[HY093]: Invalid parameter number: parameter was not defined
+[2024-10-19 09:09:00] Database Error: SQLSTATE[HY093]: Invalid parameter number: parameter was not defined
+[2024-10-19 11:14:08] Response data: 
+[2024-10-19 11:17:21] SQL: INSERT INTO project_payments 
+                    (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
+                    VALUES 
+                    (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())
+[2024-10-19 11:17:21] Params: 
+[2024-10-19 11:17:21] Response data: Array
+(
+    [success] => 1
+    [message] => บันทึกข้อมูลสำเร็จ
+)
+
+[2024-10-19 11:19:58] SQL: INSERT INTO project_payments 
+                    (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
+                    VALUES 
+                    (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())
+[2024-10-19 11:19:58] Params: 
+[2024-10-19 11:20:29] SQL: INSERT INTO project_payments 
+                    (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
+                    VALUES 
+                    (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())
+[2024-10-19 11:20:29] Params: 
+[2024-10-19 11:32:04] SQL: INSERT INTO project_payments 
+                    (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
+                    VALUES 
+                    (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())
+[2024-10-19 11:32:04] Params: Array
+(
+    [:payment_id] => c53f1bfd-f7b0-4684-ac62-a2e1d5736d1e
+    [:project_id] => 7c67ce7e-ee05-487f-a763-4627899516bb
+    [:payment_number] => 2
+    [:amount] => 335000
+    [:payment_percentage] => 50
+    [:due_date] => 
+    [:status] => Pending
+    [:payment_date] => 
+    [:amount_paid] => 0
+    [:remaining_amount] => 335000
+    [:payment_progress] => 0
+    [:updated_by] => 2
+)
+
+[2024-10-19 11:32:04] Database Error: SQLSTATE[HY093]: Invalid parameter number: parameter was not defined
+[2024-10-19 11:32:16] SQL: INSERT INTO project_payments 
+                    (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
+                    VALUES 
+                    (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())
+[2024-10-19 11:32:16] Params: Array
+(
+    [:payment_id] => bc0df810-24a3-4a10-89fb-00e3aa5efbbb
+    [:project_id] => 7c67ce7e-ee05-487f-a763-4627899516bb
+    [:payment_number] => 2
+    [:amount] => 167500
+    [:payment_percentage] => 25
+    [:due_date] => 2024-10-19
+    [:status] => Paid
+    [:payment_date] => 
+    [:amount_paid] => 167500
+    [:remaining_amount] => 0
+    [:payment_progress] => 100
+    [:updated_by] => 2
+)
+
+[2024-10-19 11:32:16] Database Error: SQLSTATE[HY093]: Invalid parameter number: parameter was not defined
+[2024-10-19 11:32:27] SQL: INSERT INTO project_payments 
+                    (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
+                    VALUES 
+                    (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())
+[2024-10-19 11:32:27] Params: Array
+(
+    [:payment_id] => 27ef5fc9-78a6-4060-bf17-d4d0d279d460
+    [:project_id] => 7c67ce7e-ee05-487f-a763-4627899516bb
+    [:payment_number] => 2
+    [:amount] => 167500
+    [:payment_percentage] => 25
+    [:due_date] => 2024-10-19
+    [:status] => Paid
+    [:payment_date] => 
+    [:amount_paid] => 167500
+    [:remaining_amount] => 0
+    [:payment_progress] => 100
+    [:updated_by] => 2
+)
+
+[2024-10-19 11:32:27] Database Error: SQLSTATE[HY093]: Invalid parameter number: parameter was not defined
+[2024-10-19 11:33:57] SQL: INSERT INTO project_payments 
+                    (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
+                    VALUES 
+                    (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())
+[2024-10-19 11:33:57] Params: Array
+(
+    [:payment_id] => 6b889096-bf55-40fb-9492-7f786db0bf38
+    [:project_id] => 7c67ce7e-ee05-487f-a763-4627899516bb
+    [:payment_number] => 2
+    [:amount] => 335000
+    [:payment_percentage] => 50
+    [:due_date] => 
+    [:status] => Pending
+    [:payment_date] => 
+    [:amount_paid] => 0
+    [:remaining_amount] => 335000
+    [:payment_progress] => 0
+    [:updated_by] => 2
+)
+
+[2024-10-19 11:33:57] Database Error: SQLSTATE[HY093]: Invalid parameter number: parameter was not defined
+[2024-10-19 11:34:08] SQL: INSERT INTO project_payments 
+                    (payment_id, project_id, payment_number, amount, payment_percentage, due_date, status, payment_date, amount_paid, remaining_amount, payment_progress, created_by, created_at)
+                    VALUES 
+                    (:payment_id, :project_id, :payment_number, :amount, :payment_percentage, :due_date, :status, :payment_date, :amount_paid, :remaining_amount, :payment_progress, :created_by, NOW())
+[2024-10-19 11:34:08] Params: Array
+(
+    [:payment_id] => 5512caec-5ba3-444f-8bd8-0bc6259b7ace
+    [:project_id] => 7c67ce7e-ee05-487f-a763-4627899516bb
+    [:payment_number] => 2
+    [:amount] => 167500
+    [:payment_percentage] => 25
+    [:due_date] => 
+    [:status] => Pending
+    [:payment_date] => 
+    [:amount_paid] => 0
+    [:remaining_amount] => 167500
+    [:payment_progress] => 0
+    [:updated_by] => 2
+)
+
+[2024-10-19 11:34:08] Database Error: SQLSTATE[HY093]: Invalid parameter number: parameter was not defined

@@ -1,0 +1,50 @@
+# # ไฟล์ที่สร้างขึ้นโดย IDE หรือ text editor
+# *.idea/
+# .vscode/
+# *.swp
+# *.swo
+# *~
+
+# # ไฟล์ที่สร้างขึ้นโดยระบบปฏิบัติการ
+# Thumbs.db
+# .DS_Store
+
+# # ไฟล์ log
+# *.log
+
+# # ไฟล์ที่เก็บข้อมูลส่วนตัวหรือข้อมูลสำคัญ
+# .env
+# config.php
+# database.yml
+
+# # โฟลเดอร์ที่เก็บไฟล์ที่สร้างขึ้นอัตโนมัติ
+# node_modules/
+vendor/
+
+# # ไฟล์ที่ใช้สำหรับการ build หรือ deploy
+# /dist/
+# /build/
+
+# # ไฟล์เอกสาร
+# *.doc
+# *.docx
+# *.xls
+# *.xlsx
+# *.ppt
+# *.pptx
+# *.pdf
+# *.txt
+# *.rtf
+# *.odt
+# *.ods
+# *.odp
+
+# # ไฟล์รูปภาพ
+# *.jpg
+# *.jpeg
+# *.png
+# *.gif
+# *.bmp
+# *.svg
+# *.tif
+# *.tiff
