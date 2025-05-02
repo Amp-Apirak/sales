@@ -474,7 +474,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-3"></div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>กำไรขั้นต้น/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                        <label>กำไรขั้นต้น/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
                                                         <input type="int" name="gross_profit" class="form-control" id="gross_profit" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
@@ -489,19 +489,19 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                             <div class="row mb-4">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
+                                                        <label>ราคาขาย/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
+                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
                                                         <label>ราคาขาย/รวมภาษีมูลค่าเพิ่ม</label>
                                                         <input type="int" name="sale_vat" class="form-control" id="sale_vat">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control">
-                                                    </div>
-                                                </div>
-                                                <div class="col-12 col-md-3">
-                                                    <div class="form-group">
-                                                        <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                        <label>ราคาต้นทุน/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
                                                         <input type="int" name="cost_no_vat" id="cost_no_vat" class="form-control">
                                                     </div>
                                                 </div>
