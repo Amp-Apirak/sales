@@ -437,6 +437,8 @@ $metrics = calculateProjectMetrics($projects, $search_params);
             left: 0;
         }
     </style>
+
+    
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -857,18 +859,45 @@ $metrics = calculateProjectMetrics($projects, $search_params);
         $(function() {
             $("#example1").DataTable({
                 "responsive": false,
-                "lengthChange": false,
+                "lengthChange": true,
                 "autoWidth": false,
                 "scrollX": true,
                 "scrollCollapse": true,
                 "paging": true,
+                "pageLength": 20, // เปลี่ยนค่าเริ่มต้นเป็น 20
+                "lengthMenu": [
+                    [10, 20, 30, 50, 100, 200, -1],
+                    [10, 20, 30, 50, 100, 200, "ทั้งหมด"]
+                ], // เพิ่มตัวเลือก "ทั้งหมด"
                 "order": [
                     [1, "desc"]
-                ], // ปรับให้เรียงตามคอลัมน์ที่ 2 (Create Date) จากล่าสุดไปเก่าสุด
+                ],
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
                 "fixedColumns": {
-                    leftColumns: 2 // ตรึง 2 คอลัมน์ซ้าย
-                }
+                    leftColumns: 2
+                },
+                "language": {
+                    "lengthMenu": "แสดง _MENU_ รายการต่อหน้า",
+                    "zeroRecords": "ไม่พบข้อมูลที่ต้องการ",
+                    "info": "แสดงรายการที่ _START_ ถึง _END_ จากทั้งหมด _TOTAL_ รายการ",
+                    "infoEmpty": "ไม่มีข้อมูลที่จะแสดง",
+                    "infoFiltered": "(กรองจากข้อมูลทั้งหมด _MAX_ รายการ)",
+                    "search": "ค้นหา:",
+                    "paginate": {
+                        "first": "หน้าแรก",
+                        "last": "หน้าสุดท้าย",
+                        "next": "ถัดไป",
+                        "previous": "ก่อนหน้า"
+                    },
+                    "processing": "กำลังประมวลผล...",
+                    "loadingRecords": "กำลังโหลดข้อมูล...",
+                    "emptyTable": "ไม่มีข้อมูลในตาราง"
+                },
+                "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>', // ปรับ layout
+                "stateSave": true, // จดจำการตั้งค่าของผู้ใช้
+                "stateDuration": 60 * 60 * 24 // จดจำเป็นเวลา 24 ชั่วโมง
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>
