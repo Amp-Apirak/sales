@@ -515,6 +515,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
 
                                             <div id="estimate-potential-section">
                                                 <h5><b><span class="text-primary">Potential</span></b></h5>
+                                                คำนวณจากราคา คูณ(*) สถานะโครงการ (เลือกสถานะ : ใบเสนอราคา = 10% ,ยื่นประมูล = 50%, ชนะ = 100%)
                                                 <hr>
                                             </div>
                                             <div class="row mb-4">
@@ -928,7 +929,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                         percentage = 10;
                         break;
                     case 'ยื่นประมูล (Bidding)':
-                        percentage = 10;
+                        percentage = 50;
                         break;
                     case 'ชนะ (Win)':
                         percentage = 100;
