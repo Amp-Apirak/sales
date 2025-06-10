@@ -948,8 +948,8 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
                 var status = $("#status").val();
 
-                // เงื่อนไขพิเศษสำหรับสถานะ "ชนะ (Win)"
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
+                // ตรวจสอบว่าสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" หรือไม่
+                if (status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') {
                     // คำนวณกำไรโดยใช้ต้นทุนเป็น 0 หากไม่ได้กรอกค่า
                     var grossProfit = saleNoVat - costNoVat; // costNoVat จะเป็น 0 ถ้าไม่ได้กรอกค่า
                     $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
@@ -973,8 +973,9 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 var status = $(this).val();
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
 
-                // เมื่อสถานะเปลี่ยนเป็น "ชนะ (Win)" และมีการกรอกราคาขาย
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
+
+                // หากสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" และมี saleNoVat ให้คำนวณกำไรขั้นต้นทันที
+                if ((status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') && saleNoVat > 0) {
                     calculateGrossProfit(); // เรียกใช้ฟังก์ชันคำนวณกำไรขั้นต้น
                 }
             });

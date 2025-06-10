@@ -890,9 +890,9 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                 var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
                 var status = $("#status").val();
 
-                // ตรวจสอบว่าสถานะเป็น "ชนะ (Win)" หรือไม่
-                if (status === 'ชนะ (Win)') {
-                    // กรณีสถานะ "ชนะ (Win)": คำนวณทันทีหากมี saleNoVat โดยให้ costNoVat เป็น 0 หากไม่กรอก
+                // ตรวจสอบว่าสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" หรือไม่
+                if (status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') {
+                    // กรณีสถานะ "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)": คำนวณทันทีหากมี saleNoVat
                     if (saleNoVat > 0) {
                         var grossProfit = saleNoVat - costNoVat; // คำนวณกำไรขั้นต้น
                         $("#gross_profit").val(formatNumber(grossProfit.toFixed(2))); // แสดงผลกำไรขั้นต้น
@@ -960,8 +960,8 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                 var status = $(this).val();
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
 
-                // หากสถานะเป็น "ชนะ (Win)" และมี saleNoVat ให้คำนวณกำไรขั้นต้นทันที
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
+                // หากสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" และมี saleNoVat ให้คำนวณกำไรขั้นต้นทันที
+                if ((status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') && saleNoVat > 0) {
                     calculateGrossProfit();
                 } else {
                     // หากสถานะไม่ใช่ "ชนะ (Win)" ให้กำหนดฟิลด์กำไรขั้นต้นและกำไรขั้นต้นเป็น % เป็นว่างเปล่า
