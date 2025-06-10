@@ -36,7 +36,8 @@ $search_status = clean_input($_POST['status'] ?? '');
 //$search_status = clean_input($_POST['status'] ?? 'ชนะ (Win)');
 $search_creator = clean_input($_POST['creator'] ?? '');
 $search_customer = clean_input($_POST['customer'] ?? '');
-$search_year = filter_var($_POST['year'] ?? 0, FILTER_VALIDATE_INT);
+$current_year = date('Y');
+$search_year = filter_var($_POST['year'] ?? $current_year, FILTER_VALIDATE_INT);
 $search_team = clean_input($_POST['team'] ?? '');
 
 // กำหนด where clause สำหรับ dropdown ตามบทบาทผู้ใช้
@@ -81,7 +82,6 @@ $years_sql = "
 $years = getDropdownData($condb, $years_sql, $params_dropdown);
 
 // เพิ่มปีปัจจุบันถ้าไม่มีในรายการ
-$current_year = date('Y');
 $has_current_year = false;
 foreach ($years as $year) {
     if ($year['year'] == $current_year) {
@@ -92,6 +92,11 @@ foreach ($years as $year) {
 if (!$has_current_year) {
     array_unshift($years, ['year' => $current_year]);
 }
+
+// จัดเรียงปีจากมากไปน้อย (ปีล่าสุดก่อน)
+usort($years, function($a, $b) {
+    return $b['year'] - $a['year'];
+});
 
 // Team Dropdown (เฉพาะ Executive หรือ Sale Supervisor)
 if ($role == 'Executive' || $role == 'Sale Supervisor') {
