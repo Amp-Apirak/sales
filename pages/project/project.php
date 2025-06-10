@@ -809,7 +809,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                         </div>
                                                     </td>
                                                     <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']) ? htmlspecialchars($project['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']?? '') ? htmlspecialchars($project['customer_name']?? '') : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
                                                     <?php if ($role != 'Engineer'): ?>
                                                         <td class="text-nowrap"><?php echo number_format($project['sale_vat'], 2); ?></td>

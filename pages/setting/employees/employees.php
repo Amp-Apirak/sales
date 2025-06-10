@@ -271,13 +271,13 @@ $query_employees = $stmt->fetchAll();
                                                     <td class="text-nowrap "><?php echo htmlspecialchars($employee['first_name_th'] . ' ' . $employee['last_name_th']); ?></td>
                                                     <td class="text-nowrap "><?php echo htmlspecialchars($employee['first_name_en'] . ' ' . $employee['last_name_en']); ?></td>
                                                     <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['nickname_th']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo !empty($employee['nickname_en']) ? htmlspecialchars($employee['nickname_en']): 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap "><?php echo !empty($employee['position']) ? htmlspecialchars($employee['position']): 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap "><?php echo !empty($employee['team_name']) ? htmlspecialchars($employee['team_name']): 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap "><?php echo !empty($employee['supervisor_first_name']) ? htmlspecialchars($employee['supervisor_first_name'] . ' ' . $employee['supervisor_last_name']): 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap "><?php echo !empty($employee['phone']) ? htmlspecialchars($employee['phone']): 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap "><?php echo !empty($employee['personal_email']) ? htmlspecialchars($employee['personal_email']): 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap "><?php echo !empty($employee['company_email']) ? htmlspecialchars($employee['company_email']): 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap text-center"><?php echo !empty($employee['nickname_en']) ? htmlspecialchars($employee['nickname_en']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap "><?php echo !empty($employee['position']) ? htmlspecialchars($employee['position']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap "><?php echo !empty($employee['team_name']) ? htmlspecialchars($employee['team_name']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap "><?php echo !empty($employee['supervisor_first_name']) ? htmlspecialchars($employee['supervisor_first_name'] . ' ' . $employee['supervisor_last_name']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap "><?php echo !empty($employee['phone']) ? htmlspecialchars($employee['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap "><?php echo !empty($employee['personal_email']) ? htmlspecialchars($employee['personal_email']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap "><?php echo !empty($employee['company_email']) ? htmlspecialchars($employee['company_email']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['created_at']); ?></td>
                                                     <td class="text-nowrap text-center">
                                                         <a href="view_employees.php?id=<?php echo urlencode(encryptUserId($employee['id'])); ?>" class="btn btn-sm btn-primary">
@@ -299,14 +299,50 @@ $query_employees = $stmt->fetchAll();
 
         <?php include  '../../../include/footer.php'; ?>
 
+        <!-- ./wrapper -->
         <script>
             $(function() {
                 $("#example1").DataTable({
-                    "responsive": true,
-                    "lengthChange": false,
+                    "responsive": false,
+                    "lengthChange": true,
                     "autoWidth": false,
-                    "order": [], // ปิดการเรียงลำดับอัตโนมัติ
-                    "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+                    "scrollX": true,
+                    "scrollCollapse": true,
+                    "paging": true,
+                    "pageLength": 20, // เปลี่ยนค่าเริ่มต้นเป็น 20
+                    "lengthMenu": [
+                        [10, 20, 30, 50, 100, 200, -1],
+                        [10, 20, 30, 50, 100, 200, "ทั้งหมด"]
+                    ], // เพิ่มตัวเลือก "ทั้งหมด"
+                    "order": [
+                        [1, "desc"]
+                    ],
+                    "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
+                    "fixedColumns": {
+                        leftColumns: 2
+                    },
+                    "language": {
+                        "lengthMenu": "แสดง _MENU_ รายการต่อหน้า",
+                        "zeroRecords": "ไม่พบข้อมูลที่ต้องการ",
+                        "info": "แสดงรายการที่ _START_ ถึง _END_ จากทั้งหมด _TOTAL_ รายการ",
+                        "infoEmpty": "ไม่มีข้อมูลที่จะแสดง",
+                        "infoFiltered": "(กรองจากข้อมูลทั้งหมด _MAX_ รายการ)",
+                        "search": "ค้นหา:",
+                        "paginate": {
+                            "first": "หน้าแรก",
+                            "last": "หน้าสุดท้าย",
+                            "next": "ถัดไป",
+                            "previous": "ก่อนหน้า"
+                        },
+                        "processing": "กำลังประมวลผล...",
+                        "loadingRecords": "กำลังโหลดข้อมูล...",
+                        "emptyTable": "ไม่มีข้อมูลในตาราง"
+                    },
+                    "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                        '<"row"<"col-sm-12"tr>>' +
+                        '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>', // ปรับ layout
+                    "stateSave": true, // จดจำการตั้งค่าของผู้ใช้
+                    "stateDuration": 60 * 60 * 24 // จดจำเป็นเวลา 24 ชั่วโมง
                 }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
             });
         </script>
