@@ -94,7 +94,7 @@ if (!$has_current_year) {
 }
 
 // จัดเรียงปีจากมากไปน้อย (ปีล่าสุดก่อน)
-usort($years, function($a, $b) {
+usort($years, function ($a, $b) {
     return $b['year'] - $a['year'];
 });
 
@@ -443,7 +443,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
         }
     </style>
 
-    
+
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -506,12 +506,12 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                 </div>
                             </div>
 
-                            <!-- Cost Price Card -->
+                            <!-- Sale Price Card -->
                             <div class="col-lg-2 col-6">
-                                <div class="small-box bg-primary">
+                                <div class="small-box bg-success">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['total_cost'], 2); ?></h3>
-                                        <p>Cost Price</p>
+                                        <h3><?php echo number_format($metrics['total_sale'], 2); ?></h3>
+                                        <p>Sale Price</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-dollar-sign"></i>
@@ -519,12 +519,12 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                 </div>
                             </div>
 
-                            <!-- Sale Price Card -->
+                            <!-- Cost Price Card -->
                             <div class="col-lg-2 col-6">
-                                <div class="small-box bg-success">
+                                <div class="small-box bg-primary">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['total_sale'], 2); ?></h3>
-                                        <p>Sale Price</p>
+                                        <h3><?php echo number_format($metrics['total_cost'], 2); ?></h3>
+                                        <p>Cost Price</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-dollar-sign"></i>
@@ -809,7 +809,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                         </div>
                                                     </td>
                                                     <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']?? '') ? htmlspecialchars($project['customer_name']?? '') : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name'] ?? '') ? htmlspecialchars($project['customer_name'] ?? '') : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
                                                     <?php if ($role != 'Engineer'): ?>
                                                         <td class="text-nowrap"><?php echo number_format($project['sale_vat'], 2); ?></td>
