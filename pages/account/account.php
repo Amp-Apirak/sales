@@ -39,9 +39,13 @@ $sql_position = "SELECT DISTINCT position FROM users";
 $query_position = $condb->query($sql_position);
 
 // สร้าง SQL Query โดยพิจารณาจากการค้นหา
-$sql_users = "SELECT u.user_id, u.username, u.first_name, u.last_name, u.company, u.role, t.team_name, u.position, u.phone, u.email, u.created_at
-              FROM users u
-              LEFT JOIN teams t ON u.team_id = t.team_id
+$sql_users = "SELECT u.user_id, u.username, u.first_name, u.last_name, u.company, u.role, t.team_name, u.position, u.phone, u.email, u.created_at,
+              creator.first_name as creator_first_name, 
+              creator.last_name as creator_last_name,
+              CONCAT(creator.first_name, ' ', creator.last_name) as creator_name
+              FROM users u               
+              LEFT JOIN teams t ON u.team_id = t.team_id               
+              LEFT JOIN users creator ON u.created_by = creator.user_id               
               WHERE 1=1";
 
 // กรณีที่ role ไม่ใช่ Executive ให้แสดงเฉพาะข้อมูลทีมของผู้ใช้เอง
@@ -306,6 +310,7 @@ $query_users = $stmt->fetchAll();
                                                 <th class="text-nowrap text-center">ตำแหน่ง</th>
                                                 <th class="text-nowrap text-center">เบอร์โทรศัทพ์</th>
                                                 <th class="text-nowrap text-center">Email</th>
+                                                <th class="text-nowrap text-center">สร้างโดย</th>
                                                 <th class="text-nowrap text-center">วันที่สร้าง</th>
                                                 <th class="text-nowrap text-center">Action</th>
                                             </tr>
@@ -322,6 +327,7 @@ $query_users = $stmt->fetchAll();
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['position']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['phone']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['email']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['creator_name'] ?? 'ไม่ระบุ'); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['created_at']); ?></td>
                                                     <td class="text-nowrap">
                                                         <?php
@@ -366,6 +372,7 @@ $query_users = $stmt->fetchAll();
                                                 <th>ตำแหน่ง</th>
                                                 <th>เบอร์โทรศัทพ์</th>
                                                 <th>Email</th>
+                                                <th>สร้างโดย</th>
                                                 <th>วันที่สร้าง</th>
                                                 <th>Action</th>
                                             </tr>

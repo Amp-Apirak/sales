@@ -1,5 +1,4 @@
 <?php
-// เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
 
 // ดึงข้อมูลจาก session ของผู้ใช้ที่เข้าสู่ระบบ
@@ -31,9 +30,27 @@ if ($role == 'Sale Supervisor') {
 
 // เพิ่มเงื่อนไขการค้นหาข้อมูลตามที่ผู้ใช้กรอกมา
 if (!empty($search_service)) {
-    $sql_customers .= " AND (c.customer_name LIKE :search OR c.company LIKE :search OR c.phone LIKE :search OR c.position LIKE :search OR c.email LIKE :search)";
+    $sql_customers .= " AND (
+        c.customer_name LIKE :search OR 
+        c.position LIKE :search OR 
+        c.phone LIKE :search OR 
+        c.email LIKE :search OR 
+        c.company LIKE :search OR 
+        c.address LIKE :search OR 
+        c.remark LIKE :search OR 
+        c.office_phone LIKE :search OR 
+        c.extension LIKE :search OR 
+        u.first_name LIKE :search OR 
+        u.last_name LIKE :search OR 
+        CONCAT(u.first_name, ' ', u.last_name) LIKE :search OR
+        t.team_name LIKE :search OR
+        DATE_FORMAT(c.created_at, '%d/%m/%Y') LIKE :search OR
+        DATE_FORMAT(c.created_at, '%Y-%m-%d') LIKE :search OR
+        YEAR(c.created_at) LIKE :search OR
+        MONTH(c.created_at) LIKE :search OR
+        DAY(c.created_at) LIKE :search
+    )";
 }
-
 
 $sql_customers .= " ORDER BY c.created_at DESC";
 
@@ -42,9 +59,9 @@ $stmt = $condb->prepare($sql_customers);
 
 // ผูกค่า team_id และ user_id ตามบทบาทของผู้ใช้
 if ($role == 'Sale Supervisor') {
-    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR); // เปลี่ยนเป็น PDO::PARAM_STR เพราะ team_id เป็น CHAR(36)
+    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
 } elseif ($role == 'Seller' || $role != 'Executive') {
-    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR); // เปลี่ยนเป็น PDO::PARAM_STR เพราะ user_id เป็น CHAR(36)
+    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
 }
 
 // ผูกค่าการค้นหากับ statement
@@ -53,11 +70,10 @@ if (!empty($search_service)) {
     $stmt->bindParam(':search', $search_param, PDO::PARAM_STR);
 }
 
-// Execute query เพื่อดึงข้อมูลลูกค้า
+// ดำเนินการ query และดึงข้อมูล
 $stmt->execute();
 $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -68,194 +84,173 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Customer Management</title>
     <?php include '../../include/header.php'; ?>
-
-    <!-- /* ใช้ฟอนต์ Noto Sans Thai กับ label */ -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
-        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
-        th,
-        h1 {
-            font-family: 'Noto Sans Thai', sans-serif;
-            font-weight: 600;
-            /* ปรับระดับน้ำหนักของฟอนต์ */
-            font-size: 14px;
-            color: #333;
+        .project-list {
+            max-height: 300px;
+            overflow-y: auto;
         }
-
-        .custom-th {
-            font-family: 'Noto Sans Thai', sans-serif;
-            font-weight: 600;
-            font-size: 18px;
-            color: #FF5733;
+        .project-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .project-item h6 {
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        .project-details {
+            font-size: 0.9em;
+            color: #666;
         }
     </style>
 </head>
 
-<body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
+<body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
-
-        <!-- Navbar -->
-        <?php include  '../../include/navbar.php'; ?>
-        <!-- /.navbar -->
-
-        <!-- Content Wrapper. Contains page content -->
+        <?php include '../../include/navbar.php'; ?>
+        
         <div class="content-wrapper">
-            <!-- Content Header (Page header) -->
             <div class="content-header">
                 <div class="container-fluid">
                     <div class="row mb-2">
                         <div class="col-sm-6">
                             <h1 class="m-0">Customer Management</h1>
-                        </div><!-- /.col -->
+                        </div>
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
-                                <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">Home</a></li>
-                                <li class="breadcrumb-item active">Customer Management</li>
+                                <li class="breadcrumb-item"><a href="../..">Home</a></li>
+                                <li class="breadcrumb-item active">Customer</li>
                             </ol>
-                        </div><!-- /.col -->
-                    </div><!-- /.row -->
-                </div><!-- /.container-fluid -->
-            </div>
-            <!-- /.content-header -->
-
-            <!-- Main content -->
-            <!-- Main content -->
-            <section class="content">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-12">
-
-                            <!-- Section Search -->
-                            <section class="content">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="card card-outline card-info">
-                                            <div class="card-header ">
-                                                <h3 class="card-title font1">
-                                                    ค้นหา
-                                                </h3>
-                                            </div>
-                                            <div class="card-body">
-                                                <form action="#" method="GET"> <!-- เปลี่ยนเป็น GET -->
-                                                    <div class="row">
-                                                        <div class="col-sm-3">
-                                                            <div class="form-group ">
-                                                                <input type="text" class="form-control" id="searchservice" name="searchservice" value="<?php echo isset($_GET['searchservice']) ? htmlspecialchars($_GET['searchservice']) : ''; ?>" placeholder="ค้นหา...">
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-sm-3">
-                                                            <div class="form-group ">
-                                                                <button type="submit" class="btn btn-primary" id="search" name="search">ค้นหา</button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-sm-5">
-                                                        </div>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                            <div class="card-footer">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                    </div>
-                            </section>
-                            <!-- //Section Search -->
-
-                            <!-- Section ปุ่มเพิ่มข้อมูล -->
-                            <div class="col-md-12 pb-3">
-                                <div class="btn-group float-right">
-                                    <a href="add_customer.php" class="btn btn-success btn-sm">เพิ่มข้อมูลลูกค้า</a>
-                                    <a href="import_customer.php" class="btn btn-info btn-sm mr-2">
-                                        <i class="fas fa-file-import"></i> Import ข้อมูล
-                                    </a>
-
-                                </div>
-                            </div><br>
-
-                            <!-- Section ตารางแสดงผล -->
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="container-fluid">
-                                        <h3 class="card-title">Customer List</h3>
-                                    </div>
-                                </div>
-                                <!-- /.card-header -->
-                                <div class="card-body">
-                                    <table id="example1" class="table table-bordered table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-nowrap text-center">Customer Name</th>
-                                                <th class="text-nowrap text-center">Position</th>
-                                                <th class="text-nowrap text-center">Phone</th>
-                                                <th class="text-nowrap text-center">Email</th>
-                                                <th class="text-nowrap text-center">Company</th>
-                                                <th class="text-nowrap text-center">Created By</th>
-                                                <th class="text-nowrap text-center">Created At</th>
-                                                <th class="text-nowrap text-center">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- แสดงข้อมูลลูกค้า -->
-                                            <?php foreach ($customers as $customer) { ?>
-                                                <tr>
-                                                    <td class="text-nowrap"><?php echo !empty($customer['customer_name']) ? htmlspecialchars($customer['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($customer['position']) ? htmlspecialchars($customer['position']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($customer['phone']) ? htmlspecialchars($customer['phone']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($customer['email']) ? htmlspecialchars($customer['email']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo !empty($customer['company']) ? htmlspecialchars($customer['company']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap">
-                                                        <?php
-                                                        $creator_name = trim($customer['first_name'] . ' ' . $customer['last_name']);
-                                                        echo !empty($creator_name) ? htmlspecialchars($creator_name) : 'ไม่ระบุข้อมูล';
-                                                        ?>
-                                                    </td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($customer['created_at']); ?></td>
-                                                    <td class="text-nowrap">
-                                                        <a href="view_customer.php?id=<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>" class="btn btn-sm btn-primary">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <a href="edit_customer.php?customer_id=<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
-                                                        <a href="delete_customer.php?customer_id=<?php echo $customer['customer_id']; ?>" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
-                                                    </td>
-                                                </tr>
-                                            <?php } ?>
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <th>Customer Name</th>
-                                                <th>Position</th>
-                                                <th>Phone</th>
-                                                <th>Email</th>
-                                                <th>Company</th>
-                                                <th>Created By</th>
-                                                <th>Created At</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                                <!-- /.card-body -->
-                            </div>
-                            <!-- //Section ตารางแสดงผล -->
-
                         </div>
                     </div>
-                </div><!-- /.container-fluid -->
-            </section>
-            <!-- /.content -->
-        </div><!-- /.container-fluid -->
+                </div>
+            </div>
 
-        <!-- /.content-wrapper -->
-        <!-- Footer -->
+            <section class="content">
+                <div class="container-fluid">
+                    <!-- Section Search -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card card-outline card-info">
+                                <div class="card-header">
+                                    <h3 class="card-title">ค้นหา</h3>
+                                </div>
+                                <div class="card-body">
+                                    <form action="#" method="GET">
+                                        <div class="row">
+                                            <div class="col-sm-3">
+                                                <div class="form-group">
+                                                    <input type="text" class="form-control" id="searchservice" name="searchservice" 
+                                                           value="<?php echo isset($_GET['searchservice']) ? htmlspecialchars($_GET['searchservice']) : ''; ?>" 
+                                                           placeholder="ค้นหา...">
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-3">
+                                                <div class="form-group">
+                                                    <button type="submit" class="btn btn-primary" id="search" name="search">ค้นหา</button>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="card-footer">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- //Section Search -->
+
+                    <!-- Section ปุ่มเพิ่มข้อมูล -->
+                    <div class="col-md-12 pb-3">
+                        <div class="btn-group float-right">
+                            <a href="add_customer.php" class="btn btn-success btn-sm">เพิ่มข้อมูลลูกค้า</a>
+                            <a href="import_customer.php" class="btn btn-info btn-sm mr-2">
+                                <i class="fas fa-file-import"></i> Import ข้อมูล
+                            </a>
+                        </div>
+                    </div><br>
+
+                    <!-- Section ตารางแสดงผล -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="container-fluid">
+                                <h3 class="card-title">Customer List</h3>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <table id="example1" class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Customer Name</th>
+                                        <th>Position</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                        <th>Company</th>
+                                        <th>Created By</th>
+                                        <th>Created At</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($customers as $customer) { ?>
+                                        <tr>
+                                            <td class="text-nowrap"><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                            <td class="text-nowrap"><?php echo !empty($customer['position']) ? htmlspecialchars($customer['position']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                            <td class="text-nowrap"><?php echo htmlspecialchars($customer['phone']); ?></td>
+                                            <td class="text-nowrap"><?php echo htmlspecialchars($customer['email']); ?></td>
+                                            <td class="text-nowrap"><?php echo !empty($customer['company']) ? htmlspecialchars($customer['company']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                            <td class="text-nowrap">
+                                                <?php
+                                                $creator_name = trim($customer['first_name'] . ' ' . $customer['last_name']);
+                                                echo !empty($creator_name) ? htmlspecialchars($creator_name) : 'ไม่ระบุข้อมูล';
+                                                ?>
+                                            </td>
+                                            <td class="text-nowrap"><?php echo htmlspecialchars($customer['created_at']); ?></td>
+                                            <td class="text-nowrap">
+                                                <a href="view_customer.php?id=<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="edit_customer.php?customer_id=<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>" class="btn btn-info btn-sm">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                                <button class="btn btn-danger btn-sm" onclick="confirmDeleteCustomer('<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>', '<?php echo htmlspecialchars($customer['customer_name']); ?>')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th>Customer Name</th>
+                                        <th>Position</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                        <th>Company</th>
+                                        <th>Created By</th>
+                                        <th>Created At</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
         <?php include '../../include/footer.php'; ?>
     </div>
-    <!-- ./wrapper -->
 
-    <!-- DataTables -->
-    <!-- ./wrapper -->
+    <!-- DataTables & Plugins -->
     <script>
         $(function() {
             $("#example1").DataTable({
@@ -265,18 +260,13 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 "scrollX": true,
                 "scrollCollapse": true,
                 "paging": true,
-                "pageLength": 20, // เปลี่ยนค่าเริ่มต้นเป็น 20
+                "pageLength": 20,
                 "lengthMenu": [
                     [10, 20, 30, 50, 100, 200, -1],
                     [10, 20, 30, 50, 100, 200, "ทั้งหมด"]
-                ], // เพิ่มตัวเลือก "ทั้งหมด"
-                "order": [
-                    [1, "desc"]
                 ],
+                "order": [[6, "desc"]],
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
-                "fixedColumns": {
-                    leftColumns: 2
-                },
                 "language": {
                     "lengthMenu": "แสดง _MENU_ รายการต่อหน้า",
                     "zeroRecords": "ไม่พบข้อมูลที่ต้องการ",
@@ -291,17 +281,200 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         "previous": "ก่อนหน้า"
                     },
                     "processing": "กำลังประมวลผล...",
-                    "loadingRecords": "กำลังโหลดข้อมูล...",
-                    "emptyTable": "ไม่มีข้อมูลในตาราง"
-                },
-                "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                    '<"row"<"col-sm-12"tr>>' +
-                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>', // ปรับ layout
-                "stateSave": true, // จดจำการตั้งค่าของผู้ใช้
-                "stateDuration": 60 * 60 * 24 // จดจำเป็นเวลา 24 ชั่วโมง
+                    "loadingRecords": "กำลังโหลดข้อมูล..."
+                }
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
+
+        // ฟังก์ชันยืนยันการลบลูกค้า
+        function confirmDeleteCustomer(customerId, customerName) {
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: `คุณต้องการลบข้อมูลลูกค้า "${customerName}" ใช่หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'ใช่, ลบ!',
+                cancelButtonText: 'ยกเลิก',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return fetch(`delete_customer.php?customer_id=${customerId}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .catch(error => {
+                            Swal.showValidationMessage(`Request failed: ${error}`);
+                        });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const response = result.value;
+                    
+                    if (response.status === 'success') {
+                        Swal.fire({
+                            title: 'สำเร็จ!',
+                            text: response.message,
+                            icon: 'success',
+                            confirmButtonText: 'ตกลง'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        // ตรวจสอบว่ามีโครงการที่เกี่ยวข้องหรือไม่
+                        if (response.related_projects && response.related_projects.length > 0) {
+                            showProjectListModal(response);
+                        } else {
+                            Swal.fire({
+                                title: 'เกิดข้อผิดพลาด!',
+                                text: response.message,
+                                icon: 'error',
+                                confirmButtonText: 'ตกลง'
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        // ฟังก์ชันแสดง Modal รายการโครงการที่เกี่ยวข้อง
+        function showProjectListModal(response) {
+            let projectListHtml = '<div class="project-list">';
+            
+            response.related_projects.forEach((project, index) => {
+                // สร้าง encrypted project_id สำหรับ URL - แก้ไข path ให้ถูกต้อง
+                const projectUrl = `../project/view_project.php?project_id=${encodeURIComponent(project.project_id)}`;
+                
+                projectListHtml += `
+                    <div class="project-item">
+                        <h6>
+                            <i class="fas fa-project-diagram"></i> 
+                            <span class="project-link" data-url="${projectUrl}" title="คลิกเพื่อดูรายละเอียดโครงการ">
+                                ${project.project_name}
+                                <i class="fas fa-external-link-alt ml-1" style="font-size: 0.8em;"></i>
+                            </span>
+                        </h6>
+                        <div class="project-details">
+                            <div><strong>เลขที่สัญญา:</strong> ${project.contract_no || 'ไม่ระบุ'}</div>
+                            <div><strong>สถานะ:</strong> <span class="badge badge-info">${project.status}</span></div>
+                            <div><strong>วันที่สร้าง:</strong> ${project.created_date}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            projectListHtml += '</div>';
+            
+            Swal.fire({
+                title: '<i class="fas fa-exclamation-triangle text-warning"></i> ไม่สามารถลบลูกค้าได้',
+                html: `
+                    <div class="text-left">
+                        <p class="mb-3">${response.message}</p>
+                        <p class="mb-3"><strong>${response.details}</strong></p>
+                        <p class="mb-2">พบ <strong>${response.project_count}</strong> โครงการที่เกี่ยวข้อง:</p>
+                        ${projectListHtml}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>คลิกที่ชื่อโครงการ</strong> เพื่อดูรายละเอียดและแก้ไขข้อมูลโครงการ<br>
+                            หรือติดต่อผู้ดูแลระบบเพื่อความช่วยเหลือ
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                width: '700px',
+                confirmButtonText: 'เข้าใจแล้ว',
+                confirmButtonColor: '#3085d6',
+                customClass: {
+                    popup: 'swal-wide'
+                },
+                didOpen: () => {
+                    // เพิ่ม event listener สำหรับลิงก์โครงการหลังจาก modal เปิดแล้ว
+                    document.querySelectorAll('.project-link').forEach(link => {
+                        link.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const url = this.getAttribute('data-url');
+                            // เปิด tab ใหม่
+                            window.open(url, '_blank');
+                        });
+                    });
+                }
+            });
+        }
     </script>
+
+    <style>
+        .swal-wide {
+            max-width: 90% !important;
+        }
+        
+        .swal2-html-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .project-list {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+        
+        .project-item {
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .project-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .project-item h6 {
+            color: #007bff;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .project-link {
+            color: #007bff !important;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-block;
+        }
+        
+        .project-link:hover {
+            color: #0056b3 !important;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        
+        .project-link:hover .fa-external-link-alt {
+            transform: translateX(2px);
+        }
+        
+        .project-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .project-details div {
+            margin-bottom: 3px;
+        }
+        
+        .badge {
+            font-size: 0.8em;
+        }
+    </style>
 </body>
 
 </html>
