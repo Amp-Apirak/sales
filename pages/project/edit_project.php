@@ -495,14 +495,14 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <div class="row mb-4">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>ราคาขาย/รวมภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="sale_vat" class="form-control" id="sale_vat" value="<?php echo number_format($project['sale_vat'] ?? 0, 2); ?>">
+                                                        <label>ราคาขาย/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
+                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control" value="<?php echo number_format($project['sale_no_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control" value="<?php echo number_format($project['sale_no_vat'] ?? 0, 2); ?>">
+                                                        <label>ราคาขาย/รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <input type="int" name="sale_vat" class="form-control" id="sale_vat" value="<?php echo number_format($project['sale_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
@@ -513,13 +513,14 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>ราคาต้นทุน/รวมภาษีมูลค่าเพิ่ม</label>
+                                                        <label>ราคาต้นทุน/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
                                                         <input type="int" name="cost_vat" id="cost_vat" class="form-control" value="<?php echo number_format($project['cost_vat'] ?? 0, 2); ?>">
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <h5><b><span class="text-primary">Estimate Potential</span></b></h5>
+                                            คำนวณจากราคา คูณ(*) สถานะโครงการ (เลือกสถานะ : ใบเสนอราคา = 10% ,ยื่นประมูล = 50%, ชนะ = 100%)
                                             <hr>
                                             <div class="row mb-4">
                                                 <div class="col-12 col-md-3">
@@ -947,8 +948,8 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
                 var status = $("#status").val();
 
-                // เงื่อนไขพิเศษสำหรับสถานะ "ชนะ (Win)"
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
+                // ตรวจสอบว่าสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" หรือไม่
+                if (status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') {
                     // คำนวณกำไรโดยใช้ต้นทุนเป็น 0 หากไม่ได้กรอกค่า
                     var grossProfit = saleNoVat - costNoVat; // costNoVat จะเป็น 0 ถ้าไม่ได้กรอกค่า
                     $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
@@ -972,8 +973,9 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 var status = $(this).val();
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
 
-                // เมื่อสถานะเปลี่ยนเป็น "ชนะ (Win)" และมีการกรอกราคาขาย
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
+
+                // หากสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" และมี saleNoVat ให้คำนวณกำไรขั้นต้นทันที
+                if ((status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') && saleNoVat > 0) {
                     calculateGrossProfit(); // เรียกใช้ฟังก์ชันคำนวณกำไรขั้นต้น
                 }
             });
@@ -1019,7 +1021,7 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         percentage = 10;
                         break;
                     case 'ยื่นประมูล (Bidding)':
-                        percentage = 10;
+                        percentage = 50;
                         break;
                     case 'ชนะ (Win)':
                         percentage = 100;

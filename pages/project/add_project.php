@@ -60,6 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     $contract_no = clean_input($_POST['con_number']);
     $product_id = clean_input($_POST['product_id']);
     $customer_id = clean_input($_POST['customer_id']);
+    // เพิ่มการรับค่า seller
+    $seller = clean_input($_POST['seller'] ?? '');
+    // หาก Role ไม่ใช่ Executive ให้ seller = created_by (ตัวเอง)
+    if ($role !== 'Executive') {
+        $seller = $created_by;
+    }
 
     // แปลงค่าที่เกี่ยวกับตัวเลขและคำนวณเพื่อกรอง, ลบ comma ออก และแปลงเป็น float
     $sale_vat = filter_var(str_replace(',', '', $_POST['sale_vat']), FILTER_VALIDATE_FLOAT);
@@ -92,6 +98,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     }
     if (empty($product_id)) {
         $error_messages[] = "กรุณาเลือกสินค้าที่ขาย";
+    }
+    // เพิ่มการตรวจสอบ seller สำหรับ Executive
+    if ($role === 'Executive' && empty($seller)) {
+        $error_messages[] = "กรุณาเลือกผู้ขาย/ผู้รับผิดชอบโครงการ";
     }
 
     // หากไม่มีข้อผิดพลาด ให้ทำการบันทึกข้อมูลลงฐานข้อมูล
@@ -142,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                 ':remark' => $remark,
                 ':vat' => $vat,
                 ':created_by' => $created_by,
-                ':seller' => $created_by
+                ':seller' => $seller
             ]);
 
             // หากมีรายการลูกค้าเพิ่มเติม ให้บันทึกลงตาราง project_customers
@@ -193,6 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
         'errors' => $error_messages,
         'message' => empty($error_messages) && strpos($alert, 'success') !== false ? 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว' : ''
     ];
+
 
     // ส่งข้อมูลเป็น JSON และยุติการทำงานของ PHP Script
     header('Content-Type: application/json');
@@ -265,6 +276,20 @@ function getCompanyData($condb, $role, $team_id, $user_id)
 
 // ดึงข้อมูลบริษัท
 $companies = getCompanyData($condb, $role, $team_id, $user_id);
+
+// เพิ่มส่วนนี้สำหรับดึงข้อมูลผู้ใช้สำหรับ Executive
+$users = [];
+if ($role === 'Executive') {
+    $stmt = $condb->prepare("
+        SELECT u.user_id, u.first_name, u.last_name, u.role, t.team_name 
+        FROM users u
+        LEFT JOIN teams t ON u.team_id = t.team_id
+        WHERE u.role IN ('Seller', 'Sale Supervisor') 
+        ORDER BY t.team_name, u.first_name
+    ");
+    $stmt->execute();
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!-- ส่วน HTML ด้านล่างเป็น Form UI และ JavaScript เพื่อใช้งานในหน้า Add Project -->
@@ -424,12 +449,59 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                             </div>
 
                                             <div class="row">
+                                                <?php if ($role === 'Executive'): ?>
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้ขาย/ผู้รับผิดชอบโครงการ <span class="text-danger">*</span></label>
+                                                            <select class="form-control select2" name="seller" id="seller" style="width: 100%;" required>
+                                                                <option value="">-- เลือกผู้ขาย/ผู้รับผิดชอบโครงการ --</option>
+                                                                <?php foreach ($users as $user): ?>
+                                                                    <option value="<?php echo htmlspecialchars($user['user_id']); ?>">
+                                                                        <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
+                                                                        (<?php echo htmlspecialchars($user['role']); ?>)
+                                                                        <?php if ($user['team_name']): ?>
+                                                                            - ทีม: <?php echo htmlspecialchars($user['team_name']); ?>
+                                                                        <?php endif; ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                            <small class="form-text text-muted">
+                                                                เลือกผู้ขายที่จะรับผิดชอบดูแลโครงการนี้
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้สร้างโครงการ</label>
+                                                            <input type="text" class="form-control"
+                                                                value="<?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?>"
+                                                                readonly style="background-color:#F8F8FF">
+                                                            <small class="form-text text-muted">คุณเป็นผู้สร้างโครงการนี้</small>
+                                                        </div>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <!-- สำหรับ Role อื่นๆ (Seller, Sale Supervisor) ให้ seller = ตัวเอง -->
+                                                    <input type="hidden" name="seller" value="<?php echo $user_id; ?>">
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้ขาย/ผู้รับผิดชอบโครงการ</label>
+                                                            <input type="text" class="form-control"
+                                                                value="<?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?>"
+                                                                readonly style="background-color:#F8F8FF">
+                                                            <small class="form-text text-muted">คุณจะเป็นผู้รับผิดชอบโครงการนี้</small>
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+
                                                 <div class="col-12 col-md-6">
                                                     <div class="form-group">
                                                         <label>ชื่อโครงการ<span class="text-danger">*</span></label>
                                                         <input type="text" name="project_name" class="form-control" placeholder="ชื่อโครงการ">
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            <div class="row">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>วันเริ่มโครงการ</label>
@@ -474,7 +546,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-3"></div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>กำไรขั้นต้น/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                        <label>กำไรขั้นต้น/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
                                                         <input type="int" name="gross_profit" class="form-control" id="gross_profit" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
@@ -489,19 +561,19 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                             <div class="row mb-4">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
+                                                        <label>ราคาขาย/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
+                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
                                                         <label>ราคาขาย/รวมภาษีมูลค่าเพิ่ม</label>
                                                         <input type="int" name="sale_vat" class="form-control" id="sale_vat">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control">
-                                                    </div>
-                                                </div>
-                                                <div class="col-12 col-md-3">
-                                                    <div class="form-group">
-                                                        <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
+                                                        <label>ราคาต้นทุน/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
                                                         <input type="int" name="cost_no_vat" id="cost_no_vat" class="form-control">
                                                     </div>
                                                 </div>
@@ -515,6 +587,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
 
                                             <div id="estimate-potential-section">
                                                 <h5><b><span class="text-primary">Potential</span></b></h5>
+                                                คำนวณจากราคา คูณ(*) สถานะโครงการ (เลือกสถานะ : ใบเสนอราคา = 10% ,ยื่นประมูล = 50%, ชนะ = 100%)
                                                 <hr>
                                             </div>
                                             <div class="row mb-4">
@@ -889,9 +962,9 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                 var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
                 var status = $("#status").val();
 
-                // ตรวจสอบว่าสถานะเป็น "ชนะ (Win)" หรือไม่
-                if (status === 'ชนะ (Win)') {
-                    // กรณีสถานะ "ชนะ (Win)": คำนวณทันทีหากมี saleNoVat โดยให้ costNoVat เป็น 0 หากไม่กรอก
+                // ตรวจสอบว่าสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" หรือไม่
+                if (status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') {
+                    // กรณีสถานะ "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)": คำนวณทันทีหากมี saleNoVat
                     if (saleNoVat > 0) {
                         var grossProfit = saleNoVat - costNoVat; // คำนวณกำไรขั้นต้น
                         $("#gross_profit").val(formatNumber(grossProfit.toFixed(2))); // แสดงผลกำไรขั้นต้น
@@ -928,7 +1001,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                         percentage = 10;
                         break;
                     case 'ยื่นประมูล (Bidding)':
-                        percentage = 10;
+                        percentage = 50;
                         break;
                     case 'ชนะ (Win)':
                         percentage = 100;
@@ -959,8 +1032,8 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                 var status = $(this).val();
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
 
-                // หากสถานะเป็น "ชนะ (Win)" และมี saleNoVat ให้คำนวณกำไรขั้นต้นทันที
-                if (status === 'ชนะ (Win)' && saleNoVat > 0) {
+                // หากสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" และมี saleNoVat ให้คำนวณกำไรขั้นต้นทันที
+                if ((status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') && saleNoVat > 0) {
                     calculateGrossProfit();
                 } else {
                     // หากสถานะไม่ใช่ "ชนะ (Win)" ให้กำหนดฟิลด์กำไรขั้นต้นและกำไรขั้นต้นเป็น % เป็นว่างเปล่า

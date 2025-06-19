@@ -36,7 +36,8 @@ $search_status = clean_input($_POST['status'] ?? '');
 //$search_status = clean_input($_POST['status'] ?? 'ชนะ (Win)');
 $search_creator = clean_input($_POST['creator'] ?? '');
 $search_customer = clean_input($_POST['customer'] ?? '');
-$search_year = filter_var($_POST['year'] ?? 0, FILTER_VALIDATE_INT);
+$current_year = date('Y');
+$search_year = filter_var($_POST['year'] ?? $current_year, FILTER_VALIDATE_INT);
 $search_team = clean_input($_POST['team'] ?? '');
 
 // กำหนด where clause สำหรับ dropdown ตามบทบาทผู้ใช้
@@ -47,7 +48,7 @@ if ($role == 'Sale Supervisor') {
     $where_clause_dropdown = " WHERE p.created_by IN (SELECT user_id FROM users WHERE team_id = :team_id)";
     $params_dropdown[':team_id'] = $team_id;
 } elseif ($role != 'Executive') {
-    $where_clause_dropdown = " WHERE p.created_by = :created_by";
+    $where_clause_dropdown = " WHERE p.seller = :user_id";
     $params_dropdown[':created_by'] = $created_by;
 }
 
@@ -62,7 +63,7 @@ function getDropdownData($condb, $sql, $params)
 // ดึงข้อมูลสำหรับ dropdowns
 $products = getDropdownData($condb, "SELECT DISTINCT p.product_id, pr.product_name FROM projects p JOIN products pr ON p.product_id = pr.product_id $where_clause_dropdown", $params_dropdown);
 $statuses = getDropdownData($condb, "SELECT DISTINCT status FROM projects p $where_clause_dropdown", $params_dropdown);
-$creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as created_by, u.first_name, u.last_name FROM users u INNER JOIN projects p ON u.user_id = p.created_by $where_clause_dropdown ORDER BY u.first_name, u.last_name", $params_dropdown);
+$creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_name FROM users u INNER JOIN projects p ON u.user_id = p.seller $where_clause_dropdown ORDER BY u.first_name, u.last_name", $params_dropdown);
 $customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_name FROM customers c INNER JOIN projects p ON c.customer_id = p.customer_id $where_clause_dropdown", $params_dropdown);
 
 // ปรับปรุงการดึงข้อมูลปีจาก sales_date
@@ -81,7 +82,6 @@ $years_sql = "
 $years = getDropdownData($condb, $years_sql, $params_dropdown);
 
 // เพิ่มปีปัจจุบันถ้าไม่มีในรายการ
-$current_year = date('Y');
 $has_current_year = false;
 foreach ($years as $year) {
     if ($year['year'] == $current_year) {
@@ -92,6 +92,11 @@ foreach ($years as $year) {
 if (!$has_current_year) {
     array_unshift($years, ['year' => $current_year]);
 }
+
+// จัดเรียงปีจากมากไปน้อย (ปีล่าสุดก่อน)
+usort($years, function ($a, $b) {
+    return $b['year'] - $a['year'];
+});
 
 // Team Dropdown (เฉพาะ Executive หรือ Sale Supervisor)
 if ($role == 'Executive' || $role == 'Sale Supervisor') {
@@ -105,7 +110,7 @@ $params = array();
 
 if ($role == 'Sale Supervisor') {
     $where_clause .= " AND (
-        u.team_id = :team_id 
+        seller.team_id = :team_id  -- เปลี่ยนจาก creator.team_id เป็น seller.team_id
         OR EXISTS (
             SELECT 1 
             FROM project_members pm2 
@@ -117,7 +122,7 @@ if ($role == 'Sale Supervisor') {
     $params[':user_id'] = $created_by;
 } elseif ($role != 'Executive') {
     $where_clause .= " AND (
-        p.created_by = :created_by 
+        p.seller = :seller_id  -- เปลี่ยนจาก created_by เป็น seller
         OR EXISTS (
             SELECT 1 
             FROM project_members pm2 
@@ -125,7 +130,7 @@ if ($role == 'Sale Supervisor') {
             AND pm2.user_id = :user_id
         )
     )";
-    $params[':created_by'] = $created_by;
+    $params[':seller_id'] = $created_by;
     $params[':user_id'] = $created_by;
 }
 
@@ -147,7 +152,7 @@ if (!empty($search_status)) {
     $params[':search_status'] = $search_status;
 }
 if (!empty($search_creator)) {
-    $where_clause .= " AND p.created_by = :search_creator";
+    $where_clause .= " AND p.seller = :search_creator";  // เปลี่ยนจาก created_by เป็น seller
     $params[':search_creator'] = $search_creator;
 }
 if (!empty($search_customer)) {
@@ -166,14 +171,14 @@ if (!empty($search_year)) {
 $sql_projects = "
     SELECT DISTINCT 
         p.*, 
-        u.first_name, 
-        u.last_name, 
+        creator.first_name as creator_first_name, 
+        creator.last_name as creator_last_name,
         c.customer_name, 
         c.company, 
         c.address, 
         c.phone, 
         c.email, 
-        t.team_name, 
+        seller_team.team_name,  -- เปลี่ยนจาก creator_team เป็น seller_team
         pr.product_name,
         seller.first_name AS seller_first_name, 
         seller.last_name AS seller_last_name,
@@ -184,15 +189,14 @@ $sql_projects = "
         END AS calculated_year
     FROM projects p
     LEFT JOIN customers c ON p.customer_id = c.customer_id
-    LEFT JOIN users u ON p.created_by = u.user_id
-    LEFT JOIN teams t ON u.team_id = t.team_id
-    LEFT JOIN products pr ON p.product_id = pr.product_id
+    LEFT JOIN users creator ON p.created_by = creator.user_id
     LEFT JOIN users seller ON p.seller = seller.user_id
+    LEFT JOIN teams seller_team ON seller.team_id = seller_team.team_id  -- เปลี่ยนเป็นใช้ทีมของ seller
+    LEFT JOIN products pr ON p.product_id = pr.product_id
     LEFT JOIN project_members pm ON p.project_id = pm.project_id
     $where_clause
     ORDER BY p.created_at DESC, p.project_id DESC;
 ";
-
 
 $stmt_projects = $condb->prepare($sql_projects);
 $stmt_projects->execute($params);
@@ -275,7 +279,7 @@ function calculateProjectMetrics($projects, $search_params = [])
         if (!empty($search_params['year']) && date('Y', strtotime($project['sales_date'])) != $search_params['year']) {
             $include_project = false;
         }
-        if (!empty($search_params['creator']) && $project['created_by'] !== $search_params['creator']) {
+        if (!empty($search_params['creator']) && $project['seller'] !== $search_params['creator']) {
             $include_project = false;
         }
 
@@ -285,8 +289,8 @@ function calculateProjectMetrics($projects, $search_params = [])
             $metrics['total_projects']++;
 
             // เก็บ creator_id เพื่อนับจำนวน seller ที่ไม่ซ้ำกัน
-            if (!empty($project['created_by'])) {
-                $unique_creators[$project['created_by']] = true;
+            if (!empty($project['seller'])) {
+                $unique_creators[$project['seller']] = true;
             }
 
             // สะสมค่าทางการเงิน
@@ -437,6 +441,8 @@ $metrics = calculateProjectMetrics($projects, $search_params);
             left: 0;
         }
     </style>
+
+
 </head>
 
 <body class="sidebar-mini layout-fixed control-sidebar-slide-open layout-navbar-fixed layout-footer-fixed">
@@ -499,12 +505,12 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                 </div>
                             </div>
 
-                            <!-- Cost Price Card -->
+                            <!-- Sale Price Card -->
                             <div class="col-lg-2 col-6">
-                                <div class="small-box bg-primary">
+                                <div class="small-box bg-success">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['total_cost'], 2); ?></h3>
-                                        <p>Cost Price</p>
+                                        <h3><?php echo number_format($metrics['total_sale'], 2); ?></h3>
+                                        <p>Sale Price</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-dollar-sign"></i>
@@ -512,12 +518,12 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                 </div>
                             </div>
 
-                            <!-- Sale Price Card -->
+                            <!-- Cost Price Card -->
                             <div class="col-lg-2 col-6">
-                                <div class="small-box bg-success">
+                                <div class="small-box bg-primary">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['total_sale'], 2); ?></h3>
-                                        <p>Sale Price</p>
+                                        <h3><?php echo number_format($metrics['total_cost'], 2); ?></h3>
+                                        <p>Cost Price</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-dollar-sign"></i>
@@ -635,8 +641,8 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                                 <select class="custom-select select2" name="creator">
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($creators as $creator) : ?>
-                                                                        <option value="<?php echo $creator['created_by']; ?>"
-                                                                            <?php echo ($search_creator === $creator['created_by']) ? 'selected' : ''; ?>>
+                                                                        <option value="<?php echo $creator['seller_id']; ?>"
+                                                                            <?php echo ($search_creator === $creator['seller_id']) ? 'selected' : ''; ?>>
                                                                             <?php echo htmlspecialchars($creator['first_name'] . ' ' . $creator['last_name']); ?>
                                                                         </option>
                                                                     <?php endforeach; ?>
@@ -802,7 +808,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                         </div>
                                                     </td>
                                                     <td class="text-nowrap"><?php echo isset($project['company']) ? htmlspecialchars($project['company']) : 'ไม่ระบุข้อมูล'; ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name']) ? htmlspecialchars($project['customer_name']) : 'ไม่ระบุข้อมูล'; ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name'] ?? '') ? htmlspecialchars($project['customer_name'] ?? '') : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?></td>
                                                     <?php if ($role != 'Engineer'): ?>
                                                         <td class="text-nowrap"><?php echo number_format($project['sale_vat'], 2); ?></td>
@@ -817,7 +823,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                         <td class="text-nowrap"><?php echo number_format($project['es_gp_no_vat'], 2); ?></td>
                                                     <?php endif; ?>
                                                     <td class="text-nowrap"><?php echo displayData($project['seller_first_name'] . ' ' . $project['seller_last_name']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['team_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['team_name'] ?? 'ไม่ระบุข้อมูล'); ?></td>
                                                     <td class="text-nowrap">
                                                         <div class="truncate-text" title="<?php echo htmlspecialchars($project['address'] ?? 'ไม่ระบุข้อมูล'); ?>">
                                                             <?php echo isset($project['address']) ? truncateText(htmlspecialchars($project['address'])) : 'ไม่ระบุข้อมูล'; ?>
@@ -832,7 +838,7 @@ $metrics = calculateProjectMetrics($projects, $search_params);
                                                     </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['start_date']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['end_date']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></td>
+                                                    <td class="text-nowrap"><?php echo htmlspecialchars($project['creator_first_name'] . ' ' . $project['creator_last_name']); ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
@@ -857,18 +863,45 @@ $metrics = calculateProjectMetrics($projects, $search_params);
         $(function() {
             $("#example1").DataTable({
                 "responsive": false,
-                "lengthChange": false,
+                "lengthChange": true,
                 "autoWidth": false,
                 "scrollX": true,
                 "scrollCollapse": true,
                 "paging": true,
+                "pageLength": 20, // เปลี่ยนค่าเริ่มต้นเป็น 20
+                "lengthMenu": [
+                    [10, 20, 30, 50, 100, 200, -1],
+                    [10, 20, 30, 50, 100, 200, "ทั้งหมด"]
+                ], // เพิ่มตัวเลือก "ทั้งหมด"
                 "order": [
                     [1, "desc"]
-                ], // ปรับให้เรียงตามคอลัมน์ที่ 2 (Create Date) จากล่าสุดไปเก่าสุด
+                ],
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
                 "fixedColumns": {
-                    leftColumns: 2 // ตรึง 2 คอลัมน์ซ้าย
-                }
+                    leftColumns: 2
+                },
+                "language": {
+                    "lengthMenu": "แสดง _MENU_ รายการต่อหน้า",
+                    "zeroRecords": "ไม่พบข้อมูลที่ต้องการ",
+                    "info": "แสดงรายการที่ _START_ ถึง _END_ จากทั้งหมด _TOTAL_ รายการ",
+                    "infoEmpty": "ไม่มีข้อมูลที่จะแสดง",
+                    "infoFiltered": "(กรองจากข้อมูลทั้งหมด _MAX_ รายการ)",
+                    "search": "ค้นหา:",
+                    "paginate": {
+                        "first": "หน้าแรก",
+                        "last": "หน้าสุดท้าย",
+                        "next": "ถัดไป",
+                        "previous": "ก่อนหน้า"
+                    },
+                    "processing": "กำลังประมวลผล...",
+                    "loadingRecords": "กำลังโหลดข้อมูล...",
+                    "emptyTable": "ไม่มีข้อมูลในตาราง"
+                },
+                "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>', // ปรับ layout
+                "stateSave": true, // จดจำการตั้งค่าของผู้ใช้
+                "stateDuration": 60 * 60 * 24 // จดจำเป็นเวลา 24 ชั่วโมง
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>
