@@ -177,7 +177,7 @@ try {
 
     // นับจำนวน Project ตามช่วงเวลาที่กรอง
     $project_query = "SELECT COUNT(*) as total_projects FROM projects p
-                      LEFT JOIN users u ON p.created_by = u.user_id
+                      LEFT JOIN users u ON p.seller = u.user_id
                       WHERE p.sales_date BETWEEN :start_date AND :end_date";
     $project_params = [
         ':start_date' => $filter_date_range[0],
@@ -194,10 +194,10 @@ try {
     }
 
     if ($filter_user_id) {
-        $project_query .= " AND p.created_by = :user_id";
+        $project_query .= " AND p.seller = :user_id";
         $project_params[':user_id'] = $filter_user_id;
     } elseif ($can_view_own) {
-        $project_query .= " AND p.created_by = :user_id";
+        $project_query .= " AND p.seller = :user_id";
         $project_params[':user_id'] = $user_id;
     }
 
@@ -210,7 +210,7 @@ try {
     if ($can_view_financial) {
         $query = "SELECT SUM(p.cost_no_vat) as total_cost, SUM(p.sale_no_vat) as total_sales 
         FROM projects p
-        LEFT JOIN users u ON p.created_by = u.user_id
+        LEFT JOIN users u ON p.seller = u.user_id
         WHERE p.sales_date BETWEEN :start_date AND :end_date";
         $params = [
             ':start_date' => $filter_date_range[0],
@@ -227,10 +227,10 @@ try {
         }
 
         if ($filter_user_id) {
-            $query .= " AND p.created_by = :user_id";
+            $query .= " AND p.seller = :user_id";
             $params[':user_id'] = $filter_user_id;
         } elseif ($can_view_own) {
-            $query .= " AND p.created_by = :user_id";
+            $query .= " AND p.seller = :user_id";
             $params[':user_id'] = $user_id;
         }
 
@@ -340,16 +340,16 @@ $yearly_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // ดึงข้อมูลยอดขายของพนักงานแต่ละคน
 $employee_sales_query = "SELECT u.first_name, u.last_name, SUM(p.sale_vat) as total_sales 
                          FROM projects p
-                         JOIN users u ON p.created_by = u.user_id
+                         JOIN users u ON p.seller = u.user_id
                          WHERE p.sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
     $employee_sales_query .= "AND u.team_id = :team_id ";
 } elseif ($can_view_team) {
     $employee_sales_query .= "AND u.team_id = :team_id ";
 } elseif ($can_view_own) {
-    $employee_sales_query .= "AND p.created_by = :user_id ";
+    $employee_sales_query .= "AND p.seller = :user_id ";
 }
-$employee_sales_query .= "GROUP BY p.created_by ORDER BY total_sales DESC LIMIT 10";
+$employee_sales_query .= "GROUP BY p.seller ORDER BY total_sales DESC LIMIT 10";
 
 $stmt = $condb->prepare($employee_sales_query);
 $stmt->bindParam(':start_date', $filter_date_range[0]);
@@ -393,7 +393,7 @@ $monthly_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // ดึงข้อมูลยอดขายรายทีม
 $team_sales_query = "SELECT t.team_name, SUM(p.sale_vat) as total_sales 
                      FROM projects p
-                     JOIN users u ON p.created_by = u.user_id
+                     JOIN users u ON p.seller = u.user_id
                      JOIN teams t ON u.team_id = t.team_id
                      WHERE p.sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
@@ -424,7 +424,7 @@ function countProjectsByStatus($condb, $status_list, $role, $team_id, $user_id, 
 {
     // เริ่มต้นสร้างคำสั่ง SQL พื้นฐาน
     $query = "SELECT COUNT(*) as count FROM projects p
-              LEFT JOIN users u ON p.created_by = u.user_id
+              LEFT JOIN users u ON p.seller = u.user_id
               WHERE p.status IN (" . implode(',', array_map(function ($status) {
         return "'$status'";
     }, $status_list)) . ")";
@@ -440,12 +440,12 @@ function countProjectsByStatus($condb, $status_list, $role, $team_id, $user_id, 
     } elseif ($role === 'Sale Supervisor') {
         $query .= " AND u.team_id = :team_id";
     } elseif ($role === 'Seller') {
-        $query .= " AND p.created_by = :user_id";
+        $query .= " AND p.seller = :user_id";
     }
 
     // เพิ่มเงื่อนไขการกรองตาม user_id ที่เลือก
     if ($filter_user_id) {
-        $query .= " AND p.created_by = :filter_user_id";
+        $query .= " AND p.seller = :filter_user_id";
     }
 
     $stmt = $condb->prepare($query);
@@ -542,7 +542,7 @@ function getWinProjectSummary($condb, $role, $team_id, $user_id, $filter_team_id
                 SUM(cost_no_vat) as total_win_cost, 
                 SUM(gross_profit) as total_win_profit
              FROM projects p
-             LEFT JOIN users u ON p.created_by = u.user_id
+             LEFT JOIN users u ON p.seller = u.user_id
              WHERE p.status = 'ชนะ (Win)'";
 
     // เพิ่มเงื่อนไขกรองตามช่วงวันที่
@@ -556,12 +556,12 @@ function getWinProjectSummary($condb, $role, $team_id, $user_id, $filter_team_id
     } elseif ($role === 'Sale Supervisor') {
         $query .= " AND u.team_id = :team_id";
     } elseif ($role === 'Seller') {
-        $query .= " AND p.created_by = :user_id";
+        $query .= " AND p.seller = :user_id";
     }
 
     // เพิ่มเงื่อนไขกรองตาม user_id ที่เลือก
     if ($filter_user_id) {
-        $query .= " AND p.created_by = :filter_user_id";
+        $query .= " AND p.seller = :filter_user_id";
     }
 
     $stmt = $condb->prepare($query);

@@ -1149,10 +1149,10 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
 
                                                     <?php if ($role != 'Engineer'): ?>
                                                         <?php if ($canViewFinancial): ?>
-                                                            <td class="text-nowrap"><?php echo number_format($project['sale_vat'], 2); ?></td>
-                                                            <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
                                                             <td class="text-nowrap "><?php echo number_format($project['sale_no_vat'], 2); ?></td>
                                                             <td class="text-nowrap "><?php echo number_format($project['cost_no_vat'], 2); ?></td>
+                                                            <td class="text-nowrap"><?php echo number_format($project['sale_vat'], 2); ?></td>
+                                                            <td class="text-nowrap "><?php echo number_format($project['cost_vat'], 2); ?></td>
                                                             <td class="text-nowrap" style="color: Green; font-weight: bold;"><?php echo number_format($project['gross_profit'], 2); ?></td>
                                                             <td class="text-nowrap" style="color: Green; font-weight: bold;"><?php echo !empty($project['potential']) ? htmlspecialchars($project['potential']) . '%' : ''; ?></td>
                                                             <td class="text-nowrap"><?php echo number_format($project['vat'], 2); ?>%</td>
