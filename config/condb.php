@@ -4,7 +4,7 @@
 define('BASE_URL', '/sales/');
 
 // ข้อมูลการเชื่อมต่อฐานข้อมูล
-$host = 'localhost';
+$host = 'db';
 $dbname = 'sales_db';
 $username = 'root';
 $password = '1234';

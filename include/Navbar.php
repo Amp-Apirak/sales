@@ -422,19 +422,6 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                         </p>
                     </a>
                 </li>
-
-                <li class="nav-item">
-                    <a href="<?php echo BASE_URL; ?>pages/claims/claims.php" class="nav-link <?php if ($menu == "claims") {
-                                                                                                        echo "active";
-                                                                                                    } ?> ">
-                        <i class="nav-icon fa fa-file-alt"></i>
-                        <p>
-                            Claims
-                        </p>
-                    </a>
-                </li>
-
-
                 <!-- <li class="nav-header text-primary">Service</li> -->
 
                 <!-- <?php if ($role === 'Engineer'): ?>

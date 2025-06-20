@@ -696,7 +696,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="detail-item">
                                                             <span class="detail-label">ราคาขาย:</span>
                                                             <span class="detail-value price-highlight">
-                                                                ฿<?php echo number_format($product['selling_price'], 2); ?>
+                                                                ฿<?php echo number_format($product['selling_price']?? 0, 2); ?>
                                                             </span>
                                                         </div>
                                                     <?php endif; ?>
@@ -705,7 +705,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="detail-item">
                                                             <span class="detail-label">ราคาต้นทุน:</span>
                                                             <span class="detail-value">
-                                                                ฿<?php echo number_format($product['cost_price'], 2); ?>
+                                                                ฿<?php echo number_format($product['cost_price']?? 0, 2); ?>
                                                             </span>
                                                         </div>
                                                     <?php endif; ?>

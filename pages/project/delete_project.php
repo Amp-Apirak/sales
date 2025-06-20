@@ -21,10 +21,11 @@ try {
     $stmt_documents->execute();
 
     // ลบข้อมูลใน projects
-    $sql = "DELETE FROM projects WHERE project_id = :project_id AND created_by = :created_by";
+    $sql = "DELETE FROM projects WHERE project_id = :project_id AND (created_by = :user_id OR seller = :seller_id)";
     $stmt = $condb->prepare($sql);
     $stmt->bindParam(':project_id', $project_id);
-    $stmt->bindParam(':created_by', $user_id);
+    $stmt->bindParam(':user_id', $user_id);
+    $stmt->bindParam(':seller_id', $user_id);
 
     if ($stmt->execute()) {
         echo json_encode(['status' => 'success', 'message' => 'ลบโครงการสำเร็จ']);

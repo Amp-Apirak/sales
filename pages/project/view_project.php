@@ -22,18 +22,17 @@ try {
     try {
         $sql = "SELECT p.*, 
         u.team_id as creator_team_id, 
-        /* แก้ไข: ดึงข้อมูลผู้ขายจาก seller แทน created_by */
-        seller.first_name, seller.last_name, seller.email as seller_email, seller.phone as seller_phone,
+        /* เปลี่ยนจากใช้ seller เป็น created_by ตรงนี้ */
+        creator.first_name, creator.last_name, creator.email as seller_email, creator.phone as seller_phone,
         pr.product_name, pr.product_description,
         c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
-        seller_team.team_name,
+        t.team_name,
         tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
         creator.first_name as creator_first_name, creator.last_name as creator_last_name,
         updater.first_name as updater_first_name, updater.last_name as updater_last_name,
         pm.is_active,
         CASE 
             WHEN p.created_by = :user_id THEN true
-            WHEN p.seller = :user_id THEN true
             WHEN EXISTS (
                 SELECT 1 FROM project_members pm 
                 WHERE pm.project_id = p.project_id 
@@ -42,15 +41,14 @@ try {
             ELSE false
         END as has_access
         FROM projects p 
-        /* แก้ไข: เปลี่ยนเป็นดึงข้อมูลจาก seller */
-        LEFT JOIN users seller ON p.seller = seller.user_id 
+        /* เปลี่ยนจาก p.seller เป็น p.created_by */
+        LEFT JOIN users creator ON p.created_by = creator.user_id 
         LEFT JOIN products pr ON p.product_id = pr.product_id 
         LEFT JOIN customers c ON p.customer_id = c.customer_id 
-        /* แก้ไข: ดึงทีมจาก seller แทน creator */
-        LEFT JOIN teams seller_team ON seller.team_id = seller_team.team_id 
-        LEFT JOIN users tl ON seller_team.team_leader = tl.user_id
-        /* เพิ่ม: รักษาข้อมูล creator ไว้ */
-        LEFT JOIN users creator ON p.created_by = creator.user_id
+        /* เปลี่ยนจาก u.team_id เป็น creator.team_id */
+        LEFT JOIN teams t ON creator.team_id = t.team_id 
+        LEFT JOIN users tl ON t.team_leader = tl.user_id
+        /* เก็บ creator ไว้เหมือนเดิมเพื่อใช้ในส่วนอื่น */
         LEFT JOIN users u ON p.created_by = u.user_id
         LEFT JOIN users updater ON p.updated_by = updater.user_id
         LEFT JOIN project_members pm ON p.project_id = pm.project_id AND pm.user_id = :user_id

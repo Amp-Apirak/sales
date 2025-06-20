@@ -59,6 +59,38 @@ $stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
 $stmt->execute();
 $project = $stmt->fetch(PDO::FETCH_ASSOC);
 
+
+// เพิ่มส่วนนี้สำหรับดึงข้อมูลผู้ใช้สำหรับ Executive
+$users = [];
+if ($role === 'Executive') {
+    $stmt = $condb->prepare("
+        SELECT u.user_id, u.first_name, u.last_name, u.role, t.team_name 
+        FROM users u
+        LEFT JOIN teams t ON u.team_id = t.team_id
+        WHERE u.role IN ('Seller', 'Sale Supervisor') 
+        ORDER BY t.team_name, u.first_name
+    ");
+    $stmt->execute();
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// โหลดข้อมูลโครงการ พร้อมข้อมูลผู้ขายและผู้สร้าง
+$stmt = $condb->prepare("
+    SELECT p.*, 
+           seller.first_name as seller_firstname, 
+           seller.last_name as seller_lastname,
+           creator.first_name as creator_firstname, 
+           creator.last_name as creator_lastname
+    FROM projects p
+    LEFT JOIN users seller ON p.seller = seller.user_id
+    LEFT JOIN users creator ON p.created_by = creator.user_id
+    WHERE p.project_id = :project_id
+");
+$stmt->bindParam(':project_id', $project_id, PDO::PARAM_STR);
+$stmt->execute();
+$project = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
 // หากไม่พบโครงการ ให้แจ้งเตือนและหยุด
 if (!$project) {
     die("ไม่พบข้อมูลโครงการที่ต้องการแก้ไข");
@@ -87,6 +119,7 @@ if (
 
     // ทำความสะอาดข้อมูลฟอร์ม
     $project_name = clean_input($_POST['project_name']);
+    $seller = clean_input($_POST['seller'] ?? '');
     $sales_date = clean_input($_POST['sales_date']);
     $date_start = clean_input($_POST['date_start']);
     $date_end = clean_input($_POST['date_end']);
@@ -115,6 +148,11 @@ if (
         }
     }
 
+    // หาก Role ไม่ใช่ Executive ให้ seller = ค่าเดิมของโครงการ
+    if ($role !== 'Executive') {
+        $seller = $project['seller'];
+    }
+
     // ตรวจสอบข้อมูลที่จำเป็น
     if (empty($project_name)) {
         $error_messages[] = "กรุณากรอกชื่อโครงการ";
@@ -125,6 +163,10 @@ if (
     if (empty($product_id)) {
         $error_messages[] = "กรุณาเลือกสินค้าที่ขาย";
     }
+    if ($role === 'Executive' && empty($seller)) {
+        $error_messages[] = "กรุณาเลือกผู้ขาย/ผู้รับผิดชอบโครงการ";
+    }
+
 
     if (empty($error_messages)) {
         try {
@@ -187,8 +229,8 @@ if (
                 ':es_gp_no_vat' => $es_gp_no_vat,
                 ':remark' => $remark,
                 ':vat' => $vat,
-                ':updated_by' => $created_by,
-                ':seller' => $created_by
+                ':updated_by' => $user_id,
+                ':seller' => $seller
             ]);
 
             // ลบ project_customers เดิมออก
@@ -428,22 +470,82 @@ $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </div>
 
                                             <div class="row">
+                                                <?php if ($role === 'Executive'): ?>
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้ขาย/ผู้รับผิดชอบโครงการ <span class="text-danger">*</span></label>
+                                                            <select class="form-control select2" name="seller" id="seller" style="width: 100%;" required>
+                                                                <option value="">-- เลือกผู้ขาย/ผู้รับผิดชอบโครงการ --</option>
+                                                                <?php foreach ($users as $user): ?>
+                                                                    <option value="<?php echo htmlspecialchars($user['user_id']); ?>"
+                                                                        <?php echo ($user['user_id'] == $project['seller']) ? 'selected' : ''; ?>>
+                                                                        <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
+                                                                        (<?php echo htmlspecialchars($user['role']); ?>)
+                                                                        <?php if ($user['team_name']): ?>
+                                                                            - ทีม: <?php echo htmlspecialchars($user['team_name']); ?>
+                                                                        <?php endif; ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                            <small class="form-text text-muted">
+                                                                ผู้รับผิดชอบปัจจุบัน: <?php echo htmlspecialchars($project['seller_firstname'] . ' ' . $project['seller_lastname']); ?>
+                                                            </small>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- แสดงข้อมูลผู้สร้าง -->
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้สร้างโครงการ</label>
+                                                            <input type="text" class="form-control"
+                                                                value="<?php echo htmlspecialchars($project['creator_firstname'] . ' ' . $project['creator_lastname']); ?>"
+                                                                readonly style="background-color:#F8F8FF">
+                                                        </div>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <!-- สำหรับ Role อื่นๆ แสดงข้อมูลอย่างเดียว -->
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้ขาย/ผู้รับผิดชอบโครงการ</label>
+                                                            <input type="text" class="form-control"
+                                                                value="<?php echo htmlspecialchars($project['seller_firstname'] . ' ' . $project['seller_lastname']); ?>"
+                                                                readonly style="background-color:#F8F8FF">
+                                                            <input type="hidden" name="seller" value="<?php echo htmlspecialchars($project['seller']); ?>">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้สร้างโครงการ</label>
+                                                            <input type="text" class="form-control"
+                                                                value="<?php echo htmlspecialchars($project['creator_firstname'] . ' ' . $project['creator_lastname']); ?>"
+                                                                readonly style="background-color:#F8F8FF">
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+
+                                            <div class="row">
                                                 <div class="col-12 col-md-6">
                                                     <div class="form-group">
                                                         <label>ชื่อโครงการ<span class="text-danger">*</span></label>
-                                                        <input type="text" name="project_name" class="form-control" value="<?php echo htmlspecialchars($project['project_name'] ?? ''); ?>" placeholder="ชื่อโครงการ">
+                                                        <input type="text" name="project_name" class="form-control"
+                                                            value="<?php echo htmlspecialchars($project['project_name']); ?>"
+                                                            placeholder="ชื่อโครงการ">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>วันเริ่มโครงการ</label>
-                                                        <input type="date" name="date_start" class="form-control" value="<?php echo htmlspecialchars($project['start_date'] ?? ''); ?>">
+                                                        <input type="date" name="date_start" class="form-control"
+                                                            value="<?php echo htmlspecialchars($project['start_date']); ?>">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>วันสิ้นสุดโครงการ</label>
-                                                        <input type="date" name="date_end" class="form-control" value="<?php echo htmlspecialchars($project['end_date'] ?? ''); ?>">
+                                                        <input type="date" name="date_end" class="form-control"
+                                                            value="<?php echo htmlspecialchars($project['end_date']); ?>">
                                                     </div>
                                                 </div>
                                             </div>
