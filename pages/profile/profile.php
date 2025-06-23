@@ -196,7 +196,7 @@ if (isset($_SESSION['user_id'])) {
                                 </div>
                                 <div class="profile-actions">
                                     <a href="<?php echo BASE_URL; ?>/pages/account/edit_account.php?user_id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-edit">Edit Information</a>
-                                    <a href="recover.php?id" class="btn btn-password">Change Password</a>
+                                    <a href="recover.php?id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-password">Change Password</a>
                                 </div>
                             </div>
                         </div>

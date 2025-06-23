@@ -429,7 +429,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                         <div class="form-group">
                                             <label for="password">รหัสผ่านใหม่ (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</label>
-                                            <input type="password" class="form-control" id="password" name="password">
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="password" name="password" placeholder="กรอกรหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)">
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text password-toggle" onclick="togglePassword('password')">
+                                                        <span id="password_icon" class="fas fa-eye-slash"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก ตัวเลข และอักขระพิเศษอย่างน้อย 1 ตัว
+                                            </small>
                                         </div>
 
                                         <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
@@ -447,6 +457,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
     <script>
+        // ฟังก์ชันสำหรับแสดง/ซ่อนรหัสผ่าน
+        function togglePassword(fieldId) {
+            const passwordField = document.getElementById(fieldId);
+            const passwordIcon = document.getElementById(fieldId + '_icon');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                passwordIcon.className = 'fas fa-eye';
+            } else {
+                passwordField.type = 'password';
+                passwordIcon.className = 'fas fa-eye-slash';
+            }
+        }
+
         $(function() {
             $('.select2').select2({
                 theme: 'bootstrap4',
