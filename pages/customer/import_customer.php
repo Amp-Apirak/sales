@@ -6,6 +6,12 @@ require '../../vendor/autoload.php';
 $role = $_SESSION['role'];
 $created_by = $_SESSION['user_id'];
 
+// เพิ่มตัวแปรสำหรับแสดงผล
+$show_success = false;
+$show_error = false;
+$success_message = "";
+$error_message = "";
+
 // เพิ่มฟังก์ชัน generateUUID
 function generateUUID()
 {
@@ -37,24 +43,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["file"])) {
     $file_type = $_FILES["file"]["type"];
 
     try {
-        // สร้าง reader ตามประเภทไฟล์
+        // ตรวจสอบประเภทไฟล์ก่อน
         if ($file_type == "text/csv") {
             $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
             $reader->setInputEncoding('UTF-8');
         } elseif ($file_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
             $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
         } else {
-            echo "<script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    Swal.fire({
-                        title: 'ไฟล์ไม่ถูกต้อง!',
-                        text: 'รองรับเฉพาะไฟล์ .xlsx และ .csv เท่านั้น',
-                        icon: 'warning',
-                        confirmButtonText: 'ตกลง'
-                    });
-                });
-            </script>";
-            exit;
+            throw new Exception("ไฟล์ไม่ถูกต้อง! รองรับเฉพาะไฟล์ .xlsx และ .csv เท่านั้น");
         }
 
         // โหลดข้อมูลจากไฟล์
@@ -78,14 +74,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["file"])) {
 
                 // เตรียม SQL statement
                 $stmt = $condb->prepare("INSERT INTO customers (
-                    customer_id, customer_name, position, company, 
-                    phone, email, address, office_phone, extension,
-                    created_by, created_at
-                ) VALUES (
-                    :customer_id, :customer_name, :position, :company,
-                    :phone, :email, :address, :office_phone, :extension,
-                    :created_by, NOW()
-                )");
+                customer_id, customer_name, position, company, 
+                phone, email, address, office_phone, extension,
+                created_by, created_at
+            ) VALUES (
+                :customer_id, :customer_name, :position, :company,
+                :phone, :email, :address, :office_phone, :extension,
+                :created_by, NOW()
+            )");
 
                 // Execute statement พร้อมข้อมูล
                 $stmt->execute([
@@ -109,34 +105,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["file"])) {
         $condb->commit();
 
         // แสดงผลสำเร็จและจำนวนรายการที่นำเข้า
-        echo "<script>
-            document.addEventListener('DOMContentLoaded', function() {
-                Swal.fire({
-                    title: 'สำเร็จ!',
-                    text: 'นำเข้าข้อมูลสำเร็จ " . $importCount . " รายการ',
-                    icon: 'success',
-                    showConfirmButton: false,
-                    timer: 1500
-                }).then(function() {
-                    window.location.href = 'customer.php';
-                });
-            });
-        </script>";
+        $success_message = "นำเข้าข้อมูลสำเร็จ " . $importCount . " รายการ";
+        $show_success = true;
     } catch (Exception $e) {
-        // ถ้าเกิดข้อผิดพลาด ให้ rollback transaction
-        $condb->rollBack();
+        // ถ้าเกิดข้อผิดพลาด ให้ rollback transaction (ถ้ามีการเริ่ม)
+        if ($condb->inTransaction()) {
+            $condb->rollBack();
+        }
 
-        // แสดงข้อผิดพลาด
-        echo "<script>
-            document.addEventListener('DOMContentLoaded', function() {
-                Swal.fire({
-                    title: 'เกิดข้อผิดพลาด!',
-                    text: '" . $e->getMessage() . "',
-                    icon: 'error',
-                    confirmButtonText: 'ตกลง'
-                });
-            });
-        </script>";
+        $error_message = "เกิดข้อผิดพลาด: " . $e->getMessage();
+        $show_error = true;
     }
 }
 
@@ -166,7 +144,9 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Import Customers</title>
     <?php include '../../include/header.php'; ?>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         .import-container {
             max-width: 900px;
@@ -334,6 +314,42 @@ if ($role !== 'Executive' && $role !== 'Sale Supervisor' && $role !== 'Seller') 
         $('form').on('submit', function() {
             $(this).find('button[type="submit"]').html('<i class="fas fa-spinner fa-spin mr-2"></i>กำลังนำเข้าข้อมูล...').attr('disabled', true);
         });
+    </script>
+
+    <script>
+        // Show selected filename
+        $('.custom-file-input').on('change', function() {
+            let fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').addClass("selected").html(fileName);
+        });
+
+        // Add loading state to submit button
+        $('form').on('submit', function() {
+            $(this).find('button[type="submit"]').html('<i class="fas fa-spinner fa-spin mr-2"></i>กำลังนำเข้าข้อมูล...').attr('disabled', true);
+        });
+
+        <?php if ($show_success): ?>
+            // แสดงข้อความสำเร็จ
+            Swal.fire({
+                title: 'สำเร็จ!',
+                text: '<?php echo $success_message; ?>',
+                icon: 'success',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(function() {
+                window.location.href = 'customer.php';
+            });
+        <?php endif; ?>
+
+        <?php if ($show_error): ?>
+            // แสดงข้อความผิดพลาด
+            Swal.fire({
+                title: 'เกิดข้อผิดพลาด!',
+                text: '<?php echo $error_message; ?>',
+                icon: 'error',
+                confirmButtonText: 'ตกลง'
+            });
+        <?php endif; ?>
     </script>
 </body>
 

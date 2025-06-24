@@ -278,13 +278,13 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
                                 <div class="col-12">
                                     <img src="<?php echo !empty($product['main_image']) ? '../../../uploads/product_images/' . $product['main_image'] : '../../../assets/img/pit.png'; ?>" class="product-image" alt="Product Image">
                                 </div>
-                                <div class="col-12 product-image-thumbs">
+                                <!-- <div class="col-12 product-image-thumbs">
                                     <div class="product-image-thumb active"><img src="../../../assets/img/pit.png" alt="Product Image"></div>
                                     <div class="product-image-thumb"><img src="../../../assets/img/pit.png" alt="Product Image"></div>
                                     <div class="product-image-thumb"><img src="../../../assets/img/pit.png" alt="Product Image"></div>
                                     <div class="product-image-thumb"><img src="../../../assets/img/pit.png" alt="Product Image"></div>
                                     <div class="product-image-thumb"><img src="../../../assets/img/pit.png" alt="Product Image"></div>
-                                </div>
+                                </div> -->
                             </div>
                             <div class="col-12 col-sm-6">
                                 <h3 class=" my-3 product-title d-flex align-items-center">
@@ -377,16 +377,16 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
                 <div class="row mt-4">
                     <nav class="w-100">
                         <div class="nav nav-tabs" id="product-tab" role="tablist">
-                            <a class="nav-item nav-link active" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">แนบลิงค์</a>
-                            <a class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="false">แนบไฟล์</a>
-                            <a class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-price" role="tab" aria-controls="product-price" aria-selected="false">รายการสินค้าในโครงการ</a>
+                            <!-- <a class="nav-item nav-link active" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">แนบลิงค์</a> -->
+                            <a class="nav-item nav-link active" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="false">แนบไฟล์</a>
+                            <!-- <a class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-price" role="tab" aria-controls="product-price" aria-selected="false">รายการสินค้าในโครงการ</a> -->
                         </div>
                     </nav>
                     <div class="tab-content p-3" id="nav-tabContent">
-                        <div class="tab-pane fade show active" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab">
+                        <!-- <div class="tab-pane fade show active" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab">
                             (อยู่ระหว่างการพํฒนา !!!!!!) แสดงตารางแสดงข้อมูลลิงค์ ประกอบด้วย ลำดับ,ชื่อ Link ที่ทำการตั้ง (เมื่อกดให้ลิงค์ไปที่หน้าของ Link), วันที่สร้าง, ผู้สร้าง, ปุ่มลบ (อยู่ระหว่างการพํฒนา !!!!!!)
-                        </div>
-                        <div class="tab-pane fade" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab">
+                        </div> -->
+                        <div class="tab-pane fade show active" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab">
                             <!-- ส่วนควบคุมการเพิ่มเอกสาร -->
                             <?php if ($show_edit_delete): ?>
                                 <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-sm btn-outline-primary">

@@ -33,25 +33,14 @@ $user_id = $_SESSION['user_id'];
  * @param string $product_team_id ทีมของผู้สร้างสินค้า
  * @return boolean
  */
-function canEditProduct($role, $user_id, $creator_id, $team_id, $product_team_id)
+function canManageProduct($role, $user_id, $created_by, $user_team_id, $product_team_id)
 {
-    // Executive สามารถแก้ไขได้ทั้งหมด
-    if ($role === 'Executive') {
-        return true;
-    }
+    $is_creator = ($created_by == $user_id);
+    $is_executive = ($role == 'Executive');
+    $is_sale_supervisor_or_seller = ($role == 'Sale Supervisor' || $role == 'Seller');
+    $is_same_team = ($product_team_id == $user_team_id);
 
-    // ผู้สร้างสามารถแก้ไขสินค้าของตัวเองได้
-    if ($user_id === $creator_id) {
-        return true;
-    }
-
-    // Sale Supervisor สามารถแก้ไขได้เฉพาะทีมตัวเอง
-    if ($role === 'Sale Supervisor' && $team_id === $product_team_id) {
-        return true;
-    }
-
-    // กรณีอื่นๆ ไม่สามารถแก้ไขได้
-    return false;
+    return ($is_creator || $is_executive || ($is_sale_supervisor_or_seller && $is_same_team));
 }
 
 // รับค่าการค้นหาจากฟอร์ม (method="GET")
@@ -167,6 +156,8 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- โหลด SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <!-- โหลด lightbox -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
@@ -546,6 +537,25 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             pointer-events: none;
             cursor: default;
         }
+
+        .badge-project-count {
+            background-color: #17a2b8;
+            color: white;
+            font-size: 0.8em;
+        }
+
+        .btn-delete {
+            color: #fff;
+            background-color: #dc3545;
+            border: none;
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            color: #fff;
+            background-color: #c82333;
+        }
     </style>
 </head>
 
@@ -580,6 +590,28 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
+
+                    <!-- แสดงข้อความแจ้งเตือน -->
+                    <?php if (isset($_SESSION['success_message'])): ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle"></i> <?php echo $_SESSION['success_message']; ?>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <?php unset($_SESSION['success_message']); ?>
+                    <?php endif; ?>
+
+                    <?php if (isset($_SESSION['error_message'])): ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> <?php echo $_SESSION['error_message']; ?>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <?php unset($_SESSION['error_message']); ?>
+                    <?php endif; ?>
+
                     <!-- Search Section -->
                     <div class="card card-primary card-outline mb-4">
                         <div class="card-header">
@@ -696,7 +728,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="detail-item">
                                                             <span class="detail-label">ราคาขาย:</span>
                                                             <span class="detail-value price-highlight">
-                                                                ฿<?php echo number_format($product['selling_price']?? 0, 2); ?>
+                                                                ฿<?php echo number_format($product['selling_price'] ?? 0, 2); ?>
                                                             </span>
                                                         </div>
                                                     <?php endif; ?>
@@ -705,7 +737,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="detail-item">
                                                             <span class="detail-label">ราคาต้นทุน:</span>
                                                             <span class="detail-value">
-                                                                ฿<?php echo number_format($product['cost_price']?? 0, 2); ?>
+                                                                ฿<?php echo number_format($product['cost_price'] ?? 0, 2); ?>
                                                             </span>
                                                         </div>
                                                     <?php endif; ?>
@@ -751,10 +783,22 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                             <i class="fas fa-eye"></i> ดูรายละเอียด
                                                         </a>
 
-                                                        <?php if (canEditProduct($role, $user_id, $product['created_by'], $team_id, $product['creator_team_id'])): ?>
+                                                        <?php if (canManageProduct($role, $user_id, $product['created_by'], $team_id, $product['creator_team_id'])): ?>
                                                             <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-custom btn-edit">
                                                                 <i class="fas fa-edit"></i> แก้ไข
                                                             </a>
+                                                            <button type="button"
+                                                                class="btn btn-custom btn-delete delete-product-btn"
+                                                                data-product-id="<?php echo urlencode(encryptUserId($product['product_id'])); ?>"
+                                                                data-product-name="<?php echo htmlspecialchars($product['product_name'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                data-project-count="0">
+                                                                <i class="fas fa-trash"></i> ลบ
+                                                            </button>
+                                                        <?php else: ?>
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-lock"></i>
+                                                                ไม่มีสิทธิ์จัดการ
+                                                            </small>
                                                         <?php endif; ?>
                                                     </div>
 
@@ -902,6 +946,62 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         window.refreshProductTable = function() {
             location.reload();
         };
+
+
+
+        // Handle Delete Product
+        $('.delete-product-btn').click(function() {
+            const productId = $(this).data('product-id');
+            const productName = $(this).data('product-name');
+            const projectCount = $(this).data('project-count');
+
+            // ตรวจสอบว่า Product ถูกใช้งานใน Project หรือไม่
+            if (projectCount > 0) {
+                Swal.fire({
+                    title: 'ไม่สามารถลบได้!',
+                    text: `Product "${productName}" ถูกใช้งานใน ${projectCount} โครงการ กรุณาลบ Product ออกจากโครงการก่อน`,
+                    icon: 'warning',
+                    confirmButtonText: 'เข้าใจแล้ว',
+                    confirmButtonColor: '#3085d6'
+                });
+                return;
+            }
+
+            // แสดงกล่องยืนยันการลบ
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                html: `คุณต้องการลบ Product<br><strong>"${productName}"</strong><br>ใช่หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: '<i class="fas fa-trash"></i> ใช่, ลบ!',
+                cancelButtonText: '<i class="fas fa-times"></i> ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // แสดงข้อความกำลังลบ
+                    Swal.fire({
+                        title: 'กำลังลบ...',
+                        text: 'กรุณารอสักครู่',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        willOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // ส่งไปยังหน้าลบ
+                    window.location.href = `delete_product.php?product_id=${productId}`;
+                }
+            });
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert').fadeOut('slow');
+        }, 5000);
     </script>
 </body>
 
