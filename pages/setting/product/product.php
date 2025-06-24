@@ -69,21 +69,25 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 // คำนวณ offset สำหรับ LIMIT ใน SQL
 $offset = ($current_page - 1) * $items_per_page;
 
-// Query พื้นฐานในการดึงข้อมูลสินค้า
+// แทนที่ SQL Query เดิมด้วยโค้ดนี้
 $sql_products = "SELECT p.*, 
                         u.first_name AS creator_first_name, 
                         u.last_name AS creator_last_name,
                         u.team_id AS creator_team_id,
-                        p.created_by, -- เพิ่มการดึง created_by
+                        p.created_by,
                         t.team_name,
-                        t.team_description
+                        t.team_description,
+                        COUNT(pr.project_id) as project_count,
+                        GROUP_CONCAT(DISTINCT CONCAT(pr.project_id, '|', pr.project_name, '|', COALESCE(c.company, c.customer_name)) SEPARATOR '|||') as project_details
                  FROM products p 
                  LEFT JOIN users u ON p.created_by = u.user_id 
                  LEFT JOIN teams t ON p.team_id = t.team_id
+                 LEFT JOIN projects pr ON p.product_id = pr.product_id
+                 LEFT JOIN customers c ON pr.customer_id = c.customer_id
                  WHERE 1=1";
 
 // สร้าง SQL สำหรับนับจำนวนรายการทั้งหมดเพื่อใช้ใน pagination
-$count_sql = "SELECT COUNT(*) AS total FROM products p 
+$count_sql = "SELECT COUNT(DISTINCT p.product_id) AS total FROM products p 
               LEFT JOIN users u ON p.created_by = u.user_id 
               WHERE 1=1";
 
@@ -96,6 +100,9 @@ if (!empty($search_service)) {
     $sql_products .= $search_condition;
     $count_sql .= $search_condition;
 }
+
+// เพิ่ม GROUP BY เพื่อจัดกลุ่มข้อมูล
+$sql_products .= " GROUP BY p.product_id";
 
 // การเรียงลำดับ
 $sql_products .= " ORDER BY p.created_at DESC";
@@ -556,6 +563,196 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #fff;
             background-color: #c82333;
         }
+
+
+
+        /* CSS สำหรับ Project Details Modal */
+        .swal-wide {
+            max-width: 90% !important;
+        }
+
+        .swal-html-container {
+            text-align: left !important;
+            padding: 0 !important;
+        }
+
+        .project-list {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        .project-item {
+            transition: all 0.2s ease;
+        }
+
+        .project-item:hover {
+            background-color: #f0f8ff !important;
+            border-color: #007bff !important;
+            transform: translateY(-1px);
+        }
+
+        /* สไตล์สำหรับปุ่มจำนวนโครงการ */
+        .project-count-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .project-count-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .project-count-badge:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .no-projects-text {
+            color: #999;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        /* Animation สำหรับ loading */
+        .loading-projects {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+
+
+        /* สไตล์สำหรับปุ่มโครงการขนาดเล็ก - คลิกได้ */
+        .project-count-badge-small {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-weight: 500;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 123, 255, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .project-count-badge-small:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 123, 255, 0.4);
+            color: white;
+            background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+        }
+
+        .project-count-badge-small:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+        }
+
+        .project-count-badge-small i {
+            font-size: 10px;
+        }
+
+        /* สไตล์สำหรับข้อความโครงการ - ไม่คลิกได้ */
+        .project-count-readonly {
+            background-color: #e9ecef;
+            color: #6c757d;
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-weight: 500;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            border: 1px solid #dee2e6;
+        }
+
+        .project-count-readonly i {
+            font-size: 10px;
+            color: #adb5bd;
+        }
+
+        /* สไตล์สำหรับข้อความยังไม่ใช้งาน - ขนาดเล็ก */
+        .no-projects-text-small {
+            color: #999;
+            font-style: italic;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .no-projects-text-small i {
+            font-size: 10px;
+            color: #ccc;
+        }
+
+        /* ปรับ detail-label ให้เล็กลง */
+        .detail-item .detail-label {
+            font-weight: 600;
+            color: #555;
+            width: 85px;
+            /* เล็กลงจาก 100px */
+            flex-shrink: 0;
+            font-size: 12px;
+            /* เพิ่มการกำหนดขนาดฟอนต์ */
+        }
+
+        .detail-item .detail-value {
+            color: #666;
+            flex-grow: 1;
+            font-size: 12px;
+            /* เพิ่มการกำหนดขนาดฟอนต์ */
+        }
+
+        /* Responsive สำหรับมือถือ */
+        @media (max-width: 768px) {
+            .detail-item .detail-label {
+                width: 75px;
+                font-size: 11px;
+            }
+
+            .detail-item .detail-value {
+                font-size: 11px;
+            }
+
+            .project-count-badge-small,
+            .project-count-readonly {
+                font-size: 10px;
+                padding: 3px 6px;
+            }
+
+            .no-projects-text-small {
+                font-size: 10px;
+            }
+        }
     </style>
 </head>
 
@@ -775,24 +972,56 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 </div>
                                             </div>
 
+                                            <!-- เพิ่มส่วนนี้ในการ์ด หลังจาก detail-item สุดท้าย -->
+                                            <div class="detail-item">
+                                                <span class="detail-label ml-4">โครงการที่ใช้:</span>
+                                                <span class="detail-value">
+                                                    <?php if (isset($product['project_count']) && $product['project_count'] > 0): ?>
+                                                        <?php if (canManageProduct($role, $user_id, $product['created_by'], $team_id, $product['creator_team_id'])): ?>
+                                                            <!-- มีสิทธิ์ - แสดงปุ่มคลิกได้ -->
+                                                            <button type="button"
+                                                                class="project-count-badge-small"
+                                                                onclick="showProjectModal('<?php echo htmlspecialchars($product['project_details'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($product['product_name'], ENT_QUOTES, 'UTF-8'); ?>')"
+                                                                title="คลิกเพื่อดูรายละเอียดโครงการ">
+                                                                <i class="fas fa-project-diagram"></i>
+                                                                <?php echo $product['project_count']; ?> โครงการ
+                                                            </button>
+                                                        <?php else: ?>
+                                                            <!-- ไม่มีสิทธิ์ - แสดงแค่ตัวเลข -->
+                                                            <span class="project-count-readonly">
+                                                                <i class="fas fa-project-diagram"></i>
+                                                                <?php echo $product['project_count']; ?> โครงการ
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    <?php else: ?>
+                                                        <span class="no-projects-text-small">
+                                                            <i class="fas fa-minus-circle"></i>
+                                                            ยังไม่ใช้งาน
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </div>
+
                                             <!-- ส่วนปุ่มการทำงาน -->
                                             <div class="card-footer">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div class="btn-group-product">
                                                         <a href="view_product.php?id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-custom btn-view">
-                                                            <i class="fas fa-eye"></i> ดูรายละเอียด
+                                                            <i class="fas fa-eye"></i> ดูข้อมูล
                                                         </a>
 
                                                         <?php if (canManageProduct($role, $user_id, $product['created_by'], $team_id, $product['creator_team_id'])): ?>
                                                             <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-custom btn-edit">
                                                                 <i class="fas fa-edit"></i> แก้ไข
                                                             </a>
+                                                            <!-- แทนที่ปุ่มลบเดิมด้วยโค้ดนี้ -->
                                                             <button type="button"
                                                                 class="btn btn-custom btn-delete delete-product-btn"
                                                                 data-product-id="<?php echo urlencode(encryptUserId($product['product_id'])); ?>"
                                                                 data-product-name="<?php echo htmlspecialchars($product['product_name'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                                data-project-count="0">
-                                                                <i class="fas fa-trash"></i> ลบ
+                                                                data-project-count="<?php echo isset($product['project_count']) ? $product['project_count'] : 0; ?>"
+                                                                data-project-details="<?php echo htmlspecialchars($product['project_details'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                                                <i class="fas fa-trash"></i> ลบข้อมูล
                                                             </button>
                                                         <?php else: ?>
                                                             <small class="text-muted">
@@ -949,25 +1178,21 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 
-        // Handle Delete Product
+        // อัปเดต Handle Delete Product ให้แสดงรายละเอียดโครงการ
         $('.delete-product-btn').click(function() {
             const productId = $(this).data('product-id');
             const productName = $(this).data('product-name');
             const projectCount = $(this).data('project-count');
+            const projectDetails = $(this).data('project-details');
 
             // ตรวจสอบว่า Product ถูกใช้งานใน Project หรือไม่
             if (projectCount > 0) {
-                Swal.fire({
-                    title: 'ไม่สามารถลบได้!',
-                    text: `Product "${productName}" ถูกใช้งานใน ${projectCount} โครงการ กรุณาลบ Product ออกจากโครงการก่อน`,
-                    icon: 'warning',
-                    confirmButtonText: 'เข้าใจแล้ว',
-                    confirmButtonColor: '#3085d6'
-                });
+                // แสดงรายละเอียดโครงการที่ใช้งาน Product
+                showProjectDetails(projectDetails, productName);
                 return;
             }
 
-            // แสดงกล่องยืนยันการลบ
+            // แสดงกล่องยืนยันการลบ (กรณีไม่มีโครงการใช้งาน)
             Swal.fire({
                 title: 'ยืนยันการลบ?',
                 html: `คุณต้องการลบ Product<br><strong>"${productName}"</strong><br>ใช่หรือไม่?`,
@@ -1002,6 +1227,187 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
         setTimeout(function() {
             $('.alert').fadeOut('slow');
         }, 5000);
+
+
+
+
+        //ฟังก์ชัน showProjectDetails 
+        function showProjectDetails(projectDetails, productName) {
+            if (!projectDetails || projectDetails === '') {
+                return;
+            }
+
+            // แปลงข้อมูลโครงการ
+            const projects = projectDetails.split('|||').map(detail => {
+                const parts = detail.split('|');
+                return {
+                    id: parts[0],
+                    name: parts[1] || 'ไม่ระบุ',
+                    customer: parts[2] || 'ไม่ระบุ'
+                };
+            });
+
+            // สร้าง HTML สำหรับแสดงรายการโครงการ
+            let projectListHtml = '<div class="project-list" style="max-height: 300px; overflow-y: auto;">';
+
+            projects.forEach((project, index) => {
+                // สร้าง URL ที่ถูกต้องโดยใช้ PHP function ผ่าน AJAX
+                // หรือใช้ URL ที่มี parameter แบบไม่เข้ารหัสก่อน (ขึ้นอยู่กับระบบ)
+                const projectViewUrl = `../../project/view_project.php?project_id=${encodeURIComponent(project.id)}`;
+
+                projectListHtml += `
+            <div class="project-item" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 10px; background-color: #f9f9f9;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1" style="color: #2c3e50;">
+                            <i class="fas fa-project-diagram text-primary"></i>
+                            ${project.name}
+                        </h6>
+                        <small class="text-muted">
+                            <i class="fas fa-building"></i>
+                            ลูกค้า: ${project.customer}
+                        </small>
+                        <br>
+                    </div>
+                    <div>
+                        <button type="button" 
+                                class="btn btn-sm btn-outline-primary" 
+                                onclick="openEncryptedProjectUrl('${project.id}')"
+                                title="คลิกเพื่อดูโครงการ">
+                            <i class="fas fa-external-link-alt"></i> ดูโครงการ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+            });
+
+            projectListHtml += '</div>';
+
+            // แสดง SweetAlert พร้อมรายละเอียดโครงการ
+            Swal.fire({
+                title: `<i class="fas fa-exclamation-triangle text-warning"></i> ไม่สามารถลบได้!`,
+                html: `
+            <div class="text-left">
+                <p class="mb-3">
+                    Product <strong>"${productName}"</strong> ถูกใช้งานใน <strong>${projects.length}</strong> โครงการ<br>
+                    กรุณาลบ Product ออกจากโครงการเหล่านี้ก่อน
+                </p>
+                <hr>
+                <h6 class="mb-3"><i class="fas fa-list"></i> รายการโครงการที่ใช้งาน:</h6>
+                ${projectListHtml}
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        คลิกปุ่ม "ดูโครงการ" เพื่อเปิดหน้าโครงการในแท็บใหม่
+                    </small>
+                </div>
+            </div>
+        `,
+                icon: 'warning',
+                width: '650px',
+                confirmButtonText: '<i class="fas fa-check"></i> เข้าใจแล้ว',
+                confirmButtonColor: '#3085d6',
+                customClass: {
+                    popup: 'swal-wide',
+                    htmlContainer: 'swal-html-container'
+                }
+            });
+        }
+
+        // ฟังก์ชันตรวจสอบสิทธิ์ก่อนแสดง Modal
+        function showProjectModal(projectDetails, productName) {
+            // ตรวจสอบว่ามีข้อมูลโครงการหรือไม่
+            if (!projectDetails || projectDetails === '') {
+                Swal.fire({
+                    title: 'ไม่มีข้อมูล',
+                    text: 'Product นี้ยังไม่ได้ใช้งานในโครงการใด',
+                    icon: 'info',
+                    confirmButtonText: 'เข้าใจแล้ว',
+                    confirmButtonColor: '#3085d6'
+                });
+                return;
+            }
+
+            // แสดงรายละเอียดโครงการ
+            showProjectDetails(projectDetails, productName);
+        }
+
+        // ป้องกันการคลิกบน element ที่ไม่มีสิทธิ์
+        $(document).ready(function() {
+            $('.project-count-readonly').click(function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'ไม่มีสิทธิ์',
+                    text: 'คุณไม่มีสิทธิ์ดูรายละเอียดโครงการนี้',
+                    icon: 'warning',
+                    confirmButtonText: 'เข้าใจแล้ว',
+                    confirmButtonColor: '#3085d6'
+                });
+            });
+        });
+
+
+
+        // ฟังก์ชันสำหรับเข้ารหัส project_id และเปิด URL
+        function openEncryptedProjectUrl(projectId) {
+            if (!projectId || projectId.trim() === '') {
+                console.error('Project ID is empty');
+                Swal.fire({
+                    title: 'ข้อผิดพลาด',
+                    text: 'ไม่พบรหัสโครงการ',
+                    icon: 'error',
+                    confirmButtonText: 'เข้าใจแล้ว'
+                });
+                return;
+            }
+
+            // แสดง loading
+            Swal.fire({
+                title: 'กำลังเปิดโครงการ...',
+                text: 'กรุณารอสักครู่',
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // ส่ง AJAX request เพื่อเข้ารหัส project_id
+            $.ajax({
+                url: 'encrypt_project_id.php', // สร้างไฟล์นี้
+                method: 'POST',
+                data: {
+                    project_id: projectId.trim()
+                },
+                dataType: 'json',
+                success: function(response) {
+                    Swal.close();
+
+                    if (response.success && response.encrypted_id) {
+                        // เปิด URL ที่เข้ารหัสแล้ว
+                        const encryptedUrl = `../../project/view_project.php?project_id=${encodeURIComponent(response.encrypted_id)}`;
+                        window.open(encryptedUrl, '_blank', 'noopener,noreferrer');
+                    } else {
+                        Swal.fire({
+                            title: 'ข้อผิดพลาด',
+                            text: response.message || 'ไม่สามารถเข้ารหัสรหัสโครงการได้',
+                            icon: 'error',
+                            confirmButtonText: 'เข้าใจแล้ว'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.close();
+                    console.error('AJAX Error:', error);
+
+                    // ใช้วิธี fallback - ลองเปิดด้วย ID ตรงๆ
+                    const fallbackUrl = `../../project/view_project.php?project_id=${encodeURIComponent(projectId)}`;
+                    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+                }
+            });
+        }
     </script>
 </body>
 
