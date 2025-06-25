@@ -18,7 +18,7 @@ try {
                              FROM customers c
                              LEFT JOIN users u ON c.created_by = u.user_id
                              WHERE c.customer_id = :id");
-    $stmt->bindParam(':id', $customer_id, PDO::PARAM_INT);
+    $stmt->bindParam(':id', $customer_id, PDO::PARAM_STR);
     $stmt->execute();
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
