@@ -84,15 +84,16 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SalePipeline | Customer Management</title>
     <?php include '../../include/header.php'; ?>
-    
+
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <style>
-        .project-list {
+
+    /* แก้ไข CSS ในส่วน <style>
+        ของไฟล์ customer.php */ <style>.project-list {
             max-height: 300px;
             overflow-y: auto;
         }
+
         .project-item {
             padding: 10px;
             border: 1px solid #ddd;
@@ -100,13 +101,26 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 5px;
             background-color: #f9f9f9;
         }
+
         .project-item h6 {
             color: #007bff;
             margin-bottom: 5px;
         }
+
         .project-details {
             font-size: 0.9em;
             color: #666;
+        }
+
+        /* แก้ไขสีลิงก์เฉพาะ Column แรก (Customer Name) ให้เป็นสีดำ */
+        #example1 tbody tr td:first-child a {
+            color: #333 !important;
+            text-decoration: none;
+        }
+
+        #example1 tbody tr td:first-child a:hover {
+            color: #007bff !important;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -114,7 +128,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
         <?php include '../../include/navbar.php'; ?>
-        
+
         <div class="content-wrapper">
             <div class="content-header">
                 <div class="container-fluid">
@@ -146,9 +160,9 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <div class="row">
                                             <div class="col-sm-3">
                                                 <div class="form-group">
-                                                    <input type="text" class="form-control" id="searchservice" name="searchservice" 
-                                                           value="<?php echo isset($_GET['searchservice']) ? htmlspecialchars($_GET['searchservice']) : ''; ?>" 
-                                                           placeholder="ค้นหา...">
+                                                    <input type="text" class="form-control" id="searchservice" name="searchservice"
+                                                        value="<?php echo isset($_GET['searchservice']) ? htmlspecialchars($_GET['searchservice']) : ''; ?>"
+                                                        placeholder="ค้นหา...">
                                                 </div>
                                             </div>
                                             <div class="col-sm-3">
@@ -202,7 +216,13 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <tbody>
                                     <?php foreach ($customers as $customer) { ?>
                                         <tr>
-                                            <td class="text-nowrap"><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                            <!-- Link ไปยังหน้า รายละเอียด -->
+                                            <td class="text-nowrap" onclick="window.location.href='view_customer.php?id=<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>'">
+                                                <a href="view_customer.php?id=<?php echo urlencode(encryptUserId($customer['customer_id'])); ?>" class="text-decoration-none">
+                                                    <?php echo htmlspecialchars($customer['customer_name']); ?>
+                                                </a>
+                                            </td>
+
                                             <td class="text-nowrap"><?php echo !empty($customer['position']) ? htmlspecialchars($customer['position']) : 'ไม่ระบุข้อมูล'; ?></td>
                                             <td class="text-nowrap"><?php echo htmlspecialchars($customer['phone']); ?></td>
                                             <td class="text-nowrap"><?php echo htmlspecialchars($customer['email']); ?></td>
@@ -265,7 +285,9 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     [10, 20, 30, 50, 100, 200, -1],
                     [10, 20, 30, 50, 100, 200, "ทั้งหมด"]
                 ],
-                "order": [[6, "desc"]],
+                "order": [
+                    [6, "desc"]
+                ],
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
                 "language": {
                     "lengthMenu": "แสดง _MENU_ รายการต่อหน้า",
@@ -314,7 +336,7 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }).then((result) => {
                 if (result.isConfirmed) {
                     const response = result.value;
-                    
+
                     if (response.status === 'success') {
                         Swal.fire({
                             title: 'สำเร็จ!',
@@ -344,11 +366,11 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // ฟังก์ชันแสดง Modal รายการโครงการที่เกี่ยวข้อง
         function showProjectListModal(response) {
             let projectListHtml = '<div class="project-list">';
-            
+
             response.related_projects.forEach((project, index) => {
                 // สร้าง encrypted project_id สำหรับ URL - แก้ไข path ให้ถูกต้อง
                 const projectUrl = `../project/view_project.php?project_id=${encodeURIComponent(project.project_id)}`;
-                
+
                 projectListHtml += `
                     <div class="project-item">
                         <h6>
@@ -366,9 +388,9 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 `;
             });
-            
+
             projectListHtml += '</div>';
-            
+
             Swal.fire({
                 title: '<i class="fas fa-exclamation-triangle text-warning"></i> ไม่สามารถลบลูกค้าได้',
                 html: `
@@ -410,12 +432,12 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .swal-wide {
             max-width: 90% !important;
         }
-        
+
         .swal2-html-container {
             max-height: 400px;
             overflow-y: auto;
         }
-        
+
         .project-list {
             max-height: 250px;
             overflow-y: auto;
@@ -424,26 +446,26 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 10px;
             background-color: #f8f9fa;
         }
-        
+
         .project-item {
             padding: 10px;
             border: 1px solid #e9ecef;
             margin-bottom: 10px;
             border-radius: 5px;
             background-color: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-        
+
         .project-item:last-child {
             margin-bottom: 0;
         }
-        
+
         .project-item h6 {
             color: #007bff;
             margin-bottom: 8px;
             font-weight: 600;
         }
-        
+
         .project-link {
             color: #007bff !important;
             text-decoration: none;
@@ -451,26 +473,26 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             cursor: pointer;
             display: inline-block;
         }
-        
+
         .project-link:hover {
             color: #0056b3 !important;
             text-decoration: underline;
             cursor: pointer;
         }
-        
+
         .project-link:hover .fa-external-link-alt {
             transform: translateX(2px);
         }
-        
+
         .project-details {
             font-size: 0.9em;
             color: #666;
         }
-        
+
         .project-details div {
             margin-bottom: 3px;
         }
-        
+
         .badge {
             font-size: 0.8em;
         }

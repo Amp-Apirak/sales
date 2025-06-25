@@ -301,9 +301,9 @@ if ($role == 'Executive') {
 
 $stmt = $condb->prepare($customer_query);
 if ($role == 'Sale Supervisor') {
-    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
+    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
 } elseif ($role == 'Seller' || $role == 'Engineer') {
-    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
 }
 $stmt->execute();
 $customers_data = $stmt->fetchAll(PDO::FETCH_ASSOC);

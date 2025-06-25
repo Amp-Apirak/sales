@@ -8,6 +8,19 @@ $team_id = $_SESSION['team_id'] ?? 0;
 $created_by = $_SESSION['user_id'] ?? 0;
 $user_id = $_SESSION['user_id'] ?? 0;
 
+// *** การ Debug เพื่อตรวจสอบข้อมูล Session (ลบออกหลังจากแก้ไขเสร็จ) ***
+// echo "<br>";
+// echo "<br>";
+// echo "<br>";
+// echo "<pre>";
+// echo "=== DEBUG INFO ===\n";
+// echo "Role: " . $role . "\n";
+// echo "User ID: " . $user_id . "\n"; 
+// echo "Team ID: " . $team_id . "\n";
+// echo "Created By: " . $created_by . "\n";
+// echo "==================\n";
+// echo "</pre>";
+
 // ตรวจสอบสิทธิ์ในการเข้าถึงหน้านี้
 // หาก role ของผู้ใช้ไม่ใช่ Executive, Sale Supervisor หรือ Seller ให้ redirect ไปที่หน้าห้ามเข้าถึง
 if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
@@ -204,7 +217,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
         'message' => empty($error_messages) && strpos($alert, 'success') !== false ? 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว' : ''
     ];
 
-
     // ส่งข้อมูลเป็น JSON และยุติการทำงานของ PHP Script
     header('Content-Type: application/json');
     echo json_encode($response);
@@ -216,68 +228,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 $stmt = $condb->query("SELECT product_id, product_name FROM products");
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ดึงข้อมูลลูกค้าให้เหมาะสมกับ role ของ user
-// หากเป็น Executive สามารถเห็นลูกค้าทั้งหมด
-// หากเป็น Sale Supervisor เห็นเฉพาะลูกค้าที่สร้างโดยผู้ใช้ในทีมเดียวกัน
-// หากเป็น Seller เห็นเฉพาะลูกค้าที่ตนเองสร้าง
-$customer_query = "SELECT DISTINCT c.* FROM customers c";
-if ($role == 'Executive') {
-    $customer_query .= " ORDER BY c.customer_name";
-} elseif ($role == 'Sale Supervisor') {
-    $customer_query .= " INNER JOIN users u ON c.created_by = u.user_id
-                       WHERE u.team_id = :team_id
-                       ORDER BY c.customer_name";
-} else {
-    $customer_query .= " WHERE c.created_by = :user_id
-                       ORDER BY c.customer_name";
+// *** ส่วนที่แก้ไข: การดึงข้อมูลลูกค้าตาม Role ของผู้ใช้ ***
+// เริ่มต้นตัวแปรสำหรับเก็บข้อมูลลูกค้า
+$customers = [];
+$customer_query = "";
+$stmt = null;
+
+// กำหนด SQL Query และ Parameter ตาม Role ของผู้ใช้
+switch ($role) {
+    case 'Executive':
+        // Executive สามารถเห็นลูกค้าทั้งหมด
+        $customer_query = "SELECT DISTINCT c.* FROM customers c ORDER BY c.customer_name";
+        $stmt = $condb->prepare($customer_query);
+        break;
+
+    case 'Sale Supervisor':
+        // Sale Supervisor เห็นเฉพาะลูกค้าของทีมตัวเอง
+        $customer_query = "SELECT DISTINCT c.* FROM customers c 
+                          INNER JOIN users u ON c.created_by = u.user_id 
+                          WHERE u.team_id = ? 
+                          ORDER BY c.customer_name";
+        $stmt = $condb->prepare($customer_query);
+        $stmt->bindParam(1, $team_id, PDO::PARAM_STR);
+        break;
+
+    case 'Seller':
+    default:
+        // Seller เห็นเฉพาะลูกค้าที่ตนเองสร้าง
+        $customer_query = "SELECT DISTINCT c.* FROM customers c 
+                          WHERE c.created_by = ? 
+                          ORDER BY c.customer_name";
+        $stmt = $condb->prepare($customer_query);
+        $stmt->bindParam(1, $user_id, PDO::PARAM_STR);
+        break;
 }
 
-$stmt = $condb->prepare($customer_query);
-if ($role == 'Sale Supervisor') {
-    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-} elseif ($role == 'Seller' || $role == 'Engineer') {
-    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-}
-$stmt->execute();
-$customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
-// ฟังก์ชันดึงข้อมูลบริษัท// แก้ไขฟังก์ชัน getCompanyData โดยระบุชื่อตารางและ alias ให้ชัดเจน
-function getCompanyData($condb, $role, $team_id, $user_id)
-{
-    $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
-             FROM customers c"; // เพิ่ม alias 'c' ให้กับตาราง customers
-
-    // เงื่อนไขตาม Role
-    if ($role == 'Sale Supervisor') {
-        $query .= " INNER JOIN users u ON c.created_by = u.user_id 
-                   WHERE u.team_id = :team_id";
-    } elseif ($role == 'Seller') {
-        $query .= " WHERE c.created_by = :user_id";
-    }
-
-    $query .= " ORDER BY c.company ASC";
-    $stmt = $condb->prepare($query);
-
-    if ($role == 'Sale Supervisor') {
-        $stmt->bindParam(':team_id', $team_id);
-    } elseif ($role == 'Seller') {
-        $stmt->bindParam(':user_id', $user_id);
-    }
-
+// Execute query และดึงข้อมูลลูกค้า
+if ($stmt) {
     try {
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Debug: แสดงจำนวนลูกค้าที่พบ (ลบออกหลังจากแก้ไขเสร็จ)
+        echo "<!-- DEBUG: Found " . count($customers) . " customers for role: " . $role . " -->";
+
+    } catch (PDOException $e) {
+        error_log("Error fetching customers: " . $e->getMessage());
+        $customers = [];
+    }
+}
+
+// *** ส่วนที่แก้ไข: ฟังก์ชันดึงข้อมูลบริษัทตาม Role ***
+function getCompanyData($condb, $role, $team_id, $user_id)
+{
+    // เริ่มต้นตัวแปรสำหรับเก็บข้อมูลบริษัท
+    $companies = [];
+    $query = "";
+    $stmt = null;
+
+    // กำหนด SQL Query ตาม Role ของผู้ใช้
+    switch ($role) {
+        case 'Executive':
+            // Executive เห็นข้อมูลบริษัททั้งหมด
+            $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
+                     FROM customers c 
+                     ORDER BY c.company ASC";
+            $stmt = $condb->prepare($query);
+            break;
+
+        case 'Sale Supervisor':
+            // Sale Supervisor เห็นเฉพาะบริษัทของลูกค้าในทีม
+            $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
+                     FROM customers c 
+                     INNER JOIN users u ON c.created_by = u.user_id 
+                     WHERE u.team_id = ? 
+                     ORDER BY c.company ASC";
+            $stmt = $condb->prepare($query);
+            $stmt->bindParam(1, $team_id, PDO::PARAM_STR);
+            break;
+
+        case 'Seller':
+        default:
+            // Seller เห็นเฉพาะบริษัทของลูกค้าที่ตนเองสร้าง
+            $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
+                     FROM customers c 
+                     WHERE c.created_by = ? 
+                     ORDER BY c.company ASC";
+            $stmt = $condb->prepare($query);
+            $stmt->bindParam(1, $user_id, PDO::PARAM_STR);
+            break;
+    }
+
+    // Execute query และคืนค่าผลลัพธ์
+    try {
+        if ($stmt) {
+            $stmt->execute();
+            $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        return $companies;
     } catch (PDOException $e) {
         error_log("Error in getCompanyData: " . $e->getMessage());
         return array(); // ส่งคืนอาร์เรย์ว่างในกรณีที่มีข้อผิดพลาด
     }
 }
 
-// ดึงข้อมูลบริษัท
+// เรียกใช้ฟังก์ชันดึงข้อมูลบริษัท
 $companies = getCompanyData($condb, $role, $team_id, $user_id);
 
-// เพิ่มส่วนนี้สำหรับดึงข้อมูลผู้ใช้สำหรับ Executive
+// ส่วนสำหรับ Executive: ดึงข้อมูลผู้ใช้สำหรับเลือกผู้รับผิดชอบโครงการ
 $users = [];
 if ($role === 'Executive') {
     $stmt = $condb->prepare("
@@ -291,7 +349,6 @@ if ($role === 'Executive') {
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 ?>
-
 <!-- ส่วน HTML ด้านล่างเป็น Form UI และ JavaScript เพื่อใช้งานในหน้า Add Project -->
 <!DOCTYPE html>
 <html lang="en">

@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
             $stmt->bindParam(':email', $email, PDO::PARAM_STR);
             $stmt->bindParam(':remark', $remark, PDO::PARAM_STR);
-            $stmt->bindParam(':updated_by', $updated_by, PDO::PARAM_INT);
+            $stmt->bindParam(':updated_by', $updated_by, PDO::PARAM_STR);
             $stmt->bindParam(':office_phone', $office_phone, PDO::PARAM_STR);
             $stmt->bindParam(':extension', $extension, PDO::PARAM_STR);
             $stmt->bindParam(':suppliers_image', $suppliers_image, PDO::PARAM_STR);

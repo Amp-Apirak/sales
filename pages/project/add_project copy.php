@@ -60,6 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     $contract_no = clean_input($_POST['con_number']);
     $product_id = clean_input($_POST['product_id']);
     $customer_id = clean_input($_POST['customer_id']);
+    // เพิ่มการรับค่า seller
+    $seller = clean_input($_POST['seller'] ?? '');
+    // หาก Role ไม่ใช่ Executive ให้ seller = created_by (ตัวเอง)
+    if ($role !== 'Executive') {
+        $seller = $created_by;
+    }
 
     // แปลงค่าที่เกี่ยวกับตัวเลขและคำนวณเพื่อกรอง, ลบ comma ออก และแปลงเป็น float
     $sale_vat = filter_var(str_replace(',', '', $_POST['sale_vat']), FILTER_VALIDATE_FLOAT);
@@ -92,6 +98,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     }
     if (empty($product_id)) {
         $error_messages[] = "กรุณาเลือกสินค้าที่ขาย";
+    }
+    // เพิ่มการตรวจสอบ seller สำหรับ Executive
+    if ($role === 'Executive' && empty($seller)) {
+        $error_messages[] = "กรุณาเลือกผู้ขาย/ผู้รับผิดชอบโครงการ";
     }
 
     // หากไม่มีข้อผิดพลาด ให้ทำการบันทึกข้อมูลลงฐานข้อมูล
@@ -142,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                 ':remark' => $remark,
                 ':vat' => $vat,
                 ':created_by' => $created_by,
-                ':seller' => $created_by
+                ':seller' => $seller
             ]);
 
             // หากมีรายการลูกค้าเพิ่มเติม ให้บันทึกลงตาราง project_customers
@@ -164,11 +174,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 
             // หากทุกอย่างไม่มีปัญหา ให้ commit transaction
             $condb->commit();
-            $alert = "success|บันทึกข้อมูลโครงการเรียบร้อยแล้ว";
+
+            // เข้ารหัส project_id เพื่อส่งไปยัง view_project.php
+            $encrypted_project_id = encryptUserId($project_id);
+
+            // ส่ง response กลับไปพร้อม redirect URL
+            $response = [
+                'success' => true,
+                'message' => 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว',
+                'redirect_url' => "view_project.php?project_id=" . urlencode($encrypted_project_id)
+            ];
+            echo json_encode($response);
+            exit();
         } catch (Exception $e) {
-            // หากมีข้อผิดพลาด ให้ rollback transaction เพื่อให้ฐานข้อมูลกลับสู่สภาพเดิม
             $condb->rollBack();
-            $alert = "error|" . $e->getMessage();
+            $response = [
+                'success' => false,
+                'errors' => [$e->getMessage()]
+            ];
+            echo json_encode($response);
+            exit();
         }
     }
 
@@ -178,6 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
         'errors' => $error_messages,
         'message' => empty($error_messages) && strpos($alert, 'success') !== false ? 'บันทึกข้อมูลโครงการเรียบร้อยแล้ว' : ''
     ];
+
 
     // ส่งข้อมูลเป็น JSON และยุติการทำงานของ PHP Script
     header('Content-Type: application/json');
@@ -199,14 +225,16 @@ if ($role == 'Executive') {
     $customer_query .= " ORDER BY c.customer_name";
 } elseif ($role == 'Sale Supervisor') {
     $customer_query .= " INNER JOIN users u ON c.created_by = u.user_id
-                         WHERE u.team_id = :team_id
-                         ORDER BY c.customer_name";
+                       WHERE u.team_id = :team_id
+                       ORDER BY c.customer_name";
 } else {
     $customer_query .= " WHERE c.created_by = :user_id
-                         ORDER BY c.customer_name";
+                       ORDER BY c.customer_name";
 }
 
 $stmt = $condb->prepare($customer_query);
+
+// 
 if ($role == 'Sale Supervisor') {
     $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
 } elseif ($role == 'Seller' || $role == 'Engineer') {
@@ -216,19 +244,21 @@ $stmt->execute();
 $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-// ฟังก์ชันดึงข้อมูลบริษัท
+// ฟังก์ชันดึงข้อมูลบริษัท// แก้ไขฟังก์ชัน getCompanyData โดยระบุชื่อตารางและ alias ให้ชัดเจน
 function getCompanyData($condb, $role, $team_id, $user_id)
 {
-    $query = "SELECT DISTINCT company, address, office_phone FROM customers";
+    $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
+             FROM customers c"; // เพิ่ม alias 'c' ให้กับตาราง customers
 
     // เงื่อนไขตาม Role
     if ($role == 'Sale Supervisor') {
-        $query .= " INNER JOIN users ON customers.created_by = users.user_id WHERE users.team_id = :team_id";
+        $query .= " INNER JOIN users u ON c.created_by = u.user_id 
+                   WHERE u.team_id = :team_id";
     } elseif ($role == 'Seller') {
-        $query .= " WHERE customers.created_by = :user_id";
+        $query .= " WHERE c.created_by = :user_id";
     }
 
-    $query .= " ORDER BY company ASC";
+    $query .= " ORDER BY c.company ASC";
     $stmt = $condb->prepare($query);
 
     if ($role == 'Sale Supervisor') {
@@ -237,12 +267,31 @@ function getCompanyData($condb, $role, $team_id, $user_id)
         $stmt->bindParam(':user_id', $user_id);
     }
 
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error in getCompanyData: " . $e->getMessage());
+        return array(); // ส่งคืนอาร์เรย์ว่างในกรณีที่มีข้อผิดพลาด
+    }
 }
 
 // ดึงข้อมูลบริษัท
 $companies = getCompanyData($condb, $role, $team_id, $user_id);
+
+// เพิ่มส่วนนี้สำหรับดึงข้อมูลผู้ใช้สำหรับ Executive
+$users = [];
+if ($role === 'Executive') {
+    $stmt = $condb->prepare("
+        SELECT u.user_id, u.first_name, u.last_name, u.role, t.team_name 
+        FROM users u
+        LEFT JOIN teams t ON u.team_id = t.team_id
+        WHERE u.role IN ('Seller', 'Sale Supervisor') 
+        ORDER BY t.team_name, u.first_name
+    ");
+    $stmt->execute();
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!-- ส่วน HTML ด้านล่างเป็น Form UI และ JavaScript เพื่อใช้งานในหน้า Add Project -->
@@ -402,12 +451,59 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                             </div>
 
                                             <div class="row">
+                                                <?php if ($role === 'Executive'): ?>
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้ขาย/ผู้รับผิดชอบโครงการ <span class="text-danger">*</span></label>
+                                                            <select class="form-control select2" name="seller" id="seller" style="width: 100%;" required>
+                                                                <option value="">-- เลือกผู้ขาย/ผู้รับผิดชอบโครงการ --</option>
+                                                                <?php foreach ($users as $user): ?>
+                                                                    <option value="<?php echo htmlspecialchars($user['user_id']); ?>">
+                                                                        <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
+                                                                        (<?php echo htmlspecialchars($user['role']); ?>)
+                                                                        <?php if ($user['team_name']): ?>
+                                                                            - ทีม: <?php echo htmlspecialchars($user['team_name']); ?>
+                                                                        <?php endif; ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                            <small class="form-text text-muted">
+                                                                เลือกผู้ขายที่จะรับผิดชอบดูแลโครงการนี้
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้สร้างโครงการ</label>
+                                                            <input type="text" class="form-control"
+                                                                value="<?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?>"
+                                                                readonly style="background-color:#F8F8FF">
+                                                            <small class="form-text text-muted">คุณเป็นผู้สร้างโครงการนี้</small>
+                                                        </div>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <!-- สำหรับ Role อื่นๆ (Seller, Sale Supervisor) ให้ seller = ตัวเอง -->
+                                                    <input type="hidden" name="seller" value="<?php echo $user_id; ?>">
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ผู้ขาย/ผู้รับผิดชอบโครงการ</label>
+                                                            <input type="text" class="form-control"
+                                                                value="<?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?>"
+                                                                readonly style="background-color:#F8F8FF">
+                                                            <small class="form-text text-muted">คุณจะเป็นผู้รับผิดชอบโครงการนี้</small>
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+
                                                 <div class="col-12 col-md-6">
                                                     <div class="form-group">
                                                         <label>ชื่อโครงการ<span class="text-danger">*</span></label>
                                                         <input type="text" name="project_name" class="form-control" placeholder="ชื่อโครงการ">
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            <div class="row">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>วันเริ่มโครงการ</label>
@@ -434,7 +530,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
 
                                         <!-- ส่วนของ Cost Project และ Estimate Potential -->
                                         <div class="card-body">
-                                            <h5><b><span class="text-primary">Cost Project</span></b></h5>
+                                            <h5><b><span class="text-primary">Estimate </span></b></h5>
                                             <hr>
                                             <div class="row">
                                                 <div class="col-12 col-md-3">
@@ -452,19 +548,25 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 <div class="col-12 col-md-3"></div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>กำไรขั้นต้น/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="gross_profit" class="form-control" id="gross_profit" style="background-color:#F8F8FF">
+                                                        <label>กำไรขั้นต้น/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
+                                                        <input type="int" name="gross_profit" class="form-control" id="gross_profit" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>กำไรขั้นต้น/คิดเป็น %</label>
-                                                        <input type="int" name="potential" class="form-control" id="potential" style="background-color:#F8F8FF">
+                                                        <input type="int" name="potential" class="form-control" id="potential" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div class="row mb-4">
+                                                <div class="col-12 col-md-3">
+                                                    <div class="form-group">
+                                                        <label>ราคาขาย/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
+                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control">
+                                                    </div>
+                                                </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ราคาขาย/รวมภาษีมูลค่าเพิ่ม</label>
@@ -473,8 +575,8 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>ราคาขาย/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="sale_no_vat" id="sale_no_vat" class="form-control">
+                                                        <label>ราคาต้นทุน/<span class="text-danger">ไม่รวมภาษีมูลค่าเพิ่ม</span></label>
+                                                        <input type="int" name="cost_no_vat" id="cost_no_vat" class="form-control">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
@@ -483,35 +585,30 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                                         <input type="int" name="cost_vat" id="cost_vat" class="form-control">
                                                     </div>
                                                 </div>
-                                                <div class="col-12 col-md-3">
-                                                    <div class="form-group">
-                                                        <label>ราคาต้นทุน/รวมไม่ภาษีมูลค่าเพิ่ม</label>
-                                                        <input type="int" name="cost_no_vat" id="cost_no_vat" class="form-control">
-                                                    </div>
-                                                </div>
                                             </div>
 
                                             <div id="estimate-potential-section">
-                                                <h5><b><span class="text-primary">Estimate Potential</span></b></h5>
+                                                <h5><b><span class="text-primary">Potential</span></b></h5>
+                                                คำนวณจากราคา คูณ(*) สถานะโครงการ (เลือกสถานะ : ใบเสนอราคา = 10% ,ยื่นประมูล = 50%, ชนะ = 100%)
                                                 <hr>
                                             </div>
                                             <div class="row mb-4">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ประมาณการยอดขาย (No Vat)</label>
-                                                        <input type="text" name="es_sale_no_vat" class="form-control" id="es_sale_no_vat" style="background-color:#F8F8FF">
+                                                        <input type="text" name="es_sale_no_vat" class="form-control" id="es_sale_no_vat" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>ประมาณการต้นทุน (No Vat)</label>
-                                                        <input type="text" name="es_cost_no_vat" class="form-control" id="es_cost_no_vat" style="background-color:#F8F8FF">
+                                                        <input type="text" name="es_cost_no_vat" class="form-control" id="es_cost_no_vat" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
                                                         <label>กำไรที่คาดการณ์ (No Vat)</label>
-                                                        <input type="text" name="es_gp_no_vat" class="form-control" id="es_gp_no_vat" style="background-color:#F8F8FF">
+                                                        <input type="text" name="es_gp_no_vat" class="form-control" id="es_gp_no_vat" readonly style="background-color:#F8F8FF">
                                                     </div>
                                                 </div>
                                             </div>
@@ -776,10 +873,8 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                                 title: 'บันทึกสำเร็จ',
                                 text: response.message,
                                 confirmButtonText: 'ตกลง'
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.href = 'project.php';
-                                }
+                            }).then(() => {
+                                window.location.href = response.redirect_url; // เปลี่ยนเส้นทางไปยังหน้ารายละเอียดโครงการ
                             });
                         } else {
                             var errorMessage = response.errors.join('<br>');
@@ -803,6 +898,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                     }
                 });
             });
+
         });
     </script>
 
@@ -846,40 +942,58 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
     <!-- คำนวณ cost และค่า Estimate ต่าง ๆ ตามการเปลี่ยนแปลงข้อมูล -->
     <script>
         $(document).ready(function() {
+            // ฟังก์ชันสำหรับจัดรูปแบบตัวเลขโดยเพิ่มเครื่องหมายคอมมา
             function formatNumber(num) {
                 return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             }
 
+            // ฟังก์ชันคำนวณราคาไม่รวม Vat จากราคารวม Vat
             function calculateNoVatPrice(priceWithVat, vat) {
                 return priceWithVat / (1 + (vat / 100));
             }
 
+            // ฟังก์ชันคำนวณราคารวม Vat จากราคาไม่รวม Vat
             function calculateWithVatPrice(priceNoVat, vat) {
                 return priceNoVat * (1 + (vat / 100));
             }
 
-            // คำนวณ Gross Profit และ Potential%
+            // ฟังก์ชันคำนวณกำไรขั้นต้น (Gross Profit) และกำไรขั้นต้นคิดเป็น % (Potential)
             function calculateGrossProfit() {
-                var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
-                var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
-
-                if (saleNoVat && costNoVat) {
-                    var grossProfit = saleNoVat - costNoVat;
-                    $("#gross_profit").val(formatNumber(grossProfit.toFixed(2)));
-
-                    var grossProfitPercentage = (grossProfit / saleNoVat) * 100;
-                    $("#potential").val(grossProfitPercentage.toFixed(2) + "%");
-                }
-            }
-
-            // คำนวณค่าประมาณการ (Estimate) ตามสถานะโครงการ
-            function recalculateEstimate() {
+                // ดึงค่าจากฟิลด์ input และแปลงเป็นตัวเลข (ลบเครื่องหมายคอมมาออก)
                 var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
                 var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
                 var status = $("#status").val();
-                var estimateSaleNoVat = 0;
-                var estimateCostNoVat = 0;
 
+                // ตรวจสอบว่าสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" หรือไม่
+                if (status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') {
+                    // กรณีสถานะ "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)": คำนวณทันทีหากมี saleNoVat
+                    if (saleNoVat > 0) {
+                        var grossProfit = saleNoVat - costNoVat; // คำนวณกำไรขั้นต้น
+                        $("#gross_profit").val(formatNumber(grossProfit.toFixed(2))); // แสดงผลกำไรขั้นต้น
+
+                        var grossProfitPercentage = (grossProfit / saleNoVat) * 100; // คำนวณกำไรขั้นต้นเป็น %
+                        $("#potential").val(grossProfitPercentage.toFixed(2) + "%"); // แสดงผลกำไรขั้นต้นเป็น %
+                    } else {
+                        // หากไม่มี saleNoVat ให้กำหนดค่าเป็น 0
+                        $("#gross_profit").val("0.00");
+                        $("#potential").val("0.00%");
+                    }
+                } else {
+                    // กรณีสถานะอื่น ๆ: ไม่คำนวณกำไรขั้นต้นและกำไรขั้นต้นเป็น % เลย
+                    // กำหนดฟิลด์เป็นว่างเปล่าเพื่อป้องกันการแสดงผลค่าที่คำนวณจากก่อนหน้านี้
+                    $("#gross_profit").val("");
+                    $("#potential").val("");
+                }
+            }
+
+            // ฟังก์ชันคำนวณค่าประมาณการ (Estimate) ตามสถานะโครงการ
+            function recalculateEstimate() {
+                // ดึงค่าจากฟิลด์ input และแปลงเป็นตัวเลข (ลบเครื่องหมายคอมมาออก)
+                var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
+                var costNoVat = parseFloat($("#cost_no_vat").val().replace(/,/g, "")) || 0;
+                var status = $("#status").val();
+
+                // กำหนดเปอร์เซ็นต์ของการประมาณการตามสถานะ
                 var percentage = 0;
                 switch (status) {
                     case 'นำเสนอโครงการ (Presentations)':
@@ -889,7 +1003,7 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                         percentage = 10;
                         break;
                     case 'ยื่นประมูล (Bidding)':
-                        percentage = 10;
+                        percentage = 50;
                         break;
                     case 'ชนะ (Win)':
                         percentage = 100;
@@ -905,24 +1019,47 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                         break;
                 }
 
-                estimateSaleNoVat = (saleNoVat * percentage) / 100;
-                estimateCostNoVat = (costNoVat * percentage) / 100;
+                // คำนวณค่าประมาณการยอดขาย, ต้นทุน, และกำไร
+                var estimateSaleNoVat = (saleNoVat * percentage) / 100;
+                var estimateCostNoVat = (costNoVat * percentage) / 100;
 
+                // แสดงผลในฟิลด์ที่เกี่ยวข้อง
                 $("#es_sale_no_vat").val(formatNumber(estimateSaleNoVat.toFixed(2)));
                 $("#es_cost_no_vat").val(formatNumber(estimateCostNoVat.toFixed(2)));
                 $("#es_gp_no_vat").val(formatNumber((estimateSaleNoVat - estimateCostNoVat).toFixed(2)));
             }
 
-            // Event ต่าง ๆ เมื่อกรอกข้อมูลคำนวณ Vat, No Vat, Update ตัวเลขและ Estimate
+            // Event Listener สำหรับการเปลี่ยนสถานะโครงการ
+            $("#status").on("change", function() {
+                var status = $(this).val();
+                var saleNoVat = parseFloat($("#sale_no_vat").val().replace(/,/g, "")) || 0;
+
+                // หากสถานะเป็น "ชนะ (Win)" หรือ "ยื่นประมูล (Bidding)" และมี saleNoVat ให้คำนวณกำไรขั้นต้นทันที
+                if ((status === 'ชนะ (Win)' || status === 'ยื่นประมูล (Bidding)') && saleNoVat > 0) {
+                    calculateGrossProfit();
+                } else {
+                    // หากสถานะไม่ใช่ "ชนะ (Win)" ให้กำหนดฟิลด์กำไรขั้นต้นและกำไรขั้นต้นเป็น % เป็นว่างเปล่า
+                    $("#gross_profit").val("");
+                    $("#potential").val("");
+                }
+                // อัปเดตค่าประมาณการทุกครั้งที่สถานะเปลี่ยน
+                recalculateEstimate();
+            });
+
+            // Event Listener สำหรับการกรอกหรือแก้ไขราคาขายรวม Vat
             $("#sale_vat").on("input", function() {
                 var saleVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
                 var vat = parseFloat($("#vat").val()) || 0;
                 var saleNoVat = calculateNoVatPrice(saleVat, vat);
                 $("#sale_no_vat").val(formatNumber(saleNoVat.toFixed(2)));
+
+                // เรียกคำนวณกำไรขั้นต้นตามเงื่อนไข (เฉพาะสถานะ "ชนะ (Win)" เท่านั้น)
                 calculateGrossProfit();
+                // อัปเดตค่าประมาณการ
                 recalculateEstimate();
             });
 
+            // Event Listener สำหรับการกรอกหรือแก้ไขราคาขายไม่รวม Vat
             $("#sale_no_vat").on("input", function() {
                 var saleNoVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
                 var vat = parseFloat($("#vat").val()) || 0;
@@ -930,10 +1067,14 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                     var saleVat = calculateWithVatPrice(saleNoVat, vat);
                     $("#sale_vat").val(formatNumber(saleVat.toFixed(2)));
                 }
+
+                // เรียกคำนวณกำไรขั้นต้นตามเงื่อนไข (เฉพาะสถานะ "ชนะ (Win)" เท่านั้น)
                 calculateGrossProfit();
+                // อัปเดตค่าประมาณการ
                 recalculateEstimate();
             });
 
+            // Event Listener สำหรับการกรอกหรือแก้ไขราคาต้นทุนไม่รวม Vat
             $("#cost_no_vat").on("input", function() {
                 var costNoVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
                 var vat = parseFloat($("#vat").val()) || 0;
@@ -941,27 +1082,38 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
                     var costVat = calculateWithVatPrice(costNoVat, vat);
                     $("#cost_vat").val(formatNumber(costVat.toFixed(2)));
                 }
+
+                // เรียกคำนวณกำไรขั้นต้นตามเงื่อนไข (เฉพาะสถานะ "ชนะ (Win)" เท่านั้น)
                 calculateGrossProfit();
+                // อัปเดตค่าประมาณการ
                 recalculateEstimate();
             });
 
+            // Event Listener สำหรับการกรอกหรือแก้ไขราคาต้นทุนรวม Vat
             $("#cost_vat").on("input", function() {
                 var costVat = parseFloat($(this).val().replace(/,/g, "")) || 0;
                 var vat = parseFloat($("#vat").val()) || 0;
                 var costNoVat = calculateNoVatPrice(costVat, vat);
                 $("#cost_no_vat").val(formatNumber(costNoVat.toFixed(2)));
+
+                // เรียกคำนวณกำไรขั้นต้นตามเงื่อนไข (เฉพาะสถานะ "ชนะ (Win)" เท่านั้น)
                 calculateGrossProfit();
+                // อัปเดตค่าประมาณการ
                 recalculateEstimate();
             });
 
+            // Event Listener สำหรับการเปลี่ยนค่า Vat
             $("#vat").on("change", function() {
+                // อัปเดตการคำนวณทั้งหมดเมื่อ Vat เปลี่ยน
                 $("#sale_vat").trigger("input");
                 $("#sale_no_vat").trigger("input");
                 $("#cost_vat").trigger("input");
                 $("#cost_no_vat").trigger("input");
             });
 
+            // Event Listener สำหรับการเปลี่ยนสถานะโครงการ (เพิ่มเติมเพื่อให้ครอบคลุม)
             $("#status").on("change", function() {
+                // อัปเดตค่าประมาณการทุกครั้งที่สถานะเปลี่ยน
                 recalculateEstimate();
             });
         });
@@ -1478,7 +1630,8 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
             /* ซ่อนหัวข้อและเนื้อหา */
         }
     </style>
-     <!-- /เงื่อนไขการซ่อนฟิลด์จากสถานะ -->
+    <!-- /เงื่อนไขการซ่อนฟิลด์จากสถานะ -->
+
 
 </body>
 
