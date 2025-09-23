@@ -60,24 +60,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // แก้ไขส่วนการ query และการเก็บค่าใน session
     if ($user && password_verify($password, $user['password'])) {
 
-        // ดึงข้อมูล team_name จากตาราง teams
+        // ดึงข้อมูลทีมทั้งหมดที่ user สังกัด
         try {
-            $stmt = $condb->prepare("
-            SELECT t.team_name 
-            FROM teams t 
-            INNER JOIN users u ON u.team_id = t.team_id 
-            WHERE u.user_id = :user_id
-        ");
-            $stmt->bindParam(':user_id', $user['user_id']);
-            $stmt->execute();
-            $team = $stmt->fetch();
+            $stmt_teams = $condb->prepare("
+                SELECT ut.team_id, t.team_name, ut.is_primary
+                FROM user_teams ut
+                JOIN teams t ON ut.team_id = t.team_id
+                WHERE ut.user_id = :user_id
+                ORDER BY ut.is_primary DESC, t.team_name ASC
+            ");
+            $stmt_teams->bindParam(':user_id', $user['user_id']);
+            $stmt_teams->execute();
+            $teams = $stmt_teams->fetchAll(PDO::FETCH_ASSOC);
 
-            // เก็บข้อมูลใน session
-            $_SESSION['team_name'] = $team['team_name'];
+            if (empty($teams)) {
+                // กรณีไม่พบทีม ให้แสดงข้อผิดพลาด
+                throw new Exception("User is not assigned to any team.");
+            }
+
+            // เก็บข้อมูลทีมทั้งหมดใน session
+            $_SESSION['team_ids'] = array_column($teams, 'team_id');
+            $_SESSION['user_teams'] = $teams; // เก็บข้อมูลทีมทั้งหมด (id, name, is_primary)
+
+            // ตั้งค่าทีมหลัก (active team)
+            $_SESSION['team_id'] = $teams[0]['team_id']; 
+            $_SESSION['team_name'] = $teams[0]['team_name'];
+
+            // เก็บข้อมูลผู้ใช้ใน session
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
-            $_SESSION['team_id'] = $user['team_id'];
             $_SESSION['first_name'] = $user['first_name'];
             $_SESSION['last_name'] = $user['last_name'];
             $_SESSION['profile_image'] = $user['profile_image'];

@@ -183,27 +183,17 @@ if ($role == 'Sale Supervisor') {
 
 // เพิ่มเงื่อนไขตาม Role สำหรับ main query
 if ($role == 'Sale Supervisor') {
-    $where_clause .= " AND (
-        seller.team_id = :team_id_main
-        OR EXISTS (
-            SELECT 1 
-            FROM project_members pm2 
-            WHERE pm2.project_id = p.project_id 
-            AND pm2.user_id = :user_id_main
-        )
-    )";
-    $params[':team_id_main'] = $team_id;
-    $params[':user_id_main'] = $created_by;
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $where_clause .= " AND (p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders)) OR EXISTS (SELECT 1 FROM project_members pm2 WHERE pm2.project_id = p.project_id AND pm2.user_id = ?))";
+        foreach ($team_ids as $tid) {
+            $params[] = $tid;
+        }
+        $params[] = $created_by;
+    }
 } elseif ($role == 'Sale' || $role == 'Seller') {
-    $where_clause .= " AND (
-        p.seller = :seller_id_main
-        OR EXISTS (
-            SELECT 1 
-            FROM project_members pm2 
-            WHERE pm2.project_id = p.project_id 
-            AND pm2.user_id = :user_id_main
-        )
-    )";
+    $where_clause .= " AND (p.seller = :seller_id_main OR EXISTS (SELECT 1 FROM project_members pm2 WHERE pm2.project_id = p.project_id AND pm2.user_id = :user_id_main))";
     $params[':seller_id_main'] = $created_by;
     $params[':user_id_main'] = $created_by;
 }
@@ -319,7 +309,8 @@ $sql_projects = "
     LEFT JOIN customers c ON p.customer_id = c.customer_id
     LEFT JOIN users creator ON p.created_by = creator.user_id
     LEFT JOIN users seller ON p.seller = seller.user_id
-    LEFT JOIN teams seller_team ON seller.team_id = seller_team.team_id
+    LEFT JOIN user_teams ut ON seller.user_id = ut.user_id AND ut.is_primary = 1
+    LEFT JOIN teams seller_team ON ut.team_id = seller_team.team_id
     LEFT JOIN products pr ON p.product_id = pr.product_id
     LEFT JOIN project_members pm ON p.project_id = pm.project_id
     LEFT JOIN project_members pm_user ON p.project_id = pm_user.project_id AND pm_user.user_id = :current_user_id

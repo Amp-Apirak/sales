@@ -35,6 +35,23 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
         <li class="nav-item d-none d-sm-inline-block ">
             <a href="<?php echo BASE_URL; ?>index.php" class="nav-link">Home</a>
         </li>
+
+        <?php
+        // Team Switcher Dropdown
+        if (isset($_SESSION['user_teams']) && count($_SESSION['user_teams']) > 1) : ?>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="teamSwitcherDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-users"></i> Team: <?php echo escapeOutput($_SESSION['team_name']); ?>
+                </a>
+                <div class="dropdown-menu" aria-labelledby="teamSwitcherDropdown">
+                    <?php foreach ($_SESSION['user_teams'] as $team) : ?>
+                        <a class="dropdown-item <?php echo ($team['team_id'] == $_SESSION['team_id']) ? 'active' : ''; ?>" href="#" onclick="switchTeam('<?php echo $team['team_id']; ?>')">
+                            <?php echo escapeOutput($team['team_name']); ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </li>
+        <?php endif; ?>
     </ul>
 
     <!-- Right navbar links -->
@@ -95,6 +112,23 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
         </li>
     </ul>
 </nav>
+
+<script>
+function switchTeam(teamId) {
+    $.ajax({
+        url: '<?php echo BASE_URL; ?>switch_team.php', // We will create this file next
+        type: 'POST',
+        data: { team_id: teamId },
+        success: function(response) {
+            // Reload the page to reflect the change
+            window.location.reload();
+        },
+        error: function() {
+            alert('Failed to switch team. Please try again.');
+        }
+    });
+}
+</script>
 
 <!-- LOGO -->
 <style>

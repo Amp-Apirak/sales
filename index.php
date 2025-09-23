@@ -80,29 +80,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $teams = [];
 $team_members = [];
 
+// สำหรับ dropdown กรองข้อมูล
 if ($can_view_all) {
-    // ดึงข้อมูลทีมทั้งหมด
-    $team_query = "SELECT team_id, team_name FROM teams";
+    // Executive ดึงทีมทั้งหมด
+    $team_query = "SELECT team_id, team_name FROM teams ORDER BY team_name ASC";
     $stmt = $condb->prepare($team_query);
     $stmt->execute();
     $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // ดึงข้อมูลผู้ใช้งานทั้งหมดในบทบาทที่เกี่ยวข้อง
-    $user_query = "SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name, team_id 
-                   FROM users 
-                   WHERE role IN ('Seller', 'Sale Supervisor', 'Executive')";
+    // ดึงผู้ใช้ทั้งหมดที่สามารถเป็นเจ้าของโครงการได้
+    $user_query = "SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as full_name, t.team_name 
+                   FROM users u 
+                   LEFT JOIN teams t ON (SELECT team_id FROM user_teams ut WHERE ut.user_id = u.user_id AND ut.is_primary = 1 LIMIT 1) = t.team_id
+                   WHERE u.role IN ('Seller', 'Sale Supervisor', 'Executive')
+                   ORDER BY t.team_name, u.first_name";
     $stmt = $condb->prepare($user_query);
     $stmt->execute();
     $team_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 } elseif ($can_view_team) {
-    // ดึงข้อมูลสมาชิกในทีมตาม team_id ที่เลือก
-    $user_query = "SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name
-                   FROM users 
-                   WHERE team_id = :team_id AND role IN ('Seller', 'Sale Supervisor', 'Executive')";
-    $stmt = $condb->prepare($user_query);
-    $stmt->bindParam(':team_id', $team_id);
-    $stmt->execute();
-    $team_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Sale Supervisor ดึงเฉพาะทีมที่ตัวเองสังกัด
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $team_query = "SELECT team_id, team_name FROM teams WHERE team_id IN ($placeholders) ORDER BY team_name ASC";
+        $stmt = $condb->prepare($team_query);
+        $stmt->execute($team_ids);
+        $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // ดึงสมาชิกในทีมทั้งหมดที่ตัวเองสังกัด
+        $user_query = "SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as full_name 
+                       FROM users u 
+                       JOIN user_teams ut ON u.user_id = ut.user_id
+                       WHERE ut.team_id IN ($placeholders) AND u.role IN ('Seller', 'Sale Supervisor', 'Executive')
+                       GROUP BY u.user_id
+                       ORDER BY u.first_name";
+        $stmt = $condb->prepare($user_query);
+        $stmt->execute($team_ids);
+        $team_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 
 // ส่วนที่ 4: ฟังก์ชันสำหรับการดึงและประมวลผลข้อมูล
@@ -117,51 +133,48 @@ function getFilteredData($condb, $query, $params)
 }
 
 // ฟังก์ชันสำหรับนับจำนวนทีม
-function getTeamCount($condb, $role, $team_id, $filter_team_id = null)
+function getTeamCount($condb, $role, $user_id, $filter_team_id = null)
 {
-    if ($role === 'Executive' && $filter_team_id) {
-        $query = "SELECT COUNT(*) as total FROM teams WHERE team_id = :team_id";
-        $stmt = $condb->prepare($query);
-        $stmt->bindParam(':team_id', $filter_team_id, PDO::PARAM_STR);
-    } elseif ($role === 'Executive') {
+    if ($role === 'Executive') {
+        if ($filter_team_id) {
+            return 1; // ถ้ากรองมาแล้ว ก็มีแค่ 1 ทีม
+        }
         $query = "SELECT COUNT(*) as total FROM teams";
         $stmt = $condb->prepare($query);
     } else {
-        $query = "SELECT COUNT(*) as total FROM teams WHERE team_id = :team_id";
+        // นับจำนวนทีมที่ user คนปัจจุบันสังกัดอยู่
+        $query = "SELECT COUNT(DISTINCT team_id) as total FROM user_teams WHERE user_id = :user_id";
         $stmt = $condb->prepare($query);
-        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
     }
     $stmt->execute();
     return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 }
 
 // ฟังก์ชันสำหรับนับจำนวนสมาชิกในทีม
-function getTeamMemberCount($condb, $role, $team_id, $user_id, $filter_team_id = null, $filter_user_id = null)
+function getTeamMemberCount($condb, $role, $user_id, $team_ids, $filter_team_id = null, $filter_user_id = null)
 {
-    if ($role === 'Executive' && $filter_team_id) {
-        $query = "SELECT COUNT(*) as total FROM users WHERE team_id = :team_id";
+    if ($role === 'Executive') {
+        if ($filter_user_id) {
+            return 1; // กรองผู้ใช้มาแล้ว
+        }
+        if ($filter_team_id) {
+            $query = "SELECT COUNT(DISTINCT user_id) as total FROM user_teams WHERE team_id = :team_id";
+            $stmt = $condb->prepare($query);
+            $stmt->bindParam(':team_id', $filter_team_id, PDO::PARAM_STR);
+        } else {
+            $query = "SELECT COUNT(*) as total FROM users";
+            $stmt = $condb->prepare($query);
+        }
+    } else { // Sale Supervisor, Seller, Engineer
+        if ($filter_user_id) {
+            return 1;
+        }
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $query = "SELECT COUNT(DISTINCT user_id) as total FROM user_teams WHERE team_id IN ($placeholders)";
         $stmt = $condb->prepare($query);
-        $stmt->bindParam(':team_id', $filter_team_id, PDO::PARAM_STR);
-    } elseif ($role === 'Executive' && $filter_user_id) {
-        $query = "SELECT COUNT(*) as total FROM users WHERE user_id = :user_id";
-        $stmt = $condb->prepare($query);
-        $stmt->bindParam(':user_id', $filter_user_id, PDO::PARAM_STR);
-    } elseif ($role === 'Executive') {
-        $query = "SELECT COUNT(*) as total FROM users";
-        $stmt = $condb->prepare($query);
-    } elseif ($role === 'Sale Supervisor' && $filter_user_id) {
-        $query = "SELECT COUNT(*) as total FROM users WHERE team_id = :team_id AND user_id = :user_id";
-        $stmt = $condb->prepare($query);
-        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
-        $stmt->bindParam(':user_id', $filter_user_id, PDO::PARAM_STR);
-    } elseif ($role === 'Sale Supervisor') {
-        $query = "SELECT COUNT(*) as total FROM users WHERE team_id = :team_id";
-        $stmt = $condb->prepare($query);
-        $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR);
-    } else {
-        $query = "SELECT COUNT(*) as total FROM users WHERE user_id = :user_id";
-        $stmt = $condb->prepare($query);
-        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
+        $stmt->execute($team_ids);
+        return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     }
     $stmt->execute();
     return $stmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -178,7 +191,6 @@ try {
 
     // นับจำนวน Project ตามช่วงเวลาที่กรอง
     $project_query = "SELECT COUNT(*) as total_projects FROM projects p
-                      LEFT JOIN users u ON p.seller = u.user_id
                       WHERE p.sales_date BETWEEN :start_date AND :end_date";
     $project_params = [
         ':start_date' => $filter_date_range[0],
@@ -186,12 +198,19 @@ try {
     ];
 
     // กรองข้อมูลตาม team_id และ user_id
-    if ($filter_team_id && $can_view_all) {
-        $project_query .= " AND u.team_id = :team_id";
-        $project_params[':team_id'] = $filter_team_id;
-    } elseif ($can_view_team) {
-        $project_query .= " AND u.team_id = :team_id";
-        $project_params[':team_id'] = $team_id;
+    if ($can_view_all) {
+        if ($filter_team_id) {
+            $project_query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
+            $project_params[':team_id'] = $filter_team_id;
+        }
+    } else if ($can_view_team) {
+        $team_ids = $_SESSION['team_ids'] ?? [];
+        if (!empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $project_query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
+            // array_values is important here to re-index the array for positional placeholders
+            $project_params = array_merge($project_params, array_values($team_ids));
+        }
     }
 
     if ($filter_user_id) {
@@ -211,7 +230,6 @@ try {
     if ($can_view_financial) {
         $query = "SELECT SUM(p.cost_no_vat) as total_cost, SUM(p.sale_no_vat) as total_sales 
         FROM projects p
-        LEFT JOIN users u ON p.seller = u.user_id
         WHERE p.sales_date BETWEEN :start_date AND :end_date";
         $params = [
             ':start_date' => $filter_date_range[0],
@@ -219,12 +237,18 @@ try {
         ];
 
         // เพิ่มเงื่อนไขการกรองข้อมูลตาม team_id และ user_id
-        if ($filter_team_id && $can_view_all) {
-            $query .= " AND u.team_id = :team_id";
-            $params[':team_id'] = $filter_team_id;
-        } elseif ($can_view_team) {
-            $query .= " AND u.team_id = :team_id";
-            $params[':team_id'] = $team_id;
+        if ($can_view_all) {
+            if ($filter_team_id) {
+                $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
+                $params[':team_id'] = $filter_team_id;
+            }
+        } else if ($can_view_team) {
+            $team_ids = $_SESSION['team_ids'] ?? [];
+            if (!empty($team_ids)) {
+                $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+                $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
+                $params = array_merge($params, array_values($team_ids));
+            }
         }
 
         if ($filter_user_id) {
@@ -241,8 +265,8 @@ try {
     }
 
     // นับจำนวนทีมและสมาชิกทีม
-    $total_teams = getTeamCount($condb, $role, $team_id, $filter_team_id);
-    $total_team_members = getTeamMemberCount($condb, $role, $team_id, $user_id, $filter_team_id, $filter_user_id);
+    $total_teams = getTeamCount($condb, $role, $user_id, $filter_team_id);
+    $total_team_members = getTeamMemberCount($condb, $role, $user_id, $_SESSION['team_ids'] ?? [], $filter_team_id, $filter_user_id);
 
     // คำนวณกำไรและเปอร์เซ็นต์กำไร
     $total_profit = $total_sales - $total_cost;
@@ -262,14 +286,18 @@ try {
 // --------------------------------------------------------
 
 // ดึงข้อมูลสถานะโครงการ
-$project_status_query = "SELECT status, COUNT(*) as count FROM projects 
-                         WHERE sales_date BETWEEN :start_date AND :end_date ";
+$project_status_query = "SELECT p.status, COUNT(*) as count FROM projects p 
+                         WHERE p.sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
-    $project_status_query .= "AND created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+    $project_status_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
 } elseif ($can_view_team) {
-    $project_status_query .= "AND created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $project_status_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders)) ";
+    }
 } elseif ($can_view_own) {
-    $project_status_query .= "AND created_by = :user_id ";
+    $project_status_query .= "AND p.created_by = :user_id ";
 }
 $project_status_query .= "GROUP BY status";
 
@@ -291,9 +319,13 @@ $top_products_query = "SELECT p.product_name, COUNT(*) as count FROM projects pr
                        JOIN products p ON pr.product_id = p.product_id 
                        WHERE pr.sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
-    $top_products_query .= "AND pr.created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+    $top_products_query .= "AND pr.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
 } elseif ($can_view_team) {
-    $top_products_query .= "AND pr.created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $top_products_query .= "AND pr.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders)) ";
+    }
 } elseif ($can_view_own) {
     $top_products_query .= "AND pr.created_by = :user_id ";
 }
@@ -314,14 +346,18 @@ $top_products_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ดึงข้อมูลยอดขายแต่ละปี
 $yearly_sales_query = "SELECT YEAR(sales_date) as year, SUM(sale_vat) as total_sales 
-                       FROM projects 
+                       FROM projects p
                        WHERE sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
-    $yearly_sales_query .= "AND created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+    $yearly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
 } elseif ($can_view_team) {
-    $yearly_sales_query .= "AND created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $yearly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders)) ";
+    }
 } elseif ($can_view_own) {
-    $yearly_sales_query .= "AND created_by = :user_id ";
+    $yearly_sales_query .= "AND p.created_by = :user_id ";
 }
 $yearly_sales_query .= "GROUP BY YEAR(sales_date) ORDER BY year";
 
@@ -344,9 +380,13 @@ $employee_sales_query = "SELECT u.first_name, u.last_name, SUM(p.sale_vat) as to
                          JOIN users u ON p.seller = u.user_id
                          WHERE p.sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
-    $employee_sales_query .= "AND u.team_id = :team_id ";
+    $employee_sales_query .= "AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
 } elseif ($can_view_team) {
-    $employee_sales_query .= "AND u.team_id = :team_id ";
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $employee_sales_query .= "AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders)) ";
+    }
 } elseif ($can_view_own) {
     $employee_sales_query .= "AND p.seller = :user_id ";
 }
@@ -367,14 +407,18 @@ $employee_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ดึงข้อมูลยอดขายรายเดือน
 $monthly_sales_query = "SELECT DATE_FORMAT(sales_date, '%Y-%m') as month, SUM(sale_vat) as total_sales 
-                        FROM projects 
+                        FROM projects p 
                         WHERE sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
-    $monthly_sales_query .= "AND created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+    $monthly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
 } elseif ($can_view_team) {
-    $monthly_sales_query .= "AND created_by IN (SELECT user_id FROM users WHERE team_id = :team_id) ";
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $monthly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders)) ";
+    }
 } elseif ($can_view_own) {
-    $monthly_sales_query .= "AND created_by = :user_id ";
+    $monthly_sales_query .= "AND p.created_by = :user_id ";
 }
 $monthly_sales_query .= "GROUP BY DATE_FORMAT(sales_date, '%Y-%m') ORDER BY month";
 
@@ -395,12 +439,17 @@ $monthly_sales_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $team_sales_query = "SELECT t.team_name, SUM(p.sale_vat) as total_sales 
                      FROM projects p
                      JOIN users u ON p.seller = u.user_id
-                     JOIN teams t ON u.team_id = t.team_id
+                     JOIN user_teams ut ON u.user_id = ut.user_id
+                     JOIN teams t ON ut.team_id = t.team_id
                      WHERE p.sales_date BETWEEN :start_date AND :end_date ";
 if ($filter_team_id && $can_view_all) {
-    $team_sales_query .= "AND u.team_id = :team_id ";
+    $team_sales_query .= "AND t.team_id = :team_id ";
 } elseif ($can_view_team) {
-    $team_sales_query .= "AND u.team_id = :team_id ";
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $team_sales_query .= "AND t.team_id IN ($placeholders) ";
+    }
 }
 $team_sales_query .= "GROUP BY t.team_id ORDER BY total_sales DESC";
 
@@ -543,7 +592,6 @@ function getWinProjectSummary($condb, $role, $team_id, $user_id, $filter_team_id
                 SUM(cost_no_vat) as total_win_cost, 
                 SUM(gross_profit) as total_win_profit
              FROM projects p
-             LEFT JOIN users u ON p.seller = u.user_id
              WHERE p.status = 'ชนะ (Win)'";
 
     // เพิ่มเงื่อนไขกรองตามช่วงวันที่
@@ -553,9 +601,13 @@ function getWinProjectSummary($condb, $role, $team_id, $user_id, $filter_team_id
 
     // เพิ่มเงื่อนไขการกรองตามสิทธิ์การเข้าถึง
     if ($filter_team_id && $role === 'Executive') {
-        $query .= " AND u.team_id = :team_id";
+        $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
     } elseif ($role === 'Sale Supervisor') {
-        $query .= " AND u.team_id = :team_id";
+        $team_ids = $_SESSION['team_ids'] ?? [];
+        if (!empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
+        }
     } elseif ($role === 'Seller') {
         $query .= " AND p.seller = :user_id";
     }

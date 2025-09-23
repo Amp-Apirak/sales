@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 23, 2025 at 10:22 AM
+-- Generation Time: Sep 23, 2025 at 02:34 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -1707,7 +1707,6 @@ CREATE TABLE `users` (
   `username` varchar(255) NOT NULL COMMENT 'ชื่อผู้ใช้สำหรับล็อกอิน',
   `email` varchar(255) NOT NULL COMMENT 'อีเมล',
   `role` enum('Executive','Sale Supervisor','Seller','Engineer') NOT NULL COMMENT 'บทบาท (เช่น Executive, Sale Supervisor)',
-  `team_id` char(36) DEFAULT NULL COMMENT 'รหัสทีม (เชื่อมโยงกับตาราง teams)',
   `position` varchar(255) NOT NULL COMMENT 'ตำแหน่งงาน',
   `phone` varchar(20) DEFAULT NULL COMMENT 'เบอร์โทรศัพท์',
   `password` varchar(255) NOT NULL COMMENT 'รหัสผ่าน',
@@ -1721,51 +1720,51 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, `role`, `team_id`, `position`, `phone`, `password`, `company`, `created_at`, `created_by`, `profile_image`) VALUES
-('1', 'Sale', 'Test Platform', 'Sale', 'Saletest@gmail.com', 'Seller', '4', 'Sale Test Platform', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', ''),
-('14d9e34c-b691-4ce8-a5ef-929ace71248a', 'Boongred', 'Theephukhieo', 'boongerd', 'boongerd@pointit.co.th', 'Sale Supervisor', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 'System Engineer Manager', '0818741889', '$2y$10$nOlaLUtPDsBhJxyi37sYZukj7i8dJJ811mbTxeC749VKxZZuYO1vW', 'Point IT Consulting Co.,Ltd.', '2024-10-31 23:55:23', '34e67e45-92f6-4e20-a78b-a4ffe97b3775', NULL),
-('193f9eed-2938-4305-ab65-828ac5253b30', 'อรรถกร', 'ปุญญะฐิติ', 'Atthakorn', 'atthakorn.pm@gmail.com', 'Seller', '2', '', '0859936540', '$2y$10$Gi1tK2Xsl0dZ28YasSajjeusUsK2.1LcP0GYzZGgYhqB6NLNIf5Qm', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2025-06-11 07:47:19', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
-('1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Arunnee', 'Thiamthawisin', 'Arunnee', 'arunnee@pointit.co.th', 'Seller', 'b9db21db-cfd7-4887-9ca7-5088a12f1bda', 'Account Executive Manager', '', '$2y$10$gcxTM193rEDPM.Ynw.GfEed.RYEBQl7640PXfEzH7Qj05kXleZ5QK', 'Point IT Consulting Co.,Ltd.', '2024-11-04 03:05:45', '5', NULL),
-('1f540668-fa06-45ec-8881-b50c378cf648', 'Podchanan', 'Setthanan', 'Podchanan', 'Podchanan@pointit.co.th', 'Seller', '28534929-e527-4755-bd37-0acdd51b7b45', 'Account Executive', '', '$2y$10$4Wtf3LOLe3wXebNw4co/e.58NEKkRyjxqUE7vceMnEFSLqA.D7eym', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:23:35', '5', NULL),
-('2', 'Systems', 'Admin', 'Admin', 'Systems_admin@gmail.com', 'Executive', '1', 'Systems Admin', '0839595800', '$2y$10$lMfm90VV7oVMLHypibv3Xuc1enYtrj4hkiHyFxQM3FXPC7n8vALRy', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', ''),
-('270c74ec-9124-4eb5-9469-0253ba8530af', 'Awirut', 'Somsanguan', 'Awirut', 'Awirut@pointit.co.th', 'Sale Supervisor', '28534929-e527-4755-bd37-0acdd51b7b45', 'Smart Innovation Technology Consulting Manager', '', '$2y$10$zbqZ8JHuuGejCPqkozcYb.wzIfiTgY.peFop7RJInr9HIUPjzZFra', 'Point IT Consulting Co.,LTD.', '2024-11-06 02:20:29', '5', NULL),
-('2f6d353b-53f1-4492-8878-bc93c18c5de9', 'Prakorb', 'Jongjarussang', 'Prakorb', 'prakorb@pointit.co.th', 'Executive', '4', 'MD', '', '$2y$10$kZrq7.zXl241JjNXWWd0oOGi/f20GFYfBH0veRAL4sMCr20reES3C', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:31:48', '5', NULL),
-('3', 'Miss Phattraorn', 'Amornophakun', 'Phattraorn', 'phattraorn.a@pointit.co.th', 'Seller', '1', 'Sales', '0619522111', '$2y$10$SHSFHBjru2xyAaGHphNVr.LjUAaFzhY9uiewWlXCWesvpRI50nlgW', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', '670e42ef5b4a3.jpg'),
-('30750fba-88ab-44ce-baf2-d0894357c67c', 'Bulakorn', 'Puapun', 'Bulakorn', 'bulakorn@gmail.com', 'Sale Supervisor', '1', 'AI Business Consulting Director', '', '$2y$10$h7OSSaVYQM5CLz9rmn37Z.4qQ2Hax0D17UerN.BTqrixUTv6U69Ta', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:14:26', '5', NULL),
-('3140fdaf-5103-4423-bf87-11b7c1153416', 'Direk', 'Wongsngam', 'Direk', 'Direk@pointit.co.th', 'Seller', 'db32697a-0f69-41f7-9413-58ffe920ad7d', 'Bank & Corporate SalesDirector', '', '$2y$10$M/bAx1lFykgf1LklAvbQKONKI4OQfpu7NofVfwA.r1GDy9xx94uGO', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:39:01', '5', NULL),
-('34e67e45-92f6-4e20-a78b-a4ffe97b3775', 'Pisarn', 'Siribandit', 'Pisarn', 'pisarn@pointit.co.th', 'Sale Supervisor', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 'Digital Transformation Consulting Director', '', '$2y$10$aEOtRUxIfKi52ib5Jj.Vpue/FP7eIWKeNRdM68DEr1GCH5OUa1uOy', 'Point IT Consulting Co.,Ltd.', '2024-10-31 18:08:53', '5', '67242a25ce524.png'),
-('3d82b654-e49f-46f8-b698-fceaa5d4cdae', 'Natapornsuang', 'Chanasan', 'Natapornsuang', 'natapornsuang@pointit.co.th', 'Seller', 'b9db21db-cfd7-4887-9ca7-5088a12f1bda', 'Senior Account Executive', '', '$2y$10$b5wxlKujVAxTagneuJOtqOJ4xBWQNkZ8lqJHmjs4CVFb4GIi0NrOi', 'Point IT Consulting Co.,Ltd.', '2024-11-04 03:00:40', '5', NULL),
-('3efcb87b-ce45-4a66-9d73-91259caba1d0', 'Teerayut', 'Kaengjai', 'Teerayut', 'Teerayut@pointit.co.th', 'Engineer', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 'Head of Enterprise Engineer Service', '', '$2y$10$u5SlcRNFVTOxQ1aFabruaeLG49neZPwAQEWo6ToVm8ZwwZul8lqVS', 'Point IT Consulting Co.,Ltd.', '2024-11-06 02:29:31', '5', NULL),
-('4', 'Support', 'Platform', 'Support', 'Support@gmail.com', 'Executive', '4', 'Application Support', '0839595811', '$2y$10$RAWOJU03Vy72u4zMVF/M/O9Af1HSbGOHAjlDKZHgrzbSZodZUcuky', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:55:43', '2', '6724613260590.png'),
-('44ab4e8b-e3e6-431d-ad49-40d4601779b4', 'Nutjaree', 'Chaothonglang', 'Nutjaree', 'nutjaree@pointit.co.th', 'Sale Supervisor', '3', 'Assistant Service Manager', '', '$2y$10$OeTqb/woFTv/pt7uaBRx4ujA7jJYTuyGzSmx2y4jtijxn9oJcRuky', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:04:37', '97c68703-a8b7-4ceb-9344-65fe4404c4ab', NULL),
-('5', 'Panit', 'Paophan', 'Panit', 'panit@poinitit.co.th', 'Executive', '4', 'Executive Director', '0814834619', '$2y$10$Td6gIdc/jANDPx3gJJEbGOPMY1Y7MMigduUt6tJ9DeB3KRGykTmg2', 'Point IT Consulting Co.,Ltd.', '2024-09-17 08:15:37', '2', NULL),
-('5b698e22-ba83-43c4-a39e-e6d68f98791f', 'Chawanon', 'Tanchairittikul', 'Chawanon', 'Chawanon@pointit.co.th', 'Engineer', '1', 'Project Management', '', '$2y$10$kRhzV6oQJ79bn/tZuuhMD.WBTbSR.NkPniYOL2si5WfsJyzjgtaau', 'Point IT Consulting Co.,Ltd.', '2025-06-18 02:00:45', '2', NULL),
-('5eef69ba-15ee-4414-a2e4-be4f68b8839e', 'Kanitta', 'Ongsathan', 'Kanitta', 'kanitta@pointit.co.th', 'Sale Supervisor', '4', 'Senior Procurement', '0880223292', '$2y$10$6BcDhIY.7m7X2s7D6iAXkOTuden3sQucRuN.8mcV4WF44RMmFHHui', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:01:23', '5', NULL),
-('6614b721-a8b4-46d2-9c80-0caab04772dc', 'Woradol', 'Daoduang', 'Woradol', 'Woradol@pointit.co.th', 'Executive', '4', 'Executive Director', '', '$2y$10$l454f/PTDFOabJbIz0BAkedEGdUGc000TRpac7ffYJrRzlIIwcUc2', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:34:51', '5', NULL),
-('70dd36b5-f587-4aa9-b544-c69542616d34', 'Narumon', 'Wongkrua', 'Narumon', 'wongkrua.na@gmail.com', 'Seller', '2', '', '0642614635', '$2y$10$D4Ab6d51oqyzTj4IOTHGsuv5oubG0u37VfDRVoT/xvpJVPWpk8LG.', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2025-06-11 09:15:44', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
-('85c114ec-a416-41c0-9859-12b90dc5b488', 'Porapath', 'Yanthukij', 'Porapath', 'porapath@pointit.co.th', 'Seller', '4', 'Procurement', '0956422238', '$2y$10$U1hx.FejkNpt5/ltAvw.b.gxPyzq3fS5WpqMh4H.10negrF/7qVk6', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:02:44', '5', NULL),
-('86054531-f751-48c7-b257-222c9ccbd946', 'สารภี', 'ทองแก้ว', 'Kai', 'Acct@pointit.co.th', 'Executive', '4', 'สมุห์บัญชี', '', '$2y$10$flZPg1wESq1UvwWrsS1wDuu2v1dFccAL70ZmJgZtHtlLGCEr54q5y', '', '2025-06-10 05:18:57', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', NULL),
-('8ae1a02d-32c2-4469-ba98-818dfc76dcdb', 'Pawitcha', 'Katekhong', 'Pawitcha', 'Pawitcha@pointit.co.th', 'Seller', 'db32697a-0f69-41f7-9413-58ffe920ad7d', 'Bank &amp; Corporate Account Executive', '', '$2y$10$k1TyBLrPo0z7gk/wWE0N8u08grMt8IoLb0sbcYu82YAUFLkhNC9.6', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:43:57', '5', NULL),
-('8c1c0a55-2610-4081-8d12-b2a6971ffbe8', 'Yuthana', 'Jaturajitraporn', 'Yuthana', 'yuthana@pointit.co.th', 'Seller', '1', 'Senior Sales Backend Developer', '', '$2y$10$.ZJ0wDC827yYB5BqJmbrD.sbXB8sk1m4QPbEXHeVsXCrKofMhC0km', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:07:14', '5', NULL),
-('8c782887-8fd3-4f99-ac27-63054a8a1942', 'Surapan', 'Pawanrum', 'Surapan', 'Surapan@pointit.co.th', 'Sale Supervisor', '1', 'Platform Development Manager', '', '$2y$10$wf6P22p7BIpJ2bIdRuyyyur2jxxyliqEi4T084m6Slq.4FZsQxCOa', 'Point IT Consulting Co.,Ltd.', '2024-12-02 06:48:59', '5', NULL),
-('97c68703-a8b7-4ceb-9344-65fe4404c4ab', 'Chittichai', 'Duangnang', 'Chittichai', 'chittichai@pointit.co.th', 'Sale Supervisor', '3', 'Service Manager', '', '$2y$10$va/6nCSzdBqd/kCyMgYN7.gtksHhW2t14s3Qr1EClGsr10cSFJyza', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:00:10', '5', NULL),
-('a5741799-938b-4d0a-a3dc-4ca1aa164708', 'Theerachart', 'Tiyapongpattana', 'Theerachart', 'theerachart@pointit.co.th', 'Engineer', '1', 'Innovation Business Consulting Manager', '', '$2y$10$FcspHzhkNMDUaSMshYrZdOGC/8OHya2fH8nwgcppvoFI0HT9w8W7O', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:28:08', '5', NULL),
-('b27b56e5-6f28-4d30-8add-4bddafa38841', 'Decha', 'Suratkullwattana', 'Decha', 'khadectemp@outlook.com', 'Engineer', '1', 'Software Business Consultant', '', '$2y$10$YUnc5HvQZ1UQFx64cdsP2.0S3y38hdWzvqDur3v2Plj8gnE8w3iXa', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:11:18', '5', NULL),
-('b3d20651-6a09-4fb7-b1f8-c72c9cd9e91a', 'Nanthika', 'Chongcharassang', 'nanthika', 'nanthika@pointit.co.th', 'Sale Supervisor', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 'Project Manager', '0631979263', '$2y$10$n5MxPcCUuAbzhssVwMIZ7.LYmuR6qzjlzdnDDyv.hjBuoPHXZ4S1e', 'Point IT Consulting Co.,Ltd.', '2024-10-31 23:57:35', '34e67e45-92f6-4e20-a78b-a4ffe97b3775', NULL),
-('ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', 'Gun', 'Oran', 'Oran.gun', 'oran.gun@gmail.com', 'Sale Supervisor', '2', 'MD', '', '$2y$10$uXZ59F.TyI624FgfXbeXdO7KPTHbsz//KLltxxz6PMbukwGEa526K', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:34:43', '5', '672824b3cb14d.png'),
-('bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', 'Yanisa', 'Khemthong', 'Yanisa_Pit', 'Yanisa@pointit.co.th', 'Seller', 'f4b11a86-0fca-45e5-8511-6a946c7f21d4', 'Senior Account Executive, Smart City Solution', '', '$2y$10$haXSQgdafMSbDh2Idbq4EuqglczuOEcc63XtUSjg3QOB0PO8ygtFa', 'Point IT Consulting Co.,Ltd.', '2024-11-04 01:49:55', 'ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', NULL),
-('c81eb76b-260d-4d5f-a8fe-d4f72ca6630a', 'Yanisa', 'Zoom', 'Yanisa_Zoom', 'yanisa8742@gmail.com', 'Seller', '2', 'Senior Account Executive, Smart City Solution', '', '$2y$10$wH8YfNGAu/AN//ljfPduDOhzhADKMi8RBdz6aUXm3g/VwKYQ0TT9m', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:54:45', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
-('c89b96f1-f916-448d-9725-2e0957cdba49', 'Versual Teams', '(Mazk)', 'mazk', 'innovation@pointit.co.th', 'Sale Supervisor', '715e81f0-4985-4981-982c-45cafb9748dc', 'Project Management', '0619512111', '$2y$10$KLN.d4rgbQqAiGH8s2LYYeD.4XgakfQLDzGESSV/HUuLcz0oCaBVG', 'Point IT Consulting Co.,Ltd.', '2025-01-16 06:51:41', '2', '6788ac7dea3bd.jpg'),
-('c9245a19-52fa-4b02-a98c-b962f2f51b3f', 'Jakkrit', 'Pontpai', 'Jakkrit', 'jakkrit@pointit.co.th', 'Sale Supervisor', 'de3fc0f5-9ebf-4c47-88dd-da5a570653ae', 'Smart City Business Consulting Manager', '', '$2y$10$Vd8C2.69FvbUIvmAejUz4eZddOs.rEUiemJ.e94.7B15R2O0CQJ7S', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:18:56', '5', NULL),
-('e23160ec-23a4-4724-9690-adb205162afb', 'Wilaiwan', 'Vutipram', 'Wilaiwan', 'wilaiwan@pointit.co.th', 'Seller', 'de3fc0f5-9ebf-4c47-88dd-da5a570653ae', 'Project Management , Smart city solutions', '', '$2y$10$GdkL6jMtVHIyWuKlOv7KUO2aXwQTB1cC4v2E7GItr3oFjesZRjE36', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:21:15', '5', NULL),
-('e40dedaf-3e9b-4694-8ee9-c173d5c44db6', 'Woraluck', 'Khunsuwanchai', 'Woraluck', 'Woraluck@pointit.co.th', 'Sale Supervisor', '28534929-e527-4755-bd37-0acdd51b7b45', 'Account Executive Manager', '', '$2y$10$kCmDHGdpiHxlkPPj6wNL2OLy4OzaSo8EshQaBC1cMtW6Eeq6rdhQC', 'Point IT Consulting Co.,Ltd.', '2024-11-06 01:17:45', '5', NULL),
-('e79e9929-6132-41ae-ab06-65b29fe70f6c', 'Panuwat', 'Sukcheep', 'Panuwat.S', 'panuwat@pointit.co.th', 'Engineer', 'c8fcdec8-4a28-4b6b-be8b-8bb0579d74bc', 'IT Outsourcing Service Manager', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,LTD.', '2024-11-25 01:33:50', '5', NULL),
-('e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', 'Daranee', 'Punyathiti', 'Daranee', 'daranee@pointit.co.th', 'Executive', '2', 'MD', '', '$2y$10$TUQFW2R8NYBX4TJs6UNX0eur7UHXFj7VAptbi7/UD//DA7iRVpyIO', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:30:21', '5', '672823ad217eb.png'),
-('ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', 'Oran.gun', 'Point IT', 'Oran.pit', 'Oran@pointit.co.th', 'Sale Supervisor', 'f4b11a86-0fca-45e5-8511-6a946c7f21d4', 'Smart City Consulting Director', '', '$2y$10$H6/.6cFDBCBXHaqn/HS6Nu7C2AT4P9yIlMgr/DLnSm7TbJchvMuWC', 'Point IT Consulting Co.,Ltd.', '2024-11-04 01:45:31', '5', NULL),
-('f30e8b87-d047-4bca-9b34-d223170df87c', 'Jiratip', 'vittayanusak', 'Jiratip', 'j.vittayanusak@gmail.com', 'Engineer', '1', 'Software Tester', '0902215120', '$2y$10$FHjLgmFWhJC2vBmL6yJh9.9dKpyLGaJPa.8M.92nBUEiZtSpIcGdC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 10:08:45', '2', NULL),
-('f384c704-5291-4413-8f52-dc25e10b5d4f', 'Piti', 'Nithitanabhornkul', 'Piti', 'piti@pointit.co.th', 'Engineer', '1', 'Senior Backend Software Develper', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:02:34', '5', NULL),
-('f4c662e1-82d1-4d5a-ba11-b8ddac4c21a0', 'Pongsan', 'chakranon', 'Pongsan', 'pongsan.chakranon@gmail.com', 'Engineer', '1', 'Ai Software Developer', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 02:57:19', '5', NULL),
-('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', 'Poomsak', 'Janluan', 'Poomsak', 'poomsak1994@gmail.com', 'Engineer', '1', 'Software Development', '0862295093', '$2y$10$UfE9pBMdOS8o5wSNumgtAOxcdd.Uwghm0aaAt8QwLHhczh7EXf7Wm', 'Point IT Consulting Co.,Ltd.', '2024-12-09 09:27:12', '2', NULL);
+INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, `role`, `position`, `phone`, `password`, `company`, `created_at`, `created_by`, `profile_image`) VALUES
+('1', 'Sale', 'Test Platform', 'Sale', 'Saletest@gmail.com', 'Seller', 'Sale Test Platform', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', ''),
+('14d9e34c-b691-4ce8-a5ef-929ace71248a', 'Boongred', 'Theephukhieo', 'boongerd', 'boongerd@pointit.co.th', 'Sale Supervisor', 'System Engineer Manager', '0818741889', '$2y$10$nOlaLUtPDsBhJxyi37sYZukj7i8dJJ811mbTxeC749VKxZZuYO1vW', 'Point IT Consulting Co.,Ltd.', '2024-10-31 23:55:23', '34e67e45-92f6-4e20-a78b-a4ffe97b3775', NULL),
+('193f9eed-2938-4305-ab65-828ac5253b30', 'อรรถกร', 'ปุญญะฐิติ', 'Atthakorn', 'atthakorn.pm@gmail.com', 'Seller', '', '0859936540', '$2y$10$Gi1tK2Xsl0dZ28YasSajjeusUsK2.1LcP0GYzZGgYhqB6NLNIf5Qm', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2025-06-11 07:47:19', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
+('1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Arunnee', 'Thiamthawisin', 'Arunnee', 'arunnee@pointit.co.th', 'Seller', 'Account Executive Manager', '', '$2y$10$gcxTM193rEDPM.Ynw.GfEed.RYEBQl7640PXfEzH7Qj05kXleZ5QK', 'Point IT Consulting Co.,Ltd.', '2024-11-04 03:05:45', '5', NULL),
+('1f540668-fa06-45ec-8881-b50c378cf648', 'Podchanan', 'Setthanan', 'Podchanan', 'Podchanan@pointit.co.th', 'Seller', 'Account Executive', '', '$2y$10$4Wtf3LOLe3wXebNw4co/e.58NEKkRyjxqUE7vceMnEFSLqA.D7eym', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:23:35', '5', NULL),
+('2', 'Systems', 'Admin', 'Admin', 'Systems_admin@gmail.com', 'Executive', 'Systems Admin', '0839595800', '$2y$10$lMfm90VV7oVMLHypibv3Xuc1enYtrj4hkiHyFxQM3FXPC7n8vALRy', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', ''),
+('270c74ec-9124-4eb5-9469-0253ba8530af', 'Awirut', 'Somsanguan', 'Awirut', 'Awirut@pointit.co.th', 'Sale Supervisor', 'Smart Innovation Technology Consulting Manager', '', '$2y$10$zbqZ8JHuuGejCPqkozcYb.wzIfiTgY.peFop7RJInr9HIUPjzZFra', 'Point IT Consulting Co.,LTD.', '2024-11-06 02:20:29', '5', NULL),
+('2f6d353b-53f1-4492-8878-bc93c18c5de9', 'Prakorb', 'Jongjarussang', 'Prakorb', 'prakorb@pointit.co.th', 'Executive', 'MD', '', '$2y$10$kZrq7.zXl241JjNXWWd0oOGi/f20GFYfBH0veRAL4sMCr20reES3C', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:31:48', '5', NULL),
+('3', 'Miss Phattraorn', 'Amornophakun', 'Phattraorn', 'phattraorn.a@pointit.co.th', 'Seller', 'Sales', '0619522111', '$2y$10$SHSFHBjru2xyAaGHphNVr.LjUAaFzhY9uiewWlXCWesvpRI50nlgW', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', '670e42ef5b4a3.jpg'),
+('30750fba-88ab-44ce-baf2-d0894357c67c', 'Bulakorn', 'Puapun', 'Bulakorn', 'bulakorn@gmail.com', 'Sale Supervisor', 'AI Business Consulting Director', '', '$2y$10$h7OSSaVYQM5CLz9rmn37Z.4qQ2Hax0D17UerN.BTqrixUTv6U69Ta', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:14:26', '5', NULL),
+('3140fdaf-5103-4423-bf87-11b7c1153416', 'Direk', 'Wongsngam', 'Direk', 'Direk@pointit.co.th', 'Seller', 'Bank & Corporate SalesDirector', '', '$2y$10$M/bAx1lFykgf1LklAvbQKONKI4OQfpu7NofVfwA.r1GDy9xx94uGO', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:39:01', '5', NULL),
+('34e67e45-92f6-4e20-a78b-a4ffe97b3775', 'Pisarn', 'Siribandit', 'Pisarn', 'pisarn@pointit.co.th', 'Sale Supervisor', 'Digital Transformation Consulting Director', '', '$2y$10$aEOtRUxIfKi52ib5Jj.Vpue/FP7eIWKeNRdM68DEr1GCH5OUa1uOy', 'Point IT Consulting Co.,Ltd.', '2024-10-31 18:08:53', '5', '67242a25ce524.png'),
+('3d82b654-e49f-46f8-b698-fceaa5d4cdae', 'Natapornsuang', 'Chanasan', 'Natapornsuang', 'natapornsuang@pointit.co.th', 'Seller', 'Senior Account Executive', '', '$2y$10$b5wxlKujVAxTagneuJOtqOJ4xBWQNkZ8lqJHmjs4CVFb4GIi0NrOi', 'Point IT Consulting Co.,Ltd.', '2024-11-04 03:00:40', '5', NULL),
+('3efcb87b-ce45-4a66-9d73-91259caba1d0', 'Teerayut', 'Kaengjai', 'Teerayut', 'Teerayut@pointit.co.th', 'Engineer', 'Head of Enterprise Engineer Service', '', '$2y$10$u5SlcRNFVTOxQ1aFabruaeLG49neZPwAQEWo6ToVm8ZwwZul8lqVS', 'Point IT Consulting Co.,Ltd.', '2024-11-06 02:29:31', '5', NULL),
+('4', 'Support', 'Platform', 'Support', 'Support@gmail.com', 'Executive', 'Application Support', '0839595811', '$2y$10$RAWOJU03Vy72u4zMVF/M/O9Af1HSbGOHAjlDKZHgrzbSZodZUcuky', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:55:43', '2', '6724613260590.png'),
+('44ab4e8b-e3e6-431d-ad49-40d4601779b4', 'Nutjaree', 'Chaothonglang', 'Nutjaree', 'nutjaree@pointit.co.th', 'Sale Supervisor', 'Assistant Service Manager', '', '$2y$10$OeTqb/woFTv/pt7uaBRx4ujA7jJYTuyGzSmx2y4jtijxn9oJcRuky', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:04:37', '97c68703-a8b7-4ceb-9344-65fe4404c4ab', NULL),
+('5', 'Panit', 'Paophan', 'Panit', 'panit@poinitit.co.th', 'Executive', 'Executive Director', '0814834619', '$2y$10$Td6gIdc/jANDPx3gJJEbGOPMY1Y7MMigduUt6tJ9DeB3KRGykTmg2', 'Point IT Consulting Co.,Ltd.', '2024-09-17 08:15:37', '2', NULL),
+('5b698e22-ba83-43c4-a39e-e6d68f98791f', 'Chawanon', 'Tanchairittikul', 'Chawanon', 'Chawanon@pointit.co.th', 'Engineer', 'Project Management', '', '$2y$10$kRhzV6oQJ79bn/tZuuhMD.WBTbSR.NkPniYOL2si5WfsJyzjgtaau', 'Point IT Consulting Co.,Ltd.', '2025-06-18 02:00:45', '2', NULL),
+('5eef69ba-15ee-4414-a2e4-be4f68b8839e', 'Kanitta', 'Ongsathan', 'Kanitta', 'kanitta@pointit.co.th', 'Sale Supervisor', 'Senior Procurement', '0880223292', '$2y$10$6BcDhIY.7m7X2s7D6iAXkOTuden3sQucRuN.8mcV4WF44RMmFHHui', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:01:23', '5', NULL),
+('6614b721-a8b4-46d2-9c80-0caab04772dc', 'Woradol', 'Daoduang', 'Woradol', 'Woradol@pointit.co.th', 'Executive', 'Executive Director', '', '$2y$10$l454f/PTDFOabJbIz0BAkedEGdUGc000TRpac7ffYJrRzlIIwcUc2', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:34:51', '5', NULL),
+('70dd36b5-f587-4aa9-b544-c69542616d34', 'Narumon', 'Wongkrua', 'Narumon', 'wongkrua.na@gmail.com', 'Seller', '', '0642614635', '$2y$10$D4Ab6d51oqyzTj4IOTHGsuv5oubG0u37VfDRVoT/xvpJVPWpk8LG.', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2025-06-11 09:15:44', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
+('85c114ec-a416-41c0-9859-12b90dc5b488', 'Porapath', 'Yanthukij', 'Porapath', 'porapath@pointit.co.th', 'Seller', 'Procurement', '0956422238', '$2y$10$U1hx.FejkNpt5/ltAvw.b.gxPyzq3fS5WpqMh4H.10negrF/7qVk6', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:02:44', '5', NULL),
+('86054531-f751-48c7-b257-222c9ccbd946', 'สารภี', 'ทองแก้ว', 'Kai', 'Acct@pointit.co.th', 'Executive', 'สมุห์บัญชี', '', '$2y$10$flZPg1wESq1UvwWrsS1wDuu2v1dFccAL70ZmJgZtHtlLGCEr54q5y', '', '2025-06-10 05:18:57', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', NULL),
+('8ae1a02d-32c2-4469-ba98-818dfc76dcdb', 'Pawitcha', 'Katekhong', 'Pawitcha', 'Pawitcha@pointit.co.th', 'Seller', 'Bank &amp; Corporate Account Executive', '', '$2y$10$k1TyBLrPo0z7gk/wWE0N8u08grMt8IoLb0sbcYu82YAUFLkhNC9.6', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:43:57', '5', NULL),
+('8c1c0a55-2610-4081-8d12-b2a6971ffbe8', 'Yuthana', 'Jaturajitraporn', 'Yuthana', 'yuthana@pointit.co.th', 'Seller', 'Senior Sales Backend Developer', '', '$2y$10$.ZJ0wDC827yYB5BqJmbrD.sbXB8sk1m4QPbEXHeVsXCrKofMhC0km', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:07:14', '5', NULL),
+('8c782887-8fd3-4f99-ac27-63054a8a1942', 'Surapan', 'Pawanrum', 'Surapan', 'Surapan@pointit.co.th', 'Sale Supervisor', 'Platform Development Manager', '', '$2y$10$wf6P22p7BIpJ2bIdRuyyyur2jxxyliqEi4T084m6Slq.4FZsQxCOa', 'Point IT Consulting Co.,Ltd.', '2024-12-02 06:48:59', '5', NULL),
+('97c68703-a8b7-4ceb-9344-65fe4404c4ab', 'Chittichai', 'Duangnang', 'Chittichai', 'chittichai@pointit.co.th', 'Sale Supervisor', 'Service Manager', '', '$2y$10$va/6nCSzdBqd/kCyMgYN7.gtksHhW2t14s3Qr1EClGsr10cSFJyza', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:00:10', '5', NULL),
+('a5741799-938b-4d0a-a3dc-4ca1aa164708', 'Theerachart', 'Tiyapongpattana', 'Theerachart', 'theerachart@pointit.co.th', 'Engineer', 'Innovation Business Consulting Manager', '', '$2y$10$FcspHzhkNMDUaSMshYrZdOGC/8OHya2fH8nwgcppvoFI0HT9w8W7O', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:28:08', '5', NULL),
+('b27b56e5-6f28-4d30-8add-4bddafa38841', 'Decha', 'Suratkullwattana', 'Decha', 'khadectemp@outlook.com', 'Engineer', 'Software Business Consultant', '', '$2y$10$YUnc5HvQZ1UQFx64cdsP2.0S3y38hdWzvqDur3v2Plj8gnE8w3iXa', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:11:18', '5', NULL),
+('b3d20651-6a09-4fb7-b1f8-c72c9cd9e91a', 'Nanthika', 'Chongcharassang', 'nanthika', 'nanthika@pointit.co.th', 'Sale Supervisor', 'Project Manager', '0631979263', '$2y$10$n5MxPcCUuAbzhssVwMIZ7.LYmuR6qzjlzdnDDyv.hjBuoPHXZ4S1e', 'Point IT Consulting Co.,Ltd.', '2024-10-31 23:57:35', '34e67e45-92f6-4e20-a78b-a4ffe97b3775', NULL),
+('ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', 'Gun', 'Oran', 'Oran.gun', 'oran.gun@gmail.com', 'Sale Supervisor', 'MD', '', '$2y$10$uXZ59F.TyI624FgfXbeXdO7KPTHbsz//KLltxxz6PMbukwGEa526K', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:34:43', '5', '672824b3cb14d.png'),
+('bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', 'Yanisa', 'Khemthong', 'Yanisa_Pit', 'Yanisa@pointit.co.th', 'Seller', 'Senior Account Executive, Smart City Solution', '', '$2y$10$haXSQgdafMSbDh2Idbq4EuqglczuOEcc63XtUSjg3QOB0PO8ygtFa', 'Point IT Consulting Co.,Ltd.', '2024-11-04 01:49:55', 'ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', NULL),
+('c81eb76b-260d-4d5f-a8fe-d4f72ca6630a', 'Yanisa', 'Zoom', 'Yanisa_Zoom', 'yanisa8742@gmail.com', 'Seller', 'Senior Account Executive, Smart City Solution', '', '$2y$10$wH8YfNGAu/AN//ljfPduDOhzhADKMi8RBdz6aUXm3g/VwKYQ0TT9m', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:54:45', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
+('c89b96f1-f916-448d-9725-2e0957cdba49', 'Versual Teams', '(Mazk)', 'mazk', 'innovation@pointit.co.th', 'Sale Supervisor', 'Project Management', '0619512111', '$2y$10$KLN.d4rgbQqAiGH8s2LYYeD.4XgakfQLDzGESSV/HUuLcz0oCaBVG', 'Point IT Consulting Co.,Ltd.', '2025-01-16 06:51:41', '2', '6788ac7dea3bd.jpg'),
+('c9245a19-52fa-4b02-a98c-b962f2f51b3f', 'Jakkrit', 'Pontpai', 'Jakkrit', 'jakkrit@pointit.co.th', 'Sale Supervisor', 'Smart City Business Consulting Manager', '', '$2y$10$Vd8C2.69FvbUIvmAejUz4eZddOs.rEUiemJ.e94.7B15R2O0CQJ7S', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:18:56', '5', NULL),
+('e23160ec-23a4-4724-9690-adb205162afb', 'Wilaiwan', 'Vutipram', 'Wilaiwan', 'wilaiwan@pointit.co.th', 'Seller', 'Project Management , Smart city solutions', '', '$2y$10$GdkL6jMtVHIyWuKlOv7KUO2aXwQTB1cC4v2E7GItr3oFjesZRjE36', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:21:15', '5', NULL),
+('e40dedaf-3e9b-4694-8ee9-c173d5c44db6', 'Woraluck', 'Khunsuwanchai', 'Woraluck', 'Woraluck@pointit.co.th', 'Sale Supervisor', 'Account Executive Manager', '', '$2y$10$kCmDHGdpiHxlkPPj6wNL2OLy4OzaSo8EshQaBC1cMtW6Eeq6rdhQC', 'Point IT Consulting Co.,Ltd.', '2024-11-06 01:17:45', '5', NULL),
+('e79e9929-6132-41ae-ab06-65b29fe70f6c', 'Panuwat', 'Sukcheep', 'Panuwat.S', 'panuwat@pointit.co.th', 'Engineer', 'IT Outsourcing Service Manager', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,LTD.', '2024-11-25 01:33:50', '5', NULL),
+('e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', 'Daranee', 'Punyathiti', 'Daranee', 'daranee@pointit.co.th', 'Executive', 'MD', '', '$2y$10$TUQFW2R8NYBX4TJs6UNX0eur7UHXFj7VAptbi7/UD//DA7iRVpyIO', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:30:21', '5', '672823ad217eb.png'),
+('ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', 'Oran.gun', 'Point IT', 'Oran.pit', 'Oran@pointit.co.th', 'Sale Supervisor', 'Smart City Consulting Director', '', '$2y$10$H6/.6cFDBCBXHaqn/HS6Nu7C2AT4P9yIlMgr/DLnSm7TbJchvMuWC', 'Point IT Consulting Co.,Ltd.', '2024-11-04 01:45:31', '5', NULL),
+('f30e8b87-d047-4bca-9b34-d223170df87c', 'Jiratip', 'vittayanusak', 'Jiratip', 'j.vittayanusak@gmail.com', 'Engineer', 'Software Tester', '0902215120', '$2y$10$FHjLgmFWhJC2vBmL6yJh9.9dKpyLGaJPa.8M.92nBUEiZtSpIcGdC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 10:08:45', '2', NULL),
+('f384c704-5291-4413-8f52-dc25e10b5d4f', 'Piti', 'Nithitanabhornkul', 'Piti', 'piti@pointit.co.th', 'Engineer', 'Senior Backend Software Develper', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:02:34', '5', NULL),
+('f4c662e1-82d1-4d5a-ba11-b8ddac4c21a0', 'Pongsan', 'chakranon', 'Pongsan', 'pongsan.chakranon@gmail.com', 'Engineer', 'Ai Software Developer', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 02:57:19', '5', NULL),
+('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', 'Poomsak', 'Janluan', 'Poomsak', 'poomsak1994@gmail.com', 'Engineer', 'Software Development', '0862295093', '$2y$10$5aIz95Ht4HwaaOYKtaaDwOe562YBgYlenBguBwicL4WrhVBaAHCDq', 'Point IT Consulting Co.,Ltd.', '2024-12-09 09:27:12', '2', NULL);
 
 -- --------------------------------------------------------
 
@@ -1826,6 +1825,70 @@ INSERT INTO `user_creation_logs` (`id`, `creator_id`, `new_user_id`, `new_user_r
 (38, 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', '193f9eed-2938-4305-ab65-828ac5253b30', 'Seller', '2025-06-11 07:47:19'),
 (39, 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', '70dd36b5-f587-4aa9-b544-c69542616d34', 'Seller', '2025-06-11 09:15:44'),
 (40, '2', '5b698e22-ba83-43c4-a39e-e6d68f98791f', 'Engineer', '2025-06-18 02:00:45');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_teams`
+--
+
+CREATE TABLE `user_teams` (
+  `user_id` char(36) NOT NULL,
+  `team_id` char(36) NOT NULL,
+  `is_primary` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `user_teams`
+--
+
+INSERT INTO `user_teams` (`user_id`, `team_id`, `is_primary`) VALUES
+('1', '4', 1),
+('14d9e34c-b691-4ce8-a5ef-929ace71248a', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 1),
+('193f9eed-2938-4305-ab65-828ac5253b30', '2', 1),
+('1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'b9db21db-cfd7-4887-9ca7-5088a12f1bda', 1),
+('1f540668-fa06-45ec-8881-b50c378cf648', '28534929-e527-4755-bd37-0acdd51b7b45', 1),
+('2', '1', 1),
+('270c74ec-9124-4eb5-9469-0253ba8530af', '28534929-e527-4755-bd37-0acdd51b7b45', 1),
+('2f6d353b-53f1-4492-8878-bc93c18c5de9', '4', 1),
+('3', '1', 1),
+('30750fba-88ab-44ce-baf2-d0894357c67c', '1', 1),
+('3140fdaf-5103-4423-bf87-11b7c1153416', 'db32697a-0f69-41f7-9413-58ffe920ad7d', 1),
+('34e67e45-92f6-4e20-a78b-a4ffe97b3775', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 1),
+('3d82b654-e49f-46f8-b698-fceaa5d4cdae', 'b9db21db-cfd7-4887-9ca7-5088a12f1bda', 1),
+('3efcb87b-ce45-4a66-9d73-91259caba1d0', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 1),
+('4', '4', 1),
+('44ab4e8b-e3e6-431d-ad49-40d4601779b4', '3', 1),
+('5', '4', 1),
+('5b698e22-ba83-43c4-a39e-e6d68f98791f', '1', 1),
+('5eef69ba-15ee-4414-a2e4-be4f68b8839e', '4', 1),
+('6614b721-a8b4-46d2-9c80-0caab04772dc', '4', 1),
+('70dd36b5-f587-4aa9-b544-c69542616d34', '2', 1),
+('85c114ec-a416-41c0-9859-12b90dc5b488', '4', 1),
+('86054531-f751-48c7-b257-222c9ccbd946', '4', 1),
+('8ae1a02d-32c2-4469-ba98-818dfc76dcdb', 'db32697a-0f69-41f7-9413-58ffe920ad7d', 1),
+('8c1c0a55-2610-4081-8d12-b2a6971ffbe8', '1', 1),
+('8c782887-8fd3-4f99-ac27-63054a8a1942', '1', 1),
+('97c68703-a8b7-4ceb-9344-65fe4404c4ab', '3', 1),
+('a5741799-938b-4d0a-a3dc-4ca1aa164708', '1', 1),
+('b27b56e5-6f28-4d30-8add-4bddafa38841', '1', 1),
+('b3d20651-6a09-4fb7-b1f8-c72c9cd9e91a', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 1),
+('ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', '2', 1),
+('bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', 'f4b11a86-0fca-45e5-8511-6a946c7f21d4', 1),
+('c81eb76b-260d-4d5f-a8fe-d4f72ca6630a', '2', 1),
+('c89b96f1-f916-448d-9725-2e0957cdba49', '715e81f0-4985-4981-982c-45cafb9748dc', 1),
+('c9245a19-52fa-4b02-a98c-b962f2f51b3f', 'de3fc0f5-9ebf-4c47-88dd-da5a570653ae', 1),
+('e23160ec-23a4-4724-9690-adb205162afb', 'de3fc0f5-9ebf-4c47-88dd-da5a570653ae', 1),
+('e40dedaf-3e9b-4694-8ee9-c173d5c44db6', '28534929-e527-4755-bd37-0acdd51b7b45', 1),
+('e79e9929-6132-41ae-ab06-65b29fe70f6c', 'c8fcdec8-4a28-4b6b-be8b-8bb0579d74bc', 1),
+('e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', '2', 1),
+('ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', 'f4b11a86-0fca-45e5-8511-6a946c7f21d4', 1),
+('f30e8b87-d047-4bca-9b34-d223170df87c', '1', 1),
+('f384c704-5291-4413-8f52-dc25e10b5d4f', '1', 1),
+('f4c662e1-82d1-4d5a-ba11-b8ddac4c21a0', '1', 1),
+('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '1', 1),
+('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '2', 0),
+('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '28534929-e527-4755-bd37-0acdd51b7b45', 0);
 
 --
 -- Indexes for dumped tables
@@ -1996,8 +2059,7 @@ ALTER TABLE `teams`
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
-  ADD PRIMARY KEY (`user_id`),
-  ADD KEY `users_team_fk` (`team_id`);
+  ADD PRIMARY KEY (`user_id`);
 
 --
 -- Indexes for table `user_creation_logs`
@@ -2006,6 +2068,14 @@ ALTER TABLE `user_creation_logs`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_creator` (`creator_id`),
   ADD KEY `fk_new_user` (`new_user_id`);
+
+--
+-- Indexes for table `user_teams`
+--
+ALTER TABLE `user_teams`
+  ADD PRIMARY KEY (`user_id`,`team_id`),
+  ADD KEY `user_teams_user_id_foreign` (`user_id`),
+  ADD KEY `user_teams_team_id_foreign` (`team_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -2116,6 +2186,13 @@ ALTER TABLE `project_task_assignments`
 --
 ALTER TABLE `teams`
   ADD CONSTRAINT `fk_team_leader` FOREIGN KEY (`team_leader`) REFERENCES `users` (`user_id`);
+
+--
+-- Constraints for table `user_teams`
+--
+ALTER TABLE `user_teams`
+  ADD CONSTRAINT `user_teams_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `teams` (`team_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_teams_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

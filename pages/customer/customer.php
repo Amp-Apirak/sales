@@ -13,13 +13,21 @@ $search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) :
 $sql_customers = "SELECT DISTINCT c.*, u.first_name, u.last_name, t.team_name 
                   FROM customers c
                   LEFT JOIN users u ON c.created_by = u.user_id
-                  LEFT JOIN teams t ON u.team_id = t.team_id
+                  LEFT JOIN user_teams ut ON u.user_id = ut.user_id AND ut.is_primary = 1
+                  LEFT JOIN teams t ON ut.team_id = t.team_id
                   WHERE 1=1";
 
 // เพิ่มเงื่อนไขกรณีผู้ใช้เป็น Sale Supervisor หรือผู้ใช้ทั่วไป
 if ($role == 'Sale Supervisor') {
-    // ผู้จัดการทีม เห็นลูกค้าของทีมตัวเอง
-    $sql_customers .= " AND u.team_id = :team_id";
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $sql_customers .= " AND u.user_id IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
+        $params = $team_ids;
+    } else {
+        // ถ้าไม่มีทีม ให้แสดงผลว่าง
+        $sql_customers .= " AND 1=0";
+    }
 } elseif ($role == 'Seller') {
     // ผู้ใช้ทั่วไป (Seller) เห็นเฉพาะลูกค้าที่ตัวเองสร้าง
     $sql_customers .= " AND c.created_by = :user_id";

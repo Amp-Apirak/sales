@@ -32,6 +32,12 @@ if (isset($_GET['user_id'])) {
     $stmt->execute();
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // ดึงข้อมูลทีมที่ผู้ใช้สังกัดอยู่
+    $stmt_user_teams = $condb->prepare("SELECT team_id FROM user_teams WHERE user_id = :user_id");
+    $stmt_user_teams->bindParam(':user_id', $user_id, PDO::PARAM_STR);
+    $stmt_user_teams->execute();
+    $user_teams = $stmt_user_teams->fetchAll(PDO::FETCH_COLUMN, 0);
+
     if (!$user) {
         die("ไม่พบข้อมูลผู้ใช้");
     }
@@ -184,12 +190,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $company = $companyValidation['value'];
     }
 
-    // ตรวจสอบ team_id และ role
-    $team_id_new = filter_var($_POST['team_id'] ?? 0, FILTER_VALIDATE_INT);
+    $team_ids = $_POST['team_ids'] ?? [];
     $role_new = sanitizeInput($_POST['role'] ?? '');
 
-    if (empty($team_id_new)) {
-        $validationErrors[] = 'กรุณาเลือกทีม';
+    if (empty($team_ids)) {
+        $validationErrors[] = 'กรุณาเลือกอย่างน้อยหนึ่งทีม';
     }
     if (empty($role_new)) {
         $validationErrors[] = 'กรุณาเลือกบทบาท';
@@ -218,7 +223,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     email = :email, 
                     phone = :phone, 
                     position = :position, 
-                    team_id = :team_id, 
                     role = :role, 
                     company = :company";
 
@@ -228,7 +232,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':email' => $email,
                 ':phone' => $phone,
                 ':position' => $position,
-                ':team_id' => $team_id_new,
                 ':role' => $role_new,
                 ':company' => $company,
                 ':user_id' => $user_id
@@ -244,6 +247,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt = $condb->prepare($sql);
             $stmt->execute($params);
+
+            // --- จัดการข้อมูลใน user_teams ---
+            // 1. ลบข้อมูลทีมเดิมทั้งหมดของ user นี้
+            $stmt_delete_teams = $condb->prepare("DELETE FROM user_teams WHERE user_id = :user_id");
+            $stmt_delete_teams->execute([':user_id' => $user_id]);
+
+            // 2. เพิ่มข้อมูลทีมใหม่ที่เลือก
+            $sql_user_teams = "INSERT INTO user_teams (user_id, team_id, is_primary) VALUES (:user_id, :team_id, :is_primary)";
+            $stmt_user_teams = $condb->prepare($sql_user_teams);
+
+            foreach ($team_ids as $index => $team_id) {
+                $is_primary = ($index === 0) ? 1 : 0; // กำหนดให้ทีมแรกที่เลือกเป็นทีมหลัก
+                $stmt_user_teams->execute([
+                    ':user_id' => $user_id,
+                    ':team_id' => $team_id,
+                    ':is_primary' => $is_primary
+                ]);
+            }
 
             // อัปเดตรูปโปรไฟล์ (ถ้ามี) ด้วย validateUploadedFile
             if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == 0) {
@@ -395,16 +416,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         </div>
 
                                         <div class="form-group">
-                                            <label for="team_id">ทีม<span class="text-danger">*</span></label>
-                                            <select class="form-control select2" id="team_id" name="team_id" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
+                                            <label for="team_ids">ทีม<span class="text-danger">*</span></label>
+                                            <select class="form-control select2" id="team_ids" name="team_ids[]" multiple="multiple" data-placeholder="เลือกทีม" style="width: 100%;" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
                                                 <?php foreach ($teams as $team): ?>
-                                                    <option value="<?php echo $team['team_id']; ?>" <?php echo ($team['team_id'] == $user['team_id']) ? 'selected' : ''; ?>>
+                                                    <option value="<?php echo $team['team_id']; ?>" <?php echo in_array($team['team_id'], $user_teams) ? 'selected' : ''; ?>>
                                                         <?php echo escapeOutput($team['team_name']); ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
                                             <?php if ($role === 'Sale Supervisor'): ?>
-                                                <input type="hidden" name="team_id" value="<?php echo $team_id; ?>">
+                                                <!-- For disabled multi-select, send the values as hidden inputs -->
+                                                <?php foreach ($user_teams as $user_team_id): ?>
+                                                    <input type="hidden" name="team_ids[]" value="<?php echo $user_team_id; ?>">
+                                                <?php endforeach; ?>
                                             <?php endif; ?>
                                         </div>
 

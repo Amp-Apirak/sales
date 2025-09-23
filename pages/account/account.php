@@ -39,18 +39,29 @@ $sql_position = "SELECT DISTINCT position FROM users";
 $query_position = $condb->query($sql_position);
 
 // สร้าง SQL Query โดยพิจารณาจากการค้นหา
-$sql_users = "SELECT u.user_id, u.username, u.first_name, u.last_name, u.company, u.role, t.team_name, u.position, u.phone, u.email, u.created_at,
+$sql_users = "SELECT u.user_id, u.username, u.first_name, u.last_name, u.company, u.role, 
+              GROUP_CONCAT(t.team_name SEPARATOR ', ') as team_name, 
+              u.position, u.phone, u.email, u.created_at,
               creator.first_name as creator_first_name, 
               creator.last_name as creator_last_name,
               CONCAT(creator.first_name, ' ', creator.last_name) as creator_name
-              FROM users u               
-              LEFT JOIN teams t ON u.team_id = t.team_id               
-              LEFT JOIN users creator ON u.created_by = creator.user_id               
+              FROM users u
+              LEFT JOIN user_teams ut ON u.user_id = ut.user_id
+              LEFT JOIN teams t ON ut.team_id = t.team_id
+              LEFT JOIN users creator ON u.created_by = creator.user_id
               WHERE 1=1";
 
 // กรณีที่ role ไม่ใช่ Executive ให้แสดงเฉพาะข้อมูลทีมของผู้ใช้เอง
 if ($role !== 'Executive') {
-    $sql_users .= " AND u.team_id = :team_id";
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id IN ($placeholders))";
+        $params = $team_ids;
+    } else {
+        $sql_users .= " AND 1=0"; // ไม่แสดงข้อมูลถ้าไม่มีทีม
+        $params = [];
+    }
 }
 
 
@@ -72,14 +83,19 @@ if (!empty($search_position)) {
     $sql_users .= " AND u.position = :search_position";
 }
 
-$sql_users .= " ORDER BY u.created_at DESC";
+$sql_users .= " GROUP BY u.user_id ORDER BY u.created_at DESC";
 
 // เตรียม statement
 $stmt = $condb->prepare($sql_users);
 
 // ทำการ bind ค่าต่างๆ
+$param_index = 1;
 if ($role !== 'Executive') {
-    $stmt->bindParam(':team_id', $team_id);
+    if (!empty($team_ids)) {
+        foreach ($team_ids as $team_id_to_bind) {
+            $stmt->bindValue($param_index++, $team_id_to_bind, PDO::PARAM_STR);
+        }
+    }
 }
 if (!empty($search)) {
     $search_param = "%$search%";

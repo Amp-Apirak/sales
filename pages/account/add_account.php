@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     $phone = clean_input($_POST['phone']);
     $password = $_POST['password'];
     $position = clean_input($_POST['position']);
-    $team_id_new = !empty($_POST['team_id']) ? clean_input($_POST['team_id']) : null;
+    $team_ids = $_POST['team_ids'] ?? [];
     $role_new = clean_input($_POST['role']);
     $company = clean_input($_POST['company']);
 
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     if (empty($username)) $error_messages[] = "กรุณากรอกชื่อผู้ใช้";
     if (empty($email)) $error_messages[] = "กรุณากรอกอีเมล";
     if (empty($password)) $error_messages[] = "กรุณากรอกรหัสผ่าน";
-    if (empty($team_id_new)) $error_messages[] = "กรุณาเลือกทีม";
+    if (empty($team_ids)) $error_messages[] = "กรุณาเลือกอย่างน้อยหนึ่งทีม";
     if (empty($role_new)) $error_messages[] = "กรุณาเลือกบทบาท";
 
     // ตรวจสอบความถูกต้องของรูปแบบอีเมล
@@ -223,9 +223,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                 }
             }
 
-            // เตรียม SQL สำหรับการเพิ่มข้อมูลผู้ใช้ใหม่
-            $sql = "INSERT INTO users (user_id, first_name, last_name, username, email, phone, password, position, team_id, role, company, created_by, profile_image) 
-                    VALUES (:user_id, :first_name, :last_name, :username, :email, :phone, :password, :position, :team_id, :role, :company, :created_by, :profile_image)";
+            // เตรียม SQL สำหรับการเพิ่มข้อมูลผู้ใช้ใหม่ (ไม่มี team_id)
+            $sql = "INSERT INTO users (user_id, first_name, last_name, username, email, phone, password, position, role, company, created_by, profile_image) 
+                    VALUES (:user_id, :first_name, :last_name, :username, :email, :phone, :password, :position, :role, :company, :created_by, :profile_image)";
 
             $stmt = $condb->prepare($sql);
             $stmt->execute([
@@ -237,12 +237,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                 ':phone' => $phone,
                 ':password' => $hashed_password,
                 ':position' => $position,
-                ':team_id' => $team_id_new,
                 ':role' => $role_new,
                 ':company' => $company,
                 ':created_by' => $created_by,
                 ':profile_image' => $profile_image
             ]);
+
+            // บันทึกข้อมูลทีมในตาราง user_teams
+            $sql_user_teams = "INSERT INTO user_teams (user_id, team_id, is_primary) VALUES (:user_id, :team_id, :is_primary)";
+            $stmt_user_teams = $condb->prepare($sql_user_teams);
+
+            foreach ($team_ids as $index => $team_id) {
+                $is_primary = ($index === 0) ? 1 : 0; // กำหนดให้ทีมแรกที่เลือกเป็นทีมหลัก
+                $stmt_user_teams->execute([
+                    ':user_id' => $user_id,
+                    ':team_id' => $team_id,
+                    ':is_primary' => $is_primary
+                ]);
+            }
 
             // บันทึก log การสร้างบัญชีผู้ใช้
             logUserCreation($created_by, $user_id, $role_new);
@@ -518,9 +530,8 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="team_id">ทีม<span class="text-danger">*</span></label>
-                                            <select class="form-control select2" id="team_id" name="team_id">
-                                                <option value="">เลือกทีม</option>
+                                            <label for="team_ids">ทีม<span class="text-danger">*</span></label>
+                                            <select class="form-control select2" id="team_ids" name="team_ids[]" multiple="multiple" data-placeholder="เลือกทีม" style="width: 100%;">
                                                 <?php foreach ($query_teams as $team): ?>
                                                     <option value="<?php echo $team['team_id']; ?>" <?php echo ($team['team_id'] == $current_user_team_id) ? 'selected' : ''; ?>>
                                                         <?php echo htmlspecialchars($team['team_name']); ?>

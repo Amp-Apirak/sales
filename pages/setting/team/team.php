@@ -42,7 +42,8 @@ $search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) :
 
 // Query พื้นฐานในการดึงข้อมูลทีมทั้งหมด
 $sql_teams = "SELECT t.*, u.first_name AS leader_first_name, u.last_name AS leader_last_name, 
-              c.first_name AS creator_first_name, c.last_name AS creator_last_name
+              c.first_name AS creator_first_name, c.last_name AS creator_last_name,
+              (SELECT COUNT(*) FROM user_teams WHERE team_id = t.team_id) as member_count
               FROM teams t
               LEFT JOIN users u ON t.team_leader = u.user_id
               LEFT JOIN users c ON t.created_by = c.user_id
@@ -195,6 +196,7 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <th>Team Name</th>
                                                 <th>Description</th>
                                                 <th>Owner team</th>
+                                                <th>Member Count</th>
                                                 <th>Created By</th>
                                                 <th>Created At</th>
                                                 <th>Action</th>
@@ -208,6 +210,7 @@ $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <td><?php echo htmlspecialchars($team['team_name'], ENT_QUOTES, 'UTF-8'); ?></td>
                                                         <td><?php echo htmlspecialchars($team['team_description'], ENT_QUOTES, 'UTF-8'); ?></td>
                                                         <td><?php echo htmlspecialchars($team['leader_first_name'] . " " . $team['leader_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                        <td><span class="badge badge-info"><?php echo $team['member_count']; ?> People</span></td>
                                                         <td><?php echo htmlspecialchars($team['creator_first_name'] . " " . $team['creator_last_name'], ENT_QUOTES, 'UTF-8'); ?></td>
                                                         <td><?php echo htmlspecialchars($team['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
                                                         <td>
