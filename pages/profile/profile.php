@@ -15,16 +15,20 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
 if (isset($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
 
-    // ดึงข้อมูลผู้ใช้จากฐานข้อมูล โดยทำการ JOIN กับตาราง teams เพื่อดึงชื่อทีม
+    // ดึงข้อมูลผู้ใช้จากฐานข้อมูล
     $stmt = $condb->prepare("
-        SELECT u.*, t.team_name 
+        SELECT u.*
         FROM users u
-        LEFT JOIN teams t ON u.team_id = t.team_id
         WHERE u.user_id = :user_id
     ");
     $stmt->bindParam(':user_id', $user_id);
     $stmt->execute();
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // เพิ่มชื่อทีมปัจจุบันจาก Session เข้าไปใน array ของ user
+    if ($user) {
+        $user['team_name'] = $_SESSION['team_name'] ?? 'N/A';
+    }
 
     if ($user) {
         // ตั้งค่าตัวแปรสำหรับใช้ใน HTML

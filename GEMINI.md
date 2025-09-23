@@ -112,3 +112,52 @@
 - **ตรวจสอบ Query ทั้งหมด:** ควรมีการตรวจสอบ Query ในหน้าอื่นๆ ที่ยังไม่ได้แก้ไข เพื่อให้แน่ใจว่าการกรองข้อมูลตามทีมทำงานถูกต้องครบถ้วนทั้งระบบ
 - **UI สำหรับทีมหลัก:** ปัจจุบันยังไม่มี UI สำหรับให้ผู้ใช้กำหนด "ทีมหลัก" (Primary Team) ด้วยตนเอง ระบบจะกำหนดให้ทีมแรกที่เลือกเป็นทีมหลักโดยอัตโนมัติ
 - **การแสดงผลข้อมูลข้ามทีม:** ต้องกำหนดนโยบายและปรับปรุงการแสดงผลให้ชัดเจน สำหรับกรณีที่ผู้ใช้ (เช่น Sale Supervisor) ดูข้อมูลของทีมอื่นที่ตนเองไม่ได้สังกัด แต่มีสมาชิกในทีมของตนไปร่วมอยู่
+
+## 10. การดำเนินการแก้ไขโดย Gemini (แก้ไขปัญหาหลังการปรับปรุง Many-to-Many User-Team)
+
+Gemini ได้ดำเนินการแก้ไขปัญหาที่เกิดขึ้นหลังจากมีการปรับปรุงโครงสร้างฐานข้อมูลสำหรับผู้ใช้สังกัดหลายทีม (Many-to-Many User-Team) โดยมีรายละเอียดการแก้ไขดังนี้:
+
+### 10.1 `pages/profile/profile.php`
+- **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'u.team_id' in 'on clause'`
+- **การแก้ไข:** ปรับปรุง SQL query ที่ใช้ดึงข้อมูลผู้ใช้ โดยเปลี่ยนจากการ `JOIN` กับ `u.team_id` โดยตรง ไปเป็นการดึงชื่อทีมที่ใช้งานอยู่ (Active Team) จาก `$_SESSION['team_name']` แทน
+
+### 10.2 `index.php` (Dashboard)
+- **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[HY093]: Invalid parameter number: mixed named and positional parameters` และ `Warning: Undefined variable`
+- **การแก้ไข:**
+    - Refactor ฟังก์ชัน `getWinProjectSummary` และ query สำหรับกราฟทั้งหมด (`$project_status_query`, `$top_products_query`, `$yearly_sales_query`, `$employee_sales_query`, `$monthly_sales_query`, `$team_sales_query`) ให้ใช้ Named Parameters ทั้งหมดในการเตรียมและ execute คำสั่ง SQL เพื่อแก้ปัญหา `mixed named and positional parameters`
+    - แก้ไขฟังก์ชัน `countProjectsByStatus` ให้ใช้ตาราง `user_teams` แทน `u.team_id` และใช้ Named Parameters อย่างสอดคล้องกัน
+    - เพิ่มการกำหนดค่าเริ่มต้นให้กับตัวแปรที่ใช้แสดงผลในบล็อก `catch (PDOException $e)` เพื่อป้องกัน `Warning: Undefined variable` หากเกิดข้อผิดพลาดในการดึงข้อมูล
+
+### 10.3 `pages/project/project.php` (Project Management)
+- **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'u.team_id'` และ `Fatal error: Uncaught Error: Call to undefined function clean_input()` และ `Warning: Undefined array key`
+- **การแก้ไข:**
+    - ปรับปรุงโค้ด PHP ส่วนบนทั้งหมด (ตั้งแต่ต้นไฟล์จนถึง `<!DOCTYPE html>`) เพื่อให้การดึงข้อมูลสำหรับ dropdowns และ main query ใช้ตาราง `user_teams` และ Named Parameters อย่างถูกต้อง
+    - นำฟังก์ชัน `clean_input()` กลับมาใส่ในไฟล์ เนื่องจากยังมีโค้ดส่วนอื่นที่เรียกใช้งานอยู่
+    - เพิ่ม `CASE` statement ใน main SQL query เพื่อสร้างคอลัมน์ `is_project_owner`, `is_team_project`, และ `user_permission` ที่หายไป ซึ่งเป็นสาเหตุของ `Warning: Undefined array key`
+
+### 10.4 `pages/customer/customer.php` (Customer Management)
+- **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens`
+- **การแก้ไข:** ปรับปรุงโค้ด PHP ส่วนบนทั้งหมด เพื่อให้การดึงข้อมูลลูกค้าใช้ Named Parameters และตาราง `user_teams` ในการกรองข้อมูลสำหรับ Role 'Sale Supervisor' อย่างถูกต้อง
+
+### 10.5 `pages/setting/suppliers/supplier.php` (Supplier Management)
+- **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'u.team_id' in 'where clause'`
+- **การแก้ไข:** ปรับปรุงโค้ด PHP ส่วนบนทั้งหมด เพื่อให้การดึงข้อมูล Supplier ใช้ตาราง `user_teams` และ Named Parameters ในการกรองข้อมูลสำหรับ Role 'Sale Supervisor' อย่างถูกต้อง
+
+### 10.6 `pages/setting/product/product.php` (Product Management)
+- **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'u.team_id' in 'field list'`
+- **การแก้ไข:** ปรับปรุงโค้ด PHP ส่วนบนทั้งหมด เพื่อให้การดึงข้อมูลสินค้าใช้ตาราง `user_teams` และ Named Parameters ในการดึงข้อมูลทีมของผู้สร้างสินค้าอย่างถูกต้อง
+
+### 10.7 `pages/project/view_project.php` (View Project Details)
+- **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'u.team_id' in 'field list'` และ `Warning: Undefined array key "creator_first_name"`, `creator_last_name"`, `first_name"`, `last_name"`
+- **การแก้ไข:**
+    - ปรับปรุง SQL query หลักที่ดึงข้อมูลโครงการ โดยเปลี่ยนการดึง `team_id` จาก `users` โดยตรง ไปเป็นการ `JOIN` ผ่าน `user_teams` เพื่อดึง `creator_team_id` และ `team_name` อย่างถูกต้อง
+    - เพิ่ม alias `AS creator_first_name` และ `AS creator_last_name` ใน SQL query หลัก เพื่อให้คอลัมน์เหล่านี้ถูกส่งกลับมาใน `$project` array อย่างถูกต้อง
+    - เปลี่ยน `JOIN users u` เป็น `LEFT JOIN users u` ใน query ที่ดึงข้อมูลสมาชิกโครงการ (`$members`) และเพิ่ม `isset()` check ในการแสดงผล `first_name` และ `last_name` เพื่อป้องกัน `Warning: Undefined array key` (แม้ว่าปัญหานี้ยังคงมีรายงานอยู่และอยู่ระหว่างการตรวจสอบเพิ่มเติม)
+
+### 10.8 `pages/project/upload_images.php`
+- **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'u.team_id' in 'on clause'`
+- **การแก้ไข:** ปรับปรุง SQL query ที่ใช้ดึงชื่อทีมของผู้ใช้ โดยเปลี่ยนไปใช้ตาราง `user_teams` และ `teams` อย่างถูกต้อง
+
+### 10.9 `pages/project/upload_document.php`
+- **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'u.team_id' in 'on clause'`
+- **การแก้ไข:** ปรับปรุง SQL query ที่ใช้ดึงชื่อทีมของผู้ใช้ โดยเปลี่ยนไปใช้ตาราง `user_teams` และ `teams` อย่างถูกต้อง

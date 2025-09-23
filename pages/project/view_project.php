@@ -21,37 +21,53 @@ try {
 
     try {
         $sql = "SELECT p.*, 
-        u.team_id as creator_team_id, 
-        /* เปลี่ยนจากใช้ seller เป็น created_by ตรงนี้ */
-        creator.first_name, creator.last_name, creator.email as seller_email, creator.phone as seller_phone,
-        pr.product_name, pr.product_description,
-        c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
-        t.team_name,
-        tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
-        creator.first_name as creator_first_name, creator.last_name as creator_last_name,
-        updater.first_name as updater_first_name, updater.last_name as updater_last_name,
-        pm.is_active,
-        CASE 
-            WHEN p.created_by = :user_id THEN true
-            WHEN EXISTS (
-                SELECT 1 FROM project_members pm 
-                WHERE pm.project_id = p.project_id 
-                AND pm.user_id = :user_id
-            ) THEN true
-            ELSE false
-        END as has_access
+            -- Creator's info
+            creator.first_name AS creator_first_name, creator.last_name AS creator_last_name, creator.email as seller_email, creator.phone as seller_phone,
+            
+            -- Product info
+            pr.product_name, pr.product_description,
+            
+            -- Customer info
+            c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
+            
+            -- Team info (from creator's primary team)
+            t.team_name,
+            t.team_id as creator_team_id, -- Get the team_id for permission checks
+            
+            -- Team leader info
+            tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
+            
+            -- Updater info
+            updater.first_name as updater_first_name, updater.last_name as updater_last_name,
+            
+            -- Project member info for current user
+            pm.is_active,
+            
+            -- Permission check flag
+            CASE 
+                WHEN p.created_by = :user_id THEN true
+                WHEN EXISTS (
+                    SELECT 1 FROM project_members pm_check 
+                    WHERE pm_check.project_id = p.project_id 
+                    AND pm_check.user_id = :user_id
+                ) THEN true
+                ELSE false
+            END as has_access
+
         FROM projects p 
-        /* เปลี่ยนจาก p.seller เป็น p.created_by */
-        LEFT JOIN users creator ON p.created_by = creator.user_id 
+        LEFT JOIN users creator ON p.created_by = creator.user_id
         LEFT JOIN products pr ON p.product_id = pr.product_id 
         LEFT JOIN customers c ON p.customer_id = c.customer_id 
-        /* เปลี่ยนจาก u.team_id เป็น creator.team_id */
-        LEFT JOIN teams t ON creator.team_id = t.team_id 
-        LEFT JOIN users tl ON t.team_leader = tl.user_id
-        /* เก็บ creator ไว้เหมือนเดิมเพื่อใช้ในส่วนอื่น */
-        LEFT JOIN users u ON p.created_by = u.user_id
         LEFT JOIN users updater ON p.updated_by = updater.user_id
+
+        -- Get creator's primary team
+        LEFT JOIN user_teams ut ON creator.user_id = ut.user_id AND ut.is_primary = 1
+        LEFT JOIN teams t ON ut.team_id = t.team_id
+        LEFT JOIN users tl ON t.team_leader = tl.user_id
+
+        -- Get current user's membership status in this project
         LEFT JOIN project_members pm ON p.project_id = pm.project_id AND pm.user_id = :user_id
+
         WHERE p.project_id = :project_id";
 
         $stmt = $condb->prepare($sql);
@@ -174,9 +190,9 @@ elseif (isset($project['is_active'])) {
 
 
 // ดึงข้อมูลสมาชิกในโครงการ
-$stmt = $condb->prepare("SELECT pm.*, u.first_name, u.last_name, pr.role_name
+$stmt = $condb->prepare("SELECT pm.*, COALESCE(u.first_name, '') AS first_name, COALESCE(u.last_name, '') AS last_name, pr.role_name
                         FROM project_members pm
-                        JOIN users u ON pm.user_id = u.user_id
+                        LEFT JOIN users u ON pm.user_id = u.user_id
                         JOIN project_roles pr ON pm.role_id = pr.role_id
                         WHERE pm.project_id = ?
                         ORDER BY pr.role_name, u.first_name");
@@ -876,7 +892,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                 <?php foreach ($members as $index => $member): ?>
                                                     <tr>
                                                         <td><?php echo $index + 1; ?></td>
-                                                        <td><?php echo htmlspecialchars($member['first_name'] . ' ' . $member['last_name']); ?></td>
+                                                        <td><?php echo htmlspecialchars((isset($member['first_name']) ? $member['first_name'] : '') . ' ' . (isset($member['last_name']) ? $member['last_name'] : '')); ?></td>
                                                         <td><?php echo htmlspecialchars($member['role_name']); ?></td>
                                                         <td><?php echo date('d/m/Y', strtotime($member['joined_date'])); ?></td>
                                                         <td>

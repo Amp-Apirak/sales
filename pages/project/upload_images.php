@@ -11,8 +11,8 @@ if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_tok
 $project_id = $_POST['project_id'];
 $user_id = $_SESSION['user_id'];
 
-// ดึงข้อมูล team_id ของผู้ใช้
-$sql = "SELECT t.team_name FROM users u JOIN teams t ON u.team_id = t.team_id WHERE u.user_id = :user_id";
+// ดึงข้อมูล team_id ของผู้ใช้ (จาก primary team)
+$sql = "SELECT t.team_name FROM users u JOIN user_teams ut ON u.user_id = ut.user_id JOIN teams t ON ut.team_id = t.team_id WHERE u.user_id = :user_id AND ut.is_primary = 1";
 $stmt = $condb->prepare($sql);
 $stmt->execute([':user_id' => $user_id]);
 $team = $stmt->fetch(PDO::FETCH_ASSOC);

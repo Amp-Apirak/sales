@@ -5,144 +5,106 @@ session_start();
 // เชื่อมต่อฐานข้อมูล
 include('../../../config/condb.php');
 
-// ตรวจสอบการตั้งค่า Session เพื่อป้องกันกรณีที่ไม่ได้ล็อกอิน
-if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
-    // กรณีไม่มีการตั้งค่า Session หรือล็อกอิน
-    header("Location: " . BASE_URL . "login.php");  // Redirect ไปยังหน้า login.php
-    exit; // หยุดการทำงานของสคริปต์ปัจจุบันหลังจาก redirect
-}
-
-// ตรวจสอบว่า User ได้ login แล้วหรือยัง และตรวจสอบ Role
-if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor' && $_SESSION['role'] != 'Seller')) {
-    // ถ้า Role ไม่ใช่ Executive หรือ Sale Supervisor ให้ redirect ไปยังหน้าอื่น เช่น หน้า Dashboard
-    header("Location: " . BASE_URL . "index.php"); // เปลี่ยนเส้นทางไปหน้า Dashboard
-    exit(); // หยุดการทำงานของสคริปต์
+// ตรวจสอบการตั้งค่า Session
+if (!isset($_SESSION['role'], $_SESSION['user_id'])) {
+    header("Location: " . BASE_URL . "login.php");
+    exit;
 }
 
 // ดึงข้อมูลจาก session
 $role = $_SESSION['role'];
-$team_id = $_SESSION['team_id'];
 $user_id = $_SESSION['user_id'];
+$user_team_ids = $_SESSION['team_ids'] ?? []; // User's teams
 
-/**
- * ฟังก์ชันตรวจสอบสิทธิ์การแก้ไขข้อมูลสินค้า
- * @param string $role บทบาทของผู้ใช้
- * @param string $user_id รหัสผู้ใช้ปัจจุบัน
- * @param string $creator_id รหัสผู้สร้างสินค้า
- * @param string $team_id ทีมของผู้ใช้ปัจจุบัน
- * @param string $product_team_id ทีมของผู้สร้างสินค้า
- * @return boolean
- */
-function canManageProduct($role, $user_id, $created_by, $user_team_id, $product_team_id)
-{
-    $is_creator = ($created_by == $user_id);
-    $is_executive = ($role == 'Executive');
-    $is_sale_supervisor_or_seller = ($role == 'Sale Supervisor' || $role == 'Seller');
-    $is_same_team = ($product_team_id == $user_team_id);
-
-    return ($is_creator || $is_executive || ($is_sale_supervisor_or_seller && $is_same_team));
-}
-
-// รับค่าการค้นหาจากฟอร์ม (method="GET")
-$search_service = isset($_GET['searchservice']) ? trim($_GET['searchservice']) : '';
-
-// เพิ่มฟังก์ชันสำหรับตรวจสอบสิทธิ์การเข้าถึงข้อมูลต้นทุน
-function canViewCostPrice($role, $team_id, $product_team_id)
-{
-    if ($role === 'Executive') {
-        // Executive สามารถดูข้อมูลได้ทั้งหมด
-        return true;
-    } elseif (($role === 'Sale Supervisor' || $role === 'Seller') && $team_id === $product_team_id) {
-        // Sale Supervisor และ Seller ดูได้เฉพาะทีมตัวเอง
+// Function to check if user can manage product
+function canManageProduct($role, $user_id, $created_by, $user_teams, $product_creator_teams_str) {
+    if ($role === 'Executive' || $user_id === $created_by) {
         return true;
     }
-    // Role อื่นๆ ไม่สามารถดูได้
+    if ($role === 'Sale Supervisor') {
+        $product_creator_teams = explode(',', $product_creator_teams_str ?? '');
+        return !empty(array_intersect($user_teams, $product_creator_teams));
+    }
     return false;
 }
 
-// กำหนดจำนวนรายการต่อหน้า
+// Function to check if user can view cost price
+function canViewCostPrice($role, $user_id, $created_by, $user_teams, $product_creator_teams_str) {
+    return canManageProduct($role, $user_id, $created_by, $user_teams, $product_creator_teams_str);
+}
+
+// Pagination setup
 $items_per_page = 12;
-
-// ดึงค่าหน้าปัจจุบันจาก URL, ถ้าไม่มีจะเป็น 1
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-
-// คำนวณ offset สำหรับ LIMIT ใน SQL
 $offset = ($current_page - 1) * $items_per_page;
 
-// แทนที่ SQL Query เดิมด้วยโค้ดนี้
+// Search term
+$search_service = trim($_GET['searchservice'] ?? '');
+
+// --- Build Query ---
+$params = [];
+$base_sql = "FROM products p 
+             LEFT JOIN users u ON p.created_by = u.user_id
+             LEFT JOIN projects pr ON p.product_id = pr.product_id
+             LEFT JOIN customers c ON pr.customer_id = c.customer_id";
+
+$where_conditions = [];
+if (!empty($search_service)) {
+    $where_conditions[] = "(p.product_name LIKE :search OR p.product_description LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search)";
+    $params[':search'] = "%$search_service%";
+}
+
+// Filtering for non-executives
+if ($role !== 'Executive') {
+    if (!empty($user_team_ids)) {
+        $team_placeholders = [];
+        foreach ($user_team_ids as $key => $id) {
+            $p = ':team_id_' . $key;
+            $team_placeholders[] = $p;
+            $params[$p] = $id;
+        }
+        $in_clause = implode(',', $team_placeholders);
+        $where_conditions[] = "(p.created_by = :user_id OR p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause)))";
+        $params[':user_id'] = $user_id;
+    } else {
+        $where_conditions[] = "p.created_by = :user_id";
+        $params[':user_id'] = $user_id;
+    }
+}
+
+$where_clause = !empty($where_conditions) ? "WHERE " . implode(' AND ', $where_conditions) : "";
+
+// Count total items
+$count_sql = "SELECT COUNT(DISTINCT p.product_id) AS total $base_sql $where_clause";
+$count_stmt = $condb->prepare($count_sql);
+$count_stmt->execute($params);
+$total_items = $count_stmt->fetchColumn();
+$total_pages = ceil($total_items / $items_per_page);
+
+// Main data query
 $sql_products = "SELECT p.*, 
                         u.first_name AS creator_first_name, 
                         u.last_name AS creator_last_name,
-                        u.team_id AS creator_team_id,
                         p.created_by,
-                        t.team_name,
-                        t.team_description,
+                        (SELECT GROUP_CONCAT(t.team_name SEPARATOR ', ') FROM teams t JOIN user_teams ut ON t.team_id = ut.team_id WHERE ut.user_id = p.created_by) as team_name,
+                        (SELECT GROUP_CONCAT(ut.team_id) FROM user_teams ut WHERE ut.user_id = p.created_by) as creator_team_ids,
                         COUNT(pr.project_id) as project_count,
                         GROUP_CONCAT(DISTINCT CONCAT(pr.project_id, '|', pr.project_name, '|', COALESCE(c.company, c.customer_name)) SEPARATOR '|||') as project_details
-                 FROM products p 
-                 LEFT JOIN users u ON p.created_by = u.user_id 
-                 LEFT JOIN teams t ON p.team_id = t.team_id
-                 LEFT JOIN projects pr ON p.product_id = pr.product_id
-                 LEFT JOIN customers c ON pr.customer_id = c.customer_id
-                 WHERE 1=1";
+                 $base_sql
+                 $where_clause
+                 GROUP BY p.product_id
+                 ORDER BY p.created_at DESC
+                 LIMIT :limit OFFSET :offset";
 
-// สร้าง SQL สำหรับนับจำนวนรายการทั้งหมดเพื่อใช้ใน pagination
-$count_sql = "SELECT COUNT(DISTINCT p.product_id) AS total FROM products p 
-              LEFT JOIN users u ON p.created_by = u.user_id 
-              WHERE 1=1";
-
-// เพิ่มเงื่อนไขการค้นหาตามที่ผู้ใช้กรอกมา
-if (!empty($search_service)) {
-    $search_condition = " AND (p.product_name LIKE :search_service 
-                        OR p.product_description LIKE :search_service 
-                        OR u.first_name LIKE :search_service 
-                        OR u.last_name LIKE :search_service)";
-    $sql_products .= $search_condition;
-    $count_sql .= $search_condition;
-}
-
-// เพิ่ม GROUP BY เพื่อจัดกลุ่มข้อมูล
-$sql_products .= " GROUP BY p.product_id";
-
-// การเรียงลำดับ
-$sql_products .= " ORDER BY p.created_at DESC";
-
-// เพิ่ม LIMIT และ OFFSET เพื่อการแบ่งหน้า
-$sql_products .= " LIMIT :limit OFFSET :offset";
-
-// เตรียม statement สำหรับนับจำนวนรายการทั้งหมด
-$count_stmt = $condb->prepare($count_sql);
-
-// ผูกค่าการค้นหากับ statement สำหรับการนับ
-if (!empty($search_service)) {
-    $search_param = '%' . $search_service . '%';
-    $count_stmt->bindParam(':search_service', $search_param, PDO::PARAM_STR);
-}
-
-// Execute query เพื่อนับจำนวนรายการทั้งหมด
-$count_stmt->execute();
-$row = $count_stmt->fetch(PDO::FETCH_ASSOC);
-$total_items = $row['total'];
-
-// คำนวณจำนวนหน้าทั้งหมด
-$total_pages = ceil($total_items / $items_per_page);
-
-// เตรียม statement สำหรับดึงข้อมูลสินค้า
 $stmt = $condb->prepare($sql_products);
-
-// ผูกค่า LIMIT และ OFFSET
 $stmt->bindParam(':limit', $items_per_page, PDO::PARAM_INT);
 $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-
-// ผูกค่าการค้นหากับ statement
-if (!empty($search_service)) {
-    $search_param = '%' . $search_service . '%';
-    $stmt->bindParam(':search_service', $search_param, PDO::PARAM_STR);
+foreach ($params as $key => &$val) {
+    $stmt->bindParam($key, $val);
 }
-
-// Execute query เพื่อดึงข้อมูลสินค้า
 $stmt->execute();
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <!DOCTYPE html>

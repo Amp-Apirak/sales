@@ -4,22 +4,23 @@ include '../../include/Add_session.php';
 
 // ดึงข้อมูลผู้ใช้จาก session
 $role = $_SESSION['role'] ?? '';
-$team_id = $_SESSION['team_id'] ?? 0;
-$created_by = $_SESSION['user_id'] ?? null;
-if (!$created_by) {
+$team_ids = $_SESSION['team_ids'] ?? []; // Array of team IDs
+$current_user_id = $_SESSION['user_id'] ?? null;
+if (!$current_user_id) {
     die("Error: User ID not found in session");
 }
 
-// ฟังก์ชันสำหรับจัดการกับปี
-function getProjectYear($salesDate, $createdAt)
+// ฟังก์ชันสำหรับดึงข้อมูล dropdown
+function getDropdownData($condb, $sql, $params = [])
 {
-    if (!empty($salesDate)) {
-        return date('Y', strtotime($salesDate));
+    try {
+        $stmt = $condb->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Dropdown query failed: " . $e->getMessage());
+        return [];
     }
-    if (!empty($createdAt)) {
-        return date('Y', strtotime($createdAt));
-    }
-    return date('Y');
 }
 
 // ฟังก์ชันทำความสะอาดข้อมูล input
@@ -32,279 +33,163 @@ function clean_input($data)
     return $data;
 }
 
-// ฟังก์ชันสำหรับดึงข้อมูล dropdown
-function getDropdownData($condb, $sql, $params)
-{
-    $stmt = $condb->prepare($sql);
-    $stmt->execute($params);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-// รับค่าจากฟอร์มการค้นหาและทำความสะอาด
-$search_service = clean_input($_POST['searchservice'] ?? '');
-$search_product = clean_input($_POST['product'] ?? '');
-$search_status = clean_input($_POST['status'] ?? '');
-$search_creator = clean_input($_POST['creator'] ?? '');
-$search_customer = clean_input($_POST['customer'] ?? '');
-$current_year = date('Y');
+// --- 1. รับและทำความสะอาด Input จากฟอร์ม ---
+$search_service = trim($_POST['searchservice'] ?? '');
+$search_product = trim($_POST['product'] ?? '');
+$search_status = trim($_POST['status'] ?? '');
+$search_creator = trim($_POST['creator'] ?? '');
+$search_customer = trim($_POST['customer'] ?? '');
 $search_year = filter_var($_POST['year'] ?? '', FILTER_VALIDATE_INT);
-// $search_year = filter_var($_POST['year'] ?? $current_year, FILTER_VALIDATE_INT);
-$search_team = clean_input($_POST['team'] ?? '');
-
-// กำหนด where clause สำหรับ dropdown ตามบทบาทผู้ใช้
-$where_clause_dropdown = "";
-$params_dropdown = array();
+$search_team = trim($_POST['team'] ?? '');
 
 
-// ดึงข้อมูลสำหรับ dropdowns
-$products = getDropdownData($condb, "SELECT DISTINCT p.product_id, pr.product_name FROM projects p JOIN products pr ON p.product_id = pr.product_id $where_clause_dropdown", $params_dropdown);
-$statuses = getDropdownData($condb, "SELECT DISTINCT status FROM projects p $where_clause_dropdown", $params_dropdown);
-$creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_name FROM users u INNER JOIN projects p ON u.user_id = p.seller $where_clause_dropdown ORDER BY u.first_name, u.last_name", $params_dropdown);
-$customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_name FROM customers c INNER JOIN projects p ON c.customer_id = p.customer_id $where_clause_dropdown", $params_dropdown);
+// --- 2. สร้างเงื่อนไขพื้นฐาน (WHERE clause) สำหรับ Dropdowns ---
+$dropdown_where = '';
+$dropdown_params = [];
 
-
-// ปรับปรุงการดึงข้อมูลปีจาก sales_date
-$years_sql = "
-    SELECT DISTINCT 
-        CASE 
-            WHEN p.sales_date IS NOT NULL AND YEAR(p.sales_date) != 0 THEN YEAR(p.sales_date)
-            WHEN p.created_at IS NOT NULL THEN YEAR(p.created_at)
-            ELSE YEAR(CURRENT_DATE)
-        END AS year 
-    FROM projects p 
-    $where_clause_dropdown 
-    HAVING year IS NOT NULL AND year != 0 
-    ORDER BY year DESC
-";
-$years = getDropdownData($condb, $years_sql, $params_dropdown);
-
-// เพิ่มปีปัจจุบันถ้าไม่มีในรายการ
-// $has_current_year = false;
-// foreach ($years as $year) {
-//     if ($year['year'] == $current_year) {
-//         $has_current_year = true;
-//         break;
-//     }
-// }
-// if (!$has_current_year) {
-//     array_unshift($years, ['year' => $current_year]);
-// }
-
-// จัดเรียงปีจากมากไปน้อย (ปีล่าสุดก่อน)
-usort($years, function ($a, $b) {
-    return $b['year'] - $a['year'];
-});
-
-// Team Dropdown (เฉพาะ Executive หรือ Sale Supervisor)
-if ($role == 'Executive' || $role == 'Sale Supervisor') {
-    $team_query = ($role == 'Sale Supervisor') ? "WHERE team_id = :team_id" : "";
-    $teams = getDropdownData($condb, "SELECT DISTINCT team_id, team_name FROM teams $team_query", $role == 'Sale Supervisor' ? [':team_id' => $team_id] : []);
-}
-
-// กำหนด where clause ตามบทบาทผู้ใช้และเงื่อนไขการค้นหา
-$where_clause = "WHERE 1=1";
-$params = array();
-
-// ดึงข้อมูลผู้ขายจากฟิลด์ seller และกรองตาม team สำหรับ Sale Supervisor
-if ($role == 'Sale Supervisor') {
-    $creators = getDropdownData(
-        $condb,
-        "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_name 
-                                       FROM users u 
-                                       WHERE u.team_id = :team_id 
-                                       AND u.role IN ('Seller', 'Sale Supervisor', 'Sale')
-                                       ORDER BY u.first_name, u.last_name",
-        [':team_id' => $team_id]
-    );
-} elseif ($role == 'Executive') {
-    $creators = getDropdownData($condb, "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_name 
-                                       FROM users u 
-                                       INNER JOIN projects p ON u.user_id = p.seller 
-                                       ORDER BY u.first_name, u.last_name", []);
-} else {
-    $creators = getDropdownData(
-        $condb,
-        "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_name 
-                                       FROM users u 
-                                       WHERE u.user_id = :user_id 
-                                       ORDER BY u.first_name, u.last_name",
-        [':user_id' => $created_by]
-    );
-}
-
-//ดึงข้อมูลลูกค้าตาม team สำหรับ Sale Supervisor
-if ($role == 'Sale Supervisor') {
-    $customers = getDropdownData(
-        $condb,
-        "SELECT DISTINCT c.customer_id, c.customer_name 
-                                        FROM customers c 
-                                        INNER JOIN users u ON c.created_by = u.user_id 
-                                        WHERE u.team_id = :team_id",
-        [':team_id' => $team_id]
-    );
-} elseif ($role == 'Executive') {
-    $customers = getDropdownData(
-        $condb,
-        "SELECT DISTINCT c.customer_id, c.customer_name 
-                                        FROM customers c 
-                                        INNER JOIN projects p ON c.customer_id = p.customer_id 
-                                        $where_clause_dropdown",
-        $params_dropdown
-    );
-} else {
-    $customers = getDropdownData(
-        $condb,
-        "SELECT DISTINCT c.customer_id, c.customer_name 
-                                        FROM customers c 
-                                        WHERE c.created_by = :user_id",
-        [':user_id' => $created_by]
-    );
-}
-
-
-// กำหนด where clause สำหรับ dropdown ตามบทบาทผู้ใช้
-if ($role == 'Sale Supervisor') {
-    // Sale Supervisor เห็นเฉพาะข้อมูลของทีมตัวเอง
-    $where_clause_dropdown = " WHERE EXISTS (
-        SELECT 1 FROM users u 
-        WHERE u.user_id = p.seller 
-        AND u.team_id = :team_id
-    )";
-    $params_dropdown[':team_id'] = $team_id;
-} elseif ($role == 'Sale' || $role == 'Seller') {
-    // Sale และ Seller เห็นเฉพาะโครงการที่ตัวเองเป็น seller
-    $where_clause_dropdown = " WHERE p.seller = :user_id";
-    $params_dropdown[':user_id'] = $created_by;
-} elseif ($role != 'Executive') {
-    // Role อื่นๆ ที่ไม่ใช่ Executive
-    $where_clause_dropdown = " WHERE p.seller = :user_id";
-    $params_dropdown[':user_id'] = $created_by;
-}
-
-// เพิ่มเงื่อนไขตาม Role สำหรับ main query
-if ($role == 'Sale Supervisor') {
-    $team_ids = $_SESSION['team_ids'] ?? [];
+if ($role === 'Sale Supervisor') {
     if (!empty($team_ids)) {
         $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
-        $where_clause .= " AND (p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders)) OR EXISTS (SELECT 1 FROM project_members pm2 WHERE pm2.project_id = p.project_id AND pm2.user_id = ?))";
-        foreach ($team_ids as $tid) {
-            $params[] = $tid;
-        }
-        $params[] = $created_by;
+        $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
+        $dropdown_params = $team_ids;
+    } else {
+        $dropdown_where = "WHERE p.seller = ?";
+        $dropdown_params[] = $current_user_id;
     }
-} elseif ($role == 'Sale' || $role == 'Seller') {
-    $where_clause .= " AND (p.seller = :seller_id_main OR EXISTS (SELECT 1 FROM project_members pm2 WHERE pm2.project_id = p.project_id AND pm2.user_id = :user_id_main))";
-    $params[':seller_id_main'] = $created_by;
-    $params[':user_id_main'] = $created_by;
+} elseif ($role === 'Seller' || $role === 'Engineer') {
+    $dropdown_where = "WHERE p.seller = ?";
+    $dropdown_params[] = $current_user_id;
 }
-// Executive ไม่ต้องมีเงื่อนไขเพิ่มเติม
+
+// --- 3. ดึงข้อมูลสำหรับ Dropdowns ---
+$products = getDropdownData($condb, "SELECT DISTINCT p.product_id, pr.product_name FROM projects p JOIN products pr ON p.product_id = pr.product_id $dropdown_where ORDER BY pr.product_name", $dropdown_params);
+$statuses = getDropdownData($condb, "SELECT DISTINCT status FROM projects p $dropdown_where ORDER BY status", $dropdown_params);
+$customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_name FROM customers c JOIN projects p ON c.customer_id = p.customer_id $dropdown_where ORDER BY c.customer_name", $dropdown_params);
+
+// Dropdown for Creators (Sellers)
+$creators_sql = "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_name FROM users u ";
+$creator_params = [];
+if ($role === 'Sale Supervisor') {
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id IN ($placeholders) AND u.role IN ('Seller', 'Sale Supervisor')";
+        $creator_params = $team_ids;
+    }
+} elseif ($role === 'Executive') {
+    $creators_sql .= "WHERE u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
+} else { // Seller, Engineer
+    $creators_sql .= "WHERE u.user_id = ?";
+    $creator_params[] = $current_user_id;
+}
+$creators = getDropdownData($condb, $creators_sql, $creator_params);
+
+// Dropdown for Years
+$years_sql = "SELECT DISTINCT YEAR(p.sales_date) as year FROM projects p $dropdown_where HAVING year IS NOT NULL ORDER BY year DESC";
+$years = getDropdownData($condb, $years_sql, $dropdown_params);
+
+// Dropdown for Teams (only for Executive)
+$teams = [];
+if ($role === 'Executive') {
+    $teams = getDropdownData($condb, "SELECT DISTINCT team_id, team_name FROM teams ORDER BY team_name");
+}
 
 
-// เพิ่มเงื่อนไขการค้นหา
+// --- 4. สร้าง Main Query ---
+$main_params = [];
+$main_where_conditions = [];
+
+// Role-based filtering
+if ($role === 'Sale Supervisor') {
+    if (!empty($team_ids)) {
+        $team_placeholders = [];
+        foreach ($team_ids as $key => $id) {
+            $p = ':main_team_' . $key;
+            $team_placeholders[] = $p;
+            $main_params[$p] = $id;
+        }
+        $in_clause = implode(',', $team_placeholders);
+        $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
+    } else {
+        $main_where_conditions[] = "p.seller = :current_user_id";
+        $main_params[':current_user_id'] = $current_user_id;
+    }
+} elseif ($role === 'Seller' || $role === 'Engineer') {
+    $main_where_conditions[] = "p.seller = :current_user_id";
+    $main_params[':current_user_id'] = $current_user_id;
+}
+
+// Search-based filtering
 if (!empty($search_service)) {
-    $where_clause .= " AND (p.project_name LIKE :search_service OR c.customer_name LIKE :search_service)";
-    $params[':search_service'] = "%$search_service%";
+    $main_where_conditions[] = "(p.project_name LIKE :search_service OR c.customer_name LIKE :search_service)";
+    $main_params[':search_service'] = "%$search_service%";
 }
-if (!empty($search_team)) {
-    $where_clause .= " AND seller_team.team_name = :search_team";  // แก้ไขจาก t.team_name
-    $params[':search_team'] = $search_team;
+if (!empty($search_team) && $role === 'Executive') {
+    $main_where_conditions[] = "seller_team.team_id = :search_team";
+    $main_params[':search_team'] = $search_team;
 }
 if (!empty($search_product)) {
-    $where_clause .= " AND p.product_id = :search_product";
-    $params[':search_product'] = $search_product;
+    $main_where_conditions[] = "p.product_id = :search_product";
+    $main_params[':search_product'] = $search_product;
 }
 if (!empty($search_status)) {
-    $where_clause .= " AND p.status = :search_status";
-    $params[':search_status'] = $search_status;
+    $main_where_conditions[] = "p.status = :search_status";
+    $main_params[':search_status'] = $search_status;
 }
 if (!empty($search_creator)) {
-    $where_clause .= " AND p.seller = :search_creator";  // เปลี่ยนจาก created_by เป็น seller
-    $params[':search_creator'] = $search_creator;
+    $main_where_conditions[] = "p.seller = :search_creator";
+    $main_params[':search_creator'] = $search_creator;
 }
 if (!empty($search_customer)) {
-    $where_clause .= " AND p.customer_id = :search_customer";
-    $params[':search_customer'] = $search_customer;
+    $main_where_conditions[] = "p.customer_id = :search_customer";
+    $main_params[':search_customer'] = $search_customer;
 }
-if (!empty($search_year) && $search_year > 0) {
-    $where_clause .= " AND (
-        (YEAR(p.sales_date) = :search_year AND p.sales_date IS NOT NULL) OR 
-        (YEAR(p.created_at) = :search_year AND p.sales_date IS NULL)
-    )";
-    $params[':search_year'] = $search_year;
+if (!empty($search_year)) {
+    $main_where_conditions[] = "YEAR(p.sales_date) = :search_year";
+    $main_params[':search_year'] = $search_year;
 }
-// if (!empty($search_year)) {
-//     $where_clause .= " AND (
-//         (YEAR(p.sales_date) = :search_year AND p.sales_date IS NOT NULL) OR 
-//         (YEAR(p.created_at) = :search_year AND p.sales_date IS NULL)
-//     )";
-//     $params[':search_year'] = $search_year;
-// }
 
+$where_clause = "";
+if (!empty($main_where_conditions)) {
+    $where_clause = "WHERE " . implode(' AND ', $main_where_conditions);
+}
 
-// เพิ่มพารามิเตอร์สำหรับตรวจสอบสิทธิ์
-$params[':current_user_id'] = $created_by;
-$params[':user_team_id'] = $team_id;
+// Final SQL
+$team_id_list_for_query = !empty($team_ids) ? implode(',', array_map(fn($id) => $condb->quote($id), $team_ids)) : "NULL";
 
-// SQL query สำหรับดึงข้อมูลโปรเจกต์ พร้อมการตรวจสอบสิทธิ์
 $sql_projects = "
     SELECT DISTINCT 
         p.*,
-        /* เพิ่มข้อมูลสำหรับตรวจสอบสิทธิ์ */
-        CASE 
-            WHEN p.created_by = :current_user_id THEN 'owner'
-            WHEN p.seller = :current_user_id THEN 'owner'
-            WHEN EXISTS (
-                SELECT 1 FROM project_members pm 
-                WHERE pm.project_id = p.project_id 
-                AND pm.user_id = :current_user_id
-            ) THEN 'shared'
-            ELSE 'none'
-        END as user_permission,
-        
-        /* ตรวจสอบว่าเป็นโครงการในทีมหรือไม่ */
-        CASE 
-            WHEN seller_team.team_id = :user_team_id THEN true
-            ELSE false
-        END as is_team_project,
-        
-        /* ตรวจสอบว่าเป็นเจ้าของโครงการหรือไม่ */
-        CASE 
-            WHEN p.created_by = :current_user_id OR p.seller = :current_user_id THEN true
-            ELSE false
-        END as is_project_owner,
-        
-        /* ดึงข้อมูลสิทธิ์จาก project_members */
-        COALESCE(pm_user.is_active, 999) as member_access_level,
-        
-        /* ตรวจสอบระดับสิทธิ์การเข้าถึงรวม */
-        CASE 
-            WHEN p.created_by = :current_user_id OR p.seller = :current_user_id THEN 'full'
-            WHEN seller_team.team_id = :user_team_id THEN 'team'
-            WHEN pm_user.is_active = 0 THEN 'full_member'
-            WHEN pm_user.is_active = 1 THEN 'view_only'
-            WHEN pm_user.is_active = 2 THEN 'half_access'
-            ELSE 'none'
-        END as access_level,
-        
         creator.first_name as creator_first_name, 
         creator.last_name as creator_last_name,
-        c.customer_name, 
-        c.company, 
-        c.address, 
-        c.phone, 
-        c.email, 
+        c.customer_name, c.company, c.address, c.phone, c.email, 
         seller_team.team_name,
         pr.product_name,
         seller.first_name AS seller_first_name, 
         seller.last_name AS seller_last_name,
-        
-        /* คำนวณปีจากข้อมูล */
+        pm_user.is_active as member_access_level,
+
+        -- Re-added columns for permission checking
         CASE 
-            WHEN p.sales_date IS NOT NULL THEN YEAR(p.sales_date)
-            WHEN p.created_at IS NOT NULL THEN YEAR(p.created_at)
-            ELSE YEAR(CURRENT_DATE)
-        END AS calculated_year
-        
+            WHEN p.created_by = :current_user_id_main OR p.seller = :current_user_id_main THEN 1
+            ELSE 0
+        END as is_project_owner,
+
+        CASE 
+            WHEN seller_team.team_id IN ($team_id_list_for_query) THEN 1
+            ELSE 0
+        END as is_team_project,
+
+        CASE 
+            WHEN p.created_by = :current_user_id_main THEN 'owner'
+            WHEN p.seller = :current_user_id_main THEN 'owner'
+            WHEN EXISTS (
+                SELECT 1 FROM project_members pm 
+                WHERE pm.project_id = p.project_id 
+                AND pm.user_id = :current_user_id_main
+            ) THEN 'shared'
+            ELSE 'none'
+        END as user_permission
+
     FROM projects p
     LEFT JOIN customers c ON p.customer_id = c.customer_id
     LEFT JOIN users creator ON p.created_by = creator.user_id
@@ -312,21 +197,16 @@ $sql_projects = "
     LEFT JOIN user_teams ut ON seller.user_id = ut.user_id AND ut.is_primary = 1
     LEFT JOIN teams seller_team ON ut.team_id = seller_team.team_id
     LEFT JOIN products pr ON p.product_id = pr.product_id
-    LEFT JOIN project_members pm ON p.project_id = pm.project_id
-    LEFT JOIN project_members pm_user ON p.project_id = pm_user.project_id AND pm_user.user_id = :current_user_id
+    LEFT JOIN project_members pm_user ON p.project_id = pm_user.project_id AND pm_user.user_id = :current_user_id_main
     $where_clause
     ORDER BY p.created_at DESC, p.project_id DESC
 ";
+$main_params[':current_user_id_main'] = $current_user_id;
 
 $stmt_projects = $condb->prepare($sql_projects);
-$stmt_projects->execute($params);
+$stmt_projects->execute($main_params);
 $projects = $stmt_projects->fetchAll(PDO::FETCH_ASSOC);
 
-// // Debug: ตรวจสอบคำสั่ง SQL และพารามิเตอร์
-// echo "<pre>";
-// print_r($stmt_projects->queryString);
-// print_r($params);
-// echo "</pre>";
 
 // ฟังก์ชันสำหรับตัดข้อความให้สั้นลงและเพิ่ม ...
 function truncateText($text, $length = 100)

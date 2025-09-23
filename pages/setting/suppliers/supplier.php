@@ -6,57 +6,64 @@ session_start();
 include('../../../config/condb.php');
 
 // ดึงข้อมูลจาก session ของผู้ใช้ที่เข้าสู่ระบบ
-$role = $_SESSION['role'];  // บทบาทของผู้ใช้
-$team_id = $_SESSION['team_id'];  // team_id ของผู้ใช้
-$user_id = $_SESSION['user_id'];  // user_id ของผู้ใช้
+$role = $_SESSION['role'];
+$team_ids = $_SESSION['team_ids'] ?? [];
+$user_id = $_SESSION['user_id'];
 
-// รับค่าการค้นหาจากฟอร์ม (method="GET")
-$search_supplier = isset($_GET['searchsupplier']) ? trim($_GET['searchsupplier']) : '';
+// รับค่าการค้นหาจากฟอร์ม
+$search_supplier = trim($_GET['searchsupplier'] ?? '');
 
-// Query พื้นฐานในการดึงข้อมูล supplier ทั้งหมด
+// --- 1. Build Query and Parameters ---
+$params = [];
 $sql_suppliers = "SELECT DISTINCT s.*, u.first_name, u.last_name, t.team_name 
                   FROM suppliers s
                   LEFT JOIN users u ON s.created_by = u.user_id
-                  LEFT JOIN teams t ON u.team_id = t.team_id
-                  WHERE 1=1";
+                  LEFT JOIN user_teams ut ON u.user_id = ut.user_id AND ut.is_primary = 1
+                  LEFT JOIN teams t ON ut.team_id = t.team_id";
 
-// เพิ่มเงื่อนไขกรณีผู้ใช้เป็น Sale Supervisor หรือผู้ใช้ทั่วไป
+$where_conditions = [];
+
+// Role-based filtering
 if ($role == 'Sale Supervisor') {
-    // ผู้จัดการทีม เห็น supplier ของทีมตัวเอง
-    $sql_suppliers .= " AND u.team_id = :team_id";
-} elseif ($role == 'Seller') {
-    // ผู้ใช้ทั่วไป (Seller) เห็นเฉพาะ supplier ที่ตัวเองสร้าง
-    $sql_suppliers .= " AND s.created_by = :user_id";
-} elseif ($role != 'Executive') {
-    // กรณีที่เป็นบทบาทอื่นๆ ที่ไม่ใช่ Executive
-    $sql_suppliers .= " AND s.created_by = :user_id";
+    if (!empty($team_ids)) {
+        $team_placeholders = [];
+        foreach ($team_ids as $key => $id) {
+            $p = ':team_id_' . $key;
+            $team_placeholders[] = $p;
+            $params[$p] = $id;
+        }
+        $in_clause = implode(',', $team_placeholders);
+        // Filter suppliers created by users who are in the supervisor's teams
+        $where_conditions[] = "s.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
+    } else {
+        $where_conditions[] = "1=0"; // No teams, show no suppliers
+    }
+} elseif ($role == 'Seller' || $role != 'Executive') {
+    $where_conditions[] = "s.created_by = :user_id";
+    $params[':user_id'] = $user_id;
 }
 
-// เพิ่มเงื่อนไขการค้นหาข้อมูลตามที่ผู้ใช้กรอกมา
+// Search filtering
 if (!empty($search_supplier)) {
-    $sql_suppliers .= " AND (s.supplier_name LIKE :search OR s.company LIKE :search OR s.phone LIKE :search OR s.position LIKE :search OR s.email LIKE :search)";
+    $where_conditions[] = "(
+        s.supplier_name LIKE :search OR 
+        s.company LIKE :search OR 
+        s.phone LIKE :search OR 
+        s.position LIKE :search OR 
+        s.email LIKE :search
+    )";
+    $params[':search'] = "%$search_supplier%";
+}
+
+if (!empty($where_conditions)) {
+    $sql_suppliers .= " WHERE " . implode(' AND ', $where_conditions);
 }
 
 $sql_suppliers .= " ORDER BY s.created_at DESC";
 
-// เตรียม statement และ bind ค่าต่างๆ เพื่อความปลอดภัย
+// --- 2. Execute Query ---
 $stmt = $condb->prepare($sql_suppliers);
-
-// ผูกค่า team_id และ user_id ตามบทบาทของผู้ใช้
-if ($role == 'Sale Supervisor') {
-    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_STR); // เปลี่ยนเป็น PDO::PARAM_STR เพราะ team_id เป็น CHAR(36)
-} elseif ($role == 'Seller' || $role != 'Executive') {
-    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR); // เปลี่ยนเป็น PDO::PARAM_STR เพราะ user_id เป็น CHAR(36)
-}
-
-// ผูกค่าการค้นหากับ statement
-if (!empty($search_supplier)) {
-    $search_param = '%' . $search_supplier . '%';
-    $stmt->bindParam(':search', $search_param, PDO::PARAM_STR);
-}
-
-// Execute query เพื่อดึงข้อมูล supplier
-$stmt->execute();
+$stmt->execute($params);
 $suppliers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
