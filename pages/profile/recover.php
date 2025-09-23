@@ -1,6 +1,7 @@
 <?php
 //session_start and Config DB
 include  '../../include/Add_session.php';
+include  '../../config/validation.php';
 
 // Clear cache
 header("Cache-Control: no-cache, no-store, must-revalidate");
@@ -73,28 +74,84 @@ if (isset($_GET['id'])) {
         $display_name = $user['username']; // ใช้ username แทนถ้าไม่มีชื่อ
     }
 
+    // สร้าง CSRF Token
+    $csrf_token = generateCSRFToken();
+
     // ตรวจสอบว่าผู้ใช้กดปุ่ม "Change Password" หรือไม่
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $current_password = $_POST['current_password'];
-        $new_password = $_POST['new_password'];
-        $confirm_password = $_POST['confirm_password'];
+        // ตรวจสอบ CSRF Token
+        if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+            echo "<script>
+                setTimeout(function() {
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด!',
+                        text: 'Security token invalid. Please try again.',
+                        icon: 'error',
+                    });
+                }, 100);
+              </script>";
+            exit;
+        }
+
+        // ตรวจสอบ Rate Limiting สำหรับการเปลี่ยนรหัสผ่าน
+        $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $rateCheck = checkRateLimit('password_change_' . $clientIP, 3, 900); // 3 ครั้งใน 15 นาที
+
+        if (!$rateCheck['allowed']) {
+            echo "<script>
+                setTimeout(function() {
+                    Swal.fire({
+                        title: 'ถูกบล็อก!',
+                        text: '" . $rateCheck['message'] . "',
+                        icon: 'warning',
+                    });
+                }, 100);
+              </script>";
+            exit;
+        }
+
+        // รับและตรวจสอบข้อมูลจากฟอร์ม
+        $validationErrors = [];
+
+        $current_password = sanitizeInput($_POST['current_password'] ?? '');
+        if (empty($current_password)) {
+            $validationErrors[] = 'กรุณาป้อนรหัสผ่านปัจจุบัน';
+        }
+
+        // ตรวจสอบรหัสผ่านใหม่
+        $passwordValidation = validatePassword($_POST['new_password'] ?? '');
+        if (!$passwordValidation['valid']) {
+            $validationErrors[] = $passwordValidation['message'];
+        } else {
+            $new_password = $passwordValidation['value'];
+        }
+
+        $confirm_password = sanitizeInput($_POST['confirm_password'] ?? '');
+        if (empty($confirm_password)) {
+            $validationErrors[] = 'กรุณายืนยันรหัสผ่านใหม่';
+        }
+
+        // ถ้ามี validation errors แสดงข้อความแจ้งเตือน
+        if (!empty($validationErrors)) {
+            $errorMessage = implode('\\n', $validationErrors);
+            echo "<script>
+                setTimeout(function() {
+                    Swal.fire({
+                        title: 'ข้อมูลไม่ถูกต้อง!',
+                        text: '" . $errorMessage . "',
+                        icon: 'warning',
+                    });
+                }, 100);
+              </script>";
+            exit;
+        }
 
         // ตรวจสอบว่ารหัสผ่านปัจจุบันถูกต้องหรือไม่
         if (password_verify($current_password, $user['password'])) {
             // ตรวจสอบว่ารหัสผ่านใหม่และการยืนยันรหัสผ่านตรงกันหรือไม่
             if ($new_password === $confirm_password) {
-                // ตรวจสอบความแข็งแกร่งของรหัสผ่าน
-                if (strlen($new_password) < 6) {
-                    echo "<script>
-                        setTimeout(function() {
-                            Swal.fire({
-                                title: 'เกิดข้อผิดพลาด!',
-                                text: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร!',
-                                icon: 'warning',
-                            });
-                        }, 100);
-                      </script>";
-                } else {
+                // รหัสผ่านถูกตรวจสอบความแข็งแกร่งแล้วใน validatePassword function
+                {
                     // อัปเดตรหัสผ่านใหม่ลงในฐานข้อมูล
                     $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
                     $update_stmt = $condb->prepare("UPDATE users SET password = :password WHERE user_id = :user_id");
@@ -358,7 +415,7 @@ if (isset($_GET['id'])) {
                         <div class="col-md-12">
                             <div class="permission-info">
                                 <i class="fas fa-info-circle"></i> 
-                                <strong>หมายเหตุ:</strong> คุณกำลังเปลี่ยนรหัสผ่านของผู้ใช้: <strong><?php echo htmlspecialchars($display_name); ?></strong>
+                                <strong>หมายเหตุ:</strong> คุณกำลังเปลี่ยนรหัสผ่านของผู้ใช้: <strong><?php echo escapeOutput($display_name); ?></strong>
                             </div>
                         </div>
                     </div>
@@ -370,16 +427,19 @@ if (isset($_GET['id'])) {
                                 <div class="profile-header">
                                     <?php 
                                     // ตรวจสอบรูปโปรไฟล์
-                                    $profile_image_path = !empty($user['profile_image']) ? 
-                                        BASE_URL . 'uploads/profile_images/' . htmlspecialchars($user['profile_image']) : 
+                                    $profile_image_path = !empty($user['profile_image']) ?
+                                        BASE_URL . 'uploads/profile_images/' . escapeOutput($user['profile_image']) :
                                         '../../assets/img/add.jpg';
                                     ?>
                                     <img src="<?php echo $profile_image_path; ?>" alt="Profile Picture" class="profile-img">
-                                    <h2 class="profile-name"><?php echo htmlspecialchars($display_name); ?></h2>
-                                    <p class="profile-role"><?php echo htmlspecialchars($display_role); ?></p>
+                                    <h2 class="profile-name"><?php echo escapeOutput($display_name); ?></h2>
+                                    <p class="profile-role"><?php echo escapeOutput($display_role); ?></p>
                                 </div>
                                 <div class="profile-info">
                                     <form method="POST" action="" onsubmit="return validatePassword()">
+                                        <!-- CSRF Token -->
+                                        <input type="hidden" name="csrf_token" value="<?php echo escapeOutput($csrf_token); ?>">
+
                                         <div class="form-group">
                                             <label>Current Password</label>
                                             <div class="input-group mb-3">

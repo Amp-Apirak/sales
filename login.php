@@ -1,11 +1,55 @@
 <?php
 session_start();
 require 'config/condb.php'; // นำเข้าการเชื่อมต่อฐานข้อมูล
+require 'config/validation.php'; // นำเข้าฟังก์ชัน validation
 
 // ตรวจสอบว่ามีการส่งข้อมูลผ่าน POST หรือไม่
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    // ตรวจสอบ Rate Limiting สำหรับการ login
+    $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $rateCheck = checkRateLimit('login_' . $clientIP, 5, 900); // 5 ครั้งใน 15 นาที
+
+    if (!$rateCheck['allowed']) {
+        echo "<script>
+        setTimeout(function() {
+            Swal.fire({
+                title: 'พยายามมากเกินไป!',
+                text: '" . $rateCheck['message'] . "',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }, 100);
+        </script>";
+    } else {
+        // ตรวจสอบและทำความสะอาดข้อมูล input
+        $usernameValidation = validateUsername($_POST['username'] ?? '');
+        $passwordValidation = validatePassword($_POST['password'] ?? '');
+
+        if (!$usernameValidation['valid']) {
+            echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    title: 'ข้อมูลไม่ถูกต้อง',
+                    text: '" . $usernameValidation['message'] . "',
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                });
+            }, 100);
+            </script>";
+        } elseif (!$passwordValidation['valid']) {
+            echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    title: 'ข้อมูลไม่ถูกต้อง',
+                    text: '" . $passwordValidation['message'] . "',
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                });
+            }, 100);
+            </script>";
+        } else {
+            $username = $usernameValidation['value'];
+            $password = $passwordValidation['value'];
 
     // เตรียมคำสั่ง SQL สำหรับการดึงข้อมูลผู้ใช้
     $stmt = $condb->prepare("SELECT * FROM users WHERE username = :username LIMIT 1");
@@ -60,14 +104,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<script>
         setTimeout(function() {
             Swal.fire({
-                title: 'Oop.....!', 
+                title: 'Oop.....!',
                 text: 'Invalid username or password, please try again.',
                 icon: 'warning',
             }).then(function() {
                 window.location.href = 'login.php';
             });
         }, 100);
-    </script>";
+        </script>";
+    }
+        }
     }
 }
 ?>

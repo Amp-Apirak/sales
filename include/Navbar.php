@@ -1,4 +1,8 @@
 <?php
+// รวม validation functions
+if (!function_exists('escapeOutput')) {
+    require_once __DIR__ . '/../config/validation.php';
+}
 
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
@@ -350,10 +354,10 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                 $team_display = isset($_SESSION['team_name']) ? $_SESSION['team_name'] : 'No Team';
                 ?>
                 <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-name">
-                    <?php echo htmlspecialchars($team_display); ?> team
+                    <?php echo escapeOutput($team_display); ?> team
                 </a>
-                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role"><b>Name :</b> <?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>
-                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role"><b>Role :</b> <?php echo htmlspecialchars($_SESSION['role']); ?></a>
+                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role"><b>Name :</b> <?php echo escapeOutput($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></a>
+                <a href="<?php echo BASE_URL; ?>pages/profile/profile.php" class="d-block user-role"><b>Role :</b> <?php echo escapeOutput($_SESSION['role']); ?></a>
             </div>
             <a href="<?php echo BASE_URL; ?>logout.php" class="logout-btn info">
                 <i class="fas fa-sign-out-alt"></i> Logout

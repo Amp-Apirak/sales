@@ -4,6 +4,7 @@ session_start();
 
 // นำเข้าไฟล์ config สำหรับการเชื่อมต่อฐานข้อมูล
 require_once 'config/condb.php';
+require_once 'config/validation.php';
 
 // ส่วนที่ 1: การตรวจสอบสิทธิ์และการกำหนดค่าเริ่มต้น
 // -------------------------------------------------
@@ -678,9 +679,9 @@ try {
                                                     name="team_id">
                                                     <option value="">ทั้งหมด</option>
                                                     <?php foreach ($teams as $team): ?>
-                                                        <option value="<?php echo htmlspecialchars($team['team_id']); ?>"
+                                                        <option value="<?php echo escapeOutput($team['team_id']); ?>"
                                                             <?php echo ($team['team_id'] == $filter_team_id) ? 'selected' : ''; ?>>
-                                                            <?php echo htmlspecialchars($team['team_name']); ?>
+                                                            <?php echo escapeOutput($team['team_name']); ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
@@ -694,7 +695,7 @@ try {
                                                 <span class="input-group-text">ช่วงเวลา:</span>
                                             </div>
                                             <input type="text" class="form-control form-control-sm" id="date_range"
-                                                name="date_range" value="<?php echo htmlspecialchars(implode(' - ', array_map(function ($date) {
+                                                name="date_range" value="<?php echo escapeOutput(implode(' - ', array_map(function ($date) {
                                                                                 return date('d/m/Y', strtotime($date));
                                                                             }, $filter_date_range))); ?>">
                                         </div>
@@ -710,9 +711,9 @@ try {
                                                     name="user_id">
                                                     <option value="">ทั้งหมด</option>
                                                     <?php foreach ($team_members as $member): ?>
-                                                        <option value="<?php echo htmlspecialchars($member['user_id']); ?>"
+                                                        <option value="<?php echo escapeOutput($member['user_id']); ?>"
                                                             <?php echo ($member['user_id'] == $filter_user_id) ? 'selected' : ''; ?>>
-                                                            <?php echo htmlspecialchars($member['full_name']); ?>
+                                                            <?php echo escapeOutput($member['full_name']); ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>

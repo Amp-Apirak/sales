@@ -1,13 +1,16 @@
 <?php
 
+// โหลด environment variables
+require_once __DIR__ . '/env_loader.php';
+
 //path
-define('BASE_URL', '/sales/');
+define('BASE_URL', getEnvVar('BASE_URL', '/sales/'));
 
 // ข้อมูลการเชื่อมต่อฐานข้อมูล
-$host = 'localhost';
-$dbname = 'sales_db';
-$username = 'root';
-$password = '1234';
+$host = getEnvVar('DB_HOST', 'localhost');
+$dbname = getEnvVar('DB_NAME', 'sales_db');
+$username = getEnvVar('DB_USERNAME', 'root');
+$password = getEnvVar('DB_PASSWORD', '1234');
 
 try {
     // สร้างการเชื่อมต่อด้วย PDO
@@ -24,12 +27,14 @@ try {
 
 // ฟังก์ชันสำหรับเข้ารหัส ID
 function encryptUserId($user_id) {
-    $secret_key = "your_secret_key";  // เปลี่ยนคีย์นี้ตามที่คุณต้องการ
-    return base64_encode(openssl_encrypt($user_id, "aes-256-cbc", $secret_key, 0, "1234567890123456"));
+    $secret_key = getEnvVar('SECRET_KEY', 'your_secret_key');
+    $iv = getEnvVar('ENCRYPTION_IV', '1234567890123456');
+    return base64_encode(openssl_encrypt($user_id, "aes-256-cbc", $secret_key, 0, $iv));
 }
 
 // ฟังก์ชันสำหรับถอดรหัส ID
 function decryptUserId($encrypted_user_id) {
-    $secret_key = "your_secret_key";  // คีย์เดียวกับที่ใช้เข้ารหัส
-    return openssl_decrypt(base64_decode($encrypted_user_id), "aes-256-cbc", $secret_key, 0, "1234567890123456");
+    $secret_key = getEnvVar('SECRET_KEY', 'your_secret_key');
+    $iv = getEnvVar('ENCRYPTION_IV', '1234567890123456');
+    return openssl_decrypt(base64_decode($encrypted_user_id), "aes-256-cbc", $secret_key, 0, $iv);
 }

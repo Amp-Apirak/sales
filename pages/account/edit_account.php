@@ -1,50 +1,7 @@
 <?php
 // เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
-
-// ฟังก์ชันทำความสะอาดข้อมูล input
-
-function clean_input($data)
-{
-    // ทำความสะอาดข้อมูลแต่ยังคงเก็บอักขระพิเศษไว้
-    $data = trim($data);
-    // ป้องกัน SQL Injection โดยใช้ PDO parameters แทน
-    return $data;
-}
-
-// ฟังก์ชันสร้าง CSRF token ที่ปลอดภัยขึ้น
-function generate_csrf_token()
-{
-    return bin2hex(random_bytes(32));
-}
-
-// ฟังก์ชันตรวจสอบ CSRF token
-function verify_csrf_token($token)
-{
-    return hash_equals($_SESSION['csrf_token'], $token);
-}
-
-// ฟังก์ชันตรวจสอบความซับซ้อนของรหัสผ่าน
-function isPasswordValid($password)
-{
-    return strlen($password) >= 8 &&
-        preg_match('/[A-Z]/', $password) &&
-        preg_match('/[a-z]/', $password) &&
-        preg_match('/[0-9]/', $password) &&
-        preg_match('/[!@#$%^&*()\-_=+{};:,<.>]/', $password);
-}
-
-// ฟังก์ชันตรวจสอบความถูกต้องของเบอร์โทรศัพท์
-function isPhoneValid($phone)
-{
-    return preg_match('/^[0-9]{10}$/', $phone);
-}
-
-// เพิ่มฟังก์ชันตรวจสอบรูปแบบอีเมล
-function isValidEmail($email)
-{
-    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-}
+include '../../config/validation.php';
 
 // ตรวจสอบสิทธิ์การเข้าถึง
 $role = $_SESSION['role'];
@@ -57,11 +14,8 @@ $created_by = $_SESSION['user_id'];
 //     exit();
 // }
 
-// สร้างหรือดึง CSRF Token
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = generate_csrf_token();
-}
-$csrf_token = $_SESSION['csrf_token'];
+// สร้าง CSRF Token
+$csrf_token = generateCSRFToken();
 
 // ตรวจสอบว่ามีการส่ง user_id มาหรือไม่
 if (isset($_GET['user_id'])) {
@@ -147,41 +101,113 @@ $error_messages = [];
 // ตรวจสอบการส่งฟอร์มแบบ POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ตรวจสอบ CSRF Token
-    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
-        die("CSRF token validation failed");
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: 'Security token invalid. Please try again.',
+                    icon: 'error',
+                }).then(function() {
+                    window.location.href = 'account.php';
+                });
+            }, 100);
+          </script>";
+        exit;
     }
 
-    // รับและทำความสะอาดข้อมูลจากฟอร์ม
-    $first_name = clean_input($_POST['first_name']);
-    $last_name = clean_input($_POST['last_name']);
-    $email = clean_input($_POST['email']);
-    $phone = clean_input($_POST['phone']);
-    $position = clean_input($_POST['position']);
-    $team_id_new = !empty($_POST['team_id']) ? clean_input($_POST['team_id']) : null;
-    $role_new = clean_input($_POST['role']);
-    $company = clean_input($_POST['company']);
-    $password = $_POST['password'];
+    // ตรวจสอบ Rate Limiting สำหรับการแก้ไขข้อมูล
+    $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $rateCheck = checkRateLimit('edit_account_' . $clientIP, 5, 600); // 5 ครั้งใน 10 นาที
 
-    // ตรวจสอบข้อมูลที่จำเป็น
-    if (empty($first_name)) $error_messages[] = "กรุณากรอกชื่อ";
-    if (empty($last_name)) $error_messages[] = "กรุณากรอกนามสกุล";
-    if (empty($email)) {
-        $error_messages[] = "กรุณากรอกอีเมล";
-    } elseif (!isValidEmail($email)) {
-        $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง";
-    }
-    if (empty($team_id_new)) $error_messages[] = "กรุณาเลือกทีม";
-    if (empty($role_new)) $error_messages[] = "กรุณาเลือกบทบาท";
-
-    // ตรวจสอบความซับซ้อนของรหัสผ่าน (ถ้ามีการเปลี่ยนแปลง)
-    if (!empty($password) && !isPasswordValid($password)) {
-        $error_messages[] = "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวอักษรพิมพ์ใหญ่ พิมพ์เล็ก ตัวเลข และอักขระพิเศษอย่างน้อย 1 ตัว";
+    if (!$rateCheck['allowed']) {
+        echo "<script>
+            setTimeout(function() {
+                Swal.fire({
+                    title: 'ถูกบล็อก!',
+                    text: '" . $rateCheck['message'] . "',
+                    icon: 'warning',
+                });
+            }, 100);
+          </script>";
+        exit;
     }
 
-    // ตรวจสอบความถูกต้องของเบอร์โทรศัพท์
-    if (!empty($phone) && !isPhoneValid($phone)) {
-        $error_messages[] = "เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเฉพาะตัวเลข 10 หลัก";
+    // รับและตรวจสอบข้อมูลจากฟอร์มด้วย validation functions
+    $validationErrors = [];
+
+    // ตรวจสอบ first_name
+    $firstNameValidation = validateText($_POST['first_name'] ?? '', 2, 50, 'ชื่อ');
+    if (!$firstNameValidation['valid']) {
+        $validationErrors[] = $firstNameValidation['message'];
+    } else {
+        $first_name = $firstNameValidation['value'];
     }
+
+    // ตรวจสอบ last_name
+    $lastNameValidation = validateText($_POST['last_name'] ?? '', 2, 50, 'นามสกุล');
+    if (!$lastNameValidation['valid']) {
+        $validationErrors[] = $lastNameValidation['message'];
+    } else {
+        $last_name = $lastNameValidation['value'];
+    }
+
+    // ตรวจสอบ email
+    $emailValidation = validateEmail($_POST['email'] ?? '');
+    if (!$emailValidation['valid']) {
+        $validationErrors[] = $emailValidation['message'];
+    } else {
+        $email = $emailValidation['value'];
+    }
+
+    // ตรวจสอบ phone
+    $phoneValidation = validatePhone($_POST['phone'] ?? '');
+    if (!$phoneValidation['valid']) {
+        $validationErrors[] = $phoneValidation['message'];
+    } else {
+        $phone = $phoneValidation['value'];
+    }
+
+    // ตรวจสอบ position
+    $positionValidation = validateText($_POST['position'] ?? '', 2, 100, 'ตำแหน่ง');
+    if (!$positionValidation['valid']) {
+        $validationErrors[] = $positionValidation['message'];
+    } else {
+        $position = $positionValidation['value'];
+    }
+
+    // ตรวจสอบ company
+    $companyValidation = validateText($_POST['company'] ?? '', 1, 100, 'บริษัท');
+    if (!$companyValidation['valid']) {
+        $validationErrors[] = $companyValidation['message'];
+    } else {
+        $company = $companyValidation['value'];
+    }
+
+    // ตรวจสอบ team_id และ role
+    $team_id_new = filter_var($_POST['team_id'] ?? 0, FILTER_VALIDATE_INT);
+    $role_new = sanitizeInput($_POST['role'] ?? '');
+
+    if (empty($team_id_new)) {
+        $validationErrors[] = 'กรุณาเลือกทีม';
+    }
+    if (empty($role_new)) {
+        $validationErrors[] = 'กรุณาเลือกบทบาท';
+    }
+
+    // ตรวจสอบรหัสผ่าน (ถ้ามีการเปลี่ยนแปลง)
+    $password = '';
+    if (!empty($_POST['password'])) {
+        $passwordValidation = validatePassword($_POST['password']);
+        if (!$passwordValidation['valid']) {
+            $validationErrors[] = $passwordValidation['message'];
+        } else {
+            $password = $passwordValidation['value'];
+        }
+    }
+
+    // รวม validation errors เข้ากับ error_messages
+    $error_messages = array_merge($error_messages, $validationErrors);
 
     // ถ้าไม่มีข้อผิดพลาด ดำเนินการอัปเดตข้อมูลผู้ใช้
     if (empty($error_messages)) {
@@ -219,49 +245,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $condb->prepare($sql);
             $stmt->execute($params);
 
-            // อัปเดตรูปโปรไฟล์ (ถ้ามี)
+            // อัปเดตรูปโปรไฟล์ (ถ้ามี) ด้วย validateUploadedFile
             if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == 0) {
-                $allowed = ['jpg', 'jpeg', 'png', 'gif'];
-                $filename = $_FILES['profile_image']['name'];
-                $filetype = $_FILES['profile_image']['type'];
-                $filesize = $_FILES['profile_image']['size'];
+                $fileValidation = validateUploadedFile($_FILES['profile_image'], ['jpg', 'jpeg', 'png', 'gif'], 5242880); // 5MB
 
-                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-                if (!in_array($ext, $allowed)) {
-                    throw new Exception("รูปแบบไฟล์ไม่ถูกต้อง กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น");
-                }
+                if (!$fileValidation['valid']) {
+                    throw new Exception($fileValidation['message']);
+                } else {
+                    $new_filename = sanitizeFilename($fileValidation['safe_name']);
+                    $upload_path = '../../uploads/profile_images/' . $new_filename;
 
-                // ตรวจสอบ MIME type
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $mime = finfo_file($finfo, $_FILES['profile_image']['tmp_name']);
-                finfo_close($finfo);
+                    if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $upload_path)) {
+                        $stmt = $condb->prepare("UPDATE users SET profile_image = :profile_image WHERE user_id = :user_id");
+                        $stmt->execute([':profile_image' => $new_filename, ':user_id' => $user_id]);
 
-                if (!in_array($mime, ['image/jpeg', 'image/png', 'image/gif'])) {
-                    throw new Exception("รูปแบบไฟล์ไม่ถูกต้อง");
-                }
-
-                if ($filesize > 5242880) {
-                    throw new Exception("ไฟล์มีขนาดใหญ่เกินไป กรุณาอัปโหลดไฟล์ขนาดไม่เกิน 5MB");
-                }
-
-                $new_filename = uniqid() . '.' . $ext;
-                $upload_path = '../../uploads/profile_images/' . $new_filename;
-
-                if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $upload_path)) {
-                    $stmt = $condb->prepare("UPDATE users SET profile_image = :profile_image WHERE user_id = :user_id");
-                    $stmt->execute([':profile_image' => $new_filename, ':user_id' => $user_id]);
-
-                    if (!empty($user['profile_image'])) {
-                        $old_image_path = '../../uploads/profile_images/' . $user['profile_image'];
-                        if (file_exists($old_image_path)) {
-                            unlink($old_image_path);
+                        if (!empty($user['profile_image'])) {
+                            $old_image_path = '../../uploads/profile_images/' . $user['profile_image'];
+                            if (file_exists($old_image_path)) {
+                                unlink($old_image_path);
+                            }
                         }
                     }
                 }
             }
 
-            // ล้าง CSRF token หลังจากอัปเดตสำเร็จ
-            unset($_SESSION['csrf_token']);
+            // CSRF token จะถูกจัดการโดย generateCSRFToken() อัตโนมัติ
 
             $success_message = "อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว";
         } catch (Exception $e) {
@@ -348,7 +356,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <?php endif; ?>
 
                                     <form id="editUserForm" action="<?php echo $_SERVER['PHP_SELF'] . '?user_id=' . urlencode($encrypted_user_id); ?>" method="POST" enctype="multipart/form-data">
-                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                        <input type="hidden" name="csrf_token" value="<?php echo escapeOutput($csrf_token); ?>">
 
                                         <div class="form-group">
                                             <label for="profile_image">รูปโปรไฟล์</label>
@@ -357,33 +365,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <label class="custom-file-label" for="profile_image">เลือกไฟล์</label>
                                             </div>
                                             <?php if (!empty($user['profile_image'])): ?>
-                                                <img src="../../uploads/profile_images/<?php echo htmlspecialchars($user['profile_image']); ?>" alt="รูปโปรไฟล์ปัจจุบัน" class="img-thumbnail mt-2" style="max-width: 200px;">
+                                                <img src="../../uploads/profile_images/<?php echo escapeOutput($user['profile_image']); ?>" alt="รูปโปรไฟล์ปัจจุบัน" class="img-thumbnail mt-2" style="max-width: 200px;">
                                             <?php endif; ?>
                                         </div>
 
                                         <div class="form-group">
                                             <label for="first_name">ชื่อ<span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="first_name" name="first_name" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                                            <input type="text" class="form-control" id="first_name" name="first_name" value="<?php echo escapeOutput($user['first_name']); ?>" required>
                                         </div>
 
                                         <div class="form-group">
                                             <label for="last_name">นามสกุล<span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="last_name" name="last_name" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
+                                            <input type="text" class="form-control" id="last_name" name="last_name" value="<?php echo escapeOutput($user['last_name']); ?>" required>
                                         </div>
 
                                         <div class="form-group">
                                             <label for="email">อีเมล<span class="text-danger">*</span></label>
-                                            <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                                            <input type="email" class="form-control" id="email" name="email" value="<?php echo escapeOutput($user['email']); ?>" required>
                                         </div>
 
                                         <div class="form-group">
                                             <label for="phone">เบอร์โทรศัพท์</label>
-                                            <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone']); ?>">
+                                            <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo escapeOutput($user['phone']); ?>">
                                         </div>
 
                                         <div class="form-group">
                                             <label for="position">ตำแหน่ง</label>
-                                            <input type="text" class="form-control" id="position" name="position" value="<?php echo htmlspecialchars($user['position']); ?>">
+                                            <input type="text" class="form-control" id="position" name="position" value="<?php echo escapeOutput($user['position']); ?>">
                                         </div>
 
                                         <div class="form-group">
@@ -391,7 +399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <select class="form-control select2" id="team_id" name="team_id" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
                                                 <?php foreach ($teams as $team): ?>
                                                     <option value="<?php echo $team['team_id']; ?>" <?php echo ($team['team_id'] == $user['team_id']) ? 'selected' : ''; ?>>
-                                                        <?php echo htmlspecialchars($team['team_name']); ?>
+                                                        <?php echo escapeOutput($team['team_name']); ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
@@ -424,7 +432,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                         <div class="form-group">
                                             <label for="company">บริษัท</label>
-                                            <input type="text" class="form-control" id="company" name="company" value="<?php echo htmlspecialchars($user['company']); ?>">
+                                            <input type="text" class="form-control" id="company" name="company" value="<?php echo escapeOutput($user['company']); ?>">
                                         </div>
 
                                         <div class="form-group">

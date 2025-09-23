@@ -4,25 +4,107 @@ session_start();
 
 // เชื่อมต่อฐานข้อมูล
 include('../../config/condb.php');
+include('../../config/validation.php'); // นำเข้าฟังก์ชัน validation
 
 // ตรวจสอบสิทธิ์ผู้ใช้
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
 $created_by = $_SESSION['user_id']; // ดึง user_id ของผู้สร้างจาก session
 
+// สร้าง CSRF Token
+$csrf_token = generateCSRFToken();
+
 // ตรวจสอบว่าผู้ใช้กดปุ่ม "เพิ่มผู้ใช้" หรือไม่
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // รับข้อมูลจากฟอร์ม
-    $first_name = $_POST['first_name'];
-    $last_name = $_POST['last_name'];
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // เข้ารหัสรหัสผ่าน
-    $position = $_POST['position'];
-    $team_id_new = $_POST['team_id'];
-    $role_new = $_POST['role'];
-    $company = $_POST['company'];  // รับข้อมูลบริษัทจากฟอร์ม
+    // ตรวจสอบ CSRF Token
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        echo "<script>
+                alert('Security token invalid. Please try again.');
+                window.location.href = 'add_user.php';
+              </script>";
+        exit;
+    }
+
+    // รับข้อมูลจากฟอร์มและตรวจสอบความถูกต้อง
+    $validationErrors = [];
+
+    // ตรวจสอบ first_name
+    $firstNameValidation = validateText($_POST['first_name'] ?? '', 2, 50, 'ชื่อ');
+    if (!$firstNameValidation['valid']) {
+        $validationErrors[] = $firstNameValidation['message'];
+    } else {
+        $first_name = $firstNameValidation['value'];
+    }
+
+    // ตรวจสอบ last_name
+    $lastNameValidation = validateText($_POST['last_name'] ?? '', 2, 50, 'นามสกุล');
+    if (!$lastNameValidation['valid']) {
+        $validationErrors[] = $lastNameValidation['message'];
+    } else {
+        $last_name = $lastNameValidation['value'];
+    }
+
+    // ตรวจสอบ username
+    $usernameValidation = validateUsername($_POST['username'] ?? '');
+    if (!$usernameValidation['valid']) {
+        $validationErrors[] = $usernameValidation['message'];
+    } else {
+        $username = $usernameValidation['value'];
+    }
+
+    // ตรวจสอบ email
+    $emailValidation = validateEmail($_POST['email'] ?? '');
+    if (!$emailValidation['valid']) {
+        $validationErrors[] = $emailValidation['message'];
+    } else {
+        $email = $emailValidation['value'];
+    }
+
+    // ตรวจสอบ phone
+    $phoneValidation = validatePhone($_POST['phone'] ?? '');
+    if (!$phoneValidation['valid']) {
+        $validationErrors[] = $phoneValidation['message'];
+    } else {
+        $phone = $phoneValidation['value'];
+    }
+
+    // ตรวจสอบ password
+    $passwordValidation = validatePassword($_POST['password'] ?? '');
+    if (!$passwordValidation['valid']) {
+        $validationErrors[] = $passwordValidation['message'];
+    } else {
+        $password = password_hash($passwordValidation['value'], PASSWORD_DEFAULT);
+    }
+
+    // ตรวจสอบ position
+    $positionValidation = validateText($_POST['position'] ?? '', 2, 100, 'ตำแหน่ง');
+    if (!$positionValidation['valid']) {
+        $validationErrors[] = $positionValidation['message'];
+    } else {
+        $position = $positionValidation['value'];
+    }
+
+    // ตรวจสอบ company
+    $companyValidation = validateText($_POST['company'] ?? '', 1, 100, 'บริษัท');
+    if (!$companyValidation['valid']) {
+        $validationErrors[] = $companyValidation['message'];
+    } else {
+        $company = $companyValidation['value'];
+    }
+
+    // ตรวจสอบ team_id และ role
+    $team_id_new = filter_var($_POST['team_id'] ?? 0, FILTER_VALIDATE_INT);
+    $role_new = sanitizeInput($_POST['role'] ?? '');
+
+    // ถ้ามี validation errors แสดงข้อความแจ้งเตือน
+    if (!empty($validationErrors)) {
+        $errorMessage = implode('\\n', $validationErrors);
+        echo "<script>
+                alert('ข้อมูลไม่ถูกต้อง:\\n" . $errorMessage . "');
+                window.location.href = 'add_user.php';
+              </script>";
+        exit;
+    }
 
     // ตรวจสอบสิทธิ์ Sale Supervisor: สามารถเลือกทีมและบทบาทเฉพาะทีมของตัวเอง และไม่สามารถสร้าง Executive ได้
     if ($role === 'Sale Supervisor') {
@@ -177,6 +259,9 @@ if ($role === 'Sale Supervisor') {
 
         <!-- ฟอร์มเพิ่มผู้ใช้งาน -->
         <form method="POST" action="add_user.php">
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="<?php echo escapeOutput($csrf_token); ?>">
+
             <div class="form-group">
                 <label for="first_name">ชื่อจริง</label>
                 <input type="text" class="form-control" id="first_name" name="first_name" required>
