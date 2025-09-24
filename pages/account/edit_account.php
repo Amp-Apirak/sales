@@ -49,7 +49,7 @@ if (isset($_GET['user_id'])) {
         } elseif ($user['role'] === 'Sale Supervisor' || $user['role'] === 'Executive') {
             // Sale Supervisor ไม่สามารถแก้ไขบัญชีของ Sale Supervisor คนอื่นหรือ Executive ได้
             $error_message = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลของ " . $user['role'];
-        } elseif ($user['role'] === 'Seller' && $user['team_id'] != $team_id) {
+        } elseif ($user['role'] === 'Seller' && !in_array($team_id, $user_teams)) {
             // Sale Supervisor ไม่สามารถแก้ไขบัญชี Seller ที่ไม่ได้อยู่ในทีมของตัวเอง
             $error_message = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลของ Seller ที่ไม่ได้อยู่ในทีมของคุณ";
         }
@@ -92,14 +92,22 @@ if (isset($_GET['user_id'])) {
 
 // ดึงข้อมูลทีมจากฐานข้อมูล
 if ($role === 'Sale Supervisor') {
-    // Sale Supervisor จะเห็นเฉพาะทีมของตนเอง
-    $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams WHERE team_id = :team_id");
-    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_INT);
+    // Sale Supervisor จะเห็นทีมทั้งหมดที่ผู้ใช้ที่กำลังแก้ไขสังกัดอยู่ รวมกับทีมของตัวเอง
+    if (!empty($user_teams)) {
+        $team_placeholders = str_repeat('?,', count($user_teams) - 1) . '?';
+        $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams WHERE team_id IN ($team_placeholders) OR team_id = ?");
+        $params = array_merge($user_teams, [$team_id]);
+        $stmt_teams->execute($params);
+    } else {
+        $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams WHERE team_id = :team_id");
+        $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_INT);
+        $stmt_teams->execute();
+    }
 } else {
     // Executive จะเห็นทุกทีม
     $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams");
+    $stmt_teams->execute();
 }
-$stmt_teams->execute();
 $teams = $stmt_teams->fetchAll(PDO::FETCH_ASSOC);
 
 $error_messages = [];

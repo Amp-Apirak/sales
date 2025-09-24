@@ -892,7 +892,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         </div>
                                                     <?php endif; ?>
 
-                                                    <?php if (canViewCostPrice($role, $team_id, $product['creator_team_id'])): ?>
+                                                    <?php if (canViewCostPrice($role, $user_id, $product['created_by'], $user_team_ids, $product['creator_team_ids'])): ?>
                                                         <div class="detail-item">
                                                             <span class="detail-label">ราคาต้นทุน:</span>
                                                             <span class="detail-value">
@@ -939,7 +939,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <span class="detail-label ml-4">โครงการที่ใช้:</span>
                                                 <span class="detail-value">
                                                     <?php if (isset($product['project_count']) && $product['project_count'] > 0): ?>
-                                                        <?php if (canManageProduct($role, $user_id, $product['created_by'], $team_id, $product['creator_team_id'])): ?>
+                                                        <?php if (canManageProduct($role, $user_id, $product['created_by'], $user_team_ids, $product['creator_team_ids'])): ?>
                                                             <!-- มีสิทธิ์ - แสดงปุ่มคลิกได้ -->
                                                             <button type="button"
                                                                 class="project-count-badge-small"
@@ -972,7 +972,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                             <i class="fas fa-eye"></i> ดูข้อมูล
                                                         </a>
 
-                                                        <?php if (canManageProduct($role, $user_id, $product['created_by'], $team_id, $product['creator_team_id'])): ?>
+                                                        <?php if (canManageProduct($role, $user_id, $product['created_by'], $user_team_ids, $product['creator_team_ids'])): ?>
                                                             <a href="edit_product.php?product_id=<?php echo urlencode(encryptUserId($product['product_id'])); ?>" class="btn btn-custom btn-edit">
                                                                 <i class="fas fa-edit"></i> แก้ไข
                                                             </a>

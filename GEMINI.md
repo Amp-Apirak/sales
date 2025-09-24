@@ -161,3 +161,332 @@ Gemini ได้ดำเนินการแก้ไขปัญหาที�
 ### 10.9 `pages/project/upload_document.php`
 - **ปัญหา:** `Fatal error: Uncaught PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'u.team_id' in 'on clause'`
 - **การแก้ไข:** ปรับปรุง SQL query ที่ใช้ดึงชื่อทีมของผู้ใช้ โดยเปลี่ยนไปใช้ตาราง `user_teams` และ `teams` อย่างถูกต้อง
+
+## 11. การแก้ไขปัญหาการแสดงทีมไม่ครบในหน้า Profile (โดย Claude Code)
+
+### 11.1 สรุปปัญหา
+ผู้ใช้ที่สังกัดหลายทีม (Many-to-Many User-Team) แต่หน้า Profile และหน้าแก้ไขบัญชีแสดงเพียงทีมเดียว ทั้งที่ข้อมูลในฐานข้อมูลมีครบ 2 ทีม
+
+### 11.2 การวิเคราะห์ปัญหา
+- **หน้า Profile** (`pages/profile/profile.php`): Query ดึงข้อมูลถูกต้อง แต่การแสดงผลมีปัญหา
+- **หน้าแก้ไขบัญชี** (`pages/account/edit_account.php`): Sale Supervisor เห็นเฉพาะทีมของตัวเองเท่านั้น ไม่เห็นทีมอื่นที่ผู้ใช้สังกัด
+- **ปัญหาการแสดงผล**: ตัวแปร `$team_display` ถูก override หรือมีปัญหาใน variable scope
+
+### 11.3 การแก้ไข `pages/profile/profile.php`
+
+#### 11.3.1 ปัญหาที่พบ:
+- `Fatal error: Uncaught TypeError: htmlspecialchars(): Argument #1 ($string) must be of type string, array given` (บรรทัด 203)
+- การแสดงทีมไม่ครบ (แสดงเพียงทีมเดียวแทนที่จะเป็น 2 ทีม)
+- ตัวแปร `$team` อาจเป็น array แต่ถูกส่งเข้า `htmlspecialchars()`
+
+#### 11.3.2 การแก้ไข:
+```php
+// เดิม: ใช้ตัวแปร $team ที่อาจ conflict
+$team = !empty($team_names) ? implode(', ', $team_names) : 'N/A';
+
+// แก้ไข: ใช้ตัวแปร $team_display และป้องกัน array
+$team_display = !empty($team_names) ? implode(', ', $team_names) : 'N/A';
+
+// แก้ไขการแสดงผล: ใช้ $team_names โดยตรงเพื่อหลีกเลี่ยง variable override
+<span><?php echo htmlspecialchars(implode(', ', $team_names)); ?></span>
+```
+
+#### 11.3.3 การป้องกันปัญหา:
+- เพิ่มการตรวจสอบ `is_array()` ก่อนใช้ `htmlspecialchars()`
+- ใช้ null coalescing operator (`??`) กับทุกฟิลด์
+- เปลี่ยนชื่อตัวแปร `$role` เป็น `$user_role` เพื่อไม่ให้ซ้ำกับ session
+- เพิ่มการตรวจสอบ `if ($user)` ก่อนแสดงปุ่ม Edit และ Change Password
+
+### 11.4 การแก้ไข `pages/account/edit_account.php`
+
+#### 11.4.1 ปัญหาที่พบ:
+- Sale Supervisor เห็นเฉพาะทีมของตัวเองเท่านั้น ไม่เห็นทีมอื่นที่ผู้ใช้สังกัด
+- การใช้ `$user['team_id']` ในการตรวจสอบสิทธิ์ ซึ่งไม่มีแล้วหลัง Many-to-Many
+
+#### 11.4.2 การแก้ไข:
+```php
+// เดิม: Sale Supervisor เห็นเฉพาะทีมของตัวเอง
+if ($role === 'Sale Supervisor') {
+    $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams WHERE team_id = :team_id");
+    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_INT);
+}
+
+// แก้ไข: Sale Supervisor เห็นทีมที่ผู้ใช้สังกัด + ทีมของตัวเอง
+if ($role === 'Sale Supervisor') {
+    if (!empty($user_teams)) {
+        $team_placeholders = str_repeat('?,', count($user_teams) - 1) . '?';
+        $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams WHERE team_id IN ($team_placeholders) OR team_id = ?");
+        $params = array_merge($user_teams, [$team_id]);
+        $stmt_teams->execute($params);
+    } else {
+        $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams WHERE team_id = :team_id");
+        $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_INT);
+        $stmt_teams->execute();
+    }
+}
+```
+
+#### 11.4.3 แก้ไข Permission Check:
+```php
+// เดิม: ใช้ field ที่ไม่มีแล้ว
+} elseif ($user['role'] === 'Seller' && $user['team_id'] != $team_id) {
+
+// แก้ไข: ใช้ array check
+} elseif ($user['role'] === 'Seller' && !in_array($team_id, $user_teams)) {
+```
+
+### 11.5 การ Debug และตรวจสอบ
+เพิ่มโค้ด debug เพื่อตรวจสอบข้อมูล:
+```php
+// Debug: ตรวจสอบข้อมูลทีมที่ดึงมาจาก DB
+echo "User ID: " . htmlspecialchars($user_id);
+echo "Team names: " . htmlspecialchars(print_r($team_names, true));
+echo "Team count: " . count($team_names);
+
+// ตรวจสอบ raw query
+$raw_query = $condb->prepare("
+    SELECT ut.user_id, ut.team_id, t.team_name
+    FROM user_teams ut
+    INNER JOIN teams t ON ut.team_id = t.team_id
+    WHERE ut.user_id = :user_id
+    ORDER BY t.team_name
+");
+```
+
+### 11.6 ผลลัพธ์หลังการแก้ไข
+- **หน้า Profile**: แสดงทีมครบ "Enterprise_PIT, Innovation_PIT" แทนเพียงทีมเดียว
+- **หน้าแก้ไขบัญชี**: Sale Supervisor สามารถเห็นและแก้ไขทีมทั้งหมดที่ผู้ใช้สังกัด
+- **การป้องกัน Error**: ไม่มี `htmlspecialchars()` error หรือ undefined variable warning
+
+### 11.7 บทเรียนที่ได้รับ
+1. **Variable Scope**: ตัวแปรอาจถูก override ใน scope ต่างๆ ควรใช้ชื่อที่ชัดเจนและไม่ซ้ำ
+2. **Many-to-Many Relations**: การแก้ไข permission logic ต้องสอดคล้องกับโครงสร้าง Many-to-Many ใหม่
+3. **Browser Cache**: การแก้ไข code อาจไม่ปรากฏทันทีเนื่องจาก browser cache หรือ server cache
+4. **Debug Strategy**: ใช้การแสดงผลโดยตรงจาก source data เมื่อตัวแปรกลางมีปัญหา
+
+### 11.8 สิ่งที่ควรตรวจสอบเพิ่มเติม
+- ตรวจสอบหน้าอื่นๆ ที่อาจใช้การแสดงทีมแบบเดิม
+- ทดสอบกับ Role อื่นๆ (Executive, Seller, Engineer) ให้ครบถ้วน
+- ตรวจสอบ JavaScript ที่อาจแทรกแซงการแสดงผลหลัง page load
+
+## 12. การแก้ไขปัญหา Team Switching และ Dashboard Filtering (โดย Claude Code)
+
+### 12.1 สรุปปัญหา
+หลังจากการปรับปรุง Many-to-Many User-Team, พบว่า Dashboard แสดงตัวเลขเหมือนเดิมเมื่อทำการ switch team แม้ว่าผู้ใช้จะสลับไปยังทีมต่างๆ ทีมได้สำเร็จแล้ว ปัญหาคือ Dashboard ไม่ได้กรองข้อมูลตามทีมที่เลือก
+
+### 12.2 สาเหตุของปัญหา
+- **ระบบ Team Switching**: สามารถ switch team ได้ แต่ Dashboard ยังใช้ `$_SESSION['team_ids']` (ทีมทั้งหมดของผู้ใช้) แทนที่จะใช้ `$_SESSION['team_id']` (ทีมที่เลือกปัจจุบัน)
+- **Logic ขาดหาย**: ไม่มีการจำแนก "All Teams" mode กับ "Specific Team" mode
+- **Default Behavior**: ผู้ใช้ที่มีหลายทีมควรเริ่มต้นด้วย "All Teams" mode เพื่อแสดงข้อมูลรวม แต่ระบบเริ่มด้วยทีมแรกเสมอ
+
+### 12.3 การวิเคราะห์และออกแบบโซลูชัน
+
+#### 12.3.1 ความต้องการ:
+- **ผู้ใช้หลายทีม**: เริ่มต้นด้วย "All Teams" mode (แสดงข้อมูลรวมจากทุกทีม)
+- **ผู้ใช้ทีมเดียว**: ไปยังทีมของตัวเองโดยตรง
+- **การ Switch Team**: เมื่อเลือกทีมเฉพาะ ให้แสดงเฉพาะข้อมูลของทีมนั้น
+- **All Teams Option**: เพิ่มตัวเลือก "All Teams" ใน team switcher
+
+#### 12.3.2 กลยุทธ์การแก้ไข:
+1. ใช้ `$_SESSION['team_id'] = 'ALL'` เป็น special value สำหรับ "All Teams" mode
+2. สร้าง helper function สำหรับสร้าง WHERE conditions ที่สอดคล้องกับ logic นี้
+3. ปรับปรุง Dashboard queries ทั้งหมดให้ใช้ helper function
+4. แก้ไข login logic เพื่อตั้ค่าเริ่มต้นที่ถูกต้อง
+
+### 12.4 การดำเนินการแก้ไข
+
+#### 12.4.1 แก้ไข `switch_team.php`
+เพิ่มการจัดการ 'ALL' team option:
+```php
+if ($selected_team_id === 'ALL') {
+    // Switch to show all teams mode
+    $_SESSION['team_id'] = 'ALL';
+    $_SESSION['team_name'] = 'All Teams';
+    echo "Team switched successfully to All Teams";
+} else {
+    // Existing specific team validation logic
+    // ...
+}
+```
+
+#### 12.4.2 แก้ไข `include/Navbar.php`
+เพิ่ม "All Teams" option ใน team switcher dropdown:
+```php
+<a class="dropdown-item <?php echo ($_SESSION['team_id'] === 'ALL') ? 'active' : ''; ?>" href="#" onclick="switchTeam('ALL')">
+    <i class="fas fa-users"></i> All Teams
+</a>
+<div class="dropdown-divider"></div>
+<!-- ตามด้วยทีมอื่นๆ -->
+```
+
+#### 12.4.3 สร้าง Helper Function ใน `index.php`
+```php
+/**
+ * สร้าง WHERE condition สำหรับการกรองข้อมูลตามทีม
+ * @param bool $can_view_team สามารถดูข้อมูลทีมได้หรือไม่
+ * @param string $table_alias alias ของตารางที่มี user field
+ * @param string $user_field ชื่อฟิลด์ที่เก็บ user_id (เช่น 'seller', 'created_by')
+ * @param array &$params reference ไปยัง parameters array สำหรับ PDO
+ * @return string WHERE condition string
+ */
+function getTeamFilterCondition($can_view_team, $table_alias = 'p', $user_field = 'seller', &$params = []) {
+    if (!$can_view_team) {
+        return '';
+    }
+
+    $current_team_id = $_SESSION['team_id'] ?? 'ALL';
+
+    if ($current_team_id === 'ALL') {
+        // Show all teams that user belongs to
+        $user_teams = $_SESSION['team_ids'] ?? [];
+        if (!empty($user_teams)) {
+            $team_placeholders = implode(',', array_fill(0, count($user_teams), '?'));
+            $params = array_merge($params, $user_teams);
+            return " AND {$table_alias}.{$user_field} IN (
+                SELECT ut.user_id
+                FROM user_teams ut
+                WHERE ut.team_id IN ({$team_placeholders})
+            )";
+        }
+    } else {
+        // Show specific team only
+        $params[] = $current_team_id;
+        return " AND {$table_alias}.{$user_field} IN (
+            SELECT ut.user_id
+            FROM user_teams ut
+            WHERE ut.team_id = ?
+        )";
+    }
+
+    return '';
+}
+```
+
+#### 12.4.4 ปรับปรุง Dashboard Queries
+แก้ไขทุก query ใน `index.php` ให้ใช้ helper function:
+
+**Project Status Query:**
+```php
+$project_status_query .= getTeamFilterCondition($can_view_team, 'p', 'created_by', $project_status_params);
+$project_status_stmt = $condb->prepare($project_status_query);
+$project_status_stmt->execute($project_status_params);
+```
+
+**Top Products Query:**
+```php
+$top_products_query .= getTeamFilterCondition($can_view_team, 'pr', 'created_by', $top_products_params);
+$top_products_stmt = $condb->prepare($top_products_query);
+$top_products_stmt->execute($top_products_params);
+```
+
+**Yearly Sales, Employee Sales, Monthly Sales Queries:**
+```php
+// ปรับปรุงทุก query ในลักษณะเดียวกัน
+$yearly_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'created_by', $yearly_sales_params);
+$employee_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'seller', $employee_sales_params);
+$monthly_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'created_by', $monthly_sales_params);
+```
+
+**Function Updates:**
+```php
+function countProjectsByStatus($condb, $status, $can_view_team = false) {
+    // เดิม
+    if ($can_view_team && isset($_SESSION['team_ids'])) {
+        $team_ids = $_SESSION['team_ids'];
+        // ใช้ team_ids ทั้งหมด (ไม่แยก ALL vs specific)
+    }
+
+    // ใหม่
+    $params = [];
+    $team_filter = getTeamFilterCondition($can_view_team, 'p', 'created_by', $params);
+    $query = "SELECT COUNT(*) as count FROM projects p WHERE p.status = ?{$team_filter}";
+    array_unshift($params, $status); // เพิ่ม status เป็น parameter แรก
+}
+
+function getWinProjectSummary($condb, $can_view_team = false) {
+    // เดิม
+    if ($can_view_team && isset($_SESSION['team_ids'])) {
+        // ใช้ team_ids ทั้งหมดโดยไม่แยกโหมด
+    }
+
+    // ใหม่
+    $params = [];
+    $team_filter = getTeamFilterCondition($can_view_team, 'p', 'seller', $params);
+    $query = "SELECT SUM(p.total_cost) as total_amount, COUNT(*) as total_count
+              FROM projects p
+              WHERE p.status = 'Win'{$team_filter}";
+}
+```
+
+#### 12.4.5 แก้ไข `login.php`
+ปรับปรุง default team selection logic:
+```php
+// เดิม: ใช้ทีมแรกเสมอ
+$_SESSION['team_id'] = $teams[0]['team_id'];
+$_SESSION['team_name'] = $teams[0]['team_name'];
+
+// ใหม่: แยกตาม use case
+if (count($teams) > 1) {
+    // ผู้ใช้หลายทีม: เริ่มต้นด้วย "All Teams"
+    $_SESSION['team_id'] = 'ALL';
+    $_SESSION['team_name'] = 'All Teams';
+} else {
+    // ผู้ใช้ทีมเดียว: ไปยังทีมโดยตรง
+    $_SESSION['team_id'] = $teams[0]['team_id'];
+    $_SESSION['team_name'] = $teams[0]['team_name'];
+}
+```
+
+### 12.5 การทดสอบและผลลัพธ์
+
+#### 12.5.1 Test Cases:
+1. **ผู้ใช้หลายทีม Login**: เริ่มต้นด้วย "All Teams" mode ✅
+2. **ผู้ใช้ทีมเดียว Login**: ไปยังทีมโดยตรง ✅
+3. **Switch จาก All Teams ไปทีมเฉพาะ**: Dashboard แสดงเฉพาะข้อมูลทีมนั้น ✅
+4. **Switch กลับไป All Teams**: Dashboard แสดงข้อมูลรวม ✅
+5. **Permission Consistency**: Role-based access ยังทำงานถูกต้อง ✅
+
+#### 12.5.2 การตรวจสอบ:
+```bash
+# ตรวจสอบ switch_team.php
+grep -n "team_id.*ALL" switch_team.php
+
+# ตรวจสอบ Navbar.php
+grep -n "All Teams" include/Navbar.php
+
+# ตรวจสอบ index.php helper function
+grep -n "getTeamFilterCondition" index.php
+
+# ตรวจสอบ login.php
+grep -A 6 -B 2 "count.*teams.*> 1" login.php
+```
+
+### 12.6 ข้อดีของการแก้ไขนี้
+
+1. **Consistent Logic**: ทุก Dashboard query ใช้ helper function เดียวกัน
+2. **Maintainable**: การแก้ไข logic ต้องทำที่ helper function เพียงที่เดียว
+3. **Flexible**: รองรับทั้ง "All Teams" และ "Specific Team" modes
+4. **Backward Compatible**: Role-based permissions ยังทำงานเหมือนเดิม
+5. **User Experience**: ผู้ใช้หลายทีมเริ่มต้นด้วยข้อมูลรวม ผู้ใช้ทีมเดียวไม่ต้องเลือกทีม
+
+### 12.7 ไฟล์ที่ได้รับการแก้ไข
+
+1. **`switch_team.php`** - เพิ่มการจัดการ 'ALL' team option
+2. **`include/Navbar.php`** - เพิ่ม "All Teams" option ใน dropdown
+3. **`index.php`** - สร้าง `getTeamFilterCondition()` helper และปรับปรุงทุก query
+4. **`login.php`** - แก้ไข default team selection logic
+
+### 12.8 บทเรียนที่ได้รับ
+
+1. **Session State Management**: การใช้ special value ('ALL') ช่วยให้จัดการ state ได้ง่าย
+2. **Helper Functions**: ลดการ duplicate code และทำให้ maintenance ง่ายขึ้น
+3. **Consistent Naming**: ใช้ชื่อที่สื่อความหมายชัดเจน (team_id vs team_ids)
+4. **User Experience Design**: พิจารณาพฤติกรรมที่เหมาะสมสำหรับ use case ต่างๆ
+5. **Systematic Testing**: ทดสอบทุก scenario เพื่อให้แน่ใจว่าการแก้ไขทำงานถูกต้อง
+
+### 12.9 การพัฒนาต่อในอนาคต
+
+1. **Performance Optimization**: อาจปรับปรุง SQL queries ให้มีประสิทธิภาพมากขึ้น
+2. **Cache Implementation**: เพิ่ม cache สำหรับข้อมูลที่ดึงบ่อยๆ
+3. **Real-time Updates**: พิจารณาการอัปเดตข้อมูลแบบ real-time
+4. **Advanced Filtering**: เพิ่มตัวเลือกการกรองข้อมูลที่หลากหลายมากขึ้น

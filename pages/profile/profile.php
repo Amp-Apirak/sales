@@ -25,24 +25,60 @@ if (isset($_SESSION['user_id'])) {
     $stmt->execute();
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // เพิ่มชื่อทีมปัจจุบันจาก Session เข้าไปใน array ของ user
-    if ($user) {
-        $user['team_name'] = $_SESSION['team_name'] ?? 'N/A';
-    }
+    // ดึงข้อมูลทีมทั้งหมดที่ผู้ใช้สังกัด
+    $teams_stmt = $condb->prepare("
+        SELECT t.team_name
+        FROM teams t
+        INNER JOIN user_teams ut ON t.team_id = ut.team_id
+        WHERE ut.user_id = :user_id
+        ORDER BY t.team_name
+    ");
+    $teams_stmt->bindParam(':user_id', $user_id);
+    $teams_stmt->execute();
+    $team_names = $teams_stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+
+
+
+
 
     if ($user) {
-        // ตั้งค่าตัวแปรสำหรับใช้ใน HTML
-        $fullName = $user['first_name'] . ' ' . $user['last_name'];
-        $email = $user['email'];
-        $position = $user['position'];
-        $phone = $user['phone'];
-        $team = $user['team_name']; // ชื่อทีมที่ได้จากการ JOIN
-        $company = $user['company'];
-        $role = $user['role']; // บทบาทของผู้ใช้
+        // ตั้งค่าตัวแปรสำหรับใช้ใน HTML (กำหนดค่าเริ่มต้นเพื่อป้องกัน error)
+        $fullName = ($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '');
+        $email = $user['email'] ?? 'N/A';
+        $position = $user['position'] ?? 'N/A';
+        $phone = $user['phone'] ?? 'N/A';
+        // ใช้ implode เพื่อแสดงทุกทีม หรือ 'N/A' หากไม่ได้สังกัดทีมใด
+        // แก้ไข: บังคับสร้าง team_display ใหม่ให้แน่ใจ
+        if (!empty($team_names) && is_array($team_names)) {
+            $team_display = implode(', ', $team_names);
+        } else {
+            $team_display = 'N/A';
+        }
+
+
+        $company = $user['company'] ?? 'N/A';
+        $user_role = $user['role'] ?? 'N/A'; // บทบาทของผู้ใช้ (เปลี่ยนชื่อตัวแปรเพื่อไม่ให้ซ้ำกับ $role จาก session)
     } else {
+        // กำหนดค่าเริ่มต้นเมื่อไม่พบผู้ใช้
+        $fullName = 'N/A';
+        $email = 'N/A';
+        $position = 'N/A';
+        $phone = 'N/A';
+        $team_display = 'N/A';
+        $company = 'N/A';
+        $user_role = 'N/A';
         echo "ไม่พบข้อมูลผู้ใช้";
     }
 } else {
+    // กำหนดค่าเริ่มต้นเมื่อผู้ใช้ไม่ได้ล็อกอิน
+    $fullName = 'N/A';
+    $email = 'N/A';
+    $position = 'N/A';
+    $phone = 'N/A';
+    $team_display = 'N/A';
+    $company = 'N/A';
+    $user_role = 'N/A';
+    $user = null;
     echo "ผู้ใช้ไม่ได้ล็อกอิน";
 }
 
@@ -174,7 +210,7 @@ if (isset($_SESSION['user_id'])) {
                                     ?>
                                     <img src="<?php echo $profile_image; ?>" alt="User Image" class="profile-img">
                                     <h2 class="profile-name"><?php echo htmlspecialchars($fullName); ?></h2>
-                                    <p class="profile-role"><?php echo htmlspecialchars($role); ?></p>
+                                    <p class="profile-role"><?php echo htmlspecialchars($user_role); ?></p>
                                 </div>
                                 <div class="profile-info">
                                     <div class="info-item">
@@ -191,16 +227,18 @@ if (isset($_SESSION['user_id'])) {
                                     </div>
                                     <div class="info-item">
                                         <span class="info-label">Team:</span>
-                                        <span><?php echo htmlspecialchars($team); ?></span>
+                                        <span><?php echo htmlspecialchars(implode(', ', $team_names)); ?></span>
                                     </div>
                                     <div class="info-item">
                                         <span class="info-label">Company:</span>
-                                        <span><?php echo htmlspecialchars($company); ?></span>
+                                        <span><?php echo htmlspecialchars(is_array($company) ? implode(', ', $company) : $company); ?></span>
                                     </div>
                                 </div>
                                 <div class="profile-actions">
+                                    <?php if ($user): ?>
                                     <a href="<?php echo BASE_URL; ?>/pages/account/edit_account.php?user_id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-edit">Edit Information</a>
                                     <a href="recover.php?id=<?php echo urlencode(encryptUserId($user['user_id'])); ?>" class="btn btn-password">Change Password</a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>

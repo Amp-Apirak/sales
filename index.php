@@ -124,6 +124,36 @@ if ($can_view_all) {
 // ส่วนที่ 4: ฟังก์ชันสำหรับการดึงและประมวลผลข้อมูล
 // ----------------------------------------------
 
+// ฟังก์ชันช่วยสำหรับสร้าง team filtering condition
+function getTeamFilterCondition($can_view_team, $table_alias = 'p', $user_field = 'seller', &$params = []) {
+    if (!$can_view_team) {
+        return '';
+    }
+
+    $current_team_id = $_SESSION['team_id'] ?? 'ALL';
+    if ($current_team_id === 'ALL') {
+        // Show all teams user belongs to
+        $team_ids = $_SESSION['team_ids'] ?? [];
+        if (!empty($team_ids)) {
+            $team_placeholders = [];
+            foreach ($team_ids as $key => $id) {
+                $placeholder = ':team_all_' . $key . '_' . rand();
+                $team_placeholders[] = $placeholder;
+                $params[$placeholder] = $id;
+            }
+            $in_clause = implode(',', $team_placeholders);
+            return " AND {$table_alias}.{$user_field} IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
+        }
+    } else {
+        // Show specific team only
+        $placeholder = ':current_team_' . rand();
+        $params[$placeholder] = $current_team_id;
+        return " AND {$table_alias}.{$user_field} IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = $placeholder)";
+    }
+
+    return '';
+}
+
 // ฟังก์ชันสำหรับดึงข้อมูลที่ผ่านการกรองจากฐานข้อมูล
 function getFilteredData($condb, $query, $params)
 {
@@ -203,17 +233,7 @@ try {
         $project_query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
         $project_params[':team_id'] = $filter_team_id;
     } elseif ($can_view_team) {
-        $team_ids = $_SESSION['team_ids'] ?? [];
-        if (!empty($team_ids)) {
-            $team_placeholders = [];
-            foreach ($team_ids as $key => $id) {
-                $placeholder = ':proj_team_' . $key;
-                $team_placeholders[] = $placeholder;
-                $project_params[$placeholder] = $id;
-            }
-            $in_clause = implode(',', $team_placeholders);
-            $project_query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
-        }
+        $project_query .= getTeamFilterCondition($can_view_team, 'p', 'seller', $project_params);
     } elseif ($can_view_own) {
         $project_query .= " AND p.seller = :user_id";
         $project_params[':user_id'] = $user_id;
@@ -239,17 +259,7 @@ try {
             $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
             $params[':team_id'] = $filter_team_id;
         } elseif ($can_view_team) {
-            $team_ids = $_SESSION['team_ids'] ?? [];
-            if (!empty($team_ids)) {
-                $team_placeholders = [];
-                foreach ($team_ids as $key => $id) {
-                    $placeholder = ':fin_team_' . $key;
-                    $team_placeholders[] = $placeholder;
-                    $params[$placeholder] = $id;
-                }
-                $in_clause = implode(',', $team_placeholders);
-                $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
-            }
+            $query .= getTeamFilterCondition($can_view_team, 'p', 'seller', $params);
         } elseif ($can_view_own) {
             $query .= " AND p.seller = :user_id";
             $params[':user_id'] = $user_id;
@@ -299,17 +309,7 @@ if ($filter_user_id) {
     $project_status_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
     $project_status_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $team_ids = $_SESSION['team_ids'] ?? [];
-    if (!empty($team_ids)) {
-        $team_placeholders = [];
-        foreach ($team_ids as $key => $id) {
-            $placeholder = ':ps_team_' . $key;
-            $team_placeholders[] = $placeholder;
-            $project_status_params[$placeholder] = $id;
-        }
-        $in_clause = implode(',', $team_placeholders);
-        $project_status_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause)) ";
-    }
+    $project_status_query .= getTeamFilterCondition($can_view_team, 'p', 'created_by', $project_status_params);
 } elseif ($can_view_own) {
     $project_status_query .= "AND p.created_by = :user_id ";
     $project_status_params[':user_id'] = $user_id;
@@ -333,17 +333,7 @@ if ($filter_user_id) {
     $top_products_query .= "AND pr.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
     $top_products_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $team_ids = $_SESSION['team_ids'] ?? [];
-    if (!empty($team_ids)) {
-        $team_placeholders = [];
-        foreach ($team_ids as $key => $id) {
-            $placeholder = ':tp_team_' . $key;
-            $team_placeholders[] = $placeholder;
-            $top_products_params[$placeholder] = $id;
-        }
-        $in_clause = implode(',', $team_placeholders);
-        $top_products_query .= "AND pr.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause)) ";
-    }
+    $top_products_query .= getTeamFilterCondition($can_view_team, 'pr', 'created_by', $top_products_params);
 } elseif ($can_view_own) {
     $top_products_query .= "AND pr.created_by = :user_id ";
     $top_products_params[':user_id'] = $user_id;
@@ -367,17 +357,7 @@ if ($filter_user_id) {
     $yearly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
     $yearly_sales_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $team_ids = $_SESSION['team_ids'] ?? [];
-    if (!empty($team_ids)) {
-        $team_placeholders = [];
-        foreach ($team_ids as $key => $id) {
-            $placeholder = ':ys_team_' . $key;
-            $team_placeholders[] = $placeholder;
-            $yearly_sales_params[$placeholder] = $id;
-        }
-        $in_clause = implode(',', $team_placeholders);
-        $yearly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause)) ";
-    }
+    $yearly_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'created_by', $yearly_sales_params);
 } elseif ($can_view_own) {
     $yearly_sales_query .= "AND p.created_by = :user_id ";
     $yearly_sales_params[':user_id'] = $user_id;
@@ -401,17 +381,7 @@ if ($filter_user_id) {
     $employee_sales_query .= "AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
     $employee_sales_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $team_ids = $_SESSION['team_ids'] ?? [];
-    if (!empty($team_ids)) {
-        $team_placeholders = [];
-        foreach ($team_ids as $key => $id) {
-            $placeholder = ':es_team_' . $key;
-            $team_placeholders[] = $placeholder;
-            $employee_sales_params[$placeholder] = $id;
-        }
-        $in_clause = implode(',', $team_placeholders);
-        $employee_sales_query .= "AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause)) ";
-    }
+    $employee_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'seller', $employee_sales_params);
 } elseif ($can_view_own) {
     $employee_sales_query .= "AND p.seller = :user_id ";
     $employee_sales_params[':user_id'] = $user_id;
@@ -435,17 +405,7 @@ if ($filter_user_id) {
     $monthly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
     $monthly_sales_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $team_ids = $_SESSION['team_ids'] ?? [];
-    if (!empty($team_ids)) {
-        $team_placeholders = [];
-        foreach ($team_ids as $key => $id) {
-            $placeholder = ':ms_team_' . $key;
-            $team_placeholders[] = $placeholder;
-            $monthly_sales_params[$placeholder] = $id;
-        }
-        $in_clause = implode(',', $team_placeholders);
-        $monthly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause)) ";
-    }
+    $monthly_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'created_by', $monthly_sales_params);
 } elseif ($can_view_own) {
     $monthly_sales_query .= "AND p.created_by = :user_id ";
     $monthly_sales_params[':user_id'] = $user_id;
@@ -471,16 +431,25 @@ if ($filter_team_id && $can_view_all) {
     $team_sales_query .= "AND t.team_id = :team_id ";
     $team_sales_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $team_ids = $_SESSION['team_ids'] ?? [];
-    if (!empty($team_ids)) {
-        $team_placeholders = [];
-        foreach ($team_ids as $key => $id) {
-            $placeholder = ':ts_team_' . $key;
-            $team_placeholders[] = $placeholder;
-            $team_sales_params[$placeholder] = $id;
+    // Team sales query needs special handling for team filtering
+    $current_team_id = $_SESSION['team_id'] ?? 'ALL';
+    if ($current_team_id === 'ALL') {
+        // Show all teams user belongs to
+        $team_ids = $_SESSION['team_ids'] ?? [];
+        if (!empty($team_ids)) {
+            $team_placeholders = [];
+            foreach ($team_ids as $key => $id) {
+                $placeholder = ':ts_team_' . $key;
+                $team_placeholders[] = $placeholder;
+                $team_sales_params[$placeholder] = $id;
+            }
+            $in_clause = implode(',', $team_placeholders);
+            $team_sales_query .= "AND t.team_id IN ($in_clause) ";
         }
-        $in_clause = implode(',', $team_placeholders);
-        $team_sales_query .= "AND t.team_id IN ($in_clause) ";
+    } else {
+        // Show specific team only
+        $team_sales_query .= "AND t.team_id = :current_team_ts ";
+        $team_sales_params[':current_team_ts'] = $current_team_id;
     }
 }
 $team_sales_query .= "GROUP BY t.team_id ORDER BY total_sales DESC";
@@ -519,21 +488,29 @@ function countProjectsByStatus($condb, $status_list, $role, $team_id, $user_id, 
         $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
         $params[':team_id'] = $filter_team_id;
     } elseif ($role === 'Sale Supervisor') {
-        // Supervisor ดูได้ทุกทีมที่ตัวเองสังกัด
-        $team_ids = $_SESSION['team_ids'] ?? [];
-        if (!empty($team_ids)) {
-            $team_placeholders = [];
-            foreach ($team_ids as $key => $id) {
-                $placeholder = ':cps_team_' . $key;
-                $team_placeholders[] = $placeholder;
-                $params[$placeholder] = $id;
+        // Supervisor ดูได้ทุกทีมที่ตัวเองสังกัด หรือเฉพาะทีมที่เลือก
+        $current_team_id = $_SESSION['team_id'] ?? 'ALL';
+        if ($current_team_id === 'ALL') {
+            // Show all teams user belongs to
+            $team_ids = $_SESSION['team_ids'] ?? [];
+            if (!empty($team_ids)) {
+                $team_placeholders = [];
+                foreach ($team_ids as $key => $id) {
+                    $placeholder = ':cps_team_' . $key;
+                    $team_placeholders[] = $placeholder;
+                    $params[$placeholder] = $id;
+                }
+                $in_clause = implode(',', $team_placeholders);
+                $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
+            } else {
+                // ถ้า Supervisor ไม่มีทีม ให้เห็นแค่ของตัวเอง
+                $query .= " AND p.seller = :user_id";
+                $params[':user_id'] = $user_id;
             }
-            $in_clause = implode(',', $team_placeholders);
-            $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
         } else {
-            // ถ้า Supervisor ไม่มีทีม ให้เห็นแค่ของตัวเอง
-             $query .= " AND p.seller = :user_id";
-             $params[':user_id'] = $user_id;
+            // Show specific team only
+            $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_cps)";
+            $params[':current_team_cps'] = $current_team_id;
         }
     } elseif ($role === 'Seller' || $role === 'Engineer') {
         // Seller/Engineer ดูได้แค่ของตัวเอง
@@ -632,16 +609,25 @@ function getWinProjectSummary($condb, $role, $team_id, $user_id, $filter_team_id
         $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
         $params[':team_id'] = $filter_team_id;
     } elseif ($role === 'Sale Supervisor') {
-        $team_ids = $_SESSION['team_ids'] ?? [];
-        if (!empty($team_ids)) {
-            $team_placeholders = [];
-            foreach ($team_ids as $key => $id) {
-                $placeholder = ':team_id_' . $key;
-                $team_placeholders[] = $placeholder;
-                $params[$placeholder] = $id;
+        // Supervisor ดูได้ทุกทีมที่ตัวเองสังกัด หรือเฉพาะทีมที่เลือก
+        $current_team_id = $_SESSION['team_id'] ?? 'ALL';
+        if ($current_team_id === 'ALL') {
+            // Show all teams user belongs to
+            $team_ids = $_SESSION['team_ids'] ?? [];
+            if (!empty($team_ids)) {
+                $team_placeholders = [];
+                foreach ($team_ids as $key => $id) {
+                    $placeholder = ':team_id_' . $key;
+                    $team_placeholders[] = $placeholder;
+                    $params[$placeholder] = $id;
+                }
+                $in_clause = implode(',', $team_placeholders);
+                $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
             }
-            $in_clause = implode(',', $team_placeholders);
-            $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
+        } else {
+            // Show specific team only
+            $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_ws)";
+            $params[':current_team_ws'] = $current_team_id;
         }
     } elseif ($role === 'Seller') {
         $query .= " AND p.seller = :user_id";

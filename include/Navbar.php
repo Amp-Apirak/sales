@@ -44,6 +44,10 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                     <i class="fas fa-users"></i> Team: <?php echo escapeOutput($_SESSION['team_name']); ?>
                 </a>
                 <div class="dropdown-menu" aria-labelledby="teamSwitcherDropdown">
+                    <a class="dropdown-item <?php echo ($_SESSION['team_id'] === 'ALL') ? 'active' : ''; ?>" href="#" onclick="switchTeam('ALL')">
+                        <i class="fas fa-users"></i> All Teams
+                    </a>
+                    <div class="dropdown-divider"></div>
                     <?php foreach ($_SESSION['user_teams'] as $team) : ?>
                         <a class="dropdown-item <?php echo ($team['team_id'] == $_SESSION['team_id']) ? 'active' : ''; ?>" href="#" onclick="switchTeam('<?php echo $team['team_id']; ?>')">
                             <?php echo escapeOutput($team['team_name']); ?>

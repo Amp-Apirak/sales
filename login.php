@@ -83,8 +83,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_teams'] = $teams; // เก็บข้อมูลทีมทั้งหมด (id, name, is_primary)
 
             // ตั้งค่าทีมหลัก (active team)
-            $_SESSION['team_id'] = $teams[0]['team_id']; 
-            $_SESSION['team_name'] = $teams[0]['team_name'];
+            // หากผู้ใช้มีมากกว่า 1 ทีม ให้ตั้งค่าเป็น 'ALL' เพื่อแสดงข้อมูลรวม
+            // หากมีเพียงทีมเดียว ให้ใช้ทีมนั้นโดยตรง
+            if (count($teams) > 1) {
+                $_SESSION['team_id'] = 'ALL';
+                $_SESSION['team_name'] = 'All Teams';
+            } else {
+                $_SESSION['team_id'] = $teams[0]['team_id'];
+                $_SESSION['team_name'] = $teams[0]['team_name'];
+            }
 
             // เก็บข้อมูลผู้ใช้ใน session
             $_SESSION['user_id'] = $user['user_id'];

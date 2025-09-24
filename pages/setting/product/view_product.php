@@ -25,9 +25,9 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $product_id = decryptUserId($_GET['id']);
 
 // ดึงข้อมูลสินค้าจากฐานข้อมูล
-$sql = "SELECT p.*, u.team_id 
+$sql = "SELECT p.*,
+               (SELECT GROUP_CONCAT(ut.team_id) FROM user_teams ut WHERE ut.user_id = p.created_by) as creator_team_ids
         FROM products p
-        INNER JOIN users u ON p.created_by = u.user_id
         WHERE p.product_id = :product_id";
 $stmt = $condb->prepare($sql);
 $stmt->bindParam(':product_id', $product_id, PDO::PARAM_STR);
@@ -39,11 +39,14 @@ if (!$product) {
     exit;
 }
 
+// Get product creator's team IDs as an array
+$creator_team_ids_array = explode(',', $product['creator_team_ids'] ?? '');
+
 // ตรวจสอบเงื่อนไขการแสดงผล
 $is_creator = ($product['created_by'] == $user_id); // ตรวจสอบว่าผู้ใช้งานเป็นคนสร้าง Product หรือไม่
 $is_executive = ($role == 'Executive'); // ตรวจสอบว่าเป็น Executive หรือไม่
 $is_sale_supervisor_or_seller = ($role == 'Sale Supervisor' || $role == 'Seller'); // ตรวจสอบว่าเป็น Sale Supervisor หรือ Seller หรือไม่
-$is_same_team = ($product['team_id'] == $team_id); // ตรวจสอบว่าผู้ใช้งานอยู่ในทีมเดียวกับทีมที่สร้าง Product หรือไม่
+$is_same_team = in_array($team_id, $creator_team_ids_array); // ตรวจสอบว่าผู้ใช้งานอยู่ในทีมเดียวกับทีมที่สร้าง Product หรือไม่
 
 // กำหนดเงื่อนไขการแสดงผล
 $show_cost_price = ($is_creator || $is_executive || ($is_sale_supervisor_or_seller && $is_same_team));
@@ -330,15 +333,18 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
                                     <div class="team-info-container mb-4">
                                         <h4 class="font-weight-bold mb-3">ข้อมูลทีมขาย (เจ้าของ)</h4>
                                         <?php
-                                        // ดึงข้อมูลทีม
-                                        $team_sql = "SELECT t.*, u.first_name, u.last_name FROM teams t 
-                 LEFT JOIN users u ON t.team_leader = u.user_id
-                 INNER JOIN products p ON t.team_id = p.team_id 
-                 WHERE p.product_id = :product_id";
+                                        // ดึงข้อมูลทีมที่ผู้สร้างสินค้าสังกัด
+                                        $team_sql = "SELECT t.team_id, t.team_name, t.team_description,
+                                                            u.first_name AS leader_first_name, u.last_name AS leader_last_name
+                                                     FROM teams t
+                                                     INNER JOIN user_teams ut ON t.team_id = ut.team_id
+                                                     LEFT JOIN users u ON t.team_leader = u.user_id
+                                                     WHERE ut.user_id = :created_by
+                                                     ORDER BY ut.is_primary DESC, t.team_name ASC"; // Prioritize primary team, then by name
                                         $team_stmt = $condb->prepare($team_sql);
-                                        $team_stmt->bindParam(':product_id', $product_id);
+                                        $team_stmt->bindParam(':created_by', $product['created_by']); // Use the product creator's ID
                                         $team_stmt->execute();
-                                        $team = $team_stmt->fetch();
+                                        $team = $team_stmt->fetch(PDO::FETCH_ASSOC); // Fetch as associative array
                                         ?>
                                         <div class="bg-light p-4 rounded">
                                             <?php if ($team): ?>
