@@ -735,3 +735,44 @@ function switchTeam(teamId) {
     });
 </script>
 <!-- /.Preloader -->
+<script>
+    // Reset active team to ALL when navigating to other menu links (for users with >1 team)
+    document.addEventListener('DOMContentLoaded', function () {
+        var shouldReset = <?php echo (isset($_SESSION['user_teams']) && count($_SESSION['user_teams']) > 1) ? 'true' : 'false'; ?>;
+        if (!shouldReset) return;
+
+        function isModifiedClick(e) {
+            return e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1;
+        }
+
+        function shouldBypass(link) {
+            var href = link.getAttribute('href') || '';
+            if (!href || href === '#' || href.indexOf('javascript:') === 0) return true; // non-navigation
+            if (link.dataset && link.dataset.noResetTeam === 'true') return true;       // explicit opt-out
+            if (href.indexOf('switch_team.php') !== -1) return true;                     // team switch actions
+            if (href.indexOf('logout.php') !== -1) return true;                          // logout
+            return false;
+        }
+
+        function handleNavClick(e) {
+            var a = e.currentTarget;
+            if (isModifiedClick(e) || shouldBypass(a)) return; // allow new tab/modified clicks
+            e.preventDefault();
+            var target = a.href;
+            fetch('<?php echo BASE_URL; ?>switch_team.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'team_id=' + encodeURIComponent('ALL'),
+                credentials: 'same-origin'
+            }).catch(function () {}).finally(function () {
+                window.location.href = target;
+            });
+        }
+
+        var selector = '.main-sidebar a.nav-link, .navbar a.nav-link';
+        document.querySelectorAll(selector).forEach(function (link) {
+            link.addEventListener('click', handleNavClick);
+        });
+    });
+    // To opt-out for a specific link, add: data-no-reset-team="true"
+</script>

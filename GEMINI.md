@@ -490,3 +490,93 @@ grep -A 6 -B 2 "count.*teams.*> 1" login.php
 2. **Cache Implementation**: เพิ่ม cache สำหรับข้อมูลที่ดึงบ่อยๆ
 3. **Real-time Updates**: พิจารณาการอัปเดตข้อมูลแบบ real-time
 4. **Advanced Filtering**: เพิ่มตัวเลือกการกรองข้อมูลที่หลากหลายมากขึ้น
+
+---
+
+## 13. บันทึกการปรับปรุง/แก้ไขรอบล่าสุด (24 ก.ย. 2025)
+
+สรุปงานที่ดำเนินการทั้งหมดในการสนทนารอบนี้ เพื่อให้ผู้พัฒนาถัดไปอ่านและทำงานต่อได้ต่อเนื่อง โดยรวบรวมไฟล์ที่แก้ สาเหตุ ผลลัพธ์ แนวทางทดสอบ และงานต่อเนื่องที่แนะนำ
+
+### 13.1 เอกสาร (ใหม่และอัปเดต)
+- เพิ่ม `permission.md`: อธิบายบทบาท/สิทธิ์บน Dashboard, ลำดับความสำคัญของฟิลเตอร์, และข้อยกเว้นของตัวชี้วัด
+- เพิ่ม `dashboard.md`: เจาะรายละเอียดการ์ด/กราฟของ Dashboard, ตาราง/คอลัมน์อ้างอิง (created_by vs seller), และเงื่อนไขการแสดงผล
+- ทั้งสองไฟล์มีส่วน “ผลของตัวกรองและข้อยกเว้น” ที่สรุปชัดเจนว่าฟิลเตอร์มีผลต่ออะไรบ้าง/ไม่บ้าง
+
+### 13.2 แก้บั๊ก HY093 ที่หน้า Account (ค้นหา)
+- ไฟล์: `pages/account/account.php`
+- สาเหตุ: ผสม placeholders แบบตำแหน่ง (`?`) กับแบบชื่อ (`:name`)
+- แก้ไข: ใช้ named parameters ทั้งหมดและ `execute($params)` ครั้งเดียว
+- ผลลัพธ์: ค้นหาได้ปกติ ปลอดภัย/อ่านง่ายขึ้น
+
+### 13.3 หน้า Account เคารพ Team Switcher (Navbar)
+- ไฟล์: `pages/account/account.php`
+- พฤติกรรมใหม่:
+  - Executive: ALL → เห็นทั้งหมด; ถ้าเลือกทีมเฉพาะ → จำกัดเฉพาะทีมนั้น
+  - Sale Supervisor: ALL → รวมทุกทีมที่ตนสังกัด; ถ้าเลือกทีมเฉพาะ → จำกัดเฉพาะทีมนั้น
+  - Seller/Engineer: ไม่ได้รับผลจาก Team Switcher (ยังเห็นเฉพาะข้อมูลของตน)
+- วิธีทำ: ใช้ `$_SESSION['team_id']` (ค่า 'ALL' หรือ team_id) เพิ่มเงื่อนไข SQL ที่เหมาะสมด้วย named parameters
+
+### 13.4 หน้า Add Account: ตรวจสอบอีเมล และรายการ “ทีม” ตาม Team Switcher
+- ไฟล์: `pages/account/add_account.php`
+- อีเมล: ใช้ `validateEmail()` จาก `config/validation.php` แทน `filter_var` เพื่อความสอดคล้องของระบบและข้อความผิดพลาด
+- รายการทีม (เฉพาะ Sale Supervisor):
+  - Navbar = ALL → ดึงทุกทีมที่ผู้ใช้คนนั้นสังกัด (JOIN user_teams → teams) ใส่ลง `<select name="team_ids[]">`
+  - Navbar = ทีมเฉพาะ → แสดงเฉพาะทีมนั้นทีมเดียว
+  - Executive: เห็นทุกทีมในระบบ (คงเดิม)
+
+### 13.5 รีเซ็ตทีมเป็น All Teams อัตโนมัติเมื่อเปลี่ยนเมนู (เฉพาะผู้ใช้หลายทีม)
+- ไฟล์: `include/Navbar.php`
+- เพิ่ม JS เพื่อ:
+  - ดักการคลิกเมนู (navbar/sidebar) แบบนำทางธรรมดา → POST ไป `switch_team.php` ด้วย `team_id=ALL` ก่อน แล้วค่อยนำทาง
+  - ไม่รบกวนการเปิดแท็บใหม่ (Ctrl/Cmd/Shift/คลิกกลาง)
+  - ไม่แตะลิงก์ switch_team/logout และรองรับ opt‑out รายลิงก์ด้วย `data-no-reset-team="true"`
+
+### 13.6 แผนปรับหน้า Customer (ยังไม่ลงมือ — รอคอนเฟิร์ม)
+- ไฟล์เป้าหมาย: `pages/customer/customer.php`
+- เสนอให้เคารพ `$_SESSION['team_id']` เช่นเดียวกับ Account/Dashboard:
+  - Executive: ALL → ทั้งหมด; เลือกทีม → เฉพาะทีมนั้น
+  - Sale Supervisor: ALL → ทุกทีมของตน; เลือกทีม → เฉพาะทีมนั้น
+  - Seller/Engineer: เฉพาะข้อมูลของตน
+- ใช้ named parameters ทั้งหมด
+
+### 13.7 วิธีทดสอบย่อ (สำคัญ)
+- Account (ค้นหา): กรองด้วยคีย์เวิร์ด/Company/Team/Role/Position → ไม่เกิด HY093 และผลลัพธ์ถูกต้อง
+- Account (Team Switcher):
+  - Executive: ALL → ทั้งหมด; เลือกทีม X → เฉพาะทีม X
+  - Supervisor (หลายทีม): ALL → รวมทุกทีม; เลือกทีม X → เฉพาะทีม X
+- Add Account:
+  - อีเมลผิด → แสดงข้อผิดพลาด ไม่บันทึก
+  - อีเมลถูก (และไม่ซ้ำ) → บันทึกได้
+  - Navbar = ALL (Supervisor) → ช่องทีมแสดงทุกทีมที่สังกัด; Navbar = ทีมเฉพาะ → แสดงเฉพาะทีมนั้น
+- Navbar Reset: ผู้ใช้หลายทีมคลิกเมนู → ทีมจะถูกรีเซ็ตเป็น ALL ก่อนนำทาง (ยกเว้นแท็บใหม่/สวิตช์ทีม/Logout)
+
+### 13.8 รายการไฟล์ที่แก้/เพิ่มในรอบนี้
+- เพิ่ม: `permission.md`, `dashboard.md`
+- แก้: `pages/account/account.php`, `pages/account/add_account.php`, `include/Navbar.php`
+
+### 13.9 ข้อเสนอแนะงานต่อเนื่อง
+- เพิ่ม `uploads/.htaccess` เพื่อปิดการ execute script ในโฟลเดอร์อัปโหลด
+- ไล่ปรับใช้ `escapeOutput()` และ `validateUploadedFile()` ให้สม่ำเสมอทุกหน้า
+- แก้ path ใน `logout.php` ให้ใช้งาน `BASE_URL` + assets อย่างถูกต้องเพื่อลด 404
+- ทบทวนความสอดคล้องของการใช้ `created_by` vs `seller` ในทุกกราฟ/การ์ด
+ - เพิ่มภาพหน้าจอ/ตัวอย่าง use‑case ลงใน `permission.md`/`dashboard.md` เพื่อ onboarding ที่เร็วขึ้น
+ 
+เพิ่มเติม (ภายหลังการยืนยัน): ปรับให้หน้า Customer และ Project เคารพ Team Switcher แล้ว โดยไม่กระทบหน้าอื่น
+
+
+### 13.10 อัปเดตเพิ่มเติมภายหลังการยืนยัน
+
+- ปรับหน้า Customer ให้เคารพ Team Switcher (ดำเนินการแล้ว)
+  - ไฟล์: 
+  - พฤติกรรมใหม่:
+    - Executive: ALL → เห็นทั้งหมด; เลือกทีม → จำกัดเฉพาะทีมนั้น
+    - Sale Supervisor: ALL → รวมทุกทีมของตน; เลือกทีม → เฉพาะทีมนั้น
+    - Seller/Engineer: เฉพาะข้อมูลของตน
+  - ใช้ named parameters ทั้งหมดในการ bind ค่าพารามิเตอร์
+
+- ปรับหน้า Project ให้เคารพ Team Switcher (ดำเนินการแล้ว)
+  - ไฟล์: 
+  - เพิ่ม 
+  - ปรับส่วนดึง Dropdowns (products/status/customers/creators/years): เติม  ตามบทบาทและทีมที่เลือก (Executive ทีมเฉพาะ, Supervisor ALL vs ทีมเฉพาะ, Seller/Engineer เฉพาะตน)
+  - ปรับ Query หลัก (main list): เติม  ให้กรอง  ผ่าน  ตามทีมที่เลือก ด้วย named parameters
+  - ไม่แตะไฟล์อื่น และคง UI/โครงสร้างเดิม

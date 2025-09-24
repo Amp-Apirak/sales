@@ -51,16 +51,39 @@ $sql_users = "SELECT u.user_id, u.username, u.first_name, u.last_name, u.company
               LEFT JOIN users creator ON u.created_by = creator.user_id
               WHERE 1=1";
 
-// กรณีที่ role ไม่ใช่ Executive ให้แสดงเฉพาะข้อมูลทีมของผู้ใช้เอง
-if ($role !== 'Executive') {
+// เก็บค่าพารามิเตอร์ทั้งหมดไว้ในอาร์เรย์ (ใช้ named placeholders เท่านั้น เพื่อหลีกเลี่ยงการผสมชนิดพารามิเตอร์)
+$params = [];
+
+// ใช้สถานะทีมจาก Navbar: $_SESSION['team_id']
+$current_team_id = $_SESSION['team_id'] ?? 'ALL';
+
+if ($role === 'Executive') {
+    // Executive เห็นทั้งหมด แต่ถ้าเลือกทีมเฉพาะจาก Navbar ให้จำกัดตามทีมนั้น
+    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+        $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id = :current_team_id)";
+        $params[':current_team_id'] = $current_team_id;
+    }
+} else { // Sale Supervisor
     $team_ids = $_SESSION['team_ids'] ?? [];
-    if (!empty($team_ids)) {
-        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
-        $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id IN ($placeholders))";
-        $params = $team_ids;
+    if ($current_team_id === 'ALL') {
+        // รวมทุกทีมที่ผู้ใช้สังกัด
+        if (!empty($team_ids)) {
+            $teamPlaceholders = [];
+            foreach ($team_ids as $idx => $tid) {
+                $ph = ":team_id_{$idx}";
+                $teamPlaceholders[] = $ph;
+                $params[$ph] = $tid;
+            }
+            $inClause = implode(',', $teamPlaceholders);
+            $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id IN ($inClause))";
+        } else {
+            // ไม่มีทีม => ไม่แสดงข้อมูล
+            $sql_users .= " AND 1=0";
+        }
     } else {
-        $sql_users .= " AND 1=0"; // ไม่แสดงข้อมูลถ้าไม่มีทีม
-        $params = [];
+        // จำกัดเฉพาะทีมที่เลือกจาก Navbar
+        $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id = :current_team_id)";
+        $params[':current_team_id'] = $current_team_id;
     }
 }
 
@@ -69,53 +92,30 @@ if ($role !== 'Executive') {
 // เพิ่มเงื่อนไขการค้นหาตามฟิลด์ที่ระบุ
 if (!empty($search)) {
     $sql_users .= " AND (u.username LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search OR u.phone LIKE :search OR u.email LIKE :search)";
+    $params[':search'] = "%" . $search . "%";
 }
 if (!empty($search_company)) {
     $sql_users .= " AND u.company = :search_company";
+    $params[':search_company'] = $search_company;
 }
 if (!empty($search_team)) {
     $sql_users .= " AND t.team_name = :search_team";
+    $params[':search_team'] = $search_team;
 }
 if (!empty($search_role)) {
     $sql_users .= " AND u.role = :search_role";
+    $params[':search_role'] = $search_role;
 }
 if (!empty($search_position)) {
     $sql_users .= " AND u.position = :search_position";
+    $params[':search_position'] = $search_position;
 }
 
 $sql_users .= " GROUP BY u.user_id ORDER BY u.created_at DESC";
 
-// เตรียม statement
+// เตรียมและรันคำสั่ง (ใช้ named parameters ทั้งหมด)
 $stmt = $condb->prepare($sql_users);
-
-// ทำการ bind ค่าต่างๆ
-$param_index = 1;
-if ($role !== 'Executive') {
-    if (!empty($team_ids)) {
-        foreach ($team_ids as $team_id_to_bind) {
-            $stmt->bindValue($param_index++, $team_id_to_bind, PDO::PARAM_STR);
-        }
-    }
-}
-if (!empty($search)) {
-    $search_param = "%$search%";
-    $stmt->bindParam(':search', $search_param);
-}
-if (!empty($search_company)) {
-    $stmt->bindParam(':search_company', $search_company);
-}
-if (!empty($search_team)) {
-    $stmt->bindParam(':search_team', $search_team);
-}
-if (!empty($search_role)) {
-    $stmt->bindParam(':search_role', $search_role);
-}
-if (!empty($search_position)) {
-    $stmt->bindParam(':search_position', $search_position);
-}
-
-// Execute query
-$stmt->execute();
+$stmt->execute($params);
 $query_users = $stmt->fetchAll();
 ?>
 

@@ -5,6 +5,7 @@ include '../../include/Add_session.php';
 // ดึงข้อมูลผู้ใช้จาก session
 $role = $_SESSION['role'] ?? '';
 $team_ids = $_SESSION['team_ids'] ?? []; // Array of team IDs
+$current_team_id = $_SESSION['team_id'] ?? 'ALL';
 $current_user_id = $_SESSION['user_id'] ?? null;
 if (!$current_user_id) {
     die("Error: User ID not found in session");
@@ -47,14 +48,24 @@ $search_team = trim($_POST['team'] ?? '');
 $dropdown_where = '';
 $dropdown_params = [];
 
-if ($role === 'Sale Supervisor') {
-    if (!empty($team_ids)) {
-        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
-        $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
-        $dropdown_params = $team_ids;
+if ($role === 'Executive') {
+    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+        $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = ?)";
+        $dropdown_params[] = $current_team_id;
+    }
+} elseif ($role === 'Sale Supervisor') {
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
+            $dropdown_params = $team_ids;
+        } else {
+            $dropdown_where = "WHERE p.seller = ?";
+            $dropdown_params[] = $current_user_id;
+        }
     } else {
-        $dropdown_where = "WHERE p.seller = ?";
-        $dropdown_params[] = $current_user_id;
+        $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = ?)";
+        $dropdown_params[] = $current_team_id;
     }
 } elseif ($role === 'Seller' || $role === 'Engineer') {
     $dropdown_where = "WHERE p.seller = ?";
@@ -69,14 +80,27 @@ $customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_
 // Dropdown for Creators (Sellers)
 $creators_sql = "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_name FROM users u ";
 $creator_params = [];
-if ($role === 'Sale Supervisor') {
-    if (!empty($team_ids)) {
-        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
-        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id IN ($placeholders) AND u.role IN ('Seller', 'Sale Supervisor')";
-        $creator_params = $team_ids;
+if ($role === 'Executive') {
+    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id = ? AND u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
+        $creator_params[] = $current_team_id;
+    } else {
+        $creators_sql .= "WHERE u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
     }
-} elseif ($role === 'Executive') {
-    $creators_sql .= "WHERE u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
+} elseif ($role === 'Sale Supervisor') {
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id IN ($placeholders) AND u.role IN ('Seller', 'Sale Supervisor')";
+            $creator_params = $team_ids;
+        } else {
+            $creators_sql .= "WHERE u.user_id = ?";
+            $creator_params[] = $current_user_id;
+        }
+    } else {
+        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id = ? AND u.role IN ('Seller', 'Sale Supervisor')";
+        $creator_params[] = $current_team_id;
+    }
 } else { // Seller, Engineer
     $creators_sql .= "WHERE u.user_id = ?";
     $creator_params[] = $current_user_id;
@@ -98,20 +122,30 @@ if ($role === 'Executive') {
 $main_params = [];
 $main_where_conditions = [];
 
-// Role-based filtering
-if ($role === 'Sale Supervisor') {
-    if (!empty($team_ids)) {
-        $team_placeholders = [];
-        foreach ($team_ids as $key => $id) {
-            $p = ':main_team_' . $key;
-            $team_placeholders[] = $p;
-            $main_params[$p] = $id;
+// Role-based filtering (respect Navbar Team Switcher)
+if ($role === 'Executive') {
+    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+        $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :exec_team_id)";
+        $main_params[':exec_team_id'] = $current_team_id;
+    }
+} elseif ($role === 'Sale Supervisor') {
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $team_placeholders = [];
+            foreach ($team_ids as $key => $id) {
+                $p = ':main_team_' . $key;
+                $team_placeholders[] = $p;
+                $main_params[$p] = $id;
+            }
+            $in_clause = implode(',', $team_placeholders);
+            $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
+        } else {
+            $main_where_conditions[] = "p.seller = :current_user_id";
+            $main_params[':current_user_id'] = $current_user_id;
         }
-        $in_clause = implode(',', $team_placeholders);
-        $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
     } else {
-        $main_where_conditions[] = "p.seller = :current_user_id";
-        $main_params[':current_user_id'] = $current_user_id;
+        $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_id)";
+        $main_params[':current_team_id'] = $current_team_id;
     }
 } elseif ($role === 'Seller' || $role === 'Engineer') {
     $main_where_conditions[] = "p.seller = :current_user_id";

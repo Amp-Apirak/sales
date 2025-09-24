@@ -5,6 +5,7 @@ include '../../include/Add_session.php';
 $role = $_SESSION['role'];
 $team_ids = $_SESSION['team_ids'] ?? [];
 $user_id = $_SESSION['user_id'];
+$current_team_id = $_SESSION['team_id'] ?? 'ALL';
 
 // รับค่าการค้นหาจากฟอร์ม
 $search_service = trim($_GET['searchservice'] ?? '');
@@ -20,20 +21,30 @@ $sql_customers = "SELECT DISTINCT c.*, u.first_name, u.last_name, t.team_name
 $where_conditions = [];
 
 // Role-based filtering
-if ($role == 'Sale Supervisor') {
-    if (!empty($team_ids)) {
-        $team_placeholders = [];
-        foreach ($team_ids as $key => $id) {
-            $p = ':team_id_' . $key;
-            $team_placeholders[] = $p;
-            $params[$p] = $id;
-        }
-        $in_clause = implode(',', $team_placeholders);
-        $where_conditions[] = "c.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
-    } else {
-        $where_conditions[] = "1=0"; // No teams, show no customers
+if ($role === 'Executive') {
+    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+        $where_conditions[] = "c.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_id)";
+        $params[':current_team_id'] = $current_team_id;
     }
-} elseif ($role == 'Seller' || $role != 'Executive') {
+} elseif ($role === 'Sale Supervisor') {
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $team_placeholders = [];
+            foreach ($team_ids as $key => $id) {
+                $p = ':team_id_' . $key;
+                $team_placeholders[] = $p;
+                $params[$p] = $id;
+            }
+            $in_clause = implode(',', $team_placeholders);
+            $where_conditions[] = "c.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
+        } else {
+            $where_conditions[] = "1=0";
+        }
+    } else {
+        $where_conditions[] = "c.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_id)";
+        $params[':current_team_id'] = $current_team_id;
+    }
+} else {
     $where_conditions[] = "c.created_by = :user_id";
     $params[':user_id'] = $user_id;
 }

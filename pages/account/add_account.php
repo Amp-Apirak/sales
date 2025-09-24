@@ -1,6 +1,10 @@
 <?php
 // เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
+// ใช้ helper สำหรับตรวจสอบอีเมลและความปลอดภัย
+if (!function_exists('validateEmail')) {
+    require_once __DIR__ . '/../../config/validation.php';
+}
 
 // ตรวจสอบสิทธิ์การเข้าถึง
 $role = $_SESSION['role'];  // บทบาทของผู้ใช้จาก session
@@ -98,14 +102,28 @@ function logUserCreation($creator_id, $new_user_id, $new_user_role)
 
 // ดึงข้อมูลทีมจากฐานข้อมูลตามบทบาทของผู้ใช้
 if ($role === 'Sale Supervisor') {
-    // Sale Supervisor จะเห็นเฉพาะทีมของตนเอง
-    $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
-    $stmt_teams = $condb->prepare($sql_teams);
-    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_STR);
-    $stmt_teams->execute();
+    // Sale Supervisor: เคารพ Team Switcher จาก Navbar
+    $current_team_id = $_SESSION['team_id'] ?? 'ALL';
+    if ($current_team_id === 'ALL') {
+        // แสดงทุกทีมที่ผู้ใช้คนปัจจุบันสังกัดอยู่
+        $sql_teams = "SELECT t.team_id, t.team_name
+                      FROM teams t
+                      JOIN user_teams ut ON ut.team_id = t.team_id
+                      WHERE ut.user_id = :current_user_id
+                      ORDER BY t.team_name";
+        $stmt_teams = $condb->prepare($sql_teams);
+        $stmt_teams->bindParam(':current_user_id', $created_by, PDO::PARAM_STR);
+        $stmt_teams->execute();
+    } else {
+        // แสดงเฉพาะทีมที่เลือกจาก Navbar
+        $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
+        $stmt_teams = $condb->prepare($sql_teams);
+        $stmt_teams->bindParam(':team_id', $current_team_id, PDO::PARAM_STR);
+        $stmt_teams->execute();
+    }
 } else {
-    // Executive และผู้ที่มีสิทธิ์สูงกว่า สามารถเห็นทีมทั้งหมด
-    $sql_teams = "SELECT team_id, team_name FROM teams";
+    // Executive และผู้ที่มีสิทธิ์สูงกว่า: เห็นทุกทีมในระบบ (พฤติกรรมเดิม)
+    $sql_teams = "SELECT team_id, team_name FROM teams ORDER BY team_name";
     $stmt_teams = $condb->prepare($sql_teams);
     $stmt_teams->execute();
 }
@@ -143,9 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     if (empty($team_ids)) $error_messages[] = "กรุณาเลือกอย่างน้อยหนึ่งทีม";
     if (empty($role_new)) $error_messages[] = "กรุณาเลือกบทบาท";
 
-    // ตรวจสอบความถูกต้องของรูปแบบอีเมล
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง";
+    // ตรวจสอบความถูกต้องของรูปแบบอีเมล (ใช้ helper กลาง)
+    $emailValidation = validateEmail($email);
+    if (!$emailValidation['valid']) {
+        $error_messages[] = $emailValidation['message'];
+    } else {
+        $email = $emailValidation['value'];
     }
 
     // ตรวจสอบความซับซ้อนของรหัสผ่าน
@@ -276,14 +297,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 
 // ดึงข้อมูลทีมจากฐานข้อมูลตามบทบาทของผู้ใช้
 if ($role === 'Sale Supervisor') {
-    // Sale Supervisor จะเห็นเฉพาะทีมของตนเอง
-    $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
-    $stmt_teams = $condb->prepare($sql_teams);
-    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_STR);
-    $stmt_teams->execute();
+    // Sale Supervisor: เคารพ Team Switcher จาก Navbar (ALL = ทีมทั้งหมดของผู้ใช้)
+    $current_team_id = $_SESSION['team_id'] ?? 'ALL';
+    if ($current_team_id === 'ALL') {
+        $sql_teams = "SELECT t.team_id, t.team_name
+                      FROM teams t
+                      JOIN user_teams ut ON ut.team_id = t.team_id
+                      WHERE ut.user_id = :current_user_id
+                      ORDER BY t.team_name";
+        $stmt_teams = $condb->prepare($sql_teams);
+        $stmt_teams->bindParam(':current_user_id', $created_by, PDO::PARAM_STR);
+        $stmt_teams->execute();
+    } else {
+        $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
+        $stmt_teams = $condb->prepare($sql_teams);
+        $stmt_teams->bindParam(':team_id', $current_team_id, PDO::PARAM_STR);
+        $stmt_teams->execute();
+    }
 } else {
-    // Executive และผู้ที่มีสิทธิ์สูงกว่า สามารถเห็นทีมทั้งหมด
-    $sql_teams = "SELECT team_id, team_name FROM teams";
+    // Executive: เห็นทุกทีมในระบบ (พฤติกรรมเดิม)
+    $sql_teams = "SELECT team_id, team_name FROM teams ORDER BY team_name";
     $stmt_teams = $condb->prepare($sql_teams);
     $stmt_teams->execute();
 }
