@@ -198,6 +198,7 @@ $sql_projects = "
         creator.last_name as creator_last_name,
         c.customer_name, c.company, c.address, c.phone, c.email, 
         seller_team.team_name,
+        seller_team.team_id AS seller_team_id,
         pr.product_name,
         seller.first_name AS seller_first_name, 
         seller.last_name AS seller_last_name,
@@ -300,6 +301,15 @@ function calculateProjectMetrics($projects, $search_params = [], $user_team_name
         $isSharedFromOtherTeam = false;
         if ($user_role !== 'Executive') {
             $belongsToUserTeam = ((int)($project['is_team_project'] ?? 0) === 1);
+            $isOwner = ((int)($project['is_project_owner'] ?? 0) === 1) || (($project['user_permission'] ?? '') === 'owner');
+
+            if (!$belongsToUserTeam && $isOwner) {
+                $belongsToUserTeam = true;
+            }
+
+            if (!$belongsToUserTeam && !empty($project['seller_team_id']) && !empty($team_ids) && in_array($project['seller_team_id'], $team_ids, true)) {
+                $belongsToUserTeam = true;
+            }
 
             // กรณีไม่มีข้อมูล is_team_project ให้ถอยกลับไปตรวจจากชื่อทีม (เฉพาะตอนเลือกทีมเฉพาะ)
             if (!$belongsToUserTeam && $current_team_id !== 'ALL' && !empty($user_team_name) && !empty($project['team_name'])) {
@@ -1048,16 +1058,45 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                                                     // ตรวจสอบว่าเป็นโครงการที่แชร์มาจากทีมอื่นหรือไม่
                                                     $isSharedFromOtherTeam = false;
 
-                                                    // สำหรับ Engineer หรือ role อื่นๆ ที่ไม่ใช่ Executive
-                                                    if ($role != 'Executive') {
-                                                        // ตรวจสอบว่าโครงการมาจากทีมอื่นหรือไม่ (ดูจาก seller's team)
-                                                        if (!empty($project['team_name']) && $project['team_name'] != $_SESSION['team_name']) {
+                                                    if ($role !== 'Executive') {
+                                                        $belongsToUserTeam = ((int)($project['is_team_project'] ?? 0) === 1);
+                                                        $isOwner = ((int)($project['is_project_owner'] ?? 0) === 1) || (($project['user_permission'] ?? '') === 'owner');
+
+                                                        if (!$belongsToUserTeam && $isOwner) {
+                                                            $belongsToUserTeam = true;
+                                                        }
+
+                                                        if (
+                                                            !$belongsToUserTeam
+                                                            && !empty($project['seller_team_id'])
+                                                            && !empty($team_ids)
+                                                            && in_array($project['seller_team_id'], $team_ids, true)
+                                                        ) {
+                                                            $belongsToUserTeam = true;
+                                                        }
+
+                                                        if (
+                                                            !$belongsToUserTeam
+                                                            && $current_team_id !== 'ALL'
+                                                            && !empty($_SESSION['team_name'])
+                                                            && !empty($project['team_name'])
+                                                        ) {
+                                                            $belongsToUserTeam = ($project['team_name'] === $_SESSION['team_name']);
+                                                        }
+
+                                                        if (!$belongsToUserTeam) {
                                                             $isSharedFromOtherTeam = true;
                                                         }
                                                     }
 
-                                                    // ตรวจสอบสิทธิ์ในการแสดงข้อมูลการเงิน
-                                                    $canViewFinancial = ($role != 'Engineer' && !$isSharedFromOtherTeam);
+                                                    // ตรวจสอบสิทธิ์ในการแสดงข้อมูลการเงิน (Engineer ไม่เห็น, ที่เหลือเห็นเฉพาะโครงการที่ไม่แชร์จากทีมอื่นหรือตนเป็นเจ้าของโดยตรง)
+                                                    $canViewFinancial = (
+                                                        $role !== 'Engineer'
+                                                        && (
+                                                            !$isSharedFromOtherTeam
+                                                            || ((int)($project['is_project_owner'] ?? 0) === 1)
+                                                        )
+                                                    );
                                                     ?>
 
                                                     <?php if ($role != 'Engineer'): ?>
