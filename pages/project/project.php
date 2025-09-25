@@ -5,6 +5,7 @@ include '../../include/Add_session.php';
 // ดึงข้อมูลผู้ใช้จาก session
 $role = $_SESSION['role'] ?? '';
 $team_ids = $_SESSION['team_ids'] ?? []; // Array of team IDs
+$user_teams = $_SESSION['user_teams'] ?? [];
 $current_team_id = $_SESSION['team_id'] ?? 'ALL';
 $current_user_id = $_SESSION['user_id'] ?? null;
 if (!$current_user_id) {
@@ -49,7 +50,7 @@ $dropdown_where = '';
 $dropdown_params = [];
 
 if ($role === 'Executive') {
-    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+    if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
         $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = ?)";
         $dropdown_params[] = $current_team_id;
     }
@@ -81,7 +82,7 @@ $customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_
 $creators_sql = "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_name FROM users u ";
 $creator_params = [];
 if ($role === 'Executive') {
-    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+    if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
         $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id = ? AND u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
         $creator_params[] = $current_team_id;
     } else {
@@ -124,7 +125,7 @@ $main_where_conditions = [];
 
 // Role-based filtering (respect Navbar Team Switcher)
 if ($role === 'Executive') {
-    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+    if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
         $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :exec_team_id)";
         $main_params[':exec_team_id'] = $current_team_id;
     }
@@ -158,7 +159,7 @@ if (!empty($search_service)) {
     $main_params[':search_service'] = "%$search_service%";
 }
 if (!empty($search_team) && $role === 'Executive') {
-    $main_where_conditions[] = "seller_team.team_id = :search_team";
+    $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :search_team)";
     $main_params[':search_team'] = $search_team;
 }
 if (!empty($search_product)) {
@@ -278,7 +279,7 @@ function displayData($data, $format = null)
 
 
 // ฟังก์ชันคำนวณข้อมูลสำหรับการ์ด
-function calculateProjectMetrics($projects, $search_params = [], $user_team_name = '', $user_role = '')
+function calculateProjectMetrics($projects, $search_params = [], $user_team_name = '', $user_role = '', $current_team_id = 'ALL', $team_ids = [])
 {
     // กำหนดค่าเริ่มต้นสำหรับการคำนวณ
     $metrics = [
@@ -297,8 +298,15 @@ function calculateProjectMetrics($projects, $search_params = [], $user_team_name
 
         // ตรวจสอบว่าเป็นโครงการที่แชร์มาจากทีมอื่นหรือไม่
         $isSharedFromOtherTeam = false;
-        if ($user_role != 'Executive') {
-            if (!empty($project['team_name']) && $project['team_name'] != $user_team_name) {
+        if ($user_role !== 'Executive') {
+            $belongsToUserTeam = ((int)($project['is_team_project'] ?? 0) === 1);
+
+            // กรณีไม่มีข้อมูล is_team_project ให้ถอยกลับไปตรวจจากชื่อทีม (เฉพาะตอนเลือกทีมเฉพาะ)
+            if (!$belongsToUserTeam && $current_team_id !== 'ALL' && !empty($user_team_name) && !empty($project['team_name'])) {
+                $belongsToUserTeam = ($project['team_name'] === $user_team_name);
+            }
+
+            if (!$belongsToUserTeam) {
                 $isSharedFromOtherTeam = true;
             }
         }
@@ -346,7 +354,7 @@ $search_params = [
 ];
 
 $user_team_name = $_SESSION['team_name'] ?? '';
-$metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $role);
+$metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $role, $current_team_id, $team_ids);
 ?>
 
 <!DOCTYPE html>
@@ -689,9 +697,9 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                                                                     <select class="custom-select select2" name="team">
                                                                         <option value="">เลือก</option>
                                                                         <?php foreach ($teams as $team) : ?>
-                                                                            <option value="<?php echo htmlspecialchars($team['team_name']); ?>" <?php echo ($search_team == $team['team_name']) ? 'selected' : ''; ?>>
-                                                                                <?php echo htmlspecialchars($team['team_name']); ?>
-                                                                            </option>
+<option value="<?php echo htmlspecialchars($team['team_id']); ?>" <?php echo ($search_team == $team['team_id']) ? 'selected' : ''; ?>>
+    <?php echo htmlspecialchars($team['team_name']); ?>
+</option>
                                                                         <?php endforeach; ?>
                                                                     </select>
                                                                 </div>

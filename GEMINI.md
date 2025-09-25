@@ -580,3 +580,22 @@ grep -A 6 -B 2 "count.*teams.*> 1" login.php
   - ปรับส่วนดึง Dropdowns (products/status/customers/creators/years): เติม  ตามบทบาทและทีมที่เลือก (Executive ทีมเฉพาะ, Supervisor ALL vs ทีมเฉพาะ, Seller/Engineer เฉพาะตน)
   - ปรับ Query หลัก (main list): เติม  ให้กรอง  ผ่าน  ตามทีมที่เลือก ด้วย named parameters
   - ไม่แตะไฟล์อื่น และคง UI/โครงสร้างเดิม
+
+### 13.11 อัปเดตรอบถัดมา (มิ.ย. 2025)
+
+- **Account / Customer / Project list**
+  - `pages/account/account.php`: Executive เห็นข้อมูลทั้งหมดเป็นค่าเริ่มต้น; Team Switcher ใช้ได้เฉพาะเมื่ออยู่หลายทีม
+  - `pages/customer/customer.php`: Executive เห็นทุกลูกค้าตามค่าเริ่มต้น, Sale Supervisor / Seller / Engineer ใช้กฎ team switcher เช่นเดียวกับรายการ Account
+  - `pages/project/project.php`: ปรับเงื่อนไข dropdowns กับ main query ให้ใช้ `user_teams` สำหรับทุกบทบาท; ฟิลเตอร์ทีมส่ง `team_id`; แก้ `calculateProjectMetrics()` ให้ Sale Supervisor เห็นตัวเลขการ์ดถูกต้องในโหมด “ALL”
+
+- **Add / Edit Project (ผู้ขายและลูกค้า)**
+  - `pages/project/add_project.php`: ดึงรายชื่อผู้ขายด้วย `user_teams` (Executive = ทุกคน, Sale Supervisor = เฉพาะสมาชิกในทีมของตน); เลือกรายชื่อผ่าน select2; กรองบริษัทลูกค้าโดยทีม (รองรับโหมด ALL)
+  - `pages/project/edit_project.php`: ปรับ logic เหมือนหน้า Add Project รวมถึง fallback ดึงผู้ขายเดิมในกรณีอยู่นอกทีม; กรองลูกค้าและตรวจสิทธิ์ Sale Supervisor ก่อนบันทึก
+
+- **View Project / Document**
+  - `pages/project/view_project.php`: JOIN ทีมหลักของผู้สร้างและผู้ขาย, ตรวจสิทธิ์ Sale Supervisor ด้วย `seller_team_id` หรือ fallback `creator_team_id`, อนุญาตดูการเงิน/รายละเอียดเมื่ออยู่ในทีมใดทีมหนึ่งของตน, แสดงชื่อทีมผู้ขายใน UI, แก้การอ้าง `first_name/last_name` เป็น `seller_first_name/last_name`
+  - `pages/project/delete_document.php`: เปลี่ยนจาก JOIN `users.team_id` เป็น JOIN `user_teams` (primary) เพื่อลบเอกสารได้ถูกต้องในโครงสร้าง many-to-many
+
+- **อื่น ๆ**
+  - `pages/project/add_project.php` & `pages/project/project.php`: แก้ค่า POST ของฟิลเตอร์ทีมให้ใช้ `team_id` จริงและรีเฟรชข้อมูลการ์ด/ตารางถูกต้อง
+  - ทบทวน CSRF / validation คงเดิม; การเปลี่ยนแปลงทั้งหมดยังเคารพ `permission.md`

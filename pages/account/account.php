@@ -58,8 +58,9 @@ $params = [];
 $current_team_id = $_SESSION['team_id'] ?? 'ALL';
 
 if ($role === 'Executive') {
-    // Executive เห็นทั้งหมด แต่ถ้าเลือกทีมเฉพาะจาก Navbar ให้จำกัดตามทีมนั้น
-    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+    // Executive เห็นทั้งหมดโดยค่าเริ่มต้น; ถ้าเลือกทีมจาก Team Switcher (มีหลายทีม) จึงค่อยกรอง
+    $userTeams = $_SESSION['user_teams'] ?? [];
+    if (count($userTeams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
         $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id = :current_team_id)";
         $params[':current_team_id'] = $current_team_id;
     }

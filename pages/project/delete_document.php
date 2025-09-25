@@ -11,12 +11,13 @@ $document_id = $_POST['document_id'];
 
 try {
     // ดึงข้อมูลไฟล์และทีม
-    $sql = "SELECT pd.file_path, t.team_name 
+    $sql = "SELECT pd.file_path, GROUP_CONCAT(DISTINCT t.team_name) AS team_name 
             FROM project_documents pd
             JOIN projects p ON pd.project_id = p.project_id
-            JOIN users u ON p.created_by = u.user_id
-            JOIN teams t ON u.team_id = t.team_id
-            WHERE pd.document_id = :document_id";
+            JOIN user_teams ut ON p.created_by = ut.user_id AND ut.is_primary = 1
+            JOIN teams t ON ut.team_id = t.team_id
+            WHERE pd.document_id = :document_id
+            GROUP BY pd.file_path";
     $stmt = $condb->prepare($sql);
     $stmt->execute([':document_id' => $document_id]);
     $document = $stmt->fetch(PDO::FETCH_ASSOC);

@@ -4,6 +4,7 @@ include '../../include/Add_session.php';
 // ดึงข้อมูลจาก session ของผู้ใช้ที่เข้าสู่ระบบ
 $role = $_SESSION['role'];
 $team_ids = $_SESSION['team_ids'] ?? [];
+$user_teams = $_SESSION['user_teams'] ?? [];
 $user_id = $_SESSION['user_id'];
 $current_team_id = $_SESSION['team_id'] ?? 'ALL';
 
@@ -22,7 +23,7 @@ $where_conditions = [];
 
 // Role-based filtering
 if ($role === 'Executive') {
-    if (!empty($current_team_id) && $current_team_id !== 'ALL') {
+    if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
         $where_conditions[] = "c.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_id)";
         $params[':current_team_id'] = $current_team_id;
     }
