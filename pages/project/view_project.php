@@ -171,6 +171,7 @@ function getStatusClass($status)
 $hasAccessToFinancialInfo = false; // ตั้งค่าเริ่มต้นเป็น false
 $hasFullAccess = false; // สำหรับสิทธิ์เต็ม
 $hasHalfAccess = false; // สำหรับสิทธิ์ครึ่งเดียว
+$sharedAccessLevel = $project['is_active'] ?? null;
 
 // เงื่อนไข 1: Executive มีสิทธิ์เต็ม
 if ($role === 'Executive') {
@@ -198,9 +199,10 @@ elseif ($project['created_by'] == $user_id) {
     $hasAccessToFinancialInfo = true;
     $hasFullAccess = true;
 }
-// เงื่อนไข 4: สมาชิกที่ถูกเชิญ
-elseif (isset($project['is_active'])) {
-    switch ($project['is_active']) {
+
+// เงื่อนไข 4: สมาชิกที่ถูกเชิญ (ยังไม่ดีดิจัดการด้านบน)
+if (!$hasFullAccess && !$hasHalfAccess && $sharedAccessLevel !== null) {
+    switch ((int)$sharedAccessLevel) {
         case 0: // Full Access
             $hasAccessToFinancialInfo = true;
             $hasFullAccess = true;

@@ -275,32 +275,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // อัปเดตรูปโปรไฟล์ (ถ้ามี) ด้วย validateUploadedFile
-            if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == 0) {
+            if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
                 $fileValidation = validateUploadedFile($_FILES['profile_image'], ['jpg', 'jpeg', 'png', 'gif'], 5242880); // 5MB
 
                 if (!$fileValidation['valid']) {
                     throw new Exception($fileValidation['message']);
-                } else {
-                    $new_filename = sanitizeFilename($fileValidation['safe_name']);
-                    $upload_path = '../../uploads/profile_images/' . $new_filename;
+                }
 
-                    if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $upload_path)) {
-                        $stmt = $condb->prepare("UPDATE users SET profile_image = :profile_image WHERE user_id = :user_id");
-                        $stmt->execute([':profile_image' => $new_filename, ':user_id' => $user_id]);
+                $uploadedFile = $fileValidation['file'];
 
-                        if (!empty($user['profile_image'])) {
-                            $old_image_path = '../../uploads/profile_images/' . $user['profile_image'];
-                            if (file_exists($old_image_path)) {
-                                unlink($old_image_path);
-                            }
-                        }
+                $uploadDir = __DIR__ . '/../../uploads/profile_images';
+                if (!is_dir($uploadDir)) {
+                    if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+                        throw new Exception('ไม่สามารถสร้างโฟลเดอร์อัปโหลดได้');
+                    }
+                }
+
+                $originalName = $uploadedFile['name'] ?? '';
+                $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+                $baseName = pathinfo($originalName, PATHINFO_FILENAME);
+                $sanitizedBase = sanitizeFilename($baseName ?: 'profile_image');
+                if ($sanitizedBase === '') {
+                    $sanitizedBase = 'profile_image';
+                }
+
+                $new_filename = $sanitizedBase . '_' . $user_id . '_' . time();
+                if (!empty($extension)) {
+                    $new_filename .= '.' . $extension;
+                }
+
+                $upload_path = $uploadDir . '/' . $new_filename;
+
+                if (!move_uploaded_file($uploadedFile['tmp_name'], $upload_path)) {
+                    throw new Exception('ไม่สามารถอัปโหลดไฟล์ได้');
+                }
+
+                $stmt = $condb->prepare("UPDATE users SET profile_image = :profile_image WHERE user_id = :user_id");
+                $stmt->execute([':profile_image' => $new_filename, ':user_id' => $user_id]);
+
+                if (!empty($user['profile_image'])) {
+                    $old_image_path = $uploadDir . '/' . $user['profile_image'];
+                    if (is_file($old_image_path)) {
+                        unlink($old_image_path);
                     }
                 }
             }
 
             // CSRF token จะถูกจัดการโดย generateCSRFToken() อัตโนมัติ
 
-            $success_message = "อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว";
+            $_SESSION['success'] = 'อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว';
+            header('Location: account.php');
+            exit;
         } catch (Exception $e) {
             $error_messages[] = "เกิดข้อผิดพลาดในการอัปเดตข้อมูล: " . $e->getMessage();
         }
@@ -375,12 +400,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <li><?php echo $error; ?></li>
                                                 <?php endforeach; ?>
                                             </ul>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <?php if (isset($success_message)): ?>
-                                        <div class="alert alert-success">
-                                            <?php echo $success_message; ?>
                                         </div>
                                     <?php endif; ?>
 
@@ -520,18 +539,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 let fileName = $(this).val().split('\\').pop();
                 $(this).next('.custom-file-label').addClass("selected").html(fileName);
             });
-
-            <?php if (isset($success_message)): ?>
-                Swal.fire({
-                    icon: 'success',
-                    title: 'สำเร็จ',
-                    text: '<?php echo $success_message; ?>',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = 'account.php';
-                    }
-                });
-            <?php endif; ?>
 
             <?php if (!empty($error_messages)): ?>
                 Swal.fire({
