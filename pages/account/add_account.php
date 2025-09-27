@@ -1,6 +1,10 @@
 <?php
 // เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
+// ใช้ helper สำหรับตรวจสอบอีเมลและความปลอดภัย
+if (!function_exists('validateEmail')) {
+    require_once __DIR__ . '/../../config/validation.php';
+}
 
 // ตรวจสอบสิทธิ์การเข้าถึง
 $role = $_SESSION['role'];  // บทบาทของผู้ใช้จาก session
@@ -98,14 +102,28 @@ function logUserCreation($creator_id, $new_user_id, $new_user_role)
 
 // ดึงข้อมูลทีมจากฐานข้อมูลตามบทบาทของผู้ใช้
 if ($role === 'Sale Supervisor') {
-    // Sale Supervisor จะเห็นเฉพาะทีมของตนเอง
-    $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
-    $stmt_teams = $condb->prepare($sql_teams);
-    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_STR);
-    $stmt_teams->execute();
+    // Sale Supervisor: เคารพ Team Switcher จาก Navbar
+    $current_team_id = $_SESSION['team_id'] ?? 'ALL';
+    if ($current_team_id === 'ALL') {
+        // แสดงทุกทีมที่ผู้ใช้คนปัจจุบันสังกัดอยู่
+        $sql_teams = "SELECT t.team_id, t.team_name
+                      FROM teams t
+                      JOIN user_teams ut ON ut.team_id = t.team_id
+                      WHERE ut.user_id = :current_user_id
+                      ORDER BY t.team_name";
+        $stmt_teams = $condb->prepare($sql_teams);
+        $stmt_teams->bindParam(':current_user_id', $created_by, PDO::PARAM_STR);
+        $stmt_teams->execute();
+    } else {
+        // แสดงเฉพาะทีมที่เลือกจาก Navbar
+        $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
+        $stmt_teams = $condb->prepare($sql_teams);
+        $stmt_teams->bindParam(':team_id', $current_team_id, PDO::PARAM_STR);
+        $stmt_teams->execute();
+    }
 } else {
-    // Executive และผู้ที่มีสิทธิ์สูงกว่า สามารถเห็นทีมทั้งหมด
-    $sql_teams = "SELECT team_id, team_name FROM teams";
+    // Executive และผู้ที่มีสิทธิ์สูงกว่า: เห็นทุกทีมในระบบ (พฤติกรรมเดิม)
+    $sql_teams = "SELECT team_id, team_name FROM teams ORDER BY team_name";
     $stmt_teams = $condb->prepare($sql_teams);
     $stmt_teams->execute();
 }
@@ -143,9 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     if (empty($team_ids)) $error_messages[] = "กรุณาเลือกอย่างน้อยหนึ่งทีม";
     if (empty($role_new)) $error_messages[] = "กรุณาเลือกบทบาท";
 
-    // ตรวจสอบความถูกต้องของรูปแบบอีเมล
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error_messages[] = "รูปแบบอีเมลไม่ถูกต้อง";
+    // ตรวจสอบความถูกต้องของรูปแบบอีเมล (ใช้ helper กลาง)
+    $emailValidation = validateEmail($email);
+    if (!$emailValidation['valid']) {
+        $error_messages[] = $emailValidation['message'];
+    } else {
+        $email = $emailValidation['value'];
     }
 
     // ตรวจสอบความซับซ้อนของรหัสผ่าน
@@ -276,14 +297,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 
 // ดึงข้อมูลทีมจากฐานข้อมูลตามบทบาทของผู้ใช้
 if ($role === 'Sale Supervisor') {
-    // Sale Supervisor จะเห็นเฉพาะทีมของตนเอง
-    $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
-    $stmt_teams = $condb->prepare($sql_teams);
-    $stmt_teams->bindParam(':team_id', $team_id, PDO::PARAM_STR);
-    $stmt_teams->execute();
+    // Sale Supervisor: เคารพ Team Switcher จาก Navbar (ALL = ทีมทั้งหมดของผู้ใช้)
+    $current_team_id = $_SESSION['team_id'] ?? 'ALL';
+    if ($current_team_id === 'ALL') {
+        $sql_teams = "SELECT t.team_id, t.team_name
+                      FROM teams t
+                      JOIN user_teams ut ON ut.team_id = t.team_id
+                      WHERE ut.user_id = :current_user_id
+                      ORDER BY t.team_name";
+        $stmt_teams = $condb->prepare($sql_teams);
+        $stmt_teams->bindParam(':current_user_id', $created_by, PDO::PARAM_STR);
+        $stmt_teams->execute();
+    } else {
+        $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
+        $stmt_teams = $condb->prepare($sql_teams);
+        $stmt_teams->bindParam(':team_id', $current_team_id, PDO::PARAM_STR);
+        $stmt_teams->execute();
+    }
 } else {
-    // Executive และผู้ที่มีสิทธิ์สูงกว่า สามารถเห็นทีมทั้งหมด
-    $sql_teams = "SELECT team_id, team_name FROM teams";
+    // Executive: เห็นทุกทีมในระบบ (พฤติกรรมเดิม)
+    $sql_teams = "SELECT team_id, team_name FROM teams ORDER BY team_name";
     $stmt_teams = $condb->prepare($sql_teams);
     $stmt_teams->execute();
 }
@@ -314,10 +347,10 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
     <!-- เพิ่ม SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
-    <!-- เพิ่มลิงก์ฟอนต์ Noto Sans Thai ในส่วน <head> ของเอกสาร HTML -->
+    <!-- เพิ่มลิงก์ฟอนต์ Sarabun ในส่วน <head> ของเอกสาร HTML -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
 
     <style>
         .card {
@@ -361,7 +394,7 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </style>
     <!-- เพิ่ม CSS ต่อไปนี้ในแท็ก <style> หรือไฟล์ CSS ของคุณ -->
     <style>
-        /* ใช้ฟอนต์ Noto Sans Thai กับทั้งหน้าเว็บ */
+        /* ใช้ฟอนต์ Sarabun กับทั้งหน้าเว็บ */
         body,
         h1,
         h2,
@@ -375,7 +408,7 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
         select,
         textarea,
         button {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
         }
 
         /* ปรับแต่งสไตล์เฉพาะสำหรับหัวข้อและฟิลด์ข้อมูล */

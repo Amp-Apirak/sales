@@ -111,6 +111,7 @@ if ($role === 'Sale Supervisor') {
 $teams = $stmt_teams->fetchAll(PDO::FETCH_ASSOC);
 
 $error_messages = [];
+$rateLimitError = null;
 
 // ตรวจสอบการส่งฟอร์มแบบ POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -134,102 +135,98 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $rateCheck = checkRateLimit('edit_account_' . $clientIP, 5, 600); // 5 ครั้งใน 10 นาที
 
+    $rateLimitError = null;
     if (!$rateCheck['allowed']) {
-        echo "<script>
-            setTimeout(function() {
-                Swal.fire({
-                    title: 'ถูกบล็อก!',
-                    text: '" . $rateCheck['message'] . "',
-                    icon: 'warning',
-                });
-            }, 100);
-          </script>";
-        exit;
-    }
-
-    // รับและตรวจสอบข้อมูลจากฟอร์มด้วย validation functions
-    $validationErrors = [];
-
-    // ตรวจสอบ first_name
-    $firstNameValidation = validateText($_POST['first_name'] ?? '', 2, 50, 'ชื่อ');
-    if (!$firstNameValidation['valid']) {
-        $validationErrors[] = $firstNameValidation['message'];
+        $rateLimitError = $rateCheck;
     } else {
-        $first_name = $firstNameValidation['value'];
-    }
+        // รับและตรวจสอบข้อมูลจากฟอร์มด้วย validation functions
+        $validationErrors = [];
 
-    // ตรวจสอบ last_name
-    $lastNameValidation = validateText($_POST['last_name'] ?? '', 2, 50, 'นามสกุล');
-    if (!$lastNameValidation['valid']) {
-        $validationErrors[] = $lastNameValidation['message'];
-    } else {
-        $last_name = $lastNameValidation['value'];
-    }
-
-    // ตรวจสอบ email
-    $emailValidation = validateEmail($_POST['email'] ?? '');
-    if (!$emailValidation['valid']) {
-        $validationErrors[] = $emailValidation['message'];
-    } else {
-        $email = $emailValidation['value'];
-    }
-
-    // ตรวจสอบ phone
-    $phoneValidation = validatePhone($_POST['phone'] ?? '');
-    if (!$phoneValidation['valid']) {
-        $validationErrors[] = $phoneValidation['message'];
-    } else {
-        $phone = $phoneValidation['value'];
-    }
-
-    // ตรวจสอบ position
-    $positionValidation = validateText($_POST['position'] ?? '', 2, 100, 'ตำแหน่ง');
-    if (!$positionValidation['valid']) {
-        $validationErrors[] = $positionValidation['message'];
-    } else {
-        $position = $positionValidation['value'];
-    }
-
-    // ตรวจสอบ company
-    $companyValidation = validateText($_POST['company'] ?? '', 1, 100, 'บริษัท');
-    if (!$companyValidation['valid']) {
-        $validationErrors[] = $companyValidation['message'];
-    } else {
-        $company = $companyValidation['value'];
-    }
-
-    $team_ids = $_POST['team_ids'] ?? [];
-    $role_new = sanitizeInput($_POST['role'] ?? '');
-
-    if (empty($team_ids)) {
-        $validationErrors[] = 'กรุณาเลือกอย่างน้อยหนึ่งทีม';
-    }
-    if (empty($role_new)) {
-        $validationErrors[] = 'กรุณาเลือกบทบาท';
-    }
-
-    // ตรวจสอบรหัสผ่าน (ถ้ามีการเปลี่ยนแปลง)
-    $password = '';
-    if (!empty($_POST['password'])) {
-        $passwordValidation = validatePassword($_POST['password']);
-        if (!$passwordValidation['valid']) {
-            $validationErrors[] = $passwordValidation['message'];
+        // ตรวจสอบ first_name
+        $firstNameValidation = validateText($_POST['first_name'] ?? '', 2, 50, 'ชื่อ');
+        if (!$firstNameValidation['valid']) {
+            $validationErrors[] = $firstNameValidation['message'];
         } else {
-            $password = $passwordValidation['value'];
+            $first_name = $firstNameValidation['value'];
         }
-    }
 
-    // รวม validation errors เข้ากับ error_messages
-    $error_messages = array_merge($error_messages, $validationErrors);
+        // ตรวจสอบ last_name
+        $lastNameValidation = validateText($_POST['last_name'] ?? '', 2, 50, 'นามสกุล');
+        if (!$lastNameValidation['valid']) {
+            $validationErrors[] = $lastNameValidation['message'];
+        } else {
+            $last_name = $lastNameValidation['value'];
+        }
 
-    // ถ้าไม่มีข้อผิดพลาด ดำเนินการอัปเดตข้อมูลผู้ใช้
-    if (empty($error_messages)) {
-        try {
-            $sql = "UPDATE users SET 
-                    first_name = :first_name, 
-                    last_name = :last_name, 
-                    email = :email, 
-                    phone = :phone, 
+        // ตรวจสอบ email
+        $emailValidation = validateEmail($_POST['email'] ?? '');
+        if (!$emailValidation['valid']) {
+            $validationErrors[] = $emailValidation['message'];
+        } else {
+            $email = $emailValidation['value'];
+        }
+
+        // ตรวจสอบ phone
+        $phoneValidation = validatePhone($_POST['phone'] ?? '');
+        if (!$phoneValidation['valid']) {
+            $validationErrors[] = $phoneValidation['message'];
+        } else {
+            $phone = $phoneValidation['value'];
+        }
+
+        // ตรวจสอบ position
+        $positionInput = $_POST['position'] ?? '';
+        if (trim($positionInput) !== '') {
+            $positionValidation = validateText($positionInput, 1, 100, 'ตำแหน่ง');
+            if (!$positionValidation['valid']) {
+                $validationErrors[] = $positionValidation['message'];
+            } else {
+                $position = $positionValidation['value'];
+            }
+        } else {
+            $position = '';
+        }
+
+        // ตรวจสอบ company (1-500 ตัวอักษร)
+        $companyValidation = validateText($_POST['company'] ?? '', 1, 500, 'บริษัท');
+        if (!$companyValidation['valid']) {
+            $validationErrors[] = $companyValidation['message'];
+        } else {
+            $company = $companyValidation['value'];
+        }
+
+        $team_ids = $_POST['team_ids'] ?? [];
+        $role_new = sanitizeInput($_POST['role'] ?? '');
+
+        if (empty($team_ids)) {
+            $validationErrors[] = 'กรุณาเลือกอย่างน้อยหนึ่งทีม';
+        }
+        if (empty($role_new)) {
+            $validationErrors[] = 'กรุณาเลือกบทบาท';
+        }
+
+        // ตรวจสอบรหัสผ่าน (ถ้ามีการเปลี่ยนแปลง)
+        $password = '';
+        if (!empty($_POST['password'])) {
+            $passwordValidation = validatePassword($_POST['password']);
+            if (!$passwordValidation['valid']) {
+                $validationErrors[] = $passwordValidation['message'];
+            } else {
+                $password = $passwordValidation['value'];
+            }
+        }
+
+        // รวม validation errors เข้ากับ error_messages
+        $error_messages = array_merge($error_messages, $validationErrors);
+
+        // ถ้าไม่มีข้อผิดพลาด ดำเนินการอัปเดตข้อมูลผู้ใช้
+        if (empty($error_messages)) {
+            try {
+                $sql = "UPDATE users SET 
+                        first_name = :first_name, 
+                        last_name = :last_name, 
+                        email = :email, 
+                        phone = :phone, 
                     position = :position, 
                     role = :role, 
                     company = :company";
@@ -275,34 +272,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // อัปเดตรูปโปรไฟล์ (ถ้ามี) ด้วย validateUploadedFile
-            if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == 0) {
+            if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
                 $fileValidation = validateUploadedFile($_FILES['profile_image'], ['jpg', 'jpeg', 'png', 'gif'], 5242880); // 5MB
 
                 if (!$fileValidation['valid']) {
                     throw new Exception($fileValidation['message']);
-                } else {
-                    $new_filename = sanitizeFilename($fileValidation['safe_name']);
-                    $upload_path = '../../uploads/profile_images/' . $new_filename;
+                }
 
-                    if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $upload_path)) {
-                        $stmt = $condb->prepare("UPDATE users SET profile_image = :profile_image WHERE user_id = :user_id");
-                        $stmt->execute([':profile_image' => $new_filename, ':user_id' => $user_id]);
+                $uploadedFile = $fileValidation['file'];
 
-                        if (!empty($user['profile_image'])) {
-                            $old_image_path = '../../uploads/profile_images/' . $user['profile_image'];
-                            if (file_exists($old_image_path)) {
-                                unlink($old_image_path);
-                            }
-                        }
+                $uploadDir = __DIR__ . '/../../uploads/profile_images';
+                if (!is_dir($uploadDir)) {
+                    if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+                        throw new Exception('ไม่สามารถสร้างโฟลเดอร์อัปโหลดได้');
+                    }
+                }
+
+                $originalName = $uploadedFile['name'] ?? '';
+                $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+                $baseName = pathinfo($originalName, PATHINFO_FILENAME);
+                $sanitizedBase = sanitizeFilename($baseName ?: 'profile_image');
+                if ($sanitizedBase === '') {
+                    $sanitizedBase = 'profile_image';
+                }
+
+                $new_filename = $sanitizedBase . '_' . $user_id . '_' . time();
+                if (!empty($extension)) {
+                    $new_filename .= '.' . $extension;
+                }
+
+                $upload_path = $uploadDir . '/' . $new_filename;
+
+                if (!move_uploaded_file($uploadedFile['tmp_name'], $upload_path)) {
+                    throw new Exception('ไม่สามารถอัปโหลดไฟล์ได้');
+                }
+
+                $stmt = $condb->prepare("UPDATE users SET profile_image = :profile_image WHERE user_id = :user_id");
+                $stmt->execute([':profile_image' => $new_filename, ':user_id' => $user_id]);
+
+                if (!empty($user['profile_image'])) {
+                    $old_image_path = $uploadDir . '/' . $user['profile_image'];
+                    if (is_file($old_image_path)) {
+                        unlink($old_image_path);
                     }
                 }
             }
 
             // CSRF token จะถูกจัดการโดย generateCSRFToken() อัตโนมัติ
 
-            $success_message = "อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว";
-        } catch (Exception $e) {
-            $error_messages[] = "เกิดข้อผิดพลาดในการอัปเดตข้อมูล: " . $e->getMessage();
+            $_SESSION['success'] = 'อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว';
+            header('Location: account.php');
+            exit;
+            } catch (Exception $e) {
+                $error_messages[] = "เกิดข้อผิดพลาดในการอัปเดตข้อมูล: " . $e->getMessage();
+            }
         }
     }
 }
@@ -319,7 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
     <style>
         body,
         h1,
@@ -334,7 +357,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         select,
         textarea,
         button {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
         }
     </style>
 </head>
@@ -375,12 +398,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <li><?php echo $error; ?></li>
                                                 <?php endforeach; ?>
                                             </ul>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <?php if (isset($success_message)): ?>
-                                        <div class="alert alert-success">
-                                            <?php echo $success_message; ?>
                                         </div>
                                     <?php endif; ?>
 
@@ -521,16 +538,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $(this).next('.custom-file-label').addClass("selected").html(fileName);
             });
 
-            <?php if (isset($success_message)): ?>
+            <?php if (!empty($rateLimitError)): ?>
+            (function() {
+                var remaining = <?php echo max(1, (int)ceil($rateLimitError['retry_after'] ?? 0)); ?>;
+                var message = '<?php echo addslashes($rateLimitError['message']); ?>';
+                var detail = '<?php echo addslashes($rateLimitError['details'] ?? ''); ?>';
+                var countdownInterval = null;
+
+                function formatCountdown(seconds) {
+                    var mins = Math.floor(seconds / 60);
+                    var secs = seconds % 60;
+                    var parts = [];
+                    if (mins > 0) {
+                        parts.push(mins + ' นาที');
+                    }
+                    parts.push(secs + ' วินาที');
+                    return parts.join(' ');
+                }
+
+                var htmlText = message + '<br>กรุณารอ <span id="rate-limit-countdown"></span> ก่อนลองใหม่';
+                if (detail) {
+                    htmlText += '<br><small class="text-muted">เหตุผล: ' + detail + '</small>';
+                }
+
                 Swal.fire({
-                    icon: 'success',
-                    title: 'สำเร็จ',
-                    text: '<?php echo $success_message; ?>',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = 'account.php';
+                    icon: 'warning',
+                    title: 'ถูกบล็อก!',
+                    html: htmlText,
+                    allowOutsideClick: true,
+                    allowEscapeKey: true,
+                    showConfirmButton: true,
+                    confirmButtonText: 'ปิด',
+                    didOpen: function() {
+                        var countdownEl = Swal.getHtmlContainer().querySelector('#rate-limit-countdown');
+                        countdownEl.textContent = formatCountdown(remaining);
+                        countdownInterval = setInterval(function() {
+                            remaining--;
+                            if (remaining <= 0) {
+                                clearInterval(countdownInterval);
+                                countdownEl.textContent = '0 วินาที';
+                                Swal.update({
+                                    confirmButtonText: 'ลองใหม่',
+                                });
+                            } else {
+                                countdownEl.textContent = formatCountdown(remaining);
+                            }
+                        }, 1000);
+                    },
+                    willClose: function() {
+                        if (countdownInterval) {
+                            clearInterval(countdownInterval);
+                        }
+                    }
+                }).then(function(result) {
+                    if (remaining <= 0 && result.isConfirmed) {
+                        window.location.reload();
                     }
                 });
+            })();
             <?php endif; ?>
 
             <?php if (!empty($error_messages)): ?>
@@ -553,11 +618,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     isValid = false;
                     errorMessage += 'กรุณากรอกนามสกุล<br>';
                 }
-                if ($('#email').val().trim() === '') {
+                var emailVal = $('#email').val().trim();
+                if (emailVal === '') {
                     isValid = false;
                     errorMessage += 'กรุณากรอกอีเมล<br>';
+                } else {
+                    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(emailVal)) {
+                        isValid = false;
+                        errorMessage += 'รูปแบบอีเมลไม่ถูกต้อง<br>';
+                    }
                 }
-                if ($('#team_id').val() === '') {
+                var teamsVal = $('#team_ids').val();
+                if (!teamsVal || teamsVal.length === 0) {
                     isValid = false;
                     errorMessage += 'กรุณาเลือกทีม<br>';
                 }

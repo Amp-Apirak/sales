@@ -22,18 +22,23 @@ try {
     try {
         $sql = "SELECT p.*, 
             -- Creator's info
-            creator.first_name AS creator_first_name, creator.last_name AS creator_last_name, creator.email as seller_email, creator.phone as seller_phone,
-            
+            creator.first_name AS creator_first_name, creator.last_name AS creator_last_name,
+
+            -- Seller info
+            seller.first_name AS seller_first_name, seller.last_name AS seller_last_name, seller.email as seller_email, seller.phone as seller_phone,
+
             -- Product info
             pr.product_name, pr.product_description,
-            
+
             -- Customer info
             c.customer_name, c.company, c.address, c.phone as customer_phone, c.email as customer_email,
-            
-            -- Team info (from creator's primary team)
-            t.team_name,
-            t.team_id as creator_team_id, -- Get the team_id for permission checks
-            
+
+            -- Team info (creator and seller)
+            creator_team.team_name AS creator_team_name,
+            creator_team.team_id as creator_team_id,
+            seller_team.team_name AS seller_team_name,
+            seller_team.team_id as seller_team_id,
+
             -- Team leader info
             tl.first_name as team_leader_first_name, tl.last_name as team_leader_last_name,
             
@@ -56,14 +61,17 @@ try {
 
         FROM projects p 
         LEFT JOIN users creator ON p.created_by = creator.user_id
+        LEFT JOIN users seller ON p.seller = seller.user_id
         LEFT JOIN products pr ON p.product_id = pr.product_id 
         LEFT JOIN customers c ON p.customer_id = c.customer_id 
         LEFT JOIN users updater ON p.updated_by = updater.user_id
 
         -- Get creator's primary team
-        LEFT JOIN user_teams ut ON creator.user_id = ut.user_id AND ut.is_primary = 1
-        LEFT JOIN teams t ON ut.team_id = t.team_id
-        LEFT JOIN users tl ON t.team_leader = tl.user_id
+        LEFT JOIN user_teams creator_ut ON creator.user_id = creator_ut.user_id AND creator_ut.is_primary = 1
+        LEFT JOIN teams creator_team ON creator_ut.team_id = creator_team.team_id
+        LEFT JOIN user_teams seller_ut ON seller.user_id = seller_ut.user_id AND seller_ut.is_primary = 1
+        LEFT JOIN teams seller_team ON seller_ut.team_id = seller_team.team_id
+        LEFT JOIN users tl ON creator_team.team_leader = tl.user_id
 
         -- Get current user's membership status in this project
         LEFT JOIN project_members pm ON p.project_id = pm.project_id AND pm.user_id = :user_id
@@ -91,8 +99,16 @@ try {
                 $hasAccess = true;
                 break;
             case 'Sale Supervisor':
-                // เข้าถึงได้ถ้าเป็นโครงการในทีมหรือเป็นสมาชิก
-                $hasAccess = ($user_team_id == $project['creator_team_id'] || $project['has_access']);
+                $userTeamIds = $_SESSION['team_ids'] ?? [];
+                $projectSellerTeamId = $project['seller_team_id'] ?? ($project['creator_team_id'] ?? null);
+
+                if ($user_team_id === 'ALL') {
+                    $belongsToTeam = $projectSellerTeamId && in_array($projectSellerTeamId, $userTeamIds, true);
+                } else {
+                    $belongsToTeam = $projectSellerTeamId && $projectSellerTeamId == $user_team_id;
+                }
+
+                $hasAccess = ($belongsToTeam || $project['has_access']);
                 break;
             case 'Seller':
             case 'Engineer':
@@ -155,6 +171,7 @@ function getStatusClass($status)
 $hasAccessToFinancialInfo = false; // ตั้งค่าเริ่มต้นเป็น false
 $hasFullAccess = false; // สำหรับสิทธิ์เต็ม
 $hasHalfAccess = false; // สำหรับสิทธิ์ครึ่งเดียว
+$sharedAccessLevel = $project['is_active'] ?? null;
 
 // เงื่อนไข 1: Executive มีสิทธิ์เต็ม
 if ($role === 'Executive') {
@@ -162,18 +179,30 @@ if ($role === 'Executive') {
     $hasFullAccess = true;
 }
 // เงื่อนไข 2: Sale Supervisor และอยู่ในทีมเดียวกับผู้สร้าง
-elseif ($role === 'Sale Supervisor' && $user_team_id == $project['creator_team_id']) {
-    $hasAccessToFinancialInfo = true;
-    $hasFullAccess = true;
+elseif ($role === 'Sale Supervisor') {
+    $userTeamIds = $_SESSION['team_ids'] ?? [];
+    $projectSellerTeamId = $project['seller_team_id'] ?? ($project['creator_team_id'] ?? null);
+
+    if ($user_team_id === 'ALL') {
+        $belongsToTeam = $projectSellerTeamId && in_array($projectSellerTeamId, $userTeamIds, true);
+    } else {
+        $belongsToTeam = $projectSellerTeamId && $projectSellerTeamId == $user_team_id;
+    }
+
+    if ($belongsToTeam) {
+        $hasAccessToFinancialInfo = true;
+        $hasFullAccess = true;
+    }
 }
 // เงื่อนไข 3: ผู้สร้างโครงการ
 elseif ($project['created_by'] == $user_id) {
     $hasAccessToFinancialInfo = true;
     $hasFullAccess = true;
 }
-// เงื่อนไข 4: สมาชิกที่ถูกเชิญ
-elseif (isset($project['is_active'])) {
-    switch ($project['is_active']) {
+
+// เงื่อนไข 4: สมาชิกที่ถูกเชิญ (ยังไม่ดีดิจัดการด้านบน)
+if (!$hasFullAccess && !$hasHalfAccess && $sharedAccessLevel !== null) {
+    switch ((int)$sharedAccessLevel) {
         case 0: // Full Access
             $hasAccessToFinancialInfo = true;
             $hasFullAccess = true;
@@ -617,7 +646,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                     <div class="info-card-body">
                                                         <div class="info-item">
                                                             <span class="info-label">ชื่อผู้ขาย:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['first_name'] . ' ' . $project['last_name']); ?></span>
+        <span class="info-value"><?php echo htmlspecialchars(($project['seller_first_name'] ?? '') . ' ' . ($project['seller_last_name'] ?? '')); ?></span>
                                                         </div>
                                                         <div class="info-item">
                                                             <span class="info-label">อีเมล:</span>
@@ -627,10 +656,10 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                             <span class="info-label">โทรศัพท์:</span>
                                                             <span class="info-value"><?php echo htmlspecialchars($project['seller_phone']); ?></span>
                                                         </div>
-                                                        <div class="info-item">
-                                                            <span class="info-label">ทีม:</span>
-                                                            <span class="info-value"><?php echo htmlspecialchars($project['team_name']); ?></span>
-                                                        </div>
+                    <div class="info-item">
+                        <span class="info-label">ทีม:</span>
+                        <span class="info-value"><?php echo htmlspecialchars($project['seller_team_name'] ?? 'ไม่ระบุ'); ?></span>
+                    </div>
                                                         <div class="info-item">
                                                             <span class="info-label">หัวหน้าทีมฝ่ายขาย:</span>
                                                             <span class="info-value">

@@ -41,7 +41,7 @@ $query_position = $condb->query($sql_position);
 // สร้าง SQL Query โดยพิจารณาจากการค้นหา
 $sql_users = "SELECT u.user_id, u.username, u.first_name, u.last_name, u.company, u.role, 
               GROUP_CONCAT(t.team_name SEPARATOR ', ') as team_name, 
-              u.position, u.phone, u.email, u.created_at,
+              u.position, u.phone, u.email, u.created_at, u.profile_image,
               creator.first_name as creator_first_name, 
               creator.last_name as creator_last_name,
               CONCAT(creator.first_name, ' ', creator.last_name) as creator_name
@@ -51,16 +51,40 @@ $sql_users = "SELECT u.user_id, u.username, u.first_name, u.last_name, u.company
               LEFT JOIN users creator ON u.created_by = creator.user_id
               WHERE 1=1";
 
-// กรณีที่ role ไม่ใช่ Executive ให้แสดงเฉพาะข้อมูลทีมของผู้ใช้เอง
-if ($role !== 'Executive') {
+// เก็บค่าพารามิเตอร์ทั้งหมดไว้ในอาร์เรย์ (ใช้ named placeholders เท่านั้น เพื่อหลีกเลี่ยงการผสมชนิดพารามิเตอร์)
+$params = [];
+
+// ใช้สถานะทีมจาก Navbar: $_SESSION['team_id']
+$current_team_id = $_SESSION['team_id'] ?? 'ALL';
+
+if ($role === 'Executive') {
+    // Executive เห็นทั้งหมดโดยค่าเริ่มต้น; ถ้าเลือกทีมจาก Team Switcher (มีหลายทีม) จึงค่อยกรอง
+    $userTeams = $_SESSION['user_teams'] ?? [];
+    if (count($userTeams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
+        $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id = :current_team_id)";
+        $params[':current_team_id'] = $current_team_id;
+    }
+} else { // Sale Supervisor
     $team_ids = $_SESSION['team_ids'] ?? [];
-    if (!empty($team_ids)) {
-        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
-        $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id IN ($placeholders))";
-        $params = $team_ids;
+    if ($current_team_id === 'ALL') {
+        // รวมทุกทีมที่ผู้ใช้สังกัด
+        if (!empty($team_ids)) {
+            $teamPlaceholders = [];
+            foreach ($team_ids as $idx => $tid) {
+                $ph = ":team_id_{$idx}";
+                $teamPlaceholders[] = $ph;
+                $params[$ph] = $tid;
+            }
+            $inClause = implode(',', $teamPlaceholders);
+            $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id IN ($inClause))";
+        } else {
+            // ไม่มีทีม => ไม่แสดงข้อมูล
+            $sql_users .= " AND 1=0";
+        }
     } else {
-        $sql_users .= " AND 1=0"; // ไม่แสดงข้อมูลถ้าไม่มีทีม
-        $params = [];
+        // จำกัดเฉพาะทีมที่เลือกจาก Navbar
+        $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id = :current_team_id)";
+        $params[':current_team_id'] = $current_team_id;
     }
 }
 
@@ -69,53 +93,30 @@ if ($role !== 'Executive') {
 // เพิ่มเงื่อนไขการค้นหาตามฟิลด์ที่ระบุ
 if (!empty($search)) {
     $sql_users .= " AND (u.username LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search OR u.phone LIKE :search OR u.email LIKE :search)";
+    $params[':search'] = "%" . $search . "%";
 }
 if (!empty($search_company)) {
     $sql_users .= " AND u.company = :search_company";
+    $params[':search_company'] = $search_company;
 }
 if (!empty($search_team)) {
     $sql_users .= " AND t.team_name = :search_team";
+    $params[':search_team'] = $search_team;
 }
 if (!empty($search_role)) {
     $sql_users .= " AND u.role = :search_role";
+    $params[':search_role'] = $search_role;
 }
 if (!empty($search_position)) {
     $sql_users .= " AND u.position = :search_position";
+    $params[':search_position'] = $search_position;
 }
 
 $sql_users .= " GROUP BY u.user_id ORDER BY u.created_at DESC";
 
-// เตรียม statement
+// เตรียมและรันคำสั่ง (ใช้ named parameters ทั้งหมด)
 $stmt = $condb->prepare($sql_users);
-
-// ทำการ bind ค่าต่างๆ
-$param_index = 1;
-if ($role !== 'Executive') {
-    if (!empty($team_ids)) {
-        foreach ($team_ids as $team_id_to_bind) {
-            $stmt->bindValue($param_index++, $team_id_to_bind, PDO::PARAM_STR);
-        }
-    }
-}
-if (!empty($search)) {
-    $search_param = "%$search%";
-    $stmt->bindParam(':search', $search_param);
-}
-if (!empty($search_company)) {
-    $stmt->bindParam(':search_company', $search_company);
-}
-if (!empty($search_team)) {
-    $stmt->bindParam(':search_team', $search_team);
-}
-if (!empty($search_role)) {
-    $stmt->bindParam(':search_role', $search_role);
-}
-if (!empty($search_position)) {
-    $stmt->bindParam(':search_position', $search_position);
-}
-
-// Execute query
-$stmt->execute();
+$stmt->execute($params);
 $query_users = $stmt->fetchAll();
 ?>
 
@@ -129,15 +130,15 @@ $query_users = $stmt->fetchAll();
     <title>SalePipeline | Account Management</title>
     <?php include  '../../include/header.php'; ?>
 
-    <!-- /* ใช้ฟอนต์ Noto Sans Thai กับ label */ -->
+    <!-- /* ใช้ฟอนต์ Sarabun กับ label */ -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
     <style>
-        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
+        /* ใช้ฟอนต์ Sarabun กับ label */
         th,
         h1 {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 700;
             /* ปรับระดับน้ำหนักของฟอนต์ */
             font-size: 14px;
@@ -145,10 +146,26 @@ $query_users = $stmt->fetchAll();
         }
 
         .custom-th {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 600;
             font-size: 18px;
             color: #FF5733;
+        }
+
+        tr.account-row {
+            cursor: pointer;
+        }
+
+        tr.account-row td:last-child {
+            cursor: default;
+        }
+
+        .account-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #dee2e6;
         }
     </style>
 </head>
@@ -333,9 +350,27 @@ $query_users = $stmt->fetchAll();
                                         </thead>
 
                                         <tbody>
-                                            <?php foreach ($query_users as $user) { ?>
-                                                <tr id="myTable">
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($user['username']); ?></td>
+                                            <?php foreach ($query_users as $user) {
+                                                $viewAccountUrl = 'view_account.php?id=' . urlencode(encryptUserId($user['user_id']));
+                                                $viewAccountUrlEsc = htmlspecialchars($viewAccountUrl, ENT_QUOTES, 'UTF-8');
+                                            ?>
+                                                <tr class="account-row" data-view-url="<?php echo $viewAccountUrlEsc; ?>">
+                                                    <td class="text-nowrap">
+                                                        <?php
+                                                        // ตรวจสอบรูปโปรไฟล์
+                                                        $profileImage = BASE_URL . 'assets/img/pit.png'; // รูปภาพ default
+                                                        
+                                                        if (!empty($user['profile_image'])) {
+                                                            $profileImagePath = __DIR__ . '/../../uploads/profile_images/' . $user['profile_image'];
+                                                            if (file_exists($profileImagePath) && is_file($profileImagePath)) {
+                                                                $profileImage = BASE_URL . 'uploads/profile_images/' . htmlspecialchars($user['profile_image']);
+                                                            }
+                                                        }
+                                                        ?>
+                                                        <img src="<?php echo $profileImage; ?>" alt="Profile" class="account-avatar mr-2" 
+                                                             onerror="this.src='<?php echo BASE_URL; ?>assets/img/pit.png';">
+                                                        <?php echo htmlspecialchars($user['username']); ?>
+                                                    </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['company']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['team_name']); ?></td>
@@ -346,6 +381,9 @@ $query_users = $stmt->fetchAll();
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['creator_name'] ?? 'ไม่ระบุ'); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($user['created_at']); ?></td>
                                                     <td class="text-nowrap">
+                                                        <a href="<?php echo $viewAccountUrlEsc; ?>" class="btn btn-primary btn-sm" title="ดูรายละเอียด">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
                                                         <?php
                                                         // ตรวจสอบเงื่อนไขการแสดงปุ่มแก้ไข
                                                         $showEditButton = true;
@@ -413,7 +451,7 @@ $query_users = $stmt->fetchAll();
     <!-- ./wrapper -->
     <script>
         $(function() {
-            $("#example1").DataTable({
+            var table = $("#example1").DataTable({
                 "responsive": false,
                 "lengthChange": true,
                 "autoWidth": false,
@@ -454,7 +492,23 @@ $query_users = $stmt->fetchAll();
                     '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>', // ปรับ layout
                 "stateSave": true, // จดจำการตั้งค่าของผู้ใช้
                 "stateDuration": 60 * 60 * 24 // จดจำเป็นเวลา 24 ชั่วโมง
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+            });
+
+            table.buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+
+            $('#example1 tbody').on('click', 'tr', function(e) {
+                if ($(e.target).closest('a, button').length) {
+                    return;
+                }
+                var $cell = $(e.target).closest('td');
+                if ($cell.is(':last-child')) {
+                    return;
+                }
+                var url = $(this).data('view-url');
+                if (url) {
+                    window.location.href = url;
+                }
+            });
         });
     </script>
 

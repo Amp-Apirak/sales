@@ -1,9 +1,9 @@
 <!-- สไตล์ CSS สำหรับหน้าเว็บ -->
 <style>
-    /* ใช้ฟอนต์ Noto Sans Thai กับทุกอีลีเมนต์ */
+    /* ใช้ฟอนต์ Sarabun กับทุกอีลีเมนต์ */
     body,
     html {
-        font-family: 'Noto Sans Thai', sans-serif;
+        font-family: 'Sarabun', sans-serif;
     }
 
     /* ปรับแต่งสไตล์เฉพาะสำหรับหัวข้อและตาราง */

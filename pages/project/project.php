@@ -5,6 +5,8 @@ include '../../include/Add_session.php';
 // ดึงข้อมูลผู้ใช้จาก session
 $role = $_SESSION['role'] ?? '';
 $team_ids = $_SESSION['team_ids'] ?? []; // Array of team IDs
+$user_teams = $_SESSION['user_teams'] ?? [];
+$current_team_id = $_SESSION['team_id'] ?? 'ALL';
 $current_user_id = $_SESSION['user_id'] ?? null;
 if (!$current_user_id) {
     die("Error: User ID not found in session");
@@ -47,14 +49,24 @@ $search_team = trim($_POST['team'] ?? '');
 $dropdown_where = '';
 $dropdown_params = [];
 
-if ($role === 'Sale Supervisor') {
-    if (!empty($team_ids)) {
-        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
-        $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
-        $dropdown_params = $team_ids;
+if ($role === 'Executive') {
+    if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
+        $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = ?)";
+        $dropdown_params[] = $current_team_id;
+    }
+} elseif ($role === 'Sale Supervisor') {
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
+            $dropdown_params = $team_ids;
+        } else {
+            $dropdown_where = "WHERE p.seller = ?";
+            $dropdown_params[] = $current_user_id;
+        }
     } else {
-        $dropdown_where = "WHERE p.seller = ?";
-        $dropdown_params[] = $current_user_id;
+        $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = ?)";
+        $dropdown_params[] = $current_team_id;
     }
 } elseif ($role === 'Seller' || $role === 'Engineer') {
     $dropdown_where = "WHERE p.seller = ?";
@@ -69,14 +81,27 @@ $customers = getDropdownData($condb, "SELECT DISTINCT c.customer_id, c.customer_
 // Dropdown for Creators (Sellers)
 $creators_sql = "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_name FROM users u ";
 $creator_params = [];
-if ($role === 'Sale Supervisor') {
-    if (!empty($team_ids)) {
-        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
-        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id IN ($placeholders) AND u.role IN ('Seller', 'Sale Supervisor')";
-        $creator_params = $team_ids;
+if ($role === 'Executive') {
+    if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
+        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id = ? AND u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
+        $creator_params[] = $current_team_id;
+    } else {
+        $creators_sql .= "WHERE u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
     }
-} elseif ($role === 'Executive') {
-    $creators_sql .= "WHERE u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
+} elseif ($role === 'Sale Supervisor') {
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id IN ($placeholders) AND u.role IN ('Seller', 'Sale Supervisor')";
+            $creator_params = $team_ids;
+        } else {
+            $creators_sql .= "WHERE u.user_id = ?";
+            $creator_params[] = $current_user_id;
+        }
+    } else {
+        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id = ? AND u.role IN ('Seller', 'Sale Supervisor')";
+        $creator_params[] = $current_team_id;
+    }
 } else { // Seller, Engineer
     $creators_sql .= "WHERE u.user_id = ?";
     $creator_params[] = $current_user_id;
@@ -98,24 +123,52 @@ if ($role === 'Executive') {
 $main_params = [];
 $main_where_conditions = [];
 
-// Role-based filtering
-if ($role === 'Sale Supervisor') {
-    if (!empty($team_ids)) {
-        $team_placeholders = [];
-        foreach ($team_ids as $key => $id) {
-            $p = ':main_team_' . $key;
-            $team_placeholders[] = $p;
-            $main_params[$p] = $id;
+// Role-based filtering (respect Navbar Team Switcher)
+// เงื่อนไขการเข้าถึงโครงการหลักตามบทบาท (รวมโครงการที่ถูกแชร์)
+$shared_condition = "EXISTS (SELECT 1 FROM project_members pm_scope WHERE pm_scope.project_id = p.project_id AND pm_scope.user_id = :shared_user_id)";
+if ($role !== 'Executive') {
+    $main_params[':shared_user_id'] = $current_user_id;
+}
+
+if ($role === 'Executive') {
+    if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
+        $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :exec_team_id)";
+        $main_params[':exec_team_id'] = $current_team_id;
+    }
+} elseif ($role === 'Sale Supervisor') {
+    $visibilityClauses = [];
+
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $team_placeholders = [];
+            foreach ($team_ids as $key => $id) {
+                $p = ':main_team_' . $key;
+                $team_placeholders[] = $p;
+                $main_params[$p] = $id;
+            }
+            $in_clause = implode(',', $team_placeholders);
+            $visibilityClauses[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
         }
-        $in_clause = implode(',', $team_placeholders);
-        $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
     } else {
-        $main_where_conditions[] = "p.seller = :current_user_id";
+        $visibilityClauses[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_id)";
+        $main_params[':current_team_id'] = $current_team_id;
+    }
+
+    // หากไม่มีทีมที่เข้าถึงได้ ให้ fallback เป็นโครงการที่ตัวเองเป็นผู้ขาย
+    if (empty($visibilityClauses)) {
+        $visibilityClauses[] = "p.seller = :current_user_id";
         $main_params[':current_user_id'] = $current_user_id;
     }
+
+    // เพิ่มเงื่อนไขโครงการที่ถูกแชร์ถึงผู้ใช้งาน
+    $visibilityClauses[] = $shared_condition;
+
+    $main_where_conditions[] = '(' . implode(' OR ', $visibilityClauses) . ')';
 } elseif ($role === 'Seller' || $role === 'Engineer') {
-    $main_where_conditions[] = "p.seller = :current_user_id";
+    $ownerClause = "p.seller = :current_user_id";
     $main_params[':current_user_id'] = $current_user_id;
+
+    $main_where_conditions[] = '(' . $ownerClause . ' OR ' . $shared_condition . ')';
 }
 
 // Search-based filtering
@@ -124,7 +177,7 @@ if (!empty($search_service)) {
     $main_params[':search_service'] = "%$search_service%";
 }
 if (!empty($search_team) && $role === 'Executive') {
-    $main_where_conditions[] = "seller_team.team_id = :search_team";
+    $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :search_team)";
     $main_params[':search_team'] = $search_team;
 }
 if (!empty($search_product)) {
@@ -163,6 +216,7 @@ $sql_projects = "
         creator.last_name as creator_last_name,
         c.customer_name, c.company, c.address, c.phone, c.email, 
         seller_team.team_name,
+        seller_team.team_id AS seller_team_id,
         pr.product_name,
         seller.first_name AS seller_first_name, 
         seller.last_name AS seller_last_name,
@@ -188,7 +242,16 @@ $sql_projects = "
                 AND pm.user_id = :current_user_id_main
             ) THEN 'shared'
             ELSE 'none'
-        END as user_permission
+        END as user_permission,
+
+        CASE
+            WHEN EXISTS (
+                SELECT 1 FROM project_members pm_flag
+                WHERE pm_flag.project_id = p.project_id
+                AND pm_flag.user_id = :current_user_id_main
+            ) THEN 1
+            ELSE 0
+        END AS is_shared_member
 
     FROM projects p
     LEFT JOIN customers c ON p.customer_id = c.customer_id
@@ -244,7 +307,7 @@ function displayData($data, $format = null)
 
 
 // ฟังก์ชันคำนวณข้อมูลสำหรับการ์ด
-function calculateProjectMetrics($projects, $search_params = [], $user_team_name = '', $user_role = '')
+function calculateProjectMetrics($projects, $search_params = [], $user_team_name = '', $user_role = '', $current_team_id = 'ALL', $team_ids = [])
 {
     // กำหนดค่าเริ่มต้นสำหรับการคำนวณ
     $metrics = [
@@ -261,12 +324,10 @@ function calculateProjectMetrics($projects, $search_params = [], $user_team_name
     foreach ($projects as $project) {
         $include_project = true;
 
-        // ตรวจสอบว่าเป็นโครงการที่แชร์มาจากทีมอื่นหรือไม่
-        $isSharedFromOtherTeam = false;
-        if ($user_role != 'Executive') {
-            if (!empty($project['team_name']) && $project['team_name'] != $user_team_name) {
-                $isSharedFromOtherTeam = true;
-            }
+        // ข้ามโครงการที่ถูกแชร์เข้ามา (ไม่ให้นับรวมบนการ์ดทุกประเภท)
+        $isSharedEntry = (($project['user_permission'] ?? '') === 'shared');
+        if ($isSharedEntry) {
+            continue;
         }
 
         // ตรวจสอบเงื่อนไขการค้นหาต่างๆ (เหมือนเดิม)
@@ -275,7 +336,6 @@ function calculateProjectMetrics($projects, $search_params = [], $user_team_name
         }
         // ... เงื่อนไขอื่นๆ เหมือนเดิม
 
-        // ถ้าผ่านเงื่อนไขการค้นหาทั้งหมด ให้นับและคำนวณ
         if ($include_project) {
             $metrics['total_projects']++;
 
@@ -283,12 +343,9 @@ function calculateProjectMetrics($projects, $search_params = [], $user_team_name
                 $unique_creators[$project['seller']] = true;
             }
 
-            // เฉพาะโครงการที่ไม่ใช่แชร์จากทีมอื่น ถึงจะนำมาคำนวณทางการเงิน
-            if (!$isSharedFromOtherTeam) {
-                $metrics['total_cost'] += floatval($project['cost_no_vat']);
-                $metrics['total_sale'] += floatval($project['sale_no_vat']);
-                $metrics['total_gross_profit'] += floatval($project['gross_profit']);
-            }
+            $metrics['total_cost'] += floatval($project['cost_no_vat']);
+            $metrics['total_sale'] += floatval($project['sale_no_vat']);
+            $metrics['total_gross_profit'] += floatval($project['gross_profit']);
         }
     }
 
@@ -312,7 +369,7 @@ $search_params = [
 ];
 
 $user_team_name = $_SESSION['team_name'] ?? '';
-$metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $role);
+$metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $role, $current_team_id, $team_ids);
 ?>
 
 <!DOCTYPE html>
@@ -325,10 +382,10 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
     <title>SalePipeline | Project Management</title>
     <?php include  '../../include/header.php'; ?>
 
-    <!-- /* ใช้ฟอนต์ Noto Sans Thai กับ label */ -->
+    <!-- /* ใช้ฟอนต์ Sarabun กับ label */ -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
     <style>
         /* สไตล์สำหรับ tooltip ที่หัวตาราง */
         .table-header-tooltip {
@@ -355,10 +412,10 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
     </style>
 
     <style>
-        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
+        /* ใช้ฟอนต์ Sarabun กับ label */
         th,
         h1 {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 700;
             /* ปรับระดับน้ำหนักของฟอนต์ */
             font-size: 14px;
@@ -366,7 +423,7 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
         }
 
         .custom-th {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 600;
             font-size: 18px;
             color: #FF5733;
@@ -536,11 +593,11 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-info">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['total_projects']); ?></h3>
-                                        <p>Project <?php echo $search_status ? "($search_status)" : "All"; ?></p>
+                                        <h3 style="font-size: 2.1rem; max-height: 60px; overflow: hidden; line-height: 1.2;"><?php echo number_format($metrics['total_projects']); ?></h3>
+                                        <p style="margin-bottom: 5px; font-size: 0.9rem;">Project <?php echo $search_status ? "($search_status)" : "All"; ?></p>
                                     </div>
                                     <div class="icon">
-                                        <i class="fas fa-folder"></i>
+                                        <i class="fas fa-project-diagram"></i>
                                     </div>
                                 </div>
                             </div>
@@ -549,11 +606,11 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-warning">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['total_creators']); ?></h3>
-                                        <p>Seller</p>
+                                        <h3 style="font-size: 2.1rem; max-height: 60px; overflow: hidden; line-height: 1.2;"><?php echo number_format($metrics['total_creators']); ?></h3>
+                                        <p style="margin-bottom: 5px; font-size: 0.9rem;">Seller</p>
                                     </div>
                                     <div class="icon">
-                                        <i class="fas fa-users"></i>
+                                        <i class="fas fa-user-tie"></i>
                                     </div>
                                 </div>
                             </div>
@@ -562,11 +619,11 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-success">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['total_sale'], 2); ?></h3>
-                                        <p>Sale Price</p>
+                                        <h3 style="font-size: 1.8rem; max-height: 60px; overflow: hidden; line-height: 1.2;"><?php echo number_format($metrics['total_sale'], 0); ?></h3>
+                                        <p style="margin-bottom: 5px; font-size: 0.9rem;">Sale Price</p>
                                     </div>
                                     <div class="icon">
-                                        <i class="fas fa-dollar-sign"></i>
+                                        <i class="fas fa-money-bill-wave"></i>
                                     </div>
                                 </div>
                             </div>
@@ -575,11 +632,11 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-primary">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['total_cost'], 2); ?></h3>
-                                        <p>Cost Price</p>
+                                        <h3 style="font-size: 1.8rem; max-height: 60px; overflow: hidden; line-height: 1.2;"><?php echo number_format($metrics['total_cost'], 0); ?></h3>
+                                        <p style="margin-bottom: 5px; font-size: 0.9rem;">Cost Price</p>
                                     </div>
                                     <div class="icon">
-                                        <i class="fas fa-dollar-sign"></i>
+                                        <i class="fas fa-shopping-cart"></i>
                                     </div>
                                 </div>
                             </div>
@@ -588,8 +645,8 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-danger">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['total_gross_profit'], 2); ?></h3>
-                                        <p>Gross Profit</p>
+                                        <h3 style="font-size: 1.8rem; max-height: 60px; overflow: hidden; line-height: 1.2;"><?php echo number_format($metrics['total_gross_profit'], 0); ?></h3>
+                                        <p style="margin-bottom: 5px; font-size: 0.9rem;">Gross Profit</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-chart-line"></i>
@@ -601,8 +658,8 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                             <div class="col-lg-2 col-6">
                                 <div class="small-box bg-pink">
                                     <div class="inner">
-                                        <h3><?php echo number_format($metrics['avg_gp_percentage'], 2); ?>%</h3>
-                                        <p>Average GP %</p>
+                                        <h3 style="font-size: 1.9rem; max-height: 60px; overflow: hidden; line-height: 1.2;"><?php echo number_format($metrics['avg_gp_percentage'], 1); ?>%</h3>
+                                        <p style="margin-bottom: 5px; font-size: 0.9rem;">Average GP %</p>
                                     </div>
                                     <div class="icon">
                                         <i class="fas fa-percentage"></i>
@@ -655,7 +712,7 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                                                                     <select class="custom-select select2" name="team">
                                                                         <option value="">เลือก</option>
                                                                         <?php foreach ($teams as $team) : ?>
-                                                                            <option value="<?php echo htmlspecialchars($team['team_name']); ?>" <?php echo ($search_team == $team['team_name']) ? 'selected' : ''; ?>>
+                                                                            <option value="<?php echo htmlspecialchars($team['team_id']); ?>" <?php echo ($search_team == $team['team_id']) ? 'selected' : ''; ?>>
                                                                                 <?php echo htmlspecialchars($team['team_name']); ?>
                                                                             </option>
                                                                         <?php endforeach; ?>
@@ -765,9 +822,8 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                                     <table id="example1" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
-                                                <?php if ($role != 'Engineer'): ?>
-                                                    <th class="text-nowrap text-center table-header-tooltip" title="ดูรายละเอียดและแก้ไขข้อมูลโครงการ">Action</th>
-                                                <?php endif; ?>
+
+                                                <th class="text-nowrap text-center table-header-tooltip" title="ดูรายละเอียดและแก้ไขข้อมูลโครงการ">Action</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="วันที่/เวลา เพิ่มข้อมูลโครงการเข้าระบบ">Create Date</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="วันที่ขาย">Sales Date</th>
                                                 <th class="text-nowrap text-center table-header-tooltip" title="สถานะของโครงการ">Status</th>
@@ -802,160 +858,158 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                                         <tbody>
                                             <?php foreach ($projects as $project): ?>
                                                 <tr>
-                                                    <?php if ($role != 'Engineer'): ?>
-                                                        <td class="text-nowrap">
-                                                            <?php
-                                                            // ตรวจสอบสิทธิ์สำหรับแต่ละปุ่ม
-                                                            $can_view = true; // ทุกคนดูได้
-                                                            $can_edit = false;
-                                                            $can_delete = false;
-                                                            $can_manage = false;
+                                                    <?php
+                                                    $memberAccessLevelRaw = $project['member_access_level'] ?? null;
+                                                    $memberAccessLevel = is_null($memberAccessLevelRaw) ? null : (int)$memberAccessLevelRaw;
+                                                    $isOwner = ((int)($project['is_project_owner'] ?? 0) === 1) || (($project['user_permission'] ?? '') === 'owner');
+                                                    $isTeamProject = ((int)($project['is_team_project'] ?? 0) === 1);
+                                                    $isSharedMember = ((int)($project['is_shared_member'] ?? 0) === 1);
+                                                    $isSharedForUser = $isSharedMember && !$isOwner;
 
-                                                            // ตรวจสอบสิทธิ์จาก project_members
-                                                            $memberAccessLevel = $project['member_access_level'] ?? 999;
-                                                            $accessLevel = $project['access_level'] ?? 'none';
+                                                    $hasFullShareAccess = $isSharedForUser && $memberAccessLevel === 0;
+                                                    $hasViewShareAccess = $isSharedForUser && $memberAccessLevel === 1;
+                                                    $hasHalfShareAccess = $isSharedForUser && $memberAccessLevel === 2;
+                                                    ?>
+                                                    <td class="text-nowrap">
+                                                        <?php
+                                                        // ตรวจสอบสิทธิ์สำหรับแต่ละปุ่ม
+                                                        $can_view = true; // ทุกคนดูได้
+                                                        $can_edit = false;
+                                                        $can_delete = false;
+                                                        $can_manage = false;
 
-                                                            // กำหนดสิทธิ์ตาม role และสิทธิ์ใน project_members
-                                                            switch ($role) {
-                                                                case 'Executive':
-                                                                    // Executive มีสิทธิ์ทุกอย่าง (ยกเว้นถ้าถูกกำหนดเป็น View Only)
-                                                                    $can_edit = ($memberAccessLevel != 1); // 1 = View Only
-                                                                    $can_delete = ($memberAccessLevel != 1);
-                                                                    $can_manage = ($memberAccessLevel != 1);
-                                                                    break;
+                                                        switch ($role) {
+                                                            case 'Executive':
+                                                                if ($hasViewShareAccess) {
+                                                                    $can_edit = false;
+                                                                    $can_delete = false;
+                                                                    $can_manage = false;
+                                                                } else {
+                                                                    $can_edit = true;
+                                                                    $can_delete = true;
+                                                                    $can_manage = true;
+                                                                }
+                                                                break;
 
-                                                                case 'Sale Supervisor':
-                                                                    if ($project['is_project_owner']) {
-                                                                        // เป็นเจ้าของโครงการ
-                                                                        $can_edit = true;
-                                                                        $can_delete = true;
-                                                                        $can_manage = true;
-                                                                    } elseif ($project['is_team_project']) {
-                                                                        // โครงการในทีม
-                                                                        $can_edit = ($memberAccessLevel != 1); // ไม่ใช่ View Only
-                                                                        $can_delete = false; // ไม่สามารถลบโครงการของคนอื่นได้
-                                                                        $can_manage = ($memberAccessLevel == 0 || $memberAccessLevel == 2); // Full หรือ Half Access
-                                                                    } elseif ($accessLevel == 'view_only') {
-                                                                        // ถูกแชร์แบบ View Only
-                                                                        $can_edit = false;
-                                                                        $can_delete = false;
-                                                                        $can_manage = false;
-                                                                    } elseif ($accessLevel == 'half_access') {
-                                                                        // ถูกแชร์แบบ Half Access
-                                                                        $can_edit = false;
-                                                                        $can_delete = false;
-                                                                        $can_manage = true;
-                                                                    } elseif ($accessLevel == 'full_member') {
-                                                                        // ถูกแชร์แบบ Full Access
-                                                                        $can_edit = true;
-                                                                        $can_delete = false;
-                                                                        $can_manage = true;
-                                                                    }
-                                                                    break;
+                                                            case 'Sale Supervisor':
+                                                                if ($isOwner) {
+                                                                    $can_edit = true;
+                                                                    $can_delete = true;
+                                                                    $can_manage = true;
+                                                                } elseif ($hasFullShareAccess) {
+                                                                    $can_edit = true;
+                                                                    $can_delete = true;
+                                                                    $can_manage = true;
+                                                                } elseif ($hasHalfShareAccess) {
+                                                                    $can_manage = true;
+                                                                } elseif ($hasViewShareAccess) {
+                                                                    $can_edit = false;
+                                                                    $can_delete = false;
+                                                                    $can_manage = false;
+                                                                } elseif ($isTeamProject) {
+                                                                    $can_edit = true;
+                                                                    $can_delete = false;
+                                                                    $can_manage = true;
+                                                                }
+                                                                break;
 
-                                                                case 'Seller':
-                                                                    if ($project['is_project_owner']) {
-                                                                        // เป็นเจ้าของโครงการ
-                                                                        $can_edit = true;
-                                                                        $can_delete = true;
-                                                                        $can_manage = true;
-                                                                    } elseif ($accessLevel == 'view_only') {
-                                                                        // ถูกแชร์แบบ View Only
-                                                                        $can_edit = false;
-                                                                        $can_delete = false;
-                                                                        $can_manage = false;
-                                                                    } elseif ($accessLevel == 'half_access') {
-                                                                        // ถูกแชร์แบบ Half Access
-                                                                        $can_edit = true;
-                                                                        $can_delete = false;
-                                                                        $can_manage = false;
-                                                                    } elseif ($accessLevel == 'full_member') {
-                                                                        // ถูกแชร์แบบ Full Access
-                                                                        $can_edit = true;
-                                                                        $can_delete = false;
-                                                                        $can_manage = true;
-                                                                    }
-                                                                    break;
-                                                            }
+                                                            case 'Seller':
+                                                                if ($isOwner) {
+                                                                    $can_edit = true;
+                                                                    $can_delete = true;
+                                                                    $can_manage = true;
+                                                                } elseif ($hasFullShareAccess) {
+                                                                    $can_edit = true;
+                                                                    $can_delete = true;
+                                                                    $can_manage = true;
+                                                                } elseif ($hasHalfShareAccess) {
+                                                                    $can_manage = true;
+                                                                } elseif ($hasViewShareAccess) {
+                                                                    $can_edit = false;
+                                                                    $can_delete = false;
+                                                                    $can_manage = false;
+                                                                }
+                                                                break;
 
-                                                            // แสดงข้อมูล Debug (ลบออกเมื่อใช้งานจริง)
-                                                            // echo "<!-- Debug: memberAccessLevel = {$memberAccessLevel}, accessLevel = {$accessLevel}, role = {$role} -->";
-                                                            ?>
+                                                            case 'Engineer':
+                                                                if ($isOwner) {
+                                                                    $can_manage = true;
+                                                                } elseif ($hasFullShareAccess || $hasHalfShareAccess) {
+                                                                    $can_manage = true;
+                                                                }
+                                                                break;
+                                                        }
+                                                        ?>
 
-                                                            <!-- ปุ่มดู - แสดงเสมอ -->
-                                                            <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
-                                                                class="btn btn-sm btn-primary" title="ดูรายละเอียด">
-                                                                <i class="fas fa-eye"></i>
+                                                        <!-- ปุ่มดู - แสดงเสมอ -->
+                                                        <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
+                                                            class="btn btn-sm btn-primary" title="ดูรายละเอียด">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+
+                                                        <!-- ปุ่มแก้ไข - แสดงตามสิทธิ์ -->
+                                                        <?php if ($can_edit): ?>
+                                                            <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
+                                                                class="btn btn-info btn-sm" title="แก้ไข">
+                                                                <i class="fas fa-pencil-alt"></i>
                                                             </a>
-
-                                                            <!-- ปุ่มแก้ไข - แสดงตามสิทธิ์ -->
-                                                            <?php if ($can_edit): ?>
-                                                                <a href="edit_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
-                                                                    class="btn btn-info btn-sm" title="แก้ไข">
-                                                                    <i class="fas fa-pencil-alt"></i>
-                                                                </a>
-                                                            <?php else: ?>
-                                                                <button class="btn btn-secondary btn-sm" disabled title="<?php
-                                                                                                                            if ($memberAccessLevel == 1) echo 'สิทธิ์ View Only';
-                                                                                                                            elseif ($accessLevel == 'view_only') echo 'โครงการแชร์แบบ View Only';
-                                                                                                                            else echo 'ไม่มีสิทธิ์แก้ไข';
-                                                                                                                            ?>">
-                                                                    <i class="fas fa-pencil-alt"></i>
-                                                                </button>
-                                                            <?php endif; ?>
-
-                                                            <!-- ปุ่มลบ - แสดงตามสิทธิ์ -->
-                                                            <?php if ($can_delete): ?>
-                                                                <button class="btn btn-danger btn-sm"
-                                                                    onclick="confirmDelete('<?php echo urlencode(encryptUserId($project['project_id'])); ?>', '<?php echo htmlspecialchars($project['project_name']); ?>')"
-                                                                    title="ลบ">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            <?php else: ?>
-                                                                <button class="btn btn-secondary btn-sm" disabled title="<?php
-                                                                                                                            if ($memberAccessLevel == 1) echo 'สิทธิ์ View Only';
-                                                                                                                            elseif (!$project['is_project_owner']) echo 'ลบได้เฉพาะเจ้าของโครงการ';
-                                                                                                                            else echo 'ไม่มีสิทธิ์ลบ';
-                                                                                                                            ?>">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            <?php endif; ?>
-
-                                                            <!-- ปุ่มจัดการโครงการ - แสดงตามสิทธิ์ -->
-                                                            <?php if ($can_manage): ?>
-                                                                <a href="management/project_management.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
-                                                                    class="btn btn-sm btn-warning" title="จัดการสมาชิกโครงการ">
-                                                                    <i class="fas fa-project-diagram"></i>
-                                                                </a>
-                                                            <?php else: ?>
-                                                                <button class="btn btn-secondary btn-sm" disabled title="<?php
-                                                                                                                            if ($memberAccessLevel == 1) echo 'สิทธิ์ View Only';
-                                                                                                                            elseif ($accessLevel == 'half_access') echo 'สิทธิ์ Half Access';
-                                                                                                                            else echo 'ไม่มีสิทธิ์จัดการ';
-                                                                                                                            ?>">
-                                                                    <i class="fas fa-project-diagram"></i>
-                                                                </button>
-                                                            <?php endif; ?>
-                                                        </td>
-                                                    <?php else: ?>
-                                                        <!-- สำหรับ Engineer - แสดงเฉพาะปุ่มดู -->
-                                                        <td class="text-nowrap">
-                                                            <a href="view_project.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
-                                                                class="btn btn-sm btn-primary" title="ดูรายละเอียด">
-                                                                <i class="fas fa-eye"></i>
-                                                            </a>
-                                                            <button class="btn btn-secondary btn-sm" disabled title="Engineer ไม่มีสิทธิ์แก้ไข">
+                                                        <?php else: ?>
+                                                            <button class="btn btn-secondary btn-sm" disabled title="<?php
+                                                                                                                        if ($hasViewShareAccess || $memberAccessLevel === 1) {
+                                                                                                                            echo 'แชร์มาแบบ View Only';
+                                                                                                                        } elseif ($hasHalfShareAccess) {
+                                                                                                                            echo 'แชร์มาแบบ Half Access';
+                                                                                                                        } else {
+                                                                                                                            echo 'ไม่มีสิทธิ์แก้ไข';
+                                                                                                                        }
+                                                                                                                        ?>">
                                                                 <i class="fas fa-pencil-alt"></i>
                                                             </button>
-                                                            <button class="btn btn-secondary btn-sm" disabled title="Engineer ไม่มีสิทธิ์ลบ">
+                                                        <?php endif; ?>
+
+                                                        <!-- ปุ่มลบ - แสดงตามสิทธิ์ -->
+                                                        <?php if ($can_delete): ?>
+                                                            <button class="btn btn-danger btn-sm"
+                                                                onclick="confirmDelete('<?php echo urlencode(encryptUserId($project['project_id'])); ?>', '<?php echo htmlspecialchars($project['project_name']); ?>')"
+                                                                title="ลบ">
                                                                 <i class="fas fa-trash"></i>
                                                             </button>
-                                                            <button class="btn btn-secondary btn-sm" disabled title="Engineer ไม่มีสิทธิ์จัดการ">
+                                                        <?php else: ?>
+                                                            <button class="btn btn-secondary btn-sm" disabled title="<?php
+                                                                                                                        if ($hasViewShareAccess || $memberAccessLevel === 1) {
+                                                                                                                            echo 'แชร์มาแบบ View Only';
+                                                                                                                        } elseif ($hasHalfShareAccess) {
+                                                                                                                            echo 'แชร์มาแบบ Half Access';
+                                                                                                                        } elseif (!$project['is_project_owner']) {
+                                                                                                                            echo 'ลบได้เฉพาะเจ้าของโครงการ';
+                                                                                                                        } else {
+                                                                                                                            echo 'ไม่มีสิทธิ์ลบ';
+                                                                                                                        }
+                                                                                                                        ?>">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+
+                                                        <!-- ปุ่มจัดการโครงการ - แสดงตามสิทธิ์ -->
+                                                        <?php if ($can_manage): ?>
+                                                            <a href="management/project_management.php?project_id=<?php echo urlencode(encryptUserId($project['project_id'])); ?>"
+                                                                class="btn btn-sm btn-warning" title="จัดการสมาชิกโครงการ">
+                                                                <i class="fas fa-project-diagram"></i>
+                                                            </a>
+                                                        <?php else: ?>
+                                                            <button class="btn btn-secondary btn-sm" disabled title="<?php
+                                                                                                                        if ($hasViewShareAccess || $memberAccessLevel === 1) {
+                                                                                                                            echo 'แชร์มาแบบ View Only';
+                                                                                                                        } elseif ($hasHalfShareAccess) {
+                                                                                                                            echo 'แชร์มาแบบ Half Access';
+                                                                                                                        } else {
+                                                                                                                            echo 'ไม่มีสิทธิ์จัดการ';
+                                                                                                                        }
+                                                                                                                        ?>">
                                                                 <i class="fas fa-project-diagram"></i>
                                                             </button>
-                                                            <span class="badge badge-warning ml-1">Engineer View</span>
-                                                        </td>
-                                                    <?php endif; ?>
+                                                        <?php endif; ?>
+                                                    </td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['created_at']); ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['sales_date']); ?></td>
                                                     <td class="text-nowrap text-center">
@@ -986,10 +1040,12 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                                                         <div class="truncate-text-project" title="<?php echo htmlspecialchars($project['project_name']); ?>">
                                                             <!-- แสดงสถานะโครงการ -->
                                                             <?php
-                                                            if ($memberAccessLevel == 1): ?>
-                                                                <span class="badge badge-secondary ml-1">Shared</span>
-                                                            <?php elseif ($memberAccessLevel == 2): ?>
-                                                                <span class="badge badge-warning ml-1">Shared</span>
+                                                            if ($memberAccessLevel === 1): ?>
+                                                                <span class="badge badge-secondary ml-1">Shared (View)</span>
+                                                            <?php elseif ($memberAccessLevel === 2): ?>
+                                                                <span class="badge badge-warning ml-1">Shared (Half)</span>
+                                                            <?php elseif ($memberAccessLevel === 0): ?>
+                                                                <span class="badge badge-success ml-1">Shared (Full)</span>
                                                             <?php elseif ($project['user_permission'] == 'shared'): ?>
                                                                 <span class="badge badge-info ml-1">Shared</span>
                                                             <?php endif; ?>
@@ -1003,19 +1059,14 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['customer_name'] ?? '') ? htmlspecialchars($project['customer_name'] ?? '') : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap"><?php echo htmlspecialchars($project['product_name']); ?> </td>
                                                     <?php
-                                                    // ตรวจสอบว่าเป็นโครงการที่แชร์มาจากทีมอื่นหรือไม่
-                                                    $isSharedFromOtherTeam = false;
-
-                                                    // สำหรับ Engineer หรือ role อื่นๆ ที่ไม่ใช่ Executive
-                                                    if ($role != 'Executive') {
-                                                        // ตรวจสอบว่าโครงการมาจากทีมอื่นหรือไม่ (ดูจาก seller's team)
-                                                        if (!empty($project['team_name']) && $project['team_name'] != $_SESSION['team_name']) {
-                                                            $isSharedFromOtherTeam = true;
+                                                    $canViewFinancial = false;
+                                                    if ($role !== 'Engineer') {
+                                                        if ($isSharedForUser) {
+                                                            $canViewFinancial = ($memberAccessLevel === 0);
+                                                        } else {
+                                                            $canViewFinancial = true;
                                                         }
                                                     }
-
-                                                    // ตรวจสอบสิทธิ์ในการแสดงข้อมูลการเงิน
-                                                    $canViewFinancial = ($role != 'Engineer' && !$isSharedFromOtherTeam);
                                                     ?>
 
                                                     <?php if ($role != 'Engineer'): ?>
@@ -1083,7 +1134,9 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
     </div>
     <script>
         $(function() {
-            $("#example1").DataTable({
+            var stateKey = 'DataTables_example1_<?php echo $role; ?>';
+
+            var table = $("#example1").DataTable({
                 "responsive": false,
                 "lengthChange": true,
                 "autoWidth": false,
@@ -1122,9 +1175,29 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
                     '<"row"<"col-sm-12"tr>>' +
                     '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>', // ปรับ layout
-                "stateSave": true, // จดจำการตั้งค่าของผู้ใช้
-                "stateDuration": 60 * 60 * 24 // จดจำเป็นเวลา 24 ชั่วโมง
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+                "stateSave": true,
+                "stateSaveCallback": function(settings, data) {
+                    localStorage.setItem(stateKey, JSON.stringify(data));
+                },
+                "stateLoadCallback": function(settings) {
+                    var stored = localStorage.getItem(stateKey);
+                    if (!stored) {
+                        return null;
+                    }
+                    try {
+                        return JSON.parse(stored);
+                    } catch (err) {
+                        localStorage.removeItem(stateKey);
+                        return null;
+                    }
+                }
+            });
+
+            table.buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+            table.columns.adjust();
+            $(window).on('resize', function() {
+                table.columns.adjust();
+            });
         });
     </script>
 

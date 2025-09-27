@@ -297,14 +297,30 @@ function getCompanyData($condb, $role, $team_id, $user_id)
             break;
 
         case 'Sale Supervisor':
-            // Sale Supervisor เห็นเฉพาะบริษัทของลูกค้าในทีม
-            $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
-                     FROM customers c 
-                     INNER JOIN users u ON c.created_by = u.user_id 
-                     WHERE u.team_id = ? 
-                     ORDER BY c.company ASC";
-            $stmt = $condb->prepare($query);
-            $stmt->bindParam(1, $team_id, PDO::PARAM_STR);
+            // Sale Supervisor เห็นเฉพาะบริษัทของลูกค้าที่อยู่ในทีมของตน
+            $user_team_ids = $_SESSION['team_ids'] ?? [];
+
+            if ($team_id === 'ALL' && !empty($user_team_ids)) {
+                $placeholders = implode(',', array_fill(0, count($user_team_ids), '?'));
+                $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
+                         FROM customers c 
+                         INNER JOIN users u ON c.created_by = u.user_id 
+                         INNER JOIN user_teams ut ON u.user_id = ut.user_id AND ut.is_primary = 1
+                         WHERE ut.team_id IN ($placeholders)
+                         ORDER BY c.company ASC";
+                $stmt = $condb->prepare($query);
+                $stmt->execute($user_team_ids);
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $query = "SELECT DISTINCT c.company, c.address, c.office_phone 
+                         FROM customers c 
+                         INNER JOIN users u ON c.created_by = u.user_id 
+                         INNER JOIN user_teams ut ON u.user_id = ut.user_id AND ut.is_primary = 1
+                         WHERE ut.team_id = ? 
+                         ORDER BY c.company ASC";
+                $stmt = $condb->prepare($query);
+                $stmt->bindParam(1, $team_id, PDO::PARAM_STR);
+            }
             break;
 
         case 'Seller':
@@ -335,16 +351,47 @@ function getCompanyData($condb, $role, $team_id, $user_id)
 // เรียกใช้ฟังก์ชันดึงข้อมูลบริษัท
 $companies = getCompanyData($condb, $role, $team_id, $user_id);
 
-// ส่วนสำหรับ Executive: ดึงข้อมูลผู้ใช้สำหรับเลือกผู้รับผิดชอบโครงการ
+// ส่วนสำหรับดึงรายชื่อผู้ขาย/ผู้รับผิดชอบโครงการ
 $users = [];
 if ($role === 'Executive') {
     $stmt = $condb->prepare("
-        SELECT u.user_id, u.first_name, u.last_name, u.role, t.team_name 
+        SELECT u.user_id, u.first_name, u.last_name, u.role,
+               GROUP_CONCAT(DISTINCT t.team_name ORDER BY t.team_name SEPARATOR ', ') AS team_name
         FROM users u
-        LEFT JOIN teams t ON u.team_id = t.team_id
-        WHERE u.role IN ('Seller', 'Sale Supervisor') 
-        ORDER BY t.team_name, u.first_name
+        LEFT JOIN user_teams ut ON u.user_id = ut.user_id
+        LEFT JOIN teams t ON ut.team_id = t.team_id
+        WHERE u.role IN ('Seller', 'Sale Supervisor')
+        GROUP BY u.user_id, u.first_name, u.last_name, u.role
+        ORDER BY team_name, u.first_name
     ");
+    $stmt->execute();
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} elseif ($role === 'Sale Supervisor') {
+    $user_teams = $_SESSION['user_teams'] ?? [];
+    $team_ids = array_column($user_teams, 'team_id');
+
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $sql = "
+            SELECT u.user_id, u.first_name, u.last_name, u.role,
+                   GROUP_CONCAT(DISTINCT t.team_name ORDER BY t.team_name SEPARATOR ', ') AS team_name
+            FROM users u
+            JOIN user_teams ut_filter ON u.user_id = ut_filter.user_id
+            LEFT JOIN user_teams ut ON u.user_id = ut.user_id
+            LEFT JOIN teams t ON ut.team_id = t.team_id
+            WHERE ut_filter.team_id IN ($placeholders)
+              AND u.role IN ('Seller', 'Sale Supervisor')
+            GROUP BY u.user_id, u.first_name, u.last_name, u.role
+            ORDER BY team_name, u.first_name
+        ";
+        $stmt = $condb->prepare($sql);
+        $stmt->execute($team_ids);
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+} else {
+    // บทบาทอื่น ๆ จะใช้ชื่อผู้ใช้งานปัจจุบันเป็นค่าเริ่มต้น
+    $stmt = $condb->prepare("SELECT user_id, first_name, last_name, role FROM users WHERE user_id = :user_id");
+    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
     $stmt->execute();
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -360,21 +407,21 @@ if ($role === 'Executive') {
     <title>SalePipeline | Add Project</title>
     <?php include  '../../include/header.php'; ?>
 
-    <!-- ใช้ฟอนต์ Noto Sans Thai -->
+    <!-- ใช้ฟอนต์ Sarabun -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
     <style>
         label,
         h1 {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 700;
             font-size: 16px;
             color: #333;
         }
 
         .custom-label {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 600;
             font-size: 18px;
             color: #FF5733;
@@ -506,14 +553,14 @@ if ($role === 'Executive') {
                                             </div>
 
                                             <div class="row">
-                                                <?php if ($role === 'Executive'): ?>
+                                                <?php if ($role === 'Executive' || ($role === 'Sale Supervisor' && !empty($users))): ?>
                                                     <div class="col-12 col-md-6">
                                                         <div class="form-group">
                                                             <label>ผู้ขาย/ผู้รับผิดชอบโครงการ <span class="text-danger">*</span></label>
                                                             <select class="form-control select2" name="seller" id="seller" style="width: 100%;" required>
                                                                 <option value="">-- เลือกผู้ขาย/ผู้รับผิดชอบโครงการ --</option>
                                                                 <?php foreach ($users as $user): ?>
-                                                                    <option value="<?php echo htmlspecialchars($user['user_id']); ?>">
+                                                                    <option value="<?php echo htmlspecialchars($user['user_id']); ?>" <?php echo ($user['user_id'] == $user_id && $role !== 'Executive') ? 'selected' : ''; ?>>
                                                                         <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
                                                                         (<?php echo htmlspecialchars($user['role']); ?>)
                                                                         <?php if ($user['team_name']): ?>
@@ -527,17 +574,19 @@ if ($role === 'Executive') {
                                                             </small>
                                                         </div>
                                                     </div>
-                                                    <div class="col-12 col-md-6">
-                                                        <div class="form-group">
-                                                            <label>ผู้สร้างโครงการ</label>
-                                                            <input type="text" class="form-control"
-                                                                value="<?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?>"
-                                                                readonly style="background-color:#F8F8FF">
-                                                            <small class="form-text text-muted">คุณเป็นผู้สร้างโครงการนี้</small>
+                                                    <?php if ($role === 'Executive'): ?>
+                                                        <div class="col-12 col-md-6">
+                                                            <div class="form-group">
+                                                                <label>ผู้สร้างโครงการ</label>
+                                                                <input type="text" class="form-control"
+                                                                    value="<?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?>"
+                                                                    readonly style="background-color:#F8F8FF">
+                                                                <small class="form-text text-muted">คุณเป็นผู้สร้างโครงการนี้</small>
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    <?php endif; ?>
                                                 <?php else: ?>
-                                                    <!-- สำหรับ Role อื่นๆ (Seller, Sale Supervisor) ให้ seller = ตัวเอง -->
+                                                    <!-- สำหรับบทบาทอื่นๆ (เช่น Seller/Engineer หรือ Sale Supervisor ที่ไม่มีทีม) ใช้ตัวเองเป็นผู้ขาย -->
                                                     <input type="hidden" name="seller" value="<?php echo $user_id; ?>">
                                                     <div class="col-12 col-md-6">
                                                         <div class="form-group">

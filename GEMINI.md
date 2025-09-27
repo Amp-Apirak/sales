@@ -490,3 +490,170 @@ grep -A 6 -B 2 "count.*teams.*> 1" login.php
 2. **Cache Implementation**: เพิ่ม cache สำหรับข้อมูลที่ดึงบ่อยๆ
 3. **Real-time Updates**: พิจารณาการอัปเดตข้อมูลแบบ real-time
 4. **Advanced Filtering**: เพิ่มตัวเลือกการกรองข้อมูลที่หลากหลายมากขึ้น
+
+---
+
+## 13. บันทึกการปรับปรุง/แก้ไขรอบล่าสุด (24 ก.ย. 2025)
+
+สรุปงานที่ดำเนินการทั้งหมดในการสนทนารอบนี้ เพื่อให้ผู้พัฒนาถัดไปอ่านและทำงานต่อได้ต่อเนื่อง โดยรวบรวมไฟล์ที่แก้ สาเหตุ ผลลัพธ์ แนวทางทดสอบ และงานต่อเนื่องที่แนะนำ
+
+### 13.1 เอกสาร (ใหม่และอัปเดต)
+- เพิ่ม `permission.md`: อธิบายบทบาท/สิทธิ์บน Dashboard, ลำดับความสำคัญของฟิลเตอร์, และข้อยกเว้นของตัวชี้วัด
+- เพิ่ม `dashboard.md`: เจาะรายละเอียดการ์ด/กราฟของ Dashboard, ตาราง/คอลัมน์อ้างอิง (created_by vs seller), และเงื่อนไขการแสดงผล
+- ทั้งสองไฟล์มีส่วน “ผลของตัวกรองและข้อยกเว้น” ที่สรุปชัดเจนว่าฟิลเตอร์มีผลต่ออะไรบ้าง/ไม่บ้าง
+
+### 13.2 แก้บั๊ก HY093 ที่หน้า Account (ค้นหา)
+- ไฟล์: `pages/account/account.php`
+- สาเหตุ: ผสม placeholders แบบตำแหน่ง (`?`) กับแบบชื่อ (`:name`)
+- แก้ไข: ใช้ named parameters ทั้งหมดและ `execute($params)` ครั้งเดียว
+- ผลลัพธ์: ค้นหาได้ปกติ ปลอดภัย/อ่านง่ายขึ้น
+
+### 13.3 หน้า Account เคารพ Team Switcher (Navbar)
+- ไฟล์: `pages/account/account.php`
+- พฤติกรรมใหม่:
+  - Executive: ALL → เห็นทั้งหมด; ถ้าเลือกทีมเฉพาะ → จำกัดเฉพาะทีมนั้น
+  - Sale Supervisor: ALL → รวมทุกทีมที่ตนสังกัด; ถ้าเลือกทีมเฉพาะ → จำกัดเฉพาะทีมนั้น
+  - Seller/Engineer: ไม่ได้รับผลจาก Team Switcher (ยังเห็นเฉพาะข้อมูลของตน)
+- วิธีทำ: ใช้ `$_SESSION['team_id']` (ค่า 'ALL' หรือ team_id) เพิ่มเงื่อนไข SQL ที่เหมาะสมด้วย named parameters
+
+### 13.4 หน้า Add Account: ตรวจสอบอีเมล และรายการ “ทีม” ตาม Team Switcher
+- ไฟล์: `pages/account/add_account.php`
+- อีเมล: ใช้ `validateEmail()` จาก `config/validation.php` แทน `filter_var` เพื่อความสอดคล้องของระบบและข้อความผิดพลาด
+- รายการทีม (เฉพาะ Sale Supervisor):
+  - Navbar = ALL → ดึงทุกทีมที่ผู้ใช้คนนั้นสังกัด (JOIN user_teams → teams) ใส่ลง `<select name="team_ids[]">`
+  - Navbar = ทีมเฉพาะ → แสดงเฉพาะทีมนั้นทีมเดียว
+  - Executive: เห็นทุกทีมในระบบ (คงเดิม)
+
+### 13.5 รีเซ็ตทีมเป็น All Teams อัตโนมัติเมื่อเปลี่ยนเมนู (เฉพาะผู้ใช้หลายทีม)
+- ไฟล์: `include/Navbar.php`
+- เพิ่ม JS เพื่อ:
+  - ดักการคลิกเมนู (navbar/sidebar) แบบนำทางธรรมดา → POST ไป `switch_team.php` ด้วย `team_id=ALL` ก่อน แล้วค่อยนำทาง
+  - ไม่รบกวนการเปิดแท็บใหม่ (Ctrl/Cmd/Shift/คลิกกลาง)
+  - ไม่แตะลิงก์ switch_team/logout และรองรับ opt‑out รายลิงก์ด้วย `data-no-reset-team="true"`
+
+### 13.6 แผนปรับหน้า Customer (ยังไม่ลงมือ — รอคอนเฟิร์ม)
+- ไฟล์เป้าหมาย: `pages/customer/customer.php`
+- เสนอให้เคารพ `$_SESSION['team_id']` เช่นเดียวกับ Account/Dashboard:
+  - Executive: ALL → ทั้งหมด; เลือกทีม → เฉพาะทีมนั้น
+  - Sale Supervisor: ALL → ทุกทีมของตน; เลือกทีม → เฉพาะทีมนั้น
+  - Seller/Engineer: เฉพาะข้อมูลของตน
+- ใช้ named parameters ทั้งหมด
+
+### 13.7 วิธีทดสอบย่อ (สำคัญ)
+- Account (ค้นหา): กรองด้วยคีย์เวิร์ด/Company/Team/Role/Position → ไม่เกิด HY093 และผลลัพธ์ถูกต้อง
+- Account (Team Switcher):
+  - Executive: ALL → ทั้งหมด; เลือกทีม X → เฉพาะทีม X
+  - Supervisor (หลายทีม): ALL → รวมทุกทีม; เลือกทีม X → เฉพาะทีม X
+- Add Account:
+  - อีเมลผิด → แสดงข้อผิดพลาด ไม่บันทึก
+  - อีเมลถูก (และไม่ซ้ำ) → บันทึกได้
+  - Navbar = ALL (Supervisor) → ช่องทีมแสดงทุกทีมที่สังกัด; Navbar = ทีมเฉพาะ → แสดงเฉพาะทีมนั้น
+- Navbar Reset: ผู้ใช้หลายทีมคลิกเมนู → ทีมจะถูกรีเซ็ตเป็น ALL ก่อนนำทาง (ยกเว้นแท็บใหม่/สวิตช์ทีม/Logout)
+
+### 13.8 รายการไฟล์ที่แก้/เพิ่มในรอบนี้
+- เพิ่ม: `permission.md`, `dashboard.md`
+- แก้: `pages/account/account.php`, `pages/account/add_account.php`, `include/Navbar.php`
+
+### 13.9 ข้อเสนอแนะงานต่อเนื่อง
+- เพิ่ม `uploads/.htaccess` เพื่อปิดการ execute script ในโฟลเดอร์อัปโหลด
+- ไล่ปรับใช้ `escapeOutput()` และ `validateUploadedFile()` ให้สม่ำเสมอทุกหน้า
+- แก้ path ใน `logout.php` ให้ใช้งาน `BASE_URL` + assets อย่างถูกต้องเพื่อลด 404
+- ทบทวนความสอดคล้องของการใช้ `created_by` vs `seller` ในทุกกราฟ/การ์ด
+ - เพิ่มภาพหน้าจอ/ตัวอย่าง use‑case ลงใน `permission.md`/`dashboard.md` เพื่อ onboarding ที่เร็วขึ้น
+ 
+เพิ่มเติม (ภายหลังการยืนยัน): ปรับให้หน้า Customer และ Project เคารพ Team Switcher แล้ว โดยไม่กระทบหน้าอื่น
+
+
+### 13.10 อัปเดตเพิ่มเติมภายหลังการยืนยัน
+
+- ปรับหน้า Customer ให้เคารพ Team Switcher (ดำเนินการแล้ว)
+  - ไฟล์: 
+  - พฤติกรรมใหม่:
+    - Executive: ALL → เห็นทั้งหมด; เลือกทีม → จำกัดเฉพาะทีมนั้น
+    - Sale Supervisor: ALL → รวมทุกทีมของตน; เลือกทีม → เฉพาะทีมนั้น
+    - Seller/Engineer: เฉพาะข้อมูลของตน
+  - ใช้ named parameters ทั้งหมดในการ bind ค่าพารามิเตอร์
+
+- ปรับหน้า Project ให้เคารพ Team Switcher (ดำเนินการแล้ว)
+  - ไฟล์: 
+  - เพิ่ม 
+  - ปรับส่วนดึง Dropdowns (products/status/customers/creators/years): เติม  ตามบทบาทและทีมที่เลือก (Executive ทีมเฉพาะ, Supervisor ALL vs ทีมเฉพาะ, Seller/Engineer เฉพาะตน)
+  - ปรับ Query หลัก (main list): เติม  ให้กรอง  ผ่าน  ตามทีมที่เลือก ด้วย named parameters
+  - ไม่แตะไฟล์อื่น และคง UI/โครงสร้างเดิม
+
+### 13.11 อัปเดตรอบถัดมา (มิ.ย. 2025)
+
+- **Account / Customer / Project list**
+  - `pages/account/account.php`: Executive เห็นข้อมูลทั้งหมดเป็นค่าเริ่มต้น; Team Switcher ใช้ได้เฉพาะเมื่ออยู่หลายทีม
+  - `pages/customer/customer.php`: Executive เห็นทุกลูกค้าตามค่าเริ่มต้น, Sale Supervisor / Seller / Engineer ใช้กฎ team switcher เช่นเดียวกับรายการ Account
+  - `pages/project/project.php`: ปรับเงื่อนไข dropdowns กับ main query ให้ใช้ `user_teams` สำหรับทุกบทบาท; ฟิลเตอร์ทีมส่ง `team_id`; แก้ `calculateProjectMetrics()` ให้ Sale Supervisor เห็นตัวเลขการ์ดถูกต้องในโหมด “ALL”
+
+- **Add / Edit Project (ผู้ขายและลูกค้า)**
+  - `pages/project/add_project.php`: ดึงรายชื่อผู้ขายด้วย `user_teams` (Executive = ทุกคน, Sale Supervisor = เฉพาะสมาชิกในทีมของตน); เลือกรายชื่อผ่าน select2; กรองบริษัทลูกค้าโดยทีม (รองรับโหมด ALL)
+  - `pages/project/edit_project.php`: ปรับ logic เหมือนหน้า Add Project รวมถึง fallback ดึงผู้ขายเดิมในกรณีอยู่นอกทีม; กรองลูกค้าและตรวจสิทธิ์ Sale Supervisor ก่อนบันทึก
+
+- **View Project / Document**
+  - `pages/project/view_project.php`: JOIN ทีมหลักของผู้สร้างและผู้ขาย, ตรวจสิทธิ์ Sale Supervisor ด้วย `seller_team_id` หรือ fallback `creator_team_id`, อนุญาตดูการเงิน/รายละเอียดเมื่ออยู่ในทีมใดทีมหนึ่งของตน, แสดงชื่อทีมผู้ขายใน UI, แก้การอ้าง `first_name/last_name` เป็น `seller_first_name/last_name`
+  - `pages/project/delete_document.php`: เปลี่ยนจาก JOIN `users.team_id` เป็น JOIN `user_teams` (primary) เพื่อลบเอกสารได้ถูกต้องในโครงสร้าง many-to-many
+
+- **อื่น ๆ**
+  - `pages/project/add_project.php` & `pages/project/project.php`: แก้ค่า POST ของฟิลเตอร์ทีมให้ใช้ `team_id` จริงและรีเฟรชข้อมูลการ์ด/ตารางถูกต้อง
+  - ทบทวน CSRF / validation คงเดิม; การเปลี่ยนแปลงทั้งหมดยังเคารพ `permission.md`
+
+### 13.12 บันทึกเพิ่มเติม (ตามการสนทนาปัจจุบัน)
+
+- **Project Listing (seller สิทธิ์ All Teams)**
+  - แก้ `pages/project/project.php` เพื่อให้ผู้ใช้บทบาท Seller เห็นข้อมูลการเงินของโครงการที่ตัวเองเป็นเจ้าของจริง แม้อยู่ในโหมด "All Teams" (ก่อนแก้ระบบคิดว่าเป็นงานแชร์จากทีมอื่นแล้วปิดตัวเลข)
+  - ปรับ SQL หลักให้เลือก `seller_team.team_id AS seller_team_id` เผื่อใช้ตรวจสอบทีมของผู้ขายแบบตรงๆ
+  - อัปเดตฟังก์ชัน `calculateProjectMetrics()` และส่วนเรนเดอร์ตารางให้พิจารณา `is_project_owner`, `is_team_project`, `seller_team_id`, และ `$_SESSION['team_ids']` แทนการเทียบชื่อทีม เพื่อหลีกเลี่ยง false positive ในโหมด All Teams
+  - ปัญหาที่พบ: เมื่อเทียบชื่อทีมกับค่า `$_SESSION['team_name']` (ซึ่งเป็น "All Teams") ระบบคิดว่าเป็นโครงการข้ามทีม จึงซ่อนคอลัมน์การเงินทั้งหมด
+  - หลังแก้: Seller/Engineer ยังคงถูกจำกัดตามสิทธิ์ (Engineer ไม่เห็นตัวเลขเลย), Seller เห็นเฉพาะโครงการที่ตนเป็นเจ้าของหรืออยู่ในทีม, ขณะที่ Sale Supervisor และ Executive ทำงานเหมือนเดิม
+
+- **การยืนยัน/ทดสอบ**
+  - พยายามรัน `php -l pages/project/project.php` เพื่อตรวจสอบ syntax แต่เครื่องในสภาพแวดล้อมนี้ไม่มีคำสั่ง `php`; ต้องทดสอบผ่านเซิร์ฟเวอร์จริงหรือรัน lint ภายหลัง
+  - แนะนำให้ล็อกอินเป็น `Support02` (Seller) แล้วเปิดหน้า Project ในโหมด All Teams เพื่อยืนยันว่าตารางแสดงยอดการเงินถูกต้อง พร้อมตรวจซ้ำด้วยบทบาท Engineer เพื่อให้แน่ใจว่ามาตรการปิดข้อมูลยังทำงาน
+
+### 13.13 บันทึกการปรับปรุงล่าสุด (ตามการสนทนา ณ ปัจจุบัน)
+
+- **pages/project/project.php**
+  - ขยายเงื่อนไข SQL และตัวกรองให้ Sale Supervisor / Seller / Engineer เห็นโครงการที่ถูกแชร์ถึงตนเอง (ผูกกับ `project_members`), พร้อม flag `is_shared_member` เพื่อใช้ใน UI
+  - ปรับ `calculateProjectMetrics()` ไม่ให้นับโครงการที่ถูกแชร์เข้ามาในสถิติการ์ด และทบทวนการเรนเดอร์ตารางให้ระบุ badge ระดับสิทธิ์ (View/Half/Full) พร้อมควบคุมการเปิด/ปิดปุ่มตามบทบาท
+  - อัปเดตสิทธิ์ปุ่ม `Action` ใหม่: Engineer ที่เป็นเจ้าของหรือถูกแชร์ Half/Full Access สามารถกด “จัดการโครงการ” ได้ (แต่ยังถูกล็อก Edit/Delete ตามสิทธิ์), และเพิ่มการจัดการ DataTables (`scrollX`, `fixedColumns`, `stateSave`) เพื่อให้หัวตารางตรงคอลัมน์ทุกบทบาท
+  - ปรับสคริปต์ DataTables ให้ใช้คีย์ state ต่อบทบาท และเรียก `columns.adjust()` หลัง init/resize เพื่อกันปัญหาหัวตารางเหลื่อมเมื่อสลับบทบาท
+
+- **pages/account/edit_account.php**
+  - แก้บั๊กอัปโหลดรูปโปรไฟล์ (เดิมอ้าง `safe_name` ที่ไม่มีในผลลัพธ์ validation) โดยสร้างชื่อไฟล์ใหม่ที่ปลอดภัย, ตรวจ/สร้างโฟลเดอร์ และลบไฟล์เก่าหลังอัปเดตสำเร็จ
+  - หลังบันทึกสำเร็จตั้ง `$_SESSION['success']` แล้ว redirect กลับ `account.php` ทันที เพื่อกันหน้าเปล่า/การรัน JS ไม่ครบ
+
+- **pages/project/view_project.php**
+  - ปรับตรรกะตั้งค่าสิทธิ์ (`hasFullAccess/hasHalfAccess/hasAccessToFinancialInfo`) ให้ตรวจ `is_active` จากการแชร์แม้บทบาท/ทีมไม่ตรง (แก้เคส Sale Supervisor จากทีมอื่นได้รับ Full Access แต่แท็บไม่ครบ)
+
+- **หมายเหตุเพิ่มเติม**
+  - ไม่สามารถรัน `php -l` ในสภาพแวดล้อมนี้ (ไม่มีคำสั่ง `php`); ทุกครั้งหลังแก้ไขให้ทดสอบผ่านเว็บเซิร์ฟเวอร์จริง
+  - ถัดไปหากปรับสิทธิ์การแชร์เพิ่มเติม ให้พิจารณาอัปเดตสรุปนี้ต่อเนื่องเพื่อลดเวลา onboarding
+
+### 13.14 บันทึกเสริม (อัปเดตล่าสุด)
+
+- **config/validation.php**
+  - ปรับโครงสร้าง rate limit ให้จำสถานะเป็น array (attempts/block_level/block_expires) เสมอ ป้องกัน warning หาก session ว่าง
+  - เพิ่มการบล็อกแบบค่อย ๆ เพิ่มเวลา (1,3,5,7,9,15 นาที) พร้อมส่งคืนข้อมูล `retry_after`, `details`, `block_level` เพื่อใช้แสดงบน UI และป้องกันการล็อกแบบไม่บอกเหตุผล
+
+- **pages/account/edit_account.php**
+  - ปรับ validation: บริษัทรองรับ 1–500 ตัวอักษร, ตำแหน่งไม่บังคับ (ถ้าใส่ต้อง ≤100 ตัวอักษร), บังคับอีเมลตรวจรูปแบบทั้งฝั่งเซิร์ฟเวอร์และ JS
+  - ปรับ rate limit UI: หากถูกบล็อกจะแสดง SweetAlert แจ้งเหตุผล (จำนวนครั้งในช่วงเวลา) พร้อมนับเวลาถอยหลัง และอนุญาตให้ปิด popup ระหว่างรอ
+  - แก้ flow หลังบันทึกสำเร็จให้ redirect กลับหน้า account พร้อม `$_SESSION['success']`
+
+- **pages/account/account.php / view_account.php**
+  - เพิ่มการแสดงรูปโปรไฟล์วงกลม (หากไม่มีใช้ `assets/img/pit.png`) และทำให้คลิกแถว/ปุ่ม “View” นำไปหน้ารายละเอียด (`view_account.php?id=...`)
+  - จัดการ fallback รูปในกรณีเก็บ path แปลก ๆ (เช่น `uploads/profile_images/...` หรือมี slash) โดยตรวจไฟล์จริงก่อน fallback
+  - เพิ่มสคริปต์ให้คลิกแถว (ยกเว้นปุ่ม Action) นำไปหน้า view_account ได้ทันที
+
+- **index.php (Dashboard)**
+  - เพิ่ม tooltip ภาษาไทยบอกเงื่อนไขคำนวณบนการ์ดสถิติต่าง ๆ (จำนวนทีม, โครงการ, ยอดขาย ฯลฯ) โดยคำนึงถึงช่วงวันที่และบทบาท/ตัวกรองปัจจุบัน
+
+- **pages/project/view_project.php**
+  - ซ่อมกรณี Sale Supervisor/ผู้ถูกแชร์ Full Access จากทีมอื่นไม่เห็นแท็บเต็ม ถ้า `is_active` เป็น Full/Half จะตั้ง `hasFullAccess/hasHalfAccess` ให้ถูกต้อง
+
+- **อื่น ๆ**
+  - ปรับ DataTables ในหน้าที่เกี่ยวข้องให้จัด layout/head-synced และใช้ state ต่อบทบาท ป้องกันหัวตารางเหลื่อมเมื่อสลับ role
+  - เพิ่ม badge แสดงระดับการแชร์ (Shared View/Half/Full) ในตาราง project เพื่อช่วย debug สิทธิ์ได้ง่ายขึ้น

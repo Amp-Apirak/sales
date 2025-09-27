@@ -65,23 +65,23 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
     <!-- เพิ่ม JavaScript ของ DataTables -->
     <script type="text/javascript" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
 
-    <!-- ใช้ฟอนต์ Noto Sans Thai กับ label -->
+    <!-- ใช้ฟอนต์ Sarabun กับ label -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
 
     <style>
-        /* ใช้ฟอนต์ Noto Sans Thai กับ label */
+        /* ใช้ฟอนต์ Sarabun กับ label */
         th,
         h1 {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 600;
             font-size: 14px;
             color: #333;
         }
 
         .custom-th {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 600;
             font-size: 18px;
             color: #FF5733;
@@ -144,7 +144,7 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
         .content-header h1,
         .card-body h3,
         .card-body h4 {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 600;
             color: #333;
         }
@@ -153,7 +153,7 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
         .price-info,
         .supplier-info,
         .table {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 400;
         }
 
@@ -211,12 +211,12 @@ $show_edit_delete = ($is_creator || $is_executive || ($is_sale_supervisor_or_sel
     <style>
         /* กำหนดฟอนต์ให้ทั้งหน้า */
         body {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
         }
 
         /* กำหนดฟอนต์ให้ตาราง */
         .table {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-size: 14px;
             /* ปรับขนาดฟอนต์ให้เล็กลง */
         }

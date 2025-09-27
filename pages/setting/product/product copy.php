@@ -166,7 +166,7 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <style>
         /* ตั้งค่าฟอนต์หลัก */
         body {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
         }
 
         /* การ์ดสินค้า */

@@ -53,7 +53,7 @@ $image_path = !empty($supplier['suppliers_image'])
     <?php include '../../../include/header.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
     <style>
         .supplier-image {
             width: 200px;
@@ -115,7 +115,7 @@ $image_path = !empty($supplier['suppliers_image'])
     <!-- ส่วน CSS สำหรับตาราง -->
     <style>
         th {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 700;
             font-size: 14px;
             color: #333;

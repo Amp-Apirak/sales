@@ -105,18 +105,18 @@ $query_employees = $stmt->fetchAll();
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
     <style>
         th,
         h1 {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 700;
             font-size: 14px;
             color: #333;
         }
 
         .custom-th {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
             font-weight: 600;
             font-size: 18px;
             color: #FF5733;
@@ -267,7 +267,7 @@ $query_employees = $stmt->fetchAll();
                                         </thead>
                                         <tbody>
                                             <?php foreach ($query_employees as $employee) { ?>
-                                                <tr>
+                                                <tr class="employee-row" style="cursor: pointer;" onclick="window.location.href='view_employees.php?id=<?php echo urlencode(encryptUserId($employee['id'])); ?>';" data-employee-id="<?php echo urlencode(encryptUserId($employee['id'])); ?>">
                                                     <td class="text-nowrap "><?php echo htmlspecialchars($employee['first_name_th'] . ' ' . $employee['last_name_th']); ?></td>
                                                     <td class="text-nowrap "><?php echo htmlspecialchars($employee['first_name_en'] . ' ' . $employee['last_name_en']); ?></td>
                                                     <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['nickname_th']); ?></td>
@@ -279,11 +279,11 @@ $query_employees = $stmt->fetchAll();
                                                     <td class="text-nowrap "><?php echo !empty($employee['personal_email']) ? htmlspecialchars($employee['personal_email']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap "><?php echo !empty($employee['company_email']) ? htmlspecialchars($employee['company_email']) : 'ไม่ระบุข้อมูล'; ?></td>
                                                     <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['created_at']); ?></td>
-                                                    <td class="text-nowrap text-center">
-                                                        <a href="view_employees.php?id=<?php echo urlencode(encryptUserId($employee['id'])); ?>" class="btn btn-sm btn-primary">
+                                                    <td class="text-nowrap text-center" onclick="event.stopPropagation();">
+                                                        <a href="view_employees.php?id=<?php echo urlencode(encryptUserId($employee['id'])); ?>" class="btn btn-sm btn-primary" title="ดูรายละเอียด">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
-                                                        <a href="edit_employees.php?id=<?php echo urlencode(encryptUserId($employee['id'])); ?>" class="btn btn-info btn-sm"><i class="fas fa-pencil-alt"></i></a>
+                                                        <a href="edit_employees.php?id=<?php echo urlencode(encryptUserId($employee['id'])); ?>" class="btn btn-info btn-sm" title="แก้ไข"><i class="fas fa-pencil-alt"></i></a>
                                                     </td>
                                                 </tr>
                                             <?php } ?>
@@ -506,6 +506,27 @@ $query_employees = $stmt->fetchAll();
             .info-section .card:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Employee row clickable styling */
+            .employee-row:hover {
+                background-color: #f8f9fa !important;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                transition: all 0.2s ease;
+            }
+
+            .employee-row td {
+                position: relative;
+            }
+
+            /* Prevent double click on action buttons */
+            .employee-row td:last-child {
+                cursor: default;
+            }
+
+            .employee-row td:last-child:hover {
+                background-color: transparent;
             }
         </style>
 

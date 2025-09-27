@@ -202,10 +202,10 @@ function handleImageUpload($file)
     <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
     <!-- เพิ่ม SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
-    <!-- เพิ่มลิงก์ฟอนต์ Noto Sans Thai ในส่วน <head> ของเอกสาร HTML -->
+    <!-- เพิ่มลิงก์ฟอนต์ Sarabun ในส่วน <head> ของเอกสาร HTML -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kodchasan:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
 
     <style>
         .card {
@@ -249,7 +249,7 @@ function handleImageUpload($file)
     </style>
     <!-- เพิ่ม CSS ต่อไปนี้ในแท็ก <style> หรือไฟล์ CSS ของคุณ -->
     <style>
-        /* ใช้ฟอนต์ Noto Sans Thai กับทั้งหน้าเว็บ */
+        /* ใช้ฟอนต์ Sarabun กับทั้งหน้าเว็บ */
         body,
         h1,
         h2,
@@ -263,7 +263,7 @@ function handleImageUpload($file)
         select,
         textarea,
         button {
-            font-family: 'Noto Sans Thai', sans-serif;
+            font-family: 'Sarabun', sans-serif;
         }
 
         /* ปรับแต่งสไตล์เฉพาะสำหรับหัวข้อและฟิลด์ข้อมูล */

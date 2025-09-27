@@ -198,7 +198,7 @@ function validateUploadedFile($file, $allowedTypes = ['jpg', 'jpeg', 'png', 'pdf
 /**
  * ฟังก์ชันสำหรับ Rate Limiting
  */
-function checkRateLimit($identifier, $maxAttempts = 5, $timeWindow = 900) { // 15 นาที
+function checkRateLimit($identifier, $maxAttempts = 5, $timeWindow = 600) {
     if (!isset($_SESSION['rate_limit'])) {
         $_SESSION['rate_limit'] = [];
     }
@@ -206,24 +206,78 @@ function checkRateLimit($identifier, $maxAttempts = 5, $timeWindow = 900) { // 1
     $now = time();
     $key = 'rate_' . $identifier;
 
-    // ล้างข้อมูลเก่า
-    if (isset($_SESSION['rate_limit'][$key])) {
-        $_SESSION['rate_limit'][$key] = array_filter($_SESSION['rate_limit'][$key], function($timestamp) use ($now, $timeWindow) {
-            return ($now - $timestamp) < $timeWindow;
-        });
-    } else {
+    if (!isset($_SESSION['rate_limit'][$key]) || !is_array($_SESSION['rate_limit'][$key])) {
         $_SESSION['rate_limit'][$key] = [];
     }
 
-    // ตรวจสอบจำนวนครั้ง
-    if (count($_SESSION['rate_limit'][$key]) >= $maxAttempts) {
-        return ['allowed' => false, 'message' => 'พยายามเกินจำนวนที่กำหนด กรุณาลองใหม่ใน 15 นาที'];
+    $entry =& $_SESSION['rate_limit'][$key];
+    $entry['attempts'] = $entry['attempts'] ?? [];
+    $entry['block_level'] = $entry['block_level'] ?? 0;
+    $entry['block_expires'] = $entry['block_expires'] ?? 0;
+
+    if (!empty($entry['block_expires']) && $entry['block_expires'] > $now) {
+        $retryAfter = $entry['block_expires'] - $now;
+        $minutes = ceil($retryAfter / 60);
+        $message = 'พยายามเกินจำนวนที่กำหนด กรุณาลองใหม่อีกครั้งใน ' . $minutes . ' นาที';
+        return [
+            'allowed' => false,
+            'message' => $message,
+            'retry_after' => $retryAfter,
+            'details' => sprintf(
+                'อยู่ในช่วงรอปลดล็อก (ระดับการบล็อก %d) เหลือ %d วินาที',
+                $entry['block_level'],
+                $retryAfter
+            ),
+            'block_level' => $entry['block_level']
+        ];
     }
 
-    // บันทึกการพยายาม
-    $_SESSION['rate_limit'][$key][] = $now;
+    if (!empty($entry['block_expires']) && $entry['block_expires'] <= $now) {
+        $entry['block_expires'] = 0;
+        $entry['attempts'] = [];
+    }
 
-    return ['allowed' => true];
+    $entry['attempts'] = array_filter(
+        $entry['attempts'],
+        function ($timestamp) use ($now, $timeWindow) {
+            return ($now - $timestamp) < $timeWindow;
+        }
+    );
+    $attemptCount = count($entry['attempts']);
+
+    if ($attemptCount >= $maxAttempts) {
+        $entry['block_level'] = min($entry['block_level'] + 1, 6);
+        $penalties = [60, 180, 300, 420, 540, 900];
+        $penaltyIndex = max(0, min($entry['block_level'] - 1, count($penalties) - 1));
+        $penaltyDuration = $penalties[$penaltyIndex];
+        $entry['block_expires'] = $now + $penaltyDuration;
+        $entry['attempts'] = [];
+
+        $minutes = ceil($penaltyDuration / 60);
+        $message = 'พยายามเกินจำนวนที่กำหนด กรุณาลองใหม่อีกครั้งใน ' . $minutes . ' นาที';
+
+        return [
+            'allowed' => false,
+            'message' => $message,
+            'retry_after' => $penaltyDuration,
+            'details' => sprintf(
+                'ระบบพบบทความแก้ไข %d ครั้งภายใน %d นาที (จำกัด %d ครั้ง)',
+                $attemptCount,
+                ceil($timeWindow / 60),
+                $maxAttempts
+            ),
+            'block_level' => $entry['block_level']
+        ];
+    }
+
+    $entry['attempts'][] = $now;
+
+    return [
+        'allowed' => true,
+        'retry_after' => 0,
+        'attempts' => $attemptCount + 1,
+        'block_level' => $entry['block_level']
+    ];
 }
 
 /**

@@ -278,6 +278,66 @@ try {
     $team_label = ($role === 'Executive') ? "จำนวนทีมทั้งหมด" : "จำนวนทีมที่ฉันอยู่";
     $member_label = ($role === 'Executive' || $role === 'Sale Supervisor') ? "จำนวนคนทั้งหมด" : "จำนวนคนในทีมของฉัน";
 
+    // จัดเตรียมข้อความ tooltip อธิบายเงื่อนไขการคำนวณ
+    $formatted_start = date('d/m/Y', strtotime($filter_date_range[0] ?? $current_year . '-01-01'));
+    $formatted_end = date('d/m/Y', strtotime($filter_date_range[1] ?? $current_date));
+    $date_range_text = "ช่วงวันที่ {$formatted_start} ถึง {$formatted_end}";
+
+    $scope_text = 'ทุกโครงการในระบบ';
+    if (!empty($filter_user_id)) {
+        $scope_text = 'เฉพาะโครงการของพนักงานที่เลือกในตัวกรอง';
+    } elseif ($can_view_all && !empty($filter_team_id)) {
+        $scope_text = 'เฉพาะโครงการของทีมที่เลือกในตัวกรอง';
+    } elseif ($can_view_team) {
+        $current_team_switch = $_SESSION['team_id'] ?? 'ALL';
+        $current_team_name = $_SESSION['team_name'] ?? '';
+        if ($current_team_switch === 'ALL') {
+            $scope_text = 'ทุกทีมที่คุณสังกัด (โหมด All Teams)';
+        } else {
+            $scope_text = 'เฉพาะโครงการของทีม ' . ($current_team_name !== '' ? $current_team_name : 'ที่เลือกใน Team Switcher');
+        }
+    } elseif ($can_view_own) {
+        $scope_text = 'เฉพาะโครงการที่คุณรับผิดชอบ';
+    }
+
+    $filter_note = (!empty($filter_user_id) || (!empty($filter_team_id) && $can_view_all))
+        ? ' (อิงตามตัวกรองที่เลือก)'
+        : '';
+
+    if ($role === 'Executive') {
+        $tooltip_team = 'นับจำนวนทีมทั้งหมดในระบบจากตารางทีม' . $filter_note . '';
+        $tooltip_members = 'นับจำนวนผู้ใช้งานทั้งหมดที่อยู่ในระบบหรือในทีมที่คุณเลือกจากตัวกรอง';
+    } elseif ($role === 'Sale Supervisor') {
+        $tooltip_team = 'นับจำนวนทีมที่คุณสังกัดตาม Team Switcher หรือตัวกรองในปัจจุบัน';
+        $tooltip_members = 'นับจำนวนสมาชิกในทุกทีมที่คุณดูอยู่ขณะนี้ (ไม่รวมทีมที่ไม่ได้รับสิทธิ์)';
+    } else {
+        $tooltip_team = 'นับจำนวนทีมที่คุณสังกัดอยู่ (จากข้อมูล user_teams)';
+        $tooltip_members = 'นับจำนวนสมาชิกภายในทีมที่คุณสังกัดอยู่เท่านั้น';
+    }
+
+    if (!empty($filter_user_id) || (!empty($filter_team_id) && $can_view_all)) {
+        $tooltip_members .= ' (จำกัดตามตัวกรองที่เลือก)';
+    }
+
+    $tooltip_total_projects = 'นับจำนวนโครงการทั้งหมดใน ' . $scope_text . ' ' . $date_range_text;
+    $tooltip_total_products = 'นับจำนวนสินค้า/บริการทั้งหมดที่บันทึกไว้ในระบบ (ตาราง products)';
+
+    $ongoing_statuses = ['นำเสนอโครงการ (Presentations)', 'ใบเสนอราคา (Quotation)', 'ยื่นประมูล (Bidding)', 'รอการพิจารณา (On Hold)'];
+    $tooltip_win_projects = 'นับจำนวนโครงการสถานะ "ชนะ (Win)" ใน ' . $scope_text . ' ' . $date_range_text;
+    $tooltip_ongoing_projects = 'นับจำนวนโครงการสถานะ ' . implode(', ', $ongoing_statuses) . ' ใน ' . $scope_text . ' ' . $date_range_text;
+    $tooltip_loss_projects = 'นับจำนวนโครงการสถานะ "แพ้ (Loss)" ใน ' . $scope_text . ' ' . $date_range_text;
+    $tooltip_canceled_projects = 'นับจำนวนโครงการสถานะ "ยกเลิก (Cancled)" ใน ' . $scope_text . ' ' . $date_range_text;
+
+    $tooltip_total_sales = 'ยอดขายรวมไม่รวมภาษีของ ' . $scope_text . ' ' . $date_range_text;
+    $tooltip_total_cost = 'ต้นทุนรวมไม่รวมภาษีของ ' . $scope_text . ' ' . $date_range_text;
+    $tooltip_total_profit = 'กำไร = ยอดขายรวม - ต้นทุนรวม (ไม่รวม VAT) ใน ' . $scope_text . ' ' . $date_range_text;
+    $tooltip_profit_percentage = 'คำนวณจาก (กำไรรวม ÷ ยอดขายรวม) × 100 หากยอดขายเป็น 0 จะแสดง 0%';
+
+    $tooltip_win_sales = 'ยอดขายไม่รวม VAT ของโครงการที่สถานะ "ชนะ (Win)" ใน ' . $scope_text . ' ' . $date_range_text;
+    $tooltip_win_cost = 'ต้นทุนไม่รวม VAT ของโครงการที่สถานะ "ชนะ (Win)" ใน ' . $scope_text . ' ' . $date_range_text;
+    $tooltip_win_profit = 'กำไรของโครงการที่สถานะ "ชนะ (Win)" (ยอดขาย - ต้นทุน)';
+    $tooltip_win_profit_percentage = 'เปอร์เซ็นต์กำไรของโครงการที่สถานะ "ชนะ (Win)" คำนวณจาก (กำไร ÷ ยอดขาย Win) × 100';
+
 } catch (PDOException $e) {
     error_log("Database query error in Section 5: " . $e->getMessage());
     // --- Add default values to prevent warnings ---
@@ -790,7 +850,7 @@ try {
                     <!-- ส่วนแสดงผล KPIs -->
                     <div class="row">
                         <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
-                            <div class="card card-statistic">
+                            <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_team); ?>">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="icon-circle bg-primary">
@@ -805,7 +865,7 @@ try {
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
-                            <div class="card card-statistic">
+                            <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_members); ?>">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="icon-circle bg-success">
@@ -821,7 +881,7 @@ try {
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
-                            <div class="card card-statistic">
+                            <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_total_projects); ?>">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="icon-circle bg-danger">
@@ -836,7 +896,7 @@ try {
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
-                            <div class="card card-statistic">
+                            <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_total_products); ?>">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center mb-3">
                                         <div class="icon-circle bg-warning">
@@ -857,7 +917,7 @@ try {
                         <div class="row">
                             <!-- การ์ดแสดงจำนวนโครงการสถานะชนะ (Win) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card card-statistic">
+                                <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_win_projects); ?>">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="icon-circle bg-success">
@@ -874,7 +934,7 @@ try {
 
                             <!-- การ์ดแสดงจำนวนโครงการที่กำลังดำเนินการ -->
                             <div class="col-lg-3 col-6">
-                                <div class="card card-statistic">
+                                <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_ongoing_projects); ?>">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="icon-circle bg-warning">
@@ -892,7 +952,7 @@ try {
 
                             <!-- การ์ดแสดงจำนวนโครงการสถานะแพ้ (Loss) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card card-statistic">
+                                <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_loss_projects); ?>">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="icon-circle bg-danger">
@@ -909,8 +969,7 @@ try {
 
                             <!-- การ์ดแสดงจำนวนโครงการทั้งหมด -->
                             <div class="col-lg-3 col-6">
-
-                                <div class="card card-statistic">
+                                <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_canceled_projects); ?>">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="icon-circle bg-info">
@@ -939,7 +998,7 @@ try {
                         <div class="row">
                             <!-- Card 1: ยอดขายรวมทั้งหมด (No vat) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-info" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div class="card bg-info" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_total_sales); ?>">
                                     <div class="card-header" style="background: linear-gradient(to right, #17a2b8, #3498db); border-radius: 15px 15px 0 0; border: none;">
                                         <h3 class="card-title" style="font-weight: 600; color: white;">
                                             <i class="fas fa-chart-line mr-2"></i>
@@ -964,7 +1023,7 @@ try {
 
                             <!-- Card 2: ต้นทุนรวมทั้งหมด (No vat) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-secondary" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div class="card bg-secondary" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_total_cost); ?>">
                                     <div class="card-header" style="background: linear-gradient(to right, #6c757d, #495057); border-radius: 15px 15px 0 0; border: none;">
                                         <h3 class="card-title" style="font-weight: 600; color: white;">
                                             <i class="fas fa-money-bill mr-2"></i>
@@ -989,7 +1048,7 @@ try {
 
                             <!-- Card 3: กำไรรวมทั้งหมด (No Vat) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-primary" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div class="card bg-primary" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_total_profit); ?>">
                                     <div class="card-header" style="background: linear-gradient(to right, #007bff, #0056b3); border-radius: 15px 15px 0 0; border: none;">
                                         <h3 class="card-title" style="font-weight: 600; color: white;">
                                             <i class="fas fa-hand-holding-usd mr-2"></i>
@@ -1014,7 +1073,7 @@ try {
 
                             <!-- Card 4: กำไรรวมทั้งหมด (No Vat %) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-purple" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div class="card bg-purple" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_profit_percentage); ?>">
                                     <div class="card-header" style="background: linear-gradient(to right, #6f42c1, #563d7c); border-radius: 15px 15px 0 0; border: none;">
                                         <h3 class="card-title" style="font-weight: 600; color: white;">
                                             <i class="fas fa-percentage mr-2"></i>
@@ -1047,7 +1106,7 @@ try {
                         <div class="row">
                             <!-- Card 1: Win ยอดขายรวม (No vat) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-success" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div class="card bg-success" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_win_sales); ?>">
                                     <div class="card-header" style="background: linear-gradient(to right, #28a745, #20c997); border-radius: 15px 15px 0 0; border: none;">
                                         <h3 class="card-title" style="font-weight: 600; color: white;">
                                             <i class="fas fa-chart-line mr-2"></i>
@@ -1072,7 +1131,7 @@ try {
 
                             <!-- Card 2: Win ต้นทุนรวม (No Vat) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-primary" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div class="card bg-primary" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_win_cost); ?>">
                                     <div class="card-header" style="background: linear-gradient(to right, #007bff, #17a2b8); border-radius: 15px 15px 0 0; border: none;">
                                         <h3 class="card-title" style="font-weight: 600; color: white;">
                                             <i class="fas fa-shopping-cart mr-2"></i>
@@ -1097,7 +1156,7 @@ try {
 
                             <!-- Card 3: Win กำไรรวม (No Vat) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-warning" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div class="card bg-warning" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_win_profit); ?>">
                                     <div class="card-header" style="background: linear-gradient(to right, #ffc107, #fd7e14); border-radius: 15px 15px 0 0; border: none;">
                                         <h3 class="card-title" style="font-weight: 600; color: white;">
                                             <i class="fas fa-coins mr-2"></i>
@@ -1122,7 +1181,7 @@ try {
 
                             <!-- Card 4: Win กำไร (No Vat %) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card bg-danger" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                <div class="card bg-danger" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_win_profit_percentage); ?>">
                                     <div class="card-header" style="background: linear-gradient(to right, #dc3545, #e83e8c); border-radius: 15px 15px 0 0; border: none;">
                                         <h3 class="card-title" style="font-weight: 600; color: white;">
                                             <i class="fas fa-percentage mr-2"></i>
@@ -1306,6 +1365,8 @@ try {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/daterangepicker/3.1.0/daterangepicker.min.js"></script>
     <script>
         $(function() {
+            $('[data-toggle="tooltip"]').tooltip();
+
             // ตั้งค่าภาษาไทยสำหรับ moment.js
             moment.locale('th');
 
