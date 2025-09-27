@@ -612,3 +612,48 @@ grep -A 6 -B 2 "count.*teams.*> 1" login.php
 - **การยืนยัน/ทดสอบ**
   - พยายามรัน `php -l pages/project/project.php` เพื่อตรวจสอบ syntax แต่เครื่องในสภาพแวดล้อมนี้ไม่มีคำสั่ง `php`; ต้องทดสอบผ่านเซิร์ฟเวอร์จริงหรือรัน lint ภายหลัง
   - แนะนำให้ล็อกอินเป็น `Support02` (Seller) แล้วเปิดหน้า Project ในโหมด All Teams เพื่อยืนยันว่าตารางแสดงยอดการเงินถูกต้อง พร้อมตรวจซ้ำด้วยบทบาท Engineer เพื่อให้แน่ใจว่ามาตรการปิดข้อมูลยังทำงาน
+
+### 13.13 บันทึกการปรับปรุงล่าสุด (ตามการสนทนา ณ ปัจจุบัน)
+
+- **pages/project/project.php**
+  - ขยายเงื่อนไข SQL และตัวกรองให้ Sale Supervisor / Seller / Engineer เห็นโครงการที่ถูกแชร์ถึงตนเอง (ผูกกับ `project_members`), พร้อม flag `is_shared_member` เพื่อใช้ใน UI
+  - ปรับ `calculateProjectMetrics()` ไม่ให้นับโครงการที่ถูกแชร์เข้ามาในสถิติการ์ด และทบทวนการเรนเดอร์ตารางให้ระบุ badge ระดับสิทธิ์ (View/Half/Full) พร้อมควบคุมการเปิด/ปิดปุ่มตามบทบาท
+  - อัปเดตสิทธิ์ปุ่ม `Action` ใหม่: Engineer ที่เป็นเจ้าของหรือถูกแชร์ Half/Full Access สามารถกด “จัดการโครงการ” ได้ (แต่ยังถูกล็อก Edit/Delete ตามสิทธิ์), และเพิ่มการจัดการ DataTables (`scrollX`, `fixedColumns`, `stateSave`) เพื่อให้หัวตารางตรงคอลัมน์ทุกบทบาท
+  - ปรับสคริปต์ DataTables ให้ใช้คีย์ state ต่อบทบาท และเรียก `columns.adjust()` หลัง init/resize เพื่อกันปัญหาหัวตารางเหลื่อมเมื่อสลับบทบาท
+
+- **pages/account/edit_account.php**
+  - แก้บั๊กอัปโหลดรูปโปรไฟล์ (เดิมอ้าง `safe_name` ที่ไม่มีในผลลัพธ์ validation) โดยสร้างชื่อไฟล์ใหม่ที่ปลอดภัย, ตรวจ/สร้างโฟลเดอร์ และลบไฟล์เก่าหลังอัปเดตสำเร็จ
+  - หลังบันทึกสำเร็จตั้ง `$_SESSION['success']` แล้ว redirect กลับ `account.php` ทันที เพื่อกันหน้าเปล่า/การรัน JS ไม่ครบ
+
+- **pages/project/view_project.php**
+  - ปรับตรรกะตั้งค่าสิทธิ์ (`hasFullAccess/hasHalfAccess/hasAccessToFinancialInfo`) ให้ตรวจ `is_active` จากการแชร์แม้บทบาท/ทีมไม่ตรง (แก้เคส Sale Supervisor จากทีมอื่นได้รับ Full Access แต่แท็บไม่ครบ)
+
+- **หมายเหตุเพิ่มเติม**
+  - ไม่สามารถรัน `php -l` ในสภาพแวดล้อมนี้ (ไม่มีคำสั่ง `php`); ทุกครั้งหลังแก้ไขให้ทดสอบผ่านเว็บเซิร์ฟเวอร์จริง
+  - ถัดไปหากปรับสิทธิ์การแชร์เพิ่มเติม ให้พิจารณาอัปเดตสรุปนี้ต่อเนื่องเพื่อลดเวลา onboarding
+
+### 13.14 บันทึกเสริม (อัปเดตล่าสุด)
+
+- **config/validation.php**
+  - ปรับโครงสร้าง rate limit ให้จำสถานะเป็น array (attempts/block_level/block_expires) เสมอ ป้องกัน warning หาก session ว่าง
+  - เพิ่มการบล็อกแบบค่อย ๆ เพิ่มเวลา (1,3,5,7,9,15 นาที) พร้อมส่งคืนข้อมูล `retry_after`, `details`, `block_level` เพื่อใช้แสดงบน UI และป้องกันการล็อกแบบไม่บอกเหตุผล
+
+- **pages/account/edit_account.php**
+  - ปรับ validation: บริษัทรองรับ 1–500 ตัวอักษร, ตำแหน่งไม่บังคับ (ถ้าใส่ต้อง ≤100 ตัวอักษร), บังคับอีเมลตรวจรูปแบบทั้งฝั่งเซิร์ฟเวอร์และ JS
+  - ปรับ rate limit UI: หากถูกบล็อกจะแสดง SweetAlert แจ้งเหตุผล (จำนวนครั้งในช่วงเวลา) พร้อมนับเวลาถอยหลัง และอนุญาตให้ปิด popup ระหว่างรอ
+  - แก้ flow หลังบันทึกสำเร็จให้ redirect กลับหน้า account พร้อม `$_SESSION['success']`
+
+- **pages/account/account.php / view_account.php**
+  - เพิ่มการแสดงรูปโปรไฟล์วงกลม (หากไม่มีใช้ `assets/img/pit.png`) และทำให้คลิกแถว/ปุ่ม “View” นำไปหน้ารายละเอียด (`view_account.php?id=...`)
+  - จัดการ fallback รูปในกรณีเก็บ path แปลก ๆ (เช่น `uploads/profile_images/...` หรือมี slash) โดยตรวจไฟล์จริงก่อน fallback
+  - เพิ่มสคริปต์ให้คลิกแถว (ยกเว้นปุ่ม Action) นำไปหน้า view_account ได้ทันที
+
+- **index.php (Dashboard)**
+  - เพิ่ม tooltip ภาษาไทยบอกเงื่อนไขคำนวณบนการ์ดสถิติต่าง ๆ (จำนวนทีม, โครงการ, ยอดขาย ฯลฯ) โดยคำนึงถึงช่วงวันที่และบทบาท/ตัวกรองปัจจุบัน
+
+- **pages/project/view_project.php**
+  - ซ่อมกรณี Sale Supervisor/ผู้ถูกแชร์ Full Access จากทีมอื่นไม่เห็นแท็บเต็ม ถ้า `is_active` เป็น Full/Half จะตั้ง `hasFullAccess/hasHalfAccess` ให้ถูกต้อง
+
+- **อื่น ๆ**
+  - ปรับ DataTables ในหน้าที่เกี่ยวข้องให้จัด layout/head-synced และใช้ state ต่อบทบาท ป้องกันหัวตารางเหลื่อมเมื่อสลับ role
+  - เพิ่ม badge แสดงระดับการแชร์ (Shared View/Half/Full) ในตาราง project เพื่อช่วย debug สิทธิ์ได้ง่ายขึ้น
