@@ -20,6 +20,7 @@ $serviceCategories = [];
 $categoriesList = [];
 $subCategoriesList = [];
 $projects = [];
+$reporters = []; // ผู้แจ้ง
 $timelineLogs = [
     [
         'order' => 1,
@@ -67,6 +68,8 @@ if (!empty($timelineLogs)) {
 
 $currentUserId = $_SESSION['user_id'] ?? null;
 $currentTeamId = $_SESSION['team_id'] ?? null;
+$currentUserName = trim(($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '')) ?: 'ผู้ใช้ระบบ';
+$currentDateTime = date('Y-m-d\TH:i');
 $defaultTicketType = 'Incident';
 $defaultStatus = 'New';
 $defaultSource = 'Portal';
@@ -74,7 +77,7 @@ $defaultPriority = 'Low';
 $defaultUrgency = 'Low';
 $defaultImpact = 'Department';
 $defaultSlaTarget = 24;
-$defaultStartAt = date('Y-m-d\TH:i');
+$defaultStartAt = $currentDateTime;
 
 try {
     // รายชื่อเจ้าของงาน (ผู้ใช้งานระบบทั้งหมด)
@@ -99,6 +102,9 @@ try {
     // รายชื่อโครงการที่เปิดอยู่
     $stmtProjects = $condb->query("SELECT project_id, project_name FROM projects ORDER BY project_name ASC");
     $projects = $stmtProjects->fetchAll();
+
+    // ผู้แจ้ง (ใช้รายชื่อผู้ใช้งานเดียวกันกับ Job Owner)
+    $reporters = $owners;
 } catch (PDOException $e) {
     // หากดึงข้อมูลไม่ได้ให้ยังคงแสดงหน้าโดยใช้ array ว่าง ๆ
 }
@@ -143,336 +149,232 @@ $menu = 'service';
     <?php include '../../include/header.php'; ?>
 
     <style>
-        .page-intro {
-            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
-            color: #fff;
-            border-radius: 1rem;
-            padding: 1.75rem;
-            box-shadow: 0px 20px 40px rgba(0, 0, 0, 0.12);
-            position: relative;
-            overflow: hidden;
+        /* Modern CSS for Service Ticket Form */
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .page-intro::after {
-            content: '';
-            position: absolute;
-            right: -40px;
-            bottom: -40px;
-            width: 180px;
-            height: 180px;
-            background: rgba(255, 255, 255, 0.09);
-            border-radius: 50%;
-        }
-
-        .page-intro .ticket-badge {
-            font-size: 0.85rem;
-            padding: 0.35rem 0.85rem;
-            border-radius: 999px;
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .summary-card {
-            border-radius: 1rem;
-            border: 1px solid rgba(0, 123, 255, 0.12);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
-        }
-
-        .summary-card .card-header {
-            border-radius: 1rem 1rem 0 0;
-            background: linear-gradient(135deg, rgba(0, 123, 255, 0.12), rgba(102, 16, 242, 0.2));
-        }
-
-        .form-section-title {
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .form-section-title i {
-            color: #007bff;
+        .content-wrapper {
+            background: transparent;
         }
 
         .card {
+            border: none;
             border-radius: 1rem;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.07);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
         }
 
-        .card-primary:not(.collapsed-card)>.card-header {
-            background: linear-gradient(135deg, #0d6efd, #6f42c1);
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
 
-        .card-primary>.card-header h3 {
-            color: #fff;
+        .card-header {
+            background: linear-gradient(135deg, #007bff, #6610f2);
+            border: none;
+            border-radius: 1rem 1rem 0 0 !important;
+            color: white;
+            padding: 1.25rem 1.5rem;
         }
 
-        .info-helper {
-            font-size: 0.75rem;
-            color: #6c757d;
-        }
-
-        .pill-stat {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.35rem 0.9rem;
-            border-radius: 999px;
-            font-size: 0.85rem;
+        .card-title {
             font-weight: 600;
-            margin-right: 0.35rem;
+            margin: 0;
+            font-size: 1.1rem;
         }
 
-        .pill-stat i {
-            margin-right: 0.35rem;
+        .card-body {
+            padding: 2rem;
         }
 
-        .pill-stat.type {
-            background: rgba(13, 110, 253, 0.12);
-            color: #0d6efd;
-        }
-
-        .pill-stat.status {
-            background: rgba(25, 135, 84, 0.12);
-            color: #198754;
-        }
-
-        .pill-stat.priority {
-            background: rgba(220, 53, 69, 0.12);
-            color: #dc3545;
-        }
-
-        .ticket-preview textarea {
-            background: rgba(248, 249, 250, 0.85);
-        }
-
-        .ticket-preview .service-preview-value {
-            display: inline-block;
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #212529;
-        }
-
-        .dropzone-mock {
-            border: 2px dashed rgba(13, 110, 253, 0.35);
-            border-radius: 1rem;
-            background: rgba(13, 110, 253, 0.04);
-            padding: 1.5rem;
-            text-align: center;
-            color: #4663ab;
-            transition: all 0.2s ease;
-        }
-
-        .dropzone-mock:hover {
-            background: rgba(13, 110, 253, 0.08);
-            border-color: rgba(13, 110, 253, 0.55);
-        }
-
-        .timeline-badge {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(13, 110, 253, 0.12);
-            color: #0d6efd;
-            margin-right: 0.85rem;
-        }
-
-        .timeline-item+.timeline-item {
-            border-top: 1px dashed rgba(13, 110, 253, 0.2);
-            padding-top: 1rem;
-        }
-
-        .timeline-item small {
-            color: #6c757d;
-        }
-
-        .form-control,
-        .select2-container--default .select2-selection--single {
+        .form-control {
+            border: 2px solid #e9ecef;
             border-radius: 0.75rem;
-            border-color: rgba(0, 0, 0, 0.08);
-        }
-
-        .select2-container--default .select2-selection--single {
-            height: calc(2.5rem + 2px);
-            padding: 0.35rem 0.85rem;
-        }
-
-        .radio-soft label {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 0.8rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(13, 110, 253, 0.15);
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .radio-soft input:checked+label {
-            background: rgba(13, 110, 253, 0.08);
-            border-color: rgba(13, 110, 253, 0.45);
-            color: #0d6efd;
-            font-weight: 600;
-        }
-
-        .section-divider {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.12rem;
-            color: #6c757d;
-        }
-
-        .ticket-meta-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 0.75rem;
-        }
-
-        .ticket-meta-grid .meta-card {
-            border-radius: 0.75rem;
-            padding: 0.65rem 0.75rem;
-            background: rgba(248, 249, 250, 0.85);
-            border: 1px solid rgba(0, 0, 0, 0.04);
-        }
-
-        .meta-card span {
-            display: block;
-            font-size: 0.75rem;
-            color: #6c757d;
-        }
-
-        .meta-card strong {
+            padding: 0.75rem 1rem;
             font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+            background: white;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: calc(2.25rem + 4px);
+            border: 2px solid #e9ecef;
+            border-radius: 0.75rem;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+        }
+
+        .btn {
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #6610f2);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
             color: #212529;
         }
 
-        .activity-timeline-card {
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+            color: #212529;
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid #6c757d;
+            color: #6c757d;
+            background: transparent;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #6c757d;
+            transform: translateY(-2px);
+        }
+
+        .dropzone-area {
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.05), rgba(102, 16, 242, 0.05));
+            border: 2px dashed #007bff !important;
             border-radius: 1rem;
-            overflow: hidden;
-            box-shadow: 0 15px 30px rgba(13, 110, 253, 0.08);
-            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
 
-        .activity-timeline-card::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(102, 16, 242, 0.04));
-            opacity: 0.4;
-            pointer-events: none;
+        .dropzone-area:hover {
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(102, 16, 242, 0.1));
+            border-color: #6610f2 !important;
+            transform: translateY(-2px);
         }
 
-        .activity-timeline-card .card-body {
-            position: relative;
-            z-index: 1;
-            padding: 1.5rem 1.75rem;
+        .text-danger {
+            color: #dc3545 !important;
+            font-weight: 600;
         }
 
-        .activity-timeline {
-            position: relative;
-            margin-left: 1.25rem;
+        .text-muted {
+            color: #6c757d !important;
         }
 
-        .activity-timeline::before {
-            content: '';
-            position: absolute;
-            left: 12px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: linear-gradient(180deg, rgba(13, 110, 253, 0.4), rgba(102, 16, 242, 0.4));
+        .gap-3 {
+            gap: 1rem;
         }
 
-        .activity-item {
-            position: relative;
-            padding-left: 2.5rem;
-            margin-bottom: 1.75rem;
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .btn-sm {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
         }
 
-        .activity-marker {
-            position: absolute;
-            left: -1px;
-            top: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        /* Custom animation for form */
+        .card {
+            animation: slideInUp 0.6s ease-out;
         }
 
-        .activity-marker .marker-index {
-            font-size: 0.75rem;
-            background: #0d6efd;
-            color: #fff;
-            border-radius: 999px;
-            padding: 0.25rem 0.6rem;
-            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
-            margin-bottom: 0.45rem;
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .activity-marker .marker-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #fff;
-            border: 3px solid #6f42c1;
-            box-shadow: 0 0 0 4px rgba(111, 66, 193, 0.12);
+        /* Select2 enhancements */
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 0.75rem;
+            padding-top: 0.5rem;
         }
 
-        .activity-content {
-            background: rgba(255, 255, 255, 0.88);
-            border-radius: 0.85rem;
-            border: 1px solid rgba(13, 110, 253, 0.08);
-            padding: 1.15rem 1.25rem;
-            box-shadow: 0 10px 20px rgba(13, 110, 253, 0.08);
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: calc(2.25rem + 4px);
+            right: 0.75rem;
         }
 
-        .activity-content h5 {
-            font-size: 1rem;
+        /* Form layout improvements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        /* Card outline variations */
+        .card-outline-info .card-header {
+            background: linear-gradient(135deg, #17a2b8, #6f42c1);
+        }
+
+        .card-outline-warning .card-header {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
             color: #212529;
         }
 
-        .activity-content .badge-light {
-            background: rgba(13, 110, 253, 0.15);
-            color: #0d6efd;
+        .card-outline-success .card-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
         }
 
-        .activity-attachment {
-            display: inline-flex;
-            align-items: center;
-            background: rgba(13, 110, 253, 0.12);
-            color: #0d6efd;
-            border-radius: 999px;
-            padding: 0.3rem 0.8rem;
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
-        }
-
-        .activity-attachment i {
-            margin-right: 0.4rem;
+        /* Additional spacing and layout adjustments */
+        .container-fluid {
+            padding: 2rem;
         }
 
         @media (max-width: 991.98px) {
-            .summary-card {
-                margin-top: 1.5rem;
-            }
-
-            .subject-cell {
-                width: 100%;
-            }
-
-            .activity-timeline::before {
-                left: 8px;
-            }
-
-            .activity-marker {
-                left: -6px;
-            }
-
-            .activity-content {
-                padding: 1rem 1.05rem;
+            .container-fluid {
+                padding: 1rem;
             }
         }
     </style>
@@ -484,93 +386,187 @@ $menu = 'service';
 
         <div class="content-wrapper">
             <div class="content-header">
-                <div class="container-fluid">
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <div class="page-intro d-flex flex-column flex-md-row align-items-md-center justify-content-between">
-                                <div>
-                                    <span class="ticket-badge mb-2 d-inline-flex align-items-center"><i class="fas fa-tools mr-2"></i>Service Desk</span>
-                                    <h1 class="mb-1">Create Service Ticket</h1>
-                                    <p class="mb-0" style="opacity:0.8;">บันทึกงานบริการ Incident / Request / Change พร้อมรายละเอียดที่ทีมต้องติดตาม</p>
-                                </div>
-                                <div class="text-md-right mt-3 mt-md-0">
-                                    <div class="ticket-meta-grid bg-white p-3 rounded-lg" style="min-width: 580px;">
-                                        <div class="meta-card">
-                                            <span>Ticket ID</span>
-                                            <strong id="preview-ticket-id">AUTO-GENERATED</strong>
-                                        </div>
-                                        <div class="meta-card">
-                                            <span>Created By</span>
-                                            <strong><?php echo escapeOutput($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></strong>
-                                        </div>
-                                        <div class="meta-card">
-                                            <span>Team Context</span>
-                                            <strong><?php echo escapeOutput($_SESSION['team_name'] ?? 'N/A'); ?></strong>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <section class="content">
                 <div class="container-fluid">
                     <div class="row">
-                        <div class="col-lg-8 order-2 order-lg-1">
+                        <div class="col-12">
                             <form id="createTicketForm" method="POST" action="#" novalidate>
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
+                                <!-- Header Card -->
                                 <div class="card card-primary mb-4">
                                     <div class="card-header">
-                                        <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Ticket Information</h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
-                                        </div>
+                                        <h3 class="card-title"><i class="fas fa-plus-circle mr-2"></i>สร้าง Service Ticket</h3>
                                     </div>
                                     <div class="card-body">
-                                        <div class="form-section-title"><i class="fas fa-ticket-alt"></i> ข้อมูลพื้นฐาน</div>
-                                        <div class="row">
-                                            <div class="col-md-12">
+                                        <!-- Auto-filled Info Fields -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
                                                 <div class="form-group">
-                                                    <label>Project</label>
-                                                    <select name="project_id" id="project_id" class="form-control select2" data-preview="project">
-                                                        <option value="" selected>ไม่ระบุโครงการ</option>
+                                                    <label>วันเวลาที่สร้าง</label>
+                                                    <input type="datetime-local" name="created_at" class="form-control" value="<?php echo $currentDateTime; ?>" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>ผู้สร้าง</label>
+                                                    <input type="text" class="form-control" value="<?php echo escapeOutput($currentUserName); ?>" readonly>
+                                                    <input type="hidden" name="created_by" value="<?php echo escapeOutput($currentUserId); ?>">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>Project<span class="text-danger">*</span></label>
+                                                    <select name="project_id" id="project_id" class="form-control select2" required>
+                                                        <option value="" selected>เลือก</option>
                                                         <?php foreach ($projects as $project): ?>
                                                             <option value="<?php echo escapeOutput($project['project_id']); ?>"><?php echo escapeOutput($project['project_name']); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                        </div>
+
+                                        <!-- First Row of Main Fields -->
+                                        <div class="row">
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
                                                     <label>Ticket Type<span class="text-danger">*</span></label>
-                                                    <select name="ticket_type" id="ticket_type" class="form-control select2" data-preview="type" required>
-                                                        <option value="" disabled>เลือกประเภทงาน</option>
+                                                    <select name="ticket_type" id="ticket_type" class="form-control select2" required>
+                                                        <option value="">เลือก</option>
                                                         <?php foreach ($ticketTypes as $type): ?>
                                                             <option value="<?php echo escapeOutput($type['id']); ?>" <?php echo $type['id'] === $defaultTicketType ? 'selected' : ''; ?>><?php echo escapeOutput($type['label']); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
-                                                    <!-- <small class="info-helper">เลือก Incident สำหรับเหตุขัดข้อง, Service สำหรับคำขอ, Change สำหรับการเปลี่ยนแปลง</small> -->
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Job Owner<span class="text-danger">*</span></label>
+                                                    <select name="job_owner" id="job_owner" class="form-control select2" required>
+                                                        <option value="">เลือก</option>
+                                                        <?php foreach ($owners as $owner): ?>
+                                                            <option value="<?php echo escapeOutput($owner['user_id']); ?>" <?php echo (string) $owner['user_id'] === (string) $currentUserId ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($owner['full_name']); ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>SLA Target (ชั่วโมง)</label>
+                                                    <select name="sla_target" id="sla_target" class="form-control select2">
+                                                        <option value="">เลือก</option>
+                                                        <option value="1">1 ชั่วโมง</option>
+                                                        <option value="2">2 ชั่วโมง</option>
+                                                        <option value="4" selected>4 ชั่วโมง</option>
+                                                        <option value="8">8 ชั่วโมง</option>
+                                                        <option value="24">24 ชั่วโมง</option>
+                                                        <option value="48">48 ชั่วโมง</option>
+                                                        <option value="72">72 ชั่วโมง</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Priority<span class="text-danger">*</span></label>
+                                                    <select name="priority" id="priority" class="form-control select2" required>
+                                                        <option value="">เลือก</option>
+                                                        <?php foreach ($priorityOptions as $priority): ?>
+                                                            <option value="<?php echo escapeOutput($priority); ?>" <?php echo $priority === $defaultPriority ? 'selected' : ''; ?>><?php echo escapeOutput($priority); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Channel</label>
+                                                    <select name="channel" id="channel" class="form-control select2">
+                                                        <option value="">เลือก</option>
+                                                        <?php foreach ($channelOptions as $channel): ?>
+                                                            <option value="<?php echo escapeOutput($channel); ?>" <?php echo $channel === 'Office' ? 'selected' : ''; ?>><?php echo escapeOutput($channel); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Urgency<span class="text-danger">*</span></label>
+                                                    <select name="urgency" id="urgency" class="form-control select2" required>
+                                                        <option value="">เลือก</option>
+                                                        <?php foreach ($urgencyOptions as $urgency): ?>
+                                                            <option value="<?php echo escapeOutput($urgency); ?>" <?php echo $urgency === $defaultUrgency ? 'selected' : ''; ?>><?php echo escapeOutput($urgency); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Second Row of Main Fields -->
+                                        <div class="row">
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Impact<span class="text-danger">*</span></label>
+                                                    <select name="impact" id="impact" class="form-control select2" required>
+                                                        <option value="">เลือก</option>
+                                                        <?php foreach ($impactOptions as $impact): ?>
+                                                            <option value="<?php echo escapeOutput($impact); ?>" <?php echo $impact === $defaultImpact ? 'selected' : ''; ?>><?php echo escapeOutput($impact); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
                                                     <label>Status<span class="text-danger">*</span></label>
-                                                    <select name="status" id="status" class="form-control select2" data-preview="status" required>
-                                                        <option value="" disabled>เลือกสถานะ</option>
+                                                    <select name="status" id="status" class="form-control select2" required>
+                                                        <option value="">เลือก</option>
                                                         <?php foreach ($statusOptions as $status): ?>
                                                             <option value="<?php echo escapeOutput($status); ?>" <?php echo $status === $defaultStatus ? 'selected' : ''; ?>><?php echo escapeOutput($status); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Service Category<span class="text-danger">*</span></label>
+                                                    <select name="service_category" id="service_category" class="form-control select2" required>
+                                                        <option value="">เลือก</option>
+                                                        <?php foreach ($serviceCategories as $category): ?>
+                                                            <option value="<?php echo escapeOutput($category['service_category']); ?>"><?php echo escapeOutput($category['service_category']); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Category<span class="text-danger">*</span></label>
+                                                    <select name="category" id="category" class="form-control select2" required>
+                                                        <option value="">เลือก</option>
+                                                        <?php foreach ($categoriesList as $cat): ?>
+                                                            <option value="<?php echo escapeOutput($cat['category']); ?>"><?php echo escapeOutput($cat['category']); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>Sub Category<span class="text-danger">*</span></label>
+                                                    <select name="sub_category" id="sub_category" class="form-control select2" required>
+                                                        <option value="">เลือก</option>
+                                                        <?php foreach ($subCategoriesList as $subCat): ?>
+                                                            <option value="<?php echo escapeOutput($subCat['sub_category']); ?>"><?php echo escapeOutput($subCat['sub_category']); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
                                                     <label>Ticket Source<span class="text-danger">*</span></label>
                                                     <select name="source" id="source" class="form-control select2" required>
-                                                        <option value="" disabled>เลือกช่องทาง</option>
+                                                        <option value="">เลือก</option>
                                                         <?php foreach ($sourceOptions as $source): ?>
                                                             <option value="<?php echo escapeOutput($source); ?>" <?php echo $source === $defaultSource ? 'selected' : ''; ?>><?php echo escapeOutput($source); ?></option>
                                                         <?php endforeach; ?>
@@ -579,403 +575,203 @@ $menu = 'service';
                                             </div>
                                         </div>
 
+                                        <!-- Additional Information Fields -->
                                         <div class="row">
-                                            <div class="col-md-4">
+                                            <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label>Service Category<span class="text-danger">*</span></label>
-                                                    <select name="service_category" id="service_category" class="form-control select2" data-preview="service_category" required>
-                                                        <option value="" disabled selected>เลือกหมวดหมู่บริการ</option>
-                                                        <?php foreach ($serviceCategories as $category): ?>
-                                                            <option value="<?php echo escapeOutput($category['service_category']); ?>"><?php echo escapeOutput($category['service_category']); ?></option>
+                                                    <label>ผู้แจ้ง</label>
+                                                    <select name="reporter" id="reporter" class="form-control select2">
+                                                        <option value="">เลือกผู้แจ้ง</option>
+                                                        <?php foreach ($reporters as $reporter): ?>
+                                                            <option value="<?php echo escapeOutput($reporter['user_id']); ?>"><?php echo escapeOutput($reporter['full_name']); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label>Category</label>
-                                                    <select name="category" class="form-control select2" data-preview="category">
-                                                        <option value="" selected>เลือก Category</option>
-                                                        <?php foreach ($categoriesList as $cat): ?>
-                                                            <option value="<?php echo escapeOutput($cat['category']); ?>"><?php echo escapeOutput($cat['category']); ?></option>
+                                                    <label>ผู้เกี่ยวข้องเพิ่มเติม (Watcher)</label>
+                                                    <select name="watchers[]" class="form-control select2" multiple data-placeholder="เลือกผู้เกี่ยวข้อง">
+                                                        <?php foreach ($owners as $owner): ?>
+                                                            <option value="<?php echo escapeOutput($owner['user_id']); ?>"><?php echo escapeOutput($owner['full_name']); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                        </div>
+
+                                        <!-- Date/Time Fields -->
+                                        <div class="row">
+                                            <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label>Sub Category</label>
-                                                    <select name="sub_category" class="form-control select2" data-preview="sub_category">
-                                                        <option value="" selected>เลือก Sub Category</option>
-                                                        <?php foreach ($subCategoriesList as $subCat): ?>
-                                                            <option value="<?php echo escapeOutput($subCat['sub_category']); ?>"><?php echo escapeOutput($subCat['sub_category']); ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
+                                                    <label>กำหนดเริ่มดำเนินการ (วันเวลา)</label>
+                                                    <input type="datetime-local" name="start_at" id="start_at" class="form-control" value="<?php echo escapeOutput($defaultStartAt); ?>">
                                                 </div>
                                             </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label>กำหนดแล้วเสร็จ (วันเวลา)</label>
+                                                    <input type="datetime-local" name="due_at" id="due_at" class="form-control">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Subject and Description -->
+                                        <div class="form-group">
+                                            <label>หัวข้อ / Subject<span class="text-danger">*</span></label>
+                                            <input type="text" name="subject" id="subject" class="form-control" placeholder="สรุปเหตุการณ์หรือคำขอ" maxlength="150" required>
+                                            <small class="text-muted">จำกัดไม่เกิน 150 ตัวอักษร</small>
                                         </div>
 
                                         <div class="form-group">
-                                            <label>Subject<span class="text-danger">*</span></label>
-                                            <input type="text" name="subject" id="subject" class="form-control" placeholder="สรุปเหตุการณ์หรือคำขอ" maxlength="150" data-preview="subject" required>
-                                            <small class="info-helper">จำกัดไม่เกิน 150 ตัวอักษร</small>
-                                        </div>
-
-                                        <div class="form-group mb-0">
                                             <label>รายละเอียดงาน / Symptom</label>
-                                            <textarea name="description" id="description" rows="5" class="form-control" placeholder="ระบุรายละเอียด ปัญหา หรือความต้องการของผู้ใช้งาน"></textarea>
+                                            <textarea name="description" id="description" rows="4" class="form-control" placeholder="ระบุรายละเอียด ปัญหา หรือความต้องการของผู้ใช้งาน"></textarea>
                                         </div>
                                     </div>
                                 </div>
 
+                                <!-- Attachments Card -->
                                 <div class="card card-outline card-info mb-4">
                                     <div class="card-header">
-                                        <h3 class="card-title"><i class="fas fa-user-shield mr-2"></i>Assignment & SLA</h3>
+                                        <h3 class="card-title"><i class="fas fa-paperclip mr-2"></i>Attachments (Job Details) - ได้มากกว่า 1 ไฟล์</h3>
                                         <div class="card-tools">
                                             <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
                                         </div>
                                     </div>
                                     <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label>Job Owner<span class="text-danger">*</span></label>
-                                                    <select name="job_owner" id="job_owner" class="form-control select2" data-preview="owner" required>
-                                                        <option value="" disabled>เลือกผู้รับผิดชอบ</option>
-                                                        <?php foreach ($owners as $owner): ?>
-                                                            <option value="<?php echo escapeOutput($owner['user_id']); ?>" data-role="<?php echo escapeOutput($owner['role']); ?>" <?php echo (string) $owner['user_id'] === (string) $currentUserId ? 'selected' : ''; ?>>
-                                                                <?php echo escapeOutput($owner['full_name']); ?>
-                                                            </option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
+                                        <div class="dropzone-area border-dashed border-2 border-primary p-4 text-center rounded">
+                                            <div class="mb-3">
+                                                <i class="fas fa-cloud-upload-alt fa-3x text-primary"></i>
                                             </div>
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label>Support Team</label>
-                                                    <select name="support_team" id="support_team" class="form-control select2">
-                                                        <option value="" disabled>เลือกทีมที่ดูแล</option>
-                                                        <?php foreach ($supportTeams as $team): ?>
-                                                            <option value="<?php echo escapeOutput($team['team_id']); ?>" <?php echo (string) $team['team_id'] === (string) $currentTeamId ? 'selected' : ''; ?>><?php echo escapeOutput($team['team_name']); ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
+                                            <p class="mb-2">ลาก & วางไฟล์ที่เกี่ยวข้อง หรือคลิกเพื่อเลือกไฟล์</p>
+                                            <small class="text-muted">รองรับไฟล์ JPG, PNG, PDF, DOCX, XLSX ขนาดรวมไม่เกิน 50 MB</small>
+                                            <div class="mt-3">
+                                                <input type="file" name="attachments[]" multiple class="form-control-file d-none" id="attachmentFiles" accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx">
+                                                <label for="attachmentFiles" class="btn btn-outline-primary">
+                                                    <i class="fas fa-file-upload mr-2"></i>เลือกไฟล์
+                                                </label>
                                             </div>
-                                            <div class="col-md-4">
-                                                <label>Preferred Channel</label>
-                                                <div class="d-flex flex-wrap gap-2 radio-soft">
-                                                    <?php foreach ($channelOptions as $index => $channel): ?>
-                                                        <div class="mr-2 mb-2">
-                                                            <input type="radio" class="d-none" name="channel" id="channel_<?php echo $index; ?>" value="<?php echo escapeOutput($channel); ?>" <?php echo $channel === 'Office' ? 'checked' : ''; ?>>
-                                                            <label for="channel_<?php echo $index; ?>"><i class="fas fa-headset"></i> <?php echo escapeOutput($channel); ?></label>
-                                                        </div>
-                                                    <?php endforeach; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>ผู้เกี่ยวข้องเพิ่มเติม (Watcher)</label>
-                                            <select name="watchers[]" class="form-control select2" multiple data-placeholder="เลือกผู้เกี่ยวข้อง">
-                                                <?php foreach ($owners as $owner): ?>
-                                                    <option value="<?php echo escapeOutput($owner['user_id']); ?>"><?php echo escapeOutput($owner['full_name']); ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-
-
-                                        <div class="row">
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label>Priority<span class="text-danger">*</span></label>
-                                                    <select name="priority" id="priority" class="form-control select2" data-preview="priority" required>
-                                                        <option value="" disabled>เลือกระดับความสำคัญ</option>
-                                                        <?php foreach ($priorityOptions as $priority): ?>
-                                                            <option value="<?php echo escapeOutput($priority); ?>" <?php echo $priority === $defaultPriority ? 'selected' : ''; ?>><?php echo escapeOutput($priority); ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label>Urgency<span class="text-danger">*</span></label>
-                                                    <select name="urgency" id="urgency" class="form-control select2" required>
-                                                        <option value="" disabled>เลือกระดับความเร่งด่วน</option>
-                                                        <?php foreach ($urgencyOptions as $urgency): ?>
-                                                            <option value="<?php echo escapeOutput($urgency); ?>" <?php echo $urgency === $defaultUrgency ? 'selected' : ''; ?>><?php echo escapeOutput($urgency); ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label>Impact<span class="text-danger">*</span></label>
-                                                    <select name="impact" id="impact" class="form-control select2" required>
-                                                        <option value="" disabled>เลือกผลกระทบ</option>
-                                                        <?php foreach ($impactOptions as $impact): ?>
-                                                            <option value="<?php echo escapeOutput($impact); ?>" <?php echo $impact === $defaultImpact ? 'selected' : ''; ?>><?php echo escapeOutput($impact); ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-group">
-                                                    <label>SLA Target (ชั่วโมง)</label>
-                                                    <input type="number" step="0.25" min="0" name="sla_target" id="sla_target" class="form-control" placeholder="เช่น 4" data-preview="sla" value="<?php echo escapeOutput($defaultSlaTarget); ?>">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label>กำหนดเริ่มดำเนินการ</label>
-                                                    <input type="datetime-local" name="start_at" id="start_at" class="form-control" data-preview="start_at" value="<?php echo escapeOutput($defaultStartAt); ?>">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label>กำหนดแล้วเสร็จ</label>
-                                                    <input type="datetime-local" name="due_at" id="due_at" class="form-control" data-preview="due_at">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group mb-0 d-none" id="caseDescriptionGroup">
-                                            <label>สาเหตุ / Case Description<span class="text-danger" id="caseDescriptionRequired"></span></label>
-                                            <textarea name="case_description" id="case_description" rows="4" class="form-control" placeholder="อธิบายสาเหตุที่พบและผลกระทบที่เกิดขึ้น"></textarea>
-                                        </div>
-
-                                        <div class="form-group mb-0 mt-3 d-none" id="resolveActionGroup">
-                                            <label>แนวทางแก้ไข / Resolve Action<span class="text-danger" id="resolveActionRequired"></span></label>
-                                            <textarea name="resolve_action" id="resolve_action" rows="4" class="form-control" placeholder="สรุปขั้นตอนการแก้ไขและผลลัพธ์ที่เกิดขึ้น"></textarea>
-                                        </div>
-
-                                        <div class="form-group mb-0" id="nextActionGroup">
-                                            <label>รายละเอียด / Next Action<span class="text-danger" id="nextActionRequired"></span></label>
-                                            <textarea name="next_action" id="next_action" rows="4" class="form-control" placeholder="ระบุขั้นตอนถัดไปหรือสิ่งที่ต้องติดตาม"></textarea>
+                                            <div id="selectedFiles" class="mt-3"></div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="card card-outline card-secondary mb-4 d-none" id="onsiteDetailsCard">
+                                <!-- Onsite Details Card -->
+                                <div class="card card-outline card-warning mb-4 d-none" id="onsiteDetailsCard">
                                     <div class="card-header">
-                                        <h3 class="card-title"><i class="fas fa-user-friends mr-2"></i>Onsite Details</h3>
+                                        <h3 class="card-title"><i class="fas fa-map-marker-alt mr-2"></i>Onsite Details</h3>
                                         <div class="card-tools">
                                             <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
                                         </div>
                                     </div>
                                     <div class="card-body">
-                                        <p class="text-muted small mb-3">สรุปข้อมูลการปฏิบัติงานหน้างานเพื่อประสานงานเดินทางและการเบิกค่าใช้จ่าย</p>
-                                        <div class="mb-3">
-                                            <span class="badge badge-light border text-secondary mr-1 mb-1">รถส่วนตัว</span>
-                                            <span class="badge badge-light border text-secondary mr-1 mb-1">รถบริษัท</span>
-                                            <span class="badge badge-light border text-secondary mr-1 mb-1">รถไฟฟ้า (BTS/MRT)</span>
-                                            <span class="badge badge-light border text-secondary mr-1 mb-1">แท็กซี่ / รถรับจ้าง</span>
-                                            <span class="badge badge-light border text-secondary mr-1 mb-1">รถโดยสารประจำทาง</span>
-                                            <span class="badge badge-light border text-secondary mr-1 mb-1">รถไฟ</span>
-                                            <span class="badge badge-light border text-secondary mr-1 mb-1">เรือโดยสาร</span>
-                                            <span class="badge badge-light border text-secondary mr-1 mb-1">เครื่องบิน</span>
-                                        </div>
+                                        <p class="text-muted small mb-4">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            ข้อมูลสำหรับการทำงานหน้างาน ใช้ในการประสานงานเดินทางและการเบิกค่าใช้จ่าย
+                                        </p>
+
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label>สถานที่เริ่มต้น / Site Start</label>
+                                                    <label><i class="fas fa-play-circle text-success mr-1"></i>สถานที่เริ่มต้น / Site Start</label>
                                                     <input type="text" name="onsite_start_location" id="onsite_start_location" class="form-control" placeholder="เช่น สำนักงานใหญ่ บางนา">
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
-                                                    <label>สถานที่ปลายทาง / Site End</label>
+                                                    <label><i class="fas fa-stop-circle text-danger mr-1"></i>สถานที่ปลายทาง / Site End</label>
                                                     <input type="text" name="onsite_end_location" id="onsite_end_location" class="form-control" placeholder="เช่น ศูนย์บริการ ขอนแก่น">
                                                 </div>
                                             </div>
                                         </div>
+
                                         <div class="row">
-                                            <div class="col-md-6">
+                                            <div class="col-md-12">
                                                 <div class="form-group">
-                                                    <label>เดินทางโดย<span class="text-danger">*</span></label>
-                                                    <select name="onsite_travel_mode" id="onsite_travel_mode" class="form-control select2" data-placeholder="เลือกวิธีการเดินทาง">
-                                                        <option value="" disabled selected>เลือกวิธีการเดินทาง</option>
-                                                        <option value="personal_car" data-needs-mileage="1">รถส่วนตัว</option>
-                                                        <option value="company_car" data-needs-mileage="1">รถบริษัท</option>
-                                                        <option value="electric_train">รถไฟฟ้า (BTS/MRT)</option>
-                                                        <option value="taxi">แท็กซี่ / รถรับจ้าง</option>
-                                                        <option value="bus">รถโดยสารประจำทาง</option>
-                                                        <option value="van">รถตู้โดยสาร</option>
-                                                        <option value="train">รถไฟ</option>
-                                                        <option value="boat">เรือโดยสาร</option>
-                                                        <option value="plane">เครื่องบิน</option>
-                                                        <option value="others_mileage" data-needs-mileage="1">อื่นๆ (ระบุและต้องบันทึกเลขไมล์)</option>
-                                                        <option value="others">อื่นๆ (ไม่ต้องบันทึกเลขไมล์)</option>
+                                                    <label><i class="fas fa-car text-primary mr-1"></i>เดินทางโดย<span class="text-danger">*</span></label>
+                                                    <select name="onsite_travel_mode" id="onsite_travel_mode" class="form-control select2" required>
+                                                        <option value="">เลือกวิธีการเดินทาง</option>
+                                                        <optgroup label="รถยนต์">
+                                                            <option value="personal_car" data-needs-mileage="1">รถส่วนตัว</option>
+                                                            <option value="company_car" data-needs-mileage="1">รถบริษัท</option>
+                                                            <option value="taxi">แท็กซี่ / รถรับจ้าง</option>
+                                                        </optgroup>
+                                                        <optgroup label="ขนส่งสาธารณะ">
+                                                            <option value="electric_train">รถไฟฟ้า (BTS/MRT)</option>
+                                                            <option value="bus">รถโดยสารประจำทาง</option>
+                                                            <option value="van">รถตู้โดยสาร</option>
+                                                            <option value="train">รถไฟ</option>
+                                                            <option value="boat">เรือโดยสาร</option>
+                                                        </optgroup>
+                                                        <optgroup label="เครื่องบิน">
+                                                            <option value="plane">เครื่องบิน</option>
+                                                        </optgroup>
+                                                        <optgroup label="อื่นๆ">
+                                                            <option value="others_mileage" data-needs-mileage="1">อื่นๆ (ต้องบันทึกเลขไมล์)</option>
+                                                            <option value="others">อื่นๆ (ไม่ต้องบันทึกเลขไมล์)</option>
+                                                        </optgroup>
                                                     </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6 d-none" id="onsiteOtherRow">
-                                                <div class="form-group">
-                                                    <label>รายละเอียดพาหนะเพิ่มเติม</label>
-                                                    <input type="text" name="onsite_travel_note" id="onsite_travel_note" class="form-control" placeholder="ระบุพาหนะ เช่น รถเช่า จังหวัดเชียงใหม่">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row d-none" id="onsiteMileageRow">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label>เลขไมล์เริ่มต้น</label>
-                                                    <input type="number" min="0" name="onsite_odometer_start" id="onsite_odometer_start" class="form-control" placeholder="เช่น 10351">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label>เลขไมล์ปลายทาง</label>
-                                                    <input type="number" min="0" name="onsite_odometer_end" id="onsite_odometer_end" class="form-control" placeholder="เช่น 10980">
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div class="form-group mb-0">
-                                            <label>หมายเหตุเพิ่มเติม</label>
+                                        <!-- ฟิลด์เลขไมล์จะแสดงเมื่อเลือกพาหนะที่ต้องบันทึกไมล์ -->
+                                        <div class="row d-none" id="onsiteMileageRow">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label><i class="fas fa-tachometer-alt text-info mr-1"></i>เลขไมล์จุดเริ่มต้น</label>
+                                                    <input type="number" step="0.1" min="0" name="onsite_odometer_start" id="onsite_odometer_start" class="form-control" placeholder="เช่น 10351.5">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label><i class="fas fa-tachometer-alt text-warning mr-1"></i>เลขไมล์จุดสิ้นสุด</label>
+                                                    <input type="number" step="0.1" min="0" name="onsite_odometer_end" id="onsite_odometer_end" class="form-control" placeholder="เช่น 10980.2">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- ฟิลด์รายละเอียดเพิ่มเติมสำหรับพาหนะอื่นๆ -->
+                                        <div class="row d-none" id="onsiteOtherRow">
+                                            <div class="col-md-12">
+                                                <div class="form-group">
+                                                    <label><i class="fas fa-info-circle text-info mr-1"></i>รายละเอียดพาหนะเพิ่มเติม</label>
+                                                    <input type="text" name="onsite_travel_note" id="onsite_travel_note" class="form-control" placeholder="ระบุพาหนะ เช่น รถเช่า จังหวัดเชียงใหม่">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label><i class="fas fa-sticky-note text-secondary mr-1"></i>หมายเหตุเพิ่มเติม</label>
                                             <textarea name="onsite_note" id="onsite_note" rows="3" class="form-control" placeholder="รายละเอียดเพิ่มเติมที่ทีมควรรับทราบ เช่น นัดหมายติดต่อผู้ประสานงาน หรือข้อมูลเบิกจ่าย"></textarea>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="card card-outline card-primary mb-4">
-                                    <div class="card-header">
-                                        <h3 class="card-title"><i class="fas fa-paperclip mr-2"></i>Attachments (Job Details)</h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="dropzone-mock">
-                                            <div class="mb-2"><i class="fas fa-cloud-upload-alt fa-2x"></i></div>
-                                            <p class="mb-1">ลาก & วางไฟล์ที่เกี่ยวข้อง หรือเลือกจากเครื่อง</p>
-                                            <small class="text-muted">รองรับไฟล์ JPG, PNG, PDF, DOCX ขนาดรวมไม่เกิน 20 MB</small>
-                                            <div class="mt-3">
-                                                <label class="btn btn-outline-primary btn-sm mb-0">
-                                                    <i class="fas fa-file-upload mr-2"></i>เลือกไฟล์
-                                                    <input type="file" name="attachments[]" multiple class="d-none">
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <div class="d-flex justify-content-between align-items-center mb-5">
-                                    <div>
-                                        <button type="reset" class="btn btn-light border"><i class="fas fa-undo mr-1"></i>Clear Form</button>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-outline-secondary mr-2" id="btnDraft"><i class="fas fa-save mr-1"></i>Save as Draft</button>
-                                        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane mr-1"></i>Create Ticket</button>
+                                <!-- Action Buttons -->
+                                <div class="card card-outline card-success mb-4">
+                                    <div class="card-body text-center py-3">
+                                        <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
+                                            <button type="reset" class="btn btn-outline-secondary btn-sm px-3">
+                                                <i class="fas fa-undo mr-1"></i>ล้างฟอร์ม
+                                            </button>
+                                            <button type="button" class="btn btn-warning btn-sm px-3" id="btnDraft">
+                                                <i class="fas fa-save mr-1"></i>บันทึก Draft
+                                            </button>
+                                            <button type="submit" class="btn btn-success btn-sm px-3">
+                                                <i class="fas fa-paper-plane mr-1"></i>สร้าง Ticket
+                                            </button>
+                                        </div>
+                                        <small class="text-muted mt-2 d-block">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            กรุณาตรวจสอบข้อมูลก่อนกดสร้าง Ticket
+                                        </small>
                                     </div>
                                 </div>
                             </form>
                         </div>
 
-                        <div class="col-lg-4 order-1 order-lg-2">
-                            <div class="card summary-card">
-                                <div class="card-header d-flex align-items-center justify-content-between">
-                                    <h3 class="card-title mb-0"><i class="fas fa-eye mr-2"></i>Ticket Preview</h3>
-                                    <span class="badge badge-primary">Real-time</span>
-                                </div>
-                                <div class="card-body ticket-preview">
-                                    <div class="mb-3">
-                                        <span class="pill-stat type" id="preview-pill-type"><i class="fas fa-info-circle"></i>Awaiting Type</span>
-                                        <span class="pill-stat status" id="preview-pill-status"><i class="fas fa-stream"></i>Awaiting Status</span>
-                                        <span class="pill-stat priority" id="preview-pill-priority"><i class="fas fa-bolt"></i>Priority</span>
-                                    </div>
-
-                                    <h4 id="preview-subject" class="mb-2">Subject</h4>
-                                    <p class="mb-3 text-muted" id="preview-description">รายละเอียดงานจะแสดงที่นี่เมื่อกรอกข้อมูล</p>
-
-                                    <div class="section-divider mb-2">Service Details</div>
-                                    <ul class="list-unstyled small text-muted mb-3" style="line-height: 1.6;">
-                                        <li><i class="fas fa-layer-group mr-2 text-primary"></i>Service Category: <span class="service-preview-value" id="preview-service-category">-</span></li>
-                                        <li><i class="fas fa-project-diagram mr-2 text-primary"></i>Project: <span class="service-preview-value" id="preview-project">-</span></li>
-                                        <li><i class="fas fa-tags mr-2 text-primary"></i>Category: <span class="service-preview-value" id="preview-category">-</span> / <span class="service-preview-value" id="preview-sub_category">-</span></li>
-                                        <li><i class="fas fa-user-cog mr-2 text-primary"></i>Owner: <span class="service-preview-value" id="preview-owner">-</span></li>
-                                    </ul>
-
-                                    <div class="section-divider mb-2">SLA Overview</div>
-                                    <div class="timeline-item d-flex">
-                                        <span class="timeline-badge"><i class="fas fa-calendar-plus"></i></span>
-                                        <div>
-                                            <strong>Start At</strong>
-                                            <div id="preview-start_at" class="text-muted small">-</div>
-                                        </div>
-                                    </div>
-                                    <div class="timeline-item d-flex mt-3">
-                                        <span class="timeline-badge"><i class="fas fa-clock"></i></span>
-                                        <div>
-                                            <strong>Due At</strong>
-                                            <div id="preview-due_at" class="text-muted small">-</div>
-                                        </div>
-                                    </div>
-                                    <div class="timeline-item d-flex mt-3">
-                                        <span class="timeline-badge"><i class="fas fa-stopwatch"></i></span>
-                                        <div>
-                                            <strong>SLA Target</strong>
-                                            <div id="preview-sla" class="text-muted small">-</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="section-divider mb-2 mt-4">Change Log</div>
-                                    <textarea class="form-control" rows="3" readonly id="preview-log">• Awaiting ticket information...</textarea>
-                                </div>
-                            </div>
-
-                            <div class="card activity-timeline-card mt-4">
-                                <div class="card-header d-flex align-items-center justify-content-between">
-                                    <h3 class="card-title mb-0"><i class="fas fa-stream mr-2"></i>Activity Timeline</h3>
-                                    <span class="badge badge-light text-primary border border-primary">Live Preview</span>
-                                </div>
-                                <div class="card-body">
-                                    <div class="activity-timeline" id="activityTimeline">
-                                        <?php foreach ($timelineLogs as $log): ?>
-                                            <div class="activity-item">
-                                                <div class="activity-marker">
-                                                    <span class="marker-index">#<?php echo escapeOutput($log['order']); ?></span>
-                                                    <span class="marker-dot"></span>
-                                                </div>
-                                                <div class="activity-content">
-                                                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
-                                                        <div class="mb-2 mb-md-0">
-                                                            <h5 class="mb-1"><?php echo escapeOutput($log['action']); ?></h5>
-                                                            <div class="text-muted small"><i class="fas fa-user-circle mr-2"></i><?php echo escapeOutput($log['actor']); ?></div>
-                                                        </div>
-                                                        <div class="text-md-right">
-                                                            <span class="badge badge-light border"><i class="far fa-clock mr-1"></i><?php echo escapeOutput($log['datetime']); ?></span>
-                                                            <div class="small text-muted mt-1"><i class="fas fa-map-marker-alt mr-1 text-danger"></i><?php echo escapeOutput($log['location']); ?></div>
-                                                        </div>
-                                                    </div>
-                                                    <p class="mt-3 mb-2 text-muted">
-                                                        <?php echo escapeOutput($log['detail']); ?>
-                                                    </p>
-                                                    <?php if (!empty($log['attachment'])): ?>
-                                                        <span class="activity-attachment"><i class="fas fa-paperclip"></i><?php echo escapeOutput($log['attachment']); ?></span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card mt-4">
-                                <div class="card-header">
-                                    <h3 class="card-title"><i class="fas fa-lightbulb mr-2"></i>Guideline</h3>
-                                </div>
-                                <div class="card-body">
-                                    <ul class="small text-muted mb-0" style="line-height: 1.7;">
-                                        <li>ตรวจสอบว่าชนิดของ Ticket ถูกต้องก่อนบันทึก</li>
-                                        <li>ระบุ Priority / Impact ให้สอดคล้องกับความเร่งด่วน</li>
-                                        <li>กำหนด SLA และผู้รับผิดชอบให้ชัดเจนเพื่อไม่ให้ Ticket ค้าง</li>
-                                        <li>หาก Ticket มีความเสี่ยง ให้บันทึกหมายเหตุเพิ่มเติมหรือแนบไฟล์ประกอบ</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </section>
@@ -1018,17 +814,11 @@ $menu = 'service';
             const $resolveRequired = $('#resolveActionRequired');
             const $nextRequired = $('#nextActionRequired');
 
-            const $channelRadios = $('input[name="channel"]');
+            const $channelSelect = $('#channel');
             const $onsiteCard = $('#onsiteDetailsCard');
             const $onsiteTravelMode = $('#onsite_travel_mode');
             const $onsiteMileageRow = $('#onsiteMileageRow');
             const $onsiteOtherRow = $('#onsiteOtherRow');
-            const $activityTimeline = $('#activityTimeline');
-            const $previewLog = $('#preview-log');
-
-            const actorName = <?php echo json_encode(trim(($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '')) ?: 'Service User'); ?>;
-            let timelineCounter = <?php echo (int) $latestTimelineIndex; ?>;
-            let previewLogDetails = [];
 
             function updateStatusDependentFields() {
                 const isResolved = $statusSelect.val() === 'Resolved';
@@ -1076,126 +866,28 @@ $menu = 'service';
             }
 
             function updateOnsiteCardVisibility() {
-                const selectedChannel = $channelRadios.filter(':checked').val();
+                const selectedChannel = $channelSelect.val();
+                console.log('Selected channel:', selectedChannel); // Debug log
+
                 if (selectedChannel === 'Onsite') {
                     $onsiteCard.removeClass('d-none');
+                    // Make travel mode required when onsite is selected
+                    $onsiteTravelMode.prop('required', true);
                 } else {
                     $onsiteCard.addClass('d-none');
                     $onsiteMileageRow.addClass('d-none');
                     $onsiteOtherRow.addClass('d-none');
+                    // Remove required attribute when not onsite
+                    $onsiteTravelMode.prop('required', false);
+                    // Clear values when hiding
+                    $onsiteTravelMode.val('').trigger('change');
+                    $('#onsite_start_location, #onsite_end_location, #onsite_travel_note, #onsite_odometer_start, #onsite_odometer_end, #onsite_note').val('');
                 }
             }
 
-            function formatTimestamp(date) {
-                try {
-                    return date.toLocaleString('th-TH', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short'
-                    });
-                } catch (error) {
-                    const y = date.getFullYear();
-                    const m = String(date.getMonth() + 1).padStart(2, '0');
-                    const d = String(date.getDate()).padStart(2, '0');
-                    const hh = String(date.getHours()).padStart(2, '0');
-                    const mm = String(date.getMinutes()).padStart(2, '0');
-                    return `${y}-${m}-${d} ${hh}:${mm}`;
-                }
-            }
 
-            function updateSubjectLogLine(subjectValue) {
-                const subjectLine = subjectValue ? `• ปรับหัวข้อเป็น: ${subjectValue}` : '• Awaiting ticket information...';
-                const lines = [subjectLine].concat(previewLogDetails);
-                $previewLog.val(lines.join('\n'));
-            }
-
-            function appendPreviewLogEntry(lines) {
-                previewLogDetails = lines;
-                updateSubjectLogLine($('#subject').val());
-            }
-
-            function appendTimelineEntry({ statusText, isResolved, caseDescription, resolveAction, nextAction, timestamp }) {
-                timelineCounter += 1;
-                const displayIndex = `#${String(timelineCounter).padStart(2, '0')}`;
-                const displayTimestamp = formatTimestamp(timestamp);
-
-                const $item = $('<div>').addClass('activity-item');
-                const $marker = $('<div>').addClass('activity-marker')
-                    .append($('<span>').addClass('marker-index').text(displayIndex))
-                    .append($('<span>').addClass('marker-dot'));
-
-                const $content = $('<div>').addClass('activity-content');
-                const $headerRow = $('<div>').addClass('d-flex flex-column flex-md-row justify-content-between align-items-md-center');
-
-                const $headerLeft = $('<div>').addClass('mb-2 mb-md-0');
-                $headerLeft.append($('<h5>').addClass('mb-1').text(`อัปเดตสถานะเป็น ${statusText}`));
-                const $actorInfo = $('<div>').addClass('text-muted small');
-                $actorInfo.append($('<i>').addClass('fas fa-user-circle mr-2'));
-                $actorInfo.append(document.createTextNode(actorName));
-                $headerLeft.append($actorInfo);
-
-                const $headerRight = $('<div>').addClass('text-md-right');
-                const $clockBadge = $('<span>').addClass('badge badge-light border');
-                $clockBadge.append($('<i>').addClass('far fa-clock mr-1'));
-                $clockBadge.append(document.createTextNode(displayTimestamp));
-                $headerRight.append($clockBadge);
-                const $locationInfo = $('<div>').addClass('small text-muted mt-1');
-                $locationInfo.append($('<i>').addClass('fas fa-map-marker-alt mr-1 text-danger'));
-                $locationInfo.append(document.createTextNode('บันทึกผ่านระบบ Service Desk (Web)'));
-                $headerRight.append($locationInfo);
-
-                $headerRow.append($headerLeft).append($headerRight);
-
-                const $detailParagraph = $('<p>').addClass('mt-3 mb-2 text-muted');
-                if (isResolved) {
-                    $detailParagraph.append($('<strong>').text('สาเหตุ: '));
-                    $detailParagraph.append(document.createTextNode(caseDescription || '-'));
-                    $detailParagraph.append($('<br>'));
-                    $detailParagraph.append($('<strong>').text('แนวทางแก้ไข: '));
-                    $detailParagraph.append(document.createTextNode(resolveAction || '-'));
-                } else {
-                    $detailParagraph.append($('<strong>').text('Next Action: '));
-                    $detailParagraph.append(document.createTextNode(nextAction || '-'));
-                }
-
-                $content.append($headerRow).append($detailParagraph);
-
-                $item.append($marker).append($content);
-                $activityTimeline.prepend($item);
-
-                return displayTimestamp;
-            }
-
-            function syncPreviewValue($element) {
-                const target = $element.data('preview');
-                if (!target || !previewMap[target]) {
-                    return;
-                }
-
-                let rawValue;
-                let displayText;
-
-                if ($element.is('select')) {
-                    rawValue = $element.val();
-                    displayText = $element.find('option:selected').text();
-                } else {
-                    rawValue = $element.val();
-                    displayText = rawValue;
-                }
-
-                if (!rawValue) {
-                    displayText = '-';
-                }
-
-                if (target === 'subject') {
-                    displayText = rawValue ? rawValue : 'Subject';
-                    $('#preview-description').text($('#description').val() || 'รายละเอียดงานจะแสดงที่นี่เมื่อกรอกข้อมูล');
-                    updateSubjectLogLine(rawValue);
-                }
-
-                $(previewMap[target]).text(displayText);
-            }
-
-            $channelRadios.on('change', function() {
+            $channelSelect.on('change', function() {
+                console.log('Channel changed to:', $(this).val());
                 updateOnsiteCardVisibility();
             });
 
@@ -1207,31 +899,9 @@ $menu = 'service';
                 updateStatusDependentFields();
             });
 
+            // Initialize visibility states
             updateOnsiteCardVisibility();
             updateOnsiteTravelMode();
-            updateStatusDependentFields();
-            updateSubjectLogLine($('#subject').val());
-
-            $('[data-preview]').on('change keyup', function() {
-                syncPreviewValue($(this));
-            });
-
-            $('[data-preview]').each(function() {
-                syncPreviewValue($(this));
-            });
-
-            $('#description').on('keyup', function() {
-                $('#preview-description').text($(this).val() || 'รายละเอียดงานจะแสดงที่นี่เมื่อกรอกข้อมูล');
-            });
-
-            $('#job_owner').on('change', function() {
-                const selected = $(this).find('option:selected');
-                const role = selected.data('role') ? ' (' + selected.data('role') + ')' : '';
-                const text = selected.text() ? selected.text() + role : '-';
-                $('#preview-owner').text(text);
-            });
-
-            $('#job_owner').trigger('change');
 
             $('#createTicketForm').on('submit', function(e) {
                 e.preventDefault();
@@ -1310,6 +980,18 @@ $menu = 'service';
                     timer: 2000,
                     showConfirmButton: false
                 });
+            });
+
+            // Real-time field validation
+            $('input[required], select[required], textarea[required]').on('blur change', function() {
+                const $field = $(this);
+                const value = $field.val();
+
+                if (!value || (Array.isArray(value) && value.length === 0)) {
+                    $field.addClass('is-invalid');
+                } else {
+                    $field.removeClass('is-invalid');
+                }
             });
         });
     </script>
