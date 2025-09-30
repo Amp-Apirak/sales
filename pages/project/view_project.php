@@ -92,6 +92,10 @@ try {
             exit;
         }
 
+        // Debug: แสดงข้อมูลวันที่ (ลบออกหลังแก้ไข)
+        // error_log("Project start_date: " . ($project['start_date'] ?? 'NULL'));
+        // error_log("Project end_date: " . ($project['end_date'] ?? 'NULL'));
+
         // ตรวจสอบสิทธิ์การเข้าถึง
         $hasAccess = false;
         switch ($role) {
@@ -848,40 +852,85 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
 
                             <!-- แถบที่ 6 บริหารโครงการ -->
                             <div class="tab-pane" id="tasks">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="fas fa-project-diagram mr-1"></i>
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h3 class="card-title mb-0">
+                                            <i class="fas fa-project-diagram mr-2"></i>
                                             ข้อมูลโครงการ
                                         </h3>
                                     </div>
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col-md-6">
-                                                <p><strong>ชื่อโครงการ:</strong> <?php echo htmlspecialchars($project['project_name']); ?></p>
-                                                <p><strong>ผลิตภัณฑ์:</strong> <?php echo htmlspecialchars($project['product_name']); ?></p>
+                                                <div class="info-item mb-3">
+                                                    <span class="info-label text-primary">
+                                                        <i class="fas fa-file-alt mr-1"></i>ชื่อโครงการ:
+                                                    </span>
+                                                    <span class="info-value font-weight-bold">
+                                                        <?php echo htmlspecialchars($project['project_name']); ?>
+                                                    </span>
+                                                </div>
+                                                <div class="info-item mb-3">
+                                                    <span class="info-label text-primary">
+                                                        <i class="fas fa-box mr-1"></i>ผลิตภัณฑ์:
+                                                    </span>
+                                                    <span class="info-value">
+                                                        <?php echo htmlspecialchars($project['product_name'] ?? 'ไม่ระบุ'); ?>
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div class="col-md-6">
-                                                <p><strong>วันที่เริ่ม:</strong> <?php echo $project['start_date']; ?></p>
-                                                <p><strong>วันที่สิ้นสุด:</strong> <?php echo $project['end_date']; ?></p>
+                                                <div class="info-item mb-3">
+                                                    <span class="info-label text-primary">
+                                                        <i class="fas fa-calendar-check mr-1"></i>วันที่เริ่ม:
+                                                    </span>
+                                                    <span class="info-value">
+                                                        <?php
+                                                        $startDate = $project['start_date'] ?? null;
+                                                        if (!empty($startDate) && $startDate != '0000-00-00' && $startDate != '1970-01-01') {
+                                                            echo date('d/m/Y', strtotime($startDate));
+                                                        } else {
+                                                            echo '<span class="text-muted">ไม่ระบุ</span>';
+                                                        }
+                                                        ?>
+                                                    </span>
+                                                </div>
+                                                <div class="info-item mb-3">
+                                                    <span class="info-label text-primary">
+                                                        <i class="fas fa-calendar-times mr-1"></i>วันที่สิ้นสุด:
+                                                    </span>
+                                                    <span class="info-value">
+                                                        <?php
+                                                        $endDate = $project['end_date'] ?? null;
+                                                        if (!empty($endDate) && $endDate != '0000-00-00' && $endDate != '1970-01-01') {
+                                                            echo date('d/m/Y', strtotime($endDate));
+                                                        } else {
+                                                            echo '<span class="text-muted">ไม่ระบุ</span>';
+                                                        }
+                                                        ?>
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="fas fa-tasks mr-1"></i>
-                                            รายการงาน
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                        <h3 class="card-title mb-0">
+                                            <i class="fas fa-tasks mr-2"></i>
+                                            การจัดการงาน
                                         </h3>
                                         <div class="card-tools">
-                                            <button type="button" class="btn btn-primary btn-sm" onclick="showAddTaskModal()">
-                                                <i class="fas fa-plus"></i> เพิ่มงานใหม่
+                                            <button type="button" class="btn btn-light btn-sm" onclick="showAddTaskModal()">
+                                                <i class="fas fa-plus mr-1"></i> เพิ่มงานใหม่
+                                            </button>
+                                            <button type="button" class="btn btn-outline-light btn-sm ml-1" onclick="loadTasks()" title="รีเฟรช">
+                                                <i class="fas fa-sync-alt"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="card-body">
+                                    <div class="card-body p-0">
                                         <div id="task-container">
                                             <!-- Task tree will be loaded here -->
                                         </div>

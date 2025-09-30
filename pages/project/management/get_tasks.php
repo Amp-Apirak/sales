@@ -70,24 +70,24 @@ function calculateTaskProgress($tasks)
 function getTasksHierarchy($condb, $project_id, $parent_id = null)
 {
     $stmt = $condb->prepare("
-        SELECT 
+        SELECT
             t.*,
             -- ผู้รับผิดชอบงาน
             GROUP_CONCAT(
-                DISTINCT CONCAT(u.first_name, ' ', u.last_name) 
+                DISTINCT CONCAT(u.first_name, ' ', u.last_name)
                 SEPARATOR ', '
             ) as assigned_users,
-            
+
             -- จำนวน subtasks
             (
-                SELECT COUNT(*) 
-                FROM project_tasks st 
+                SELECT COUNT(*)
+                FROM project_tasks st
                 WHERE st.parent_task_id = t.task_id
             ) as subtask_count,
-            
+
             -- ผู้สร้างงาน
             CONCAT(creator.first_name, ' ', creator.last_name) as creator_name,
-            
+
             -- คำนวณความคืบหน้าเฉลี่ยจาก subtasks
             COALESCE(
                 (
@@ -96,16 +96,19 @@ function getTasksHierarchy($condb, $project_id, $parent_id = null)
                     WHERE st.parent_task_id = t.task_id
                 ),
                 t.progress
-            ) as avg_subtask_progress
-            
+            ) as avg_subtask_progress,
+
+            -- สร้าง Task Display ID (T + ลำดับ)
+            CONCAT('T', LPAD(ROW_NUMBER() OVER (ORDER BY t.task_order ASC, t.created_at ASC), 3, '0')) as task_display_id
+
         FROM project_tasks t
         LEFT JOIN project_task_assignments ta ON t.task_id = ta.task_id
         LEFT JOIN users u ON ta.user_id = u.user_id
         LEFT JOIN users creator ON t.created_by = creator.user_id
-        
+
         WHERE t.project_id = ?
         AND (t.parent_task_id IS NULL AND ? IS NULL OR t.parent_task_id = ?)
-        
+
         GROUP BY t.task_id
         ORDER BY t.task_order ASC, t.created_at ASC
     ");
@@ -145,13 +148,16 @@ function getTasksHierarchy($condb, $project_id, $parent_id = null)
 }
 
 // ฟังก์ชันแสดงผล Task แต่ละรายการ
-function renderTask($task, $level = 0)
+function renderTask($task, $level = 0, $taskNumber = '')
 {
     $indent = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $level);
     $taskId = htmlspecialchars($task['task_id']);
     $taskName = htmlspecialchars($task['task_name']);
     $description = htmlspecialchars($task['description'] ?: 'ไม่มีรายละเอียด');
     $progress = (int)$task['progress'];
+
+    // สร้าง Task Display ID สำหรับแสดงผล
+    $taskDisplayId = !empty($taskNumber) ? $taskNumber : 'T' . str_pad($level + 1, 3, '0', STR_PAD_LEFT);
 
     // ส่วนแสดงวันที่เริ่ม
     if (empty($task['start_date']) || $task['start_date'] == '0000-00-00') {
@@ -245,6 +251,9 @@ function renderTask($task, $level = 0)
     // HTML สำหรับแต่ละแถว
     $html = "
     <tr class='task-row' data-task-id='{$taskId}' data-level='{$level}'>
+        <td class='text-center text-nowrap'>
+            <span class='badge badge-light task-id-badge'>{$taskDisplayId}</span>
+        </td>
         <td>
             <i class='fas fa-grip-vertical task-handle mr-2' style='cursor: move;'></i>
             {$indent}";
@@ -302,8 +311,11 @@ function renderTask($task, $level = 0)
 
     // แสดง subtasks ถ้ามี
     if (!empty($task['sub_tasks'])) {
+        $subTaskCounter = 1;
         foreach ($task['sub_tasks'] as $subtask) {
-            $html .= renderTask($subtask, $level + 1);
+            $subTaskId = $taskDisplayId . '.' . $subTaskCounter;
+            $html .= renderTask($subtask, $level + 1, $subTaskId);
+            $subTaskCounter++;
         }
     }
 
@@ -334,30 +346,63 @@ echo '<div class="modal fade" id="taskDetailsModal" tabindex="-1" role="dialog">
 // แสดงผลตาราง
 echo "<div class='table-responsive'>
     <table class='table table-hover' id='tasks-table'>
-        <thead>
+        <thead class='thead-light'>
             <tr>
-    <th style='min-width: 300px;'>งาน</th>
-    <th style='min-width: 300px;'>รายละเอียด</th>
-    <th style='min-width: 100px;'>สถานะ</th>
-    <th style='min-width: 150px;' class='text-center'>ความคืบหน้า</th>
-    <th style='min-width: 100px;' class='text-center text-nowrap'>ความสำคัญ</th>
-    <th style='min-width: 100px;'>วันที่เริ่ม</th>
-    <th style='min-width: 100px;'>วันที่สิ้นสุด</th>
-    <th style='min-width: 100px;' class='text-center text-nowrap'>ระยะเวลา</th>
-    <th style='min-width: 150px;'>ผู้รับผิดชอบ</th>
-    <th style='min-width: 150px;'>ผู้สร้าง</th>
-    <th style='min-width: 100px;'>จัดการ</th>
-</tr>
+                <th style='min-width: 80px;' class='text-center text-nowrap'>
+                    <i class='fas fa-hashtag mr-1'></i>ID
+                </th>
+                <th style='min-width: 280px;'>
+                    <i class='fas fa-tasks mr-1'></i>งาน
+                </th>
+                <th style='min-width: 280px;'>
+                    <i class='fas fa-align-left mr-1'></i>รายละเอียด
+                </th>
+                <th style='min-width: 100px;' class='text-center'>
+                    <i class='fas fa-flag mr-1'></i>สถานะ
+                </th>
+                <th style='min-width: 150px;' class='text-center'>
+                    <i class='fas fa-chart-line mr-1'></i>ความคืบหน้า
+                </th>
+                <th style='min-width: 100px;' class='text-center text-nowrap'>
+                    <i class='fas fa-exclamation-circle mr-1'></i>ความสำคัญ
+                </th>
+                <th style='min-width: 100px;' class='text-center'>
+                    <i class='fas fa-calendar-check mr-1'></i>วันที่เริ่ม
+                </th>
+                <th style='min-width: 100px;' class='text-center'>
+                    <i class='fas fa-calendar-times mr-1'></i>วันที่สิ้นสุด
+                </th>
+                <th style='min-width: 100px;' class='text-center text-nowrap'>
+                    <i class='fas fa-clock mr-1'></i>ระยะเวลา
+                </th>
+                <th style='min-width: 150px;' class='text-center'>
+                    <i class='fas fa-users mr-1'></i>ผู้รับผิดชอบ
+                </th>
+                <th style='min-width: 120px;' class='text-center'>
+                    <i class='fas fa-user-plus mr-1'></i>ผู้สร้าง
+                </th>
+                <th style='min-width: 120px;' class='text-center'>
+                    <i class='fas fa-cogs mr-1'></i>จัดการ
+                </th>
+            </tr>
         </thead>
         <tbody>";
 
 // ดึงและแสดงข้อมูล tasks
 $tasks = getTasksHierarchy($condb, $project_id);
 if (empty($tasks)) {
-    echo "<tr><td colspan='7' class='text-center'>ยังไม่มีรายการงาน</td></tr>";
+    echo "<tr><td colspan='12' class='text-center py-4'>
+            <div class='text-muted'>
+                <i class='fas fa-tasks fa-2x mb-2'></i><br>
+                ยังไม่มีรายการงาน<br>
+                <small>คลิกปุ่ม 'เพิ่มงานใหม่' เพื่อเริ่มต้น</small>
+            </div>
+          </td></tr>";
 } else {
+    $taskCounter = 1;
     foreach ($tasks as $task) {
-        echo renderTask($task);
+        echo renderTask($task, 0, 'T' . str_pad($taskCounter, 3, '0', STR_PAD_LEFT));
+        $taskCounter++;
     }
 }
 
@@ -497,6 +542,34 @@ echo "</tbody></table></div>";
 
     .task-handle:hover {
         color: #666;
+    }
+
+    /* สไตล์สำหรับ Task ID Badge */
+    .task-id-badge {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        font-size: 0.85rem;
+        background-color: #e9ecef !important;
+        color: #495057 !important;
+        border: 1px solid #ced4da;
+        padding: 0.3rem 0.6rem;
+        border-radius: 0.375rem;
+        letter-spacing: 0.5px;
+    }
+
+    /* สไตล์สำหรับ thead */
+    .thead-light th {
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .thead-light th i {
+        color: #6c757d;
+        font-size: 0.8rem;
     }
 </style>
 
