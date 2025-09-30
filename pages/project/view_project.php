@@ -921,11 +921,11 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                             <i class="fas fa-tasks mr-2"></i>
                                             การจัดการงาน
                                         </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-light btn-sm" onclick="showAddTaskModal()">
+                                        <div class="card-tools ml-auto">
+                                            <button type="button" class="btn btn-light btn-sm mr-2" onclick="showAddTaskModal()">
                                                 <i class="fas fa-plus mr-1"></i> เพิ่มงานใหม่
                                             </button>
-                                            <button type="button" class="btn btn-outline-light btn-sm ml-1" onclick="loadTasks()" title="รีเฟรช">
+                                            <button type="button" class="btn btn-outline-light btn-sm" onclick="loadTasks()" title="รีเฟรช">
                                                 <i class="fas fa-sync-alt"></i>
                                             </button>
                                         </div>

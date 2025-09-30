@@ -248,11 +248,26 @@ function renderTask($task, $level = 0, $taskNumber = '')
     // ใช้ค่าความคืบหน้าที่คำนวณได้จาก subtasks
     $progress = $task['has_subtasks'] ? $task['real_progress'] : (int)$task['progress'];
 
+    // สร้าง CSS class สำหรับระดับของ Task
+    $levelClass = match($level) {
+        0 => 'task-id-main',
+        1 => 'task-id-subtask task-id-level-1',
+        2 => 'task-id-subtask task-id-level-2',
+        default => 'task-id-subtask task-id-level-3'
+    };
+
+    // สร้าง visual hierarchy indicator
+    $hierarchyIndicator = '';
+    if ($level > 0) {
+        $hierarchyIndicator = '<span class="task-hierarchy-line" style="margin-left: ' . (($level - 1) * 20) . 'px;"></span>';
+    }
+
     // HTML สำหรับแต่ละแถว
     $html = "
-    <tr class='task-row' data-task-id='{$taskId}' data-level='{$level}'>
-        <td class='text-center text-nowrap'>
-            <span class='badge badge-light task-id-badge'>{$taskDisplayId}</span>
+    <tr class='task-row task-level-{$level}' data-task-id='{$taskId}' data-level='{$level}'>
+        <td class='text-center text-nowrap task-id-cell'>
+            {$hierarchyIndicator}
+            <span class='badge task-id-badge {$levelClass}'>{$taskDisplayId}</span>
         </td>
         <td>
             <i class='fas fa-grip-vertical task-handle mr-2' style='cursor: move;'></i>
@@ -549,12 +564,107 @@ echo "</tbody></table></div>";
         font-family: 'Courier New', monospace;
         font-weight: bold;
         font-size: 0.85rem;
-        background-color: #e9ecef !important;
-        color: #495057 !important;
         border: 1px solid #ced4da;
         padding: 0.3rem 0.6rem;
         border-radius: 0.375rem;
         letter-spacing: 0.5px;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+
+    /* Main Task ID - สีเข้มและโดดเด่น */
+    .task-id-main {
+        background-color: #007bff !important;
+        color: #fff !important;
+        border-color: #0056b3;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    /* Sub Task ID - สีอ่อนและเล็กกว่า */
+    .task-id-subtask {
+        border-color: #dee2e6;
+        font-size: 0.75rem;
+        font-weight: 600;
+        position: relative;
+    }
+
+    /* Sub Task Level 1 - สีเขียว */
+    .task-id-level-1 {
+        background-color: #d4edda !important;
+        color: #155724 !important;
+        border-color: #c3e6cb;
+    }
+
+    /* Sub Task Level 2 - สีเหลือง */
+    .task-id-level-2 {
+        background-color: #fff3cd !important;
+        color: #856404 !important;
+        border-color: #ffeaa7;
+    }
+
+    /* Sub Task Level 3+ - สีแดง */
+    .task-id-level-3 {
+        background-color: #f8d7da !important;
+        color: #721c24 !important;
+        border-color: #f5c6cb;
+    }
+
+    /* เพิ่มเส้นเชื่อมสำหรับ Sub Task */
+    .task-id-subtask::before {
+        content: '';
+        position: absolute;
+        left: -10px;
+        top: 50%;
+        width: 8px;
+        height: 1px;
+        background-color: #dee2e6;
+        transform: translateY(-50%);
+    }
+
+    /* Cell สำหรับ Task ID */
+    .task-id-cell {
+        vertical-align: middle;
+        position: relative;
+        padding: 0.75rem 0.5rem;
+    }
+
+    /* Hierarchy Line สำหรับแสดง level ของ Task */
+    .task-hierarchy-line {
+        display: inline-block;
+        width: 15px;
+        height: 1px;
+        background-color: #6c757d;
+        position: relative;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+
+    .task-hierarchy-line::before {
+        content: '└';
+        position: absolute;
+        left: -5px;
+        top: -8px;
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    /* แยกสีตาม level ของ Task */
+    .task-level-0 {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+
+    .task-level-1 {
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+
+    .task-level-2 {
+        background-color: rgba(255, 193, 7, 0.05);
+    }
+
+    .task-level-3 {
+        background-color: rgba(220, 53, 69, 0.05);
     }
 
     /* สไตล์สำหรับ thead */
