@@ -22,13 +22,16 @@
                     </div>
                     <div class="form-group">
                         <label>ผู้รับผิดชอบ</label>
-                        <select class="form-control" name="assigned_users[]" multiple>
+                        <select class="form-control select2-multiple" id="assigned_users" name="assigned_users[]" multiple="multiple" data-placeholder="เลือกผู้รับผิดชอบ...">
                             <?php foreach ($users as $user): ?>
                                 <option value="<?php echo $user['user_id']; ?>">
                                     <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> พิมพ์ชื่อเพื่อค้นหา หรือเลือกจากรายชื่อ (สามารถเลือกได้หลายคน)
+                        </small>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
@@ -88,10 +91,48 @@
 <script>
     $(document).ready(function() {
         loadTasks();
-        $('.select2').select2({
-            theme: 'bootstrap4'
+        // ไม่เรียก initializeSelect2() ที่นี่เพราะจะเรียกใน modal แทน
+
+        // จัดการเมื่อปิด modal
+        $('#taskModal').on('hidden.bs.modal', function() {
+            // ทำลาย Select2 เมื่อปิด modal
+            if ($('#assigned_users').hasClass('select2-hidden-accessible')) {
+                $('#assigned_users').select2('destroy');
+            }
+            // ลบ event handlers ทั้งหมด
+            $('#taskModal').off('shown.bs.modal.select2init shown.bs.modal.select2edit');
         });
     });
+
+    // ฟังก์ชันสำหรับ initialize Select2
+    function initializeSelect2() {
+        // ตรวจสอบว่า Select2 ถูก initialize แล้วหรือไม่
+        if ($('#assigned_users').hasClass('select2-hidden-accessible')) {
+            $('#assigned_users').select2('destroy');
+        }
+
+        $('#assigned_users').select2({
+            theme: 'bootstrap4',
+            placeholder: 'เลือกผู้รับผิดชอบ...',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('#taskModal'), // สำคัญ: กำหนด parent เป็น modal
+            language: {
+                noResults: function() {
+                    return "ไม่พบผลลัพธ์";
+                },
+                searching: function() {
+                    return "กำลังค้นหา...";
+                },
+                inputTooShort: function() {
+                    return "พิมพ์อย่างน้อย 1 ตัวอักษร";
+                },
+                loadingMore: function() {
+                    return "กำลังโหลดข้อมูลเพิ่มเติม...";
+                }
+            }
+        });
+    }
 
     function loadTasks() {
         $.ajax({
@@ -274,14 +315,28 @@
                         $('#progress').val(task.progress);
                         $('#priority').val(task.priority);
 
-                        // กำหนดค่าให้ select2 multiple
-                        $('#assigned_users').val(task.assigned_users).trigger('change');
-
                         // เปลี่ยนชื่อปุ่มและหัวข้อ Modal
                         $('#taskModalTitle').text('แก้ไขงาน');
 
                         // แสดง Modal
                         $('#taskModal').modal('show');
+
+                        // ลบ event handler เก่าก่อน
+                        $('#taskModal').off('shown.bs.modal.select2edit');
+
+                        // Re-initialize Select2 หลังจาก modal แสดงแล้ว แล้วกำหนดค่า
+                        $('#taskModal').one('shown.bs.modal.select2edit', function() {
+                            setTimeout(function() {
+                                initializeSelect2();
+                                // กำหนดค่าให้ select2 multiple หลังจาก initialize แล้ว
+                                $('#assigned_users').val(task.assigned_users).trigger('change');
+                            }, 100);
+                        });
+
+                        // Trigger event หลัง modal แสดงแล้ว
+                        $('#taskModal').on('shown.bs.modal', function() {
+                            $('#taskModal').trigger('shown.bs.modal.select2edit');
+                        });
                     } else {
                         throw new Error(response.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
                     }
@@ -308,8 +363,13 @@
         // รีเซ็ตฟอร์ม
         $('#taskForm')[0].reset();
 
-        // รีเซ็ต select2
-        $('#assigned_users').val(null).trigger('change');
+        // ทำลาย Select2 ก่อนแล้วสร้างใหม่
+        if ($('#assigned_users').hasClass('select2-hidden-accessible')) {
+            $('#assigned_users').select2('destroy');
+        }
+
+        // รีเซ็ต select
+        $('#assigned_users').val(null);
 
         // กำหนดค่าเริ่มต้น
         $('#task_id').val(''); // เคลียร์ task_id เพื่อระบุว่าเป็นการเพิ่มใหม่
@@ -320,6 +380,21 @@
 
         // แสดง Modal
         $('#taskModal').modal('show');
+
+        // ลบ event handler เก่าก่อน
+        $('#taskModal').off('shown.bs.modal.select2init');
+
+        // Re-initialize Select2 หลังจาก modal แสดงแล้ว
+        $('#taskModal').one('shown.bs.modal.select2init', function() {
+            setTimeout(function() {
+                initializeSelect2();
+            }, 100);
+        });
+
+        // Trigger event หลัง modal แสดงแล้ว
+        $('#taskModal').on('shown.bs.modal', function() {
+            $('#taskModal').trigger('shown.bs.modal.select2init');
+        });
     }
 
 
@@ -483,7 +558,60 @@
                 $('#task-container').html(response);
                 // เรียกใช้ initSortable หลังจากโหลด tasks
                 initSortable();
+                // subtasks จะถูกซ่อนไว้ตั้งแต่เริ่มต้นแล้วใน PHP
             }
+        });
+    }
+
+    // ฟังก์ชันขยาย Task ทั้งหมด
+    function expandAllTasks() {
+        $('.task-row[data-level="0"]').each(function() {
+            const currentRow = $(this);
+            const currentLevel = parseInt(currentRow.data('level'));
+            let nextRow = currentRow.next();
+
+            // แสดงรายการ subtasks ทั้งหมด
+            while (nextRow.length && parseInt(nextRow.data('level')) > currentLevel) {
+                nextRow.show();
+                nextRow = nextRow.next();
+            }
+
+            // เปลี่ยนไอคอนเป็น fa-caret-down
+            currentRow.find('.toggle-subtasks').removeClass('fa-caret-right').addClass('fa-caret-down');
+        });
+
+        // ขยาย subtasks ของ subtasks ด้วย (recursive)
+        $('.task-row[data-level]:not([data-level="0"])').each(function() {
+            const currentRow = $(this);
+            const currentLevel = parseInt(currentRow.data('level'));
+            let nextRow = currentRow.next();
+
+            // แสดงรายการ subtasks
+            while (nextRow.length && parseInt(nextRow.data('level')) > currentLevel) {
+                nextRow.show();
+                nextRow = nextRow.next();
+            }
+
+            // เปลี่ยนไอคอนเป็น fa-caret-down
+            currentRow.find('.toggle-subtasks').removeClass('fa-caret-right').addClass('fa-caret-down');
+        });
+    }
+
+    // ฟังก์ชันย่อ Task ทั้งหมด
+    function collapseAllTasks() {
+        $('.task-row[data-level="0"]').each(function() {
+            const currentRow = $(this);
+            const currentLevel = parseInt(currentRow.data('level'));
+            let nextRow = currentRow.next();
+
+            // ซ่อนรายการ subtasks ทั้งหมด
+            while (nextRow.length && parseInt(nextRow.data('level')) > currentLevel) {
+                nextRow.hide();
+                nextRow = nextRow.next();
+            }
+
+            // เปลี่ยนไอคอนเป็น fa-caret-right
+            currentRow.find('.toggle-subtasks').removeClass('fa-caret-down').addClass('fa-caret-right');
         });
     }
 </script>
@@ -595,6 +723,47 @@
     .btn-group .btn-xs {
         padding: 0.1rem 0.3rem;
         font-size: 0.75rem;
+    }
+
+    /* สไตล์สำหรับ Select2 */
+    .select2-container--bootstrap4 .select2-selection--multiple {
+        min-height: 38px;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+    }
+
+    .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice {
+        background-color: #007bff;
+        border: 1px solid #007bff;
+        color: #fff;
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        margin: 0.125rem;
+        font-size: 0.875rem;
+    }
+
+    .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove {
+        color: #fff;
+        margin-right: 0.25rem;
+    }
+
+    .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #ffc107;
+    }
+
+    .select2-container--bootstrap4 .select2-search--inline .select2-search__field {
+        min-width: 150px;
+    }
+
+    .select2-dropdown {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .select2-results__option--highlighted {
+        background-color: #007bff !important;
+        color: #fff !important;
     }
 </style>
 

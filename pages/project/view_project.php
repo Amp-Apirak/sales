@@ -292,6 +292,10 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+
     <!-- CSS -->
     <link rel="stylesheet" href="../../assets/css/view_project.css">
     <link rel="stylesheet" href="../../assets/css/project/cost_tab/cost_tab.css">
@@ -922,11 +926,17 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                             การจัดการงาน
                                         </h3>
                                         <div class="card-tools ml-auto">
+                                            <button type="button" class="btn btn-warning btn-sm mr-1" onclick="expandAllTasks()" title="ขยายทั้งหมด">
+                                                <i class="fas fa-expand-arrows-alt text-dark"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-info btn-sm mr-2" onclick="collapseAllTasks()" title="ย่อทั้งหมด">
+                                                <i class="fas fa-compress-arrows-alt text-white"></i>
+                                            </button>
                                             <button type="button" class="btn btn-light btn-sm mr-2" onclick="showAddTaskModal()">
                                                 <i class="fas fa-plus mr-1"></i> เพิ่มงานใหม่
                                             </button>
-                                            <button type="button" class="btn btn-outline-light btn-sm" onclick="loadTasks()" title="รีเฟรช">
-                                                <i class="fas fa-sync-alt"></i>
+                                            <button type="button" class="btn btn-secondary btn-sm" onclick="loadTasks()" title="รีเฟรช">
+                                                <i class="fas fa-sync-alt text-white"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -1013,6 +1023,9 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
         </div>
         <?php include '../../include/footer.php'; ?>
     </div>
+
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </body>
 
 </html>

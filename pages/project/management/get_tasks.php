@@ -262,9 +262,12 @@ function renderTask($task, $level = 0, $taskNumber = '')
         $hierarchyIndicator = '<span class="task-hierarchy-line" style="margin-left: ' . (($level - 1) * 20) . 'px;"></span>';
     }
 
+    // กำหนดการซ่อนแสดงตาม level (subtasks จะถูกซ่อนไว้ตั้งแต่เริ่มต้น)
+    $hiddenStyle = $level > 0 ? 'style="display: none;"' : '';
+
     // HTML สำหรับแต่ละแถว
     $html = "
-    <tr class='task-row task-level-{$level}' data-task-id='{$taskId}' data-level='{$level}'>
+    <tr class='task-row task-level-{$level}' data-task-id='{$taskId}' data-level='{$level}' {$hiddenStyle}>
         <td class='text-center text-nowrap task-id-cell'>
             {$hierarchyIndicator}
             <span class='badge task-id-badge {$levelClass}'>{$taskDisplayId}</span>
@@ -274,7 +277,7 @@ function renderTask($task, $level = 0, $taskNumber = '')
             {$indent}";
 
     if (!empty($task['sub_tasks'])) {
-        $html .= "<i class='fas fa-caret-down toggle-subtasks mr-1' style='cursor: pointer;'></i>";
+        $html .= "<i class='fas fa-caret-right toggle-subtasks mr-1' style='cursor: pointer;'></i>";
     } else {
         $html .= "<i class='fas fa-circle mr-1' style='font-size: 0.5em; vertical-align: middle;'></i>";
     }
