@@ -154,6 +154,32 @@
         background-size: 12px;
         padding-right: 40px;
     }
+
+    /* ข้อความช่วยเหลือ */
+    #amountPaidHelp {
+        margin-top: 8px;
+        padding: 8px 12px;
+        background-color: #f8f9fa;
+        border-left: 3px solid #3498db;
+        border-radius: 4px;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    #amountPaidHelp i {
+        margin-right: 6px;
+    }
+
+    /* Animation สำหรับช่อง amountPaid */
+    #amountPaid {
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    #amountPaid:focus {
+        outline: none;
+    }
 </style>
 
 <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
@@ -246,6 +272,9 @@
                             จำนวนเงินที่ชำระแล้ว (บาท)
                         </label>
                         <input type="text" class="form-control" id="amountPaid" readonly placeholder="0.00">
+                        <small class="form-text text-muted" id="amountPaidHelp">
+                            <i class="fas fa-info-circle"></i> แสดงยอดรวมที่ชำระแล้วทั้งหมด (รวมงวดนี้ถ้าเลือกสถานะ "ชำระแล้ว")
+                        </small>
                     </div>
                 </form>
             </div>
@@ -268,15 +297,40 @@
 
     // ฟังก์ชันสำหรับฟอร์แมตตัวเลขให้มีคอมม่าและทศนิยม 2 ตำแหน่ง
     function formatNumber(num) {
+        // แปลงเป็นตัวเลขก่อน (รองรับทั้ง string และ number)
+        let value;
+        if (typeof num === 'string') {
+            value = parseFloat(num.replace(/,/g, ''));
+        } else if (typeof num === 'number') {
+            value = num;
+        } else {
+            return '0.00';
+        }
+
+        // ถ้าไม่ใช่ตัวเลข ให้คืนค่า 0.00
+        if (isNaN(value)) {
+            return '0.00';
+        }
+
         return new Intl.NumberFormat('th-TH', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-        }).format(num);
+        }).format(value);
     }
 
     // ฟังก์ชันสำหรับแปลงข้อความที่มีคอมม่าเป็นตัวเลข
     function parseFormattedNumber(str) {
-        return parseFloat(str.replace(/,/g, '')) || 0;
+        // ถ้าเป็น number อยู่แล้ว ให้คืนค่าเลย
+        if (typeof str === 'number') {
+            return str;
+        }
+        // ถ้าไม่ใช่ string ให้คืนค่า 0
+        if (typeof str !== 'string') {
+            return 0;
+        }
+        // แปลง string เป็น number
+        const value = parseFloat(str.replace(/,/g, ''));
+        return isNaN(value) ? 0 : value;
     }
 
     // ฟังก์ชันสำหรับจัดการการป้อนข้อมูลในช่องตัวเลข
@@ -340,23 +394,94 @@
         $('#paymentPercentage').val(percentage.toFixed(2));
     }
 
+    // ฟังก์ชันสำหรับคำนวณยอดรวมที่ชำระแล้วทั้งหมด (ไม่รวมรายการปัจจุบัน)
+    function calculateTotalPaid(excludePaymentId = null) {
+        let totalPaid = 0;
+        payments.forEach(payment => {
+            // นับเฉพาะรายการที่สถานะเป็น "Paid" และไม่ใช่รายการที่กำลังแก้ไข
+            if (payment.payment_id !== excludePaymentId && payment.status === 'Paid') {
+                // ใช้ amount (จำนวนเงินงวดนั้นๆ) ไม่ใช่ amount_paid (ที่อาจเป็นยอดรวมสะสม)
+                totalPaid += parseFloat(payment.amount) || 0;
+            }
+        });
+        return totalPaid;
+    }
+
     // ฟังก์ชันสำหรับอัปเดตจำนวนเงินที่ชำระแล้วตามสถานะการชำระเงิน
     function updateAmountPaid() {
         const status = document.getElementById('status').value;
         const amount = parseFormattedNumber(document.getElementById('amount').value);
+        const currentPaymentId = document.getElementById('paymentId').value;
+
+        // คำนวณยอดรวมที่ชำระแล้วทั้งหมด (ไม่รวมรายการปัจจุบัน)
+        const previousTotalPaid = calculateTotalPaid(currentPaymentId);
+
+        let helpText = '';
+
         if (status === 'Paid') {
-            document.getElementById('amountPaid').value = formatNumber(amount);
-        } else {
-            document.getElementById('amountPaid').value = formatNumber(0);
+            // แสดงยอดรวมทั้งหมด = ยอดเก่า + ยอดปัจจุบัน
+            const totalWithCurrent = previousTotalPaid + amount;
+            document.getElementById('amountPaid').value = formatNumber(totalWithCurrent);
+
+            // สร้างข้อความอธิบายที่ชัดเจน
+            if (previousTotalPaid > 0) {
+                helpText = `<i class="fas fa-calculator"></i> <strong>คำนวณ:</strong> ${formatNumber(previousTotalPaid)} (ชำระแล้ว) + ${formatNumber(amount)} (งวดนี้) = <strong class="text-success">${formatNumber(totalWithCurrent)} บาท</strong>`;
+            } else {
+                helpText = `<i class="fas fa-info-circle"></i> งวดนี้เป็นงวดแรกที่ชำระ = <strong class="text-success">${formatNumber(amount)} บาท</strong>`;
+            }
+
+            // เปลี่ยนสีของ input เป็นเขียวอ่อน
+            $('#amountPaid').css('background-color', '#e8f5e9');
+        } else if (status === 'Pending') {
+            // ถ้าสถานะเป็น Pending แสดงเฉพาะยอดเก่า
+            document.getElementById('amountPaid').value = formatNumber(previousTotalPaid);
+
+            if (previousTotalPaid > 0) {
+                helpText = `<i class="fas fa-info-circle"></i> ยอดที่ชำระแล้วก่อนหน้านี้ = <strong>${formatNumber(previousTotalPaid)} บาท</strong> (งวดนี้รอชำระ)`;
+            } else {
+                helpText = `<i class="fas fa-hourglass-half"></i> ยังไม่มีการชำระเงิน (งวดนี้รอชำระ)`;
+            }
+
+            $('#amountPaid').css('background-color', '#fff3cd');
+        } else if (status === 'Overdue') {
+            // ถ้าสถานะเป็น Overdue
+            document.getElementById('amountPaid').value = formatNumber(previousTotalPaid);
+
+            if (previousTotalPaid > 0) {
+                helpText = `<i class="fas fa-exclamation-triangle"></i> ยอดที่ชำระแล้ว = <strong>${formatNumber(previousTotalPaid)} บาท</strong> (งวดนี้เกินกำหนด)`;
+            } else {
+                helpText = `<i class="fas fa-exclamation-triangle text-danger"></i> <strong class="text-danger">ยังไม่มีการชำระเงิน (งวดนี้เกินกำหนด)</strong>`;
+            }
+
+            $('#amountPaid').css('background-color', '#f8d7da');
         }
+
+        // อัพเดตข้อความช่วยเหลือ
+        $('#amountPaidHelp').html(helpText);
     }
 
     // ฟังก์ชันเปิด Modal สำหรับเพิ่มการชำระเงิน
     function openAddPaymentModal() {
-        document.getElementById('paymentModalLabel').textContent = 'เพิ่มการชำระเงิน';
+        document.getElementById('paymentModalLabel').innerHTML = '<i class="fas fa-money-check-alt"></i> เพิ่มการชำระเงิน';
         document.getElementById('paymentForm').reset();
         document.getElementById('paymentId').value = '';
         document.getElementById('paymentNumber').value = payments.length + 1;
+
+        // แสดงยอดรวมที่ชำระแล้วทั้งหมด
+        const totalPaid = calculateTotalPaid();
+        document.getElementById('amountPaid').value = formatNumber(totalPaid);
+
+        // ตั้งค่าเริ่มต้นให้แสดงข้อความช่วยเหลือ
+        let helpText = '';
+        if (totalPaid > 0) {
+            helpText = `<i class="fas fa-info-circle"></i> ยอดที่ชำระแล้วก่อนหน้านี้ทั้งหมด = <strong>${formatNumber(totalPaid)} บาท</strong>`;
+            $('#amountPaid').css('background-color', '#fff3cd');
+        } else {
+            helpText = `<i class="fas fa-info-circle"></i> ยังไม่มีการชำระเงินก่อนหน้านี้`;
+            $('#amountPaid').css('background-color', '#e9ecef');
+        }
+        $('#amountPaidHelp').html(helpText);
+
         $('#paymentModal').modal('show');
     }
 
@@ -522,9 +647,15 @@
     // Event Listeners
     $('#paymentPercentage').on('input', function() {
         calculateAmountFromPercentage();
+        updateAmountPaid(); // อัพเดตยอดรวมเมื่อเปลี่ยนเปอร์เซ็นต์
     });
 
     $('#amount').on('input', function() {
         calculatePercentageFromAmount();
+        updateAmountPaid(); // อัพเดตยอดรวมเมื่อเปลี่ยนจำนวนเงิน
+    });
+
+    $('#status').on('change', function() {
+        updateAmountPaid(); // อัพเดตยอดรวมเมื่อเปลี่ยนสถานะ
     });
 </script>

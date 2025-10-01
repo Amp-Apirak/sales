@@ -298,7 +298,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- CSS -->
     <link rel="stylesheet" href="../../assets/css/view_project.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="../../assets/css/project/cost_tab/cost_tab.css">
+    <link rel="stylesheet" href="../../assets/css/project/cost_tab/cost_tab.css?v=<?php echo time(); ?>">
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">

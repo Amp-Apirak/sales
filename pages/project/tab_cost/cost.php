@@ -18,7 +18,7 @@
 
         // ตรวจสอบและฟอร์แมตตัวเลขใหม่
         if (!isNaN(value) && value !== '') {
-            input.value = formatNumber(value);
+            input.value = formatNumberCost(value);
         } else {
             input.value = '';
         }
@@ -28,9 +28,11 @@
         calculateTotals(); // เรียกฟังก์ชันคำนวณยอดรวมใหม่
     }
 
-    // ฟังก์ชันฟอร์แมตตัวเลขให้มีคอมม่า
-    function formatNumber(value) {
-        const parts = value.split('.');
+    // ฟังก์ชันฟอร์แมตตัวเลขให้มีคอมม่า (สำหรับ Cost Tab)
+    function formatNumberCost(value) {
+        // แปลงเป็น string ก่อน
+        const strValue = String(value);
+        const parts = strValue.split('.');
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         return parts.join('.');
     }
@@ -268,11 +270,11 @@
                         <td>${escapeHtml(cost.description)}</td>
                         <td>${cost.quantity}</td>
                         <td>${escapeHtml(cost.unit)}</td>
-                        <td>${formatNumber(cost.price_per_unit)}</td>
-                        <td>${formatNumber(cost.total_amount)}</td>
+                        <td>${formatNumberCost(cost.price_per_unit)}</td>
+                        <td>${formatNumberCost(cost.total_amount)}</td>
                         <?php if ($hasAccessToFinancialInfo): ?>
-                            <td>${formatNumber(cost.cost_per_unit)}</td>
-                            <td>${formatNumber(cost.total_cost)}</td>
+                            <td>${formatNumberCost(cost.cost_per_unit)}</td>
+                            <td>${formatNumberCost(cost.total_cost)}</td>
                             <td>${escapeHtml(cost.supplier)}</td>
                         <?php endif; ?>
                         <td>
@@ -382,26 +384,26 @@
 
     // ฟังก์ชันอัพเดทยอดรวม
     // function updateSummary(summary) {
-    //     $('#totalAmount').text(formatNumber(summary.total_amount) + ' บาท');
-    //     $('#vatAmount').text(formatNumber(summary.vat_amount) + ' บาท');
-    //     $('#grandTotal').text(formatNumber(summary.grand_total) + ' บาท');
-    //     $('#totalCost').text(formatNumber(summary.total_cost) + ' บาท');
-    //     $('#costVatAmount').text(formatNumber(summary.cost_vat_amount) + ' บาท');
-    //     $('#totalCostWithVat').text(formatNumber(summary.total_cost_with_vat) + ' บาท');
-    //     $('#profitAmount').text(formatNumber(summary.profit_amount) + ' บาท');
-    //     $('#profitPercentage').text(formatNumber(summary.profit_percentage) + '%');
+    //     $('#totalAmount').text(formatNumberCost(summary.total_amount) + ' บาท');
+    //     $('#vatAmount').text(formatNumberCost(summary.vat_amount) + ' บาท');
+    //     $('#grandTotal').text(formatNumberCost(summary.grand_total) + ' บาท');
+    //     $('#totalCost').text(formatNumberCost(summary.total_cost) + ' บาท');
+    //     $('#costVatAmount').text(formatNumberCost(summary.cost_vat_amount) + ' บาท');
+    //     $('#totalCostWithVat').text(formatNumberCost(summary.total_cost_with_vat) + ' บาท');
+    //     $('#profitAmount').text(formatNumberCost(summary.profit_amount) + ' บาท');
+    //     $('#profitPercentage').text(formatNumberCost(summary.profit_percentage) + '%');
     // }
 
     // ฟังก์ชันอัพเดทการแสดงผลสรุป
     function updateSummaryDisplay(summary) {
-        $('#totalAmount').text(formatNumber(summary.total_amount));
-        $('#vatAmount').text(formatNumber(summary.vat_amount));
-        $('#grandTotal').text(formatNumber(summary.grand_total));
-        $('#totalCost').text(formatNumber(summary.total_cost));
-        $('#costVatAmount').text(formatNumber(summary.cost_vat_amount));
-        $('#totalCostWithVat').text(formatNumber(summary.total_cost_with_vat));
-        $('#profitAmount').text(formatNumber(summary.profit_amount));
-        $('#profitPercentage').text(formatNumber(summary.profit_percentage));
+        $('#totalAmount').text(formatNumberCost(summary.total_amount));
+        $('#vatAmount').text(formatNumberCost(summary.vat_amount));
+        $('#grandTotal').text(formatNumberCost(summary.grand_total));
+        $('#totalCost').text(formatNumberCost(summary.total_cost));
+        $('#costVatAmount').text(formatNumberCost(summary.cost_vat_amount));
+        $('#totalCostWithVat').text(formatNumberCost(summary.total_cost_with_vat));
+        $('#profitAmount').text(formatNumberCost(summary.profit_amount));
+        $('#profitPercentage').text(formatNumberCost(summary.profit_percentage));
     }
 
     // ฟังก์ชันแก้ไขข้อมูล
@@ -422,8 +424,8 @@
                     $('#descriptionInput').val(cost.description);
                     $('#qtyInput').val(cost.quantity);
                     $('#unitInput').val(cost.unit);
-                    $('#priceInput').val(formatNumber(cost.price_per_unit));
-                    $('#costInput').val(formatNumber(cost.cost_per_unit));
+                    $('#priceInput').val(formatNumberCost(cost.price_per_unit));
+                    $('#costInput').val(formatNumberCost(cost.cost_per_unit));
                     $('#supplierInput').val(cost.supplier);
 
                     // เปลี่ยนปุ่มบันทึกเป็นปุ่มอัพเดท
