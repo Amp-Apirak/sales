@@ -1,8 +1,169 @@
+<!-- Styled Modal สำหรับการชำระเงิน -->
+<style>
+    #paymentModal .modal-dialog {
+        max-width: 600px;
+    }
+
+    #paymentModal .modal-content {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    #paymentModal .modal-header {
+        background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+        color: white;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        padding: 20px 25px;
+        border: none;
+    }
+
+    #paymentModal .modal-title {
+        font-weight: 600;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    #paymentModal .modal-title i {
+        margin-right: 10px;
+        font-size: 24px;
+    }
+
+    #paymentModal .close {
+        color: white;
+        opacity: 0.9;
+        text-shadow: none;
+        font-size: 28px;
+    }
+
+    #paymentModal .close:hover {
+        opacity: 1;
+    }
+
+    #paymentModal .modal-body {
+        padding: 30px 25px;
+        background: #f8f9fa;
+    }
+
+    #paymentModal .form-group {
+        margin-bottom: 20px;
+    }
+
+    #paymentModal .form-group label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+    }
+
+    #paymentModal .form-group label i {
+        margin-right: 8px;
+        color: #3498db;
+        width: 18px;
+    }
+
+    #paymentModal .form-control {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 10px 15px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    #paymentModal .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.15);
+        background: white;
+    }
+
+    #paymentModal .form-control[readonly] {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+
+    #paymentModal .modal-footer {
+        padding: 20px 25px;
+        border-top: 1px solid #dee2e6;
+        background: white;
+        border-bottom-left-radius: 15px;
+        border-bottom-right-radius: 15px;
+    }
+
+    #paymentModal .modal-footer .btn {
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    #paymentModal .modal-footer .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    #paymentModal .modal-footer .btn-secondary:hover {
+        background-color: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    #paymentModal .modal-footer .btn-primary {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+    }
+
+    #paymentModal .modal-footer .btn-primary:hover {
+        background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 576px) {
+        #paymentModal .modal-dialog {
+            margin: 10px;
+        }
+
+        #paymentModal .modal-body {
+            padding: 20px 15px;
+        }
+
+        #paymentModal .modal-header,
+        #paymentModal .modal-footer {
+            padding: 15px;
+        }
+
+        #paymentModal .modal-title {
+            font-size: 18px;
+        }
+    }
+
+    /* แถบแสดงสถานะ */
+    #paymentModal #status {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233498db' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        background-size: 12px;
+        padding-right: 40px;
+    }
+</style>
+
 <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="paymentModalLabel">เพิ่มการชำระเงิน</h5>
+                <h5 class="modal-title" id="paymentModalLabel">
+                    <i class="fas fa-money-check-alt"></i>
+                    เพิ่มการชำระเงิน
+                </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -11,43 +172,90 @@
                 <form id="paymentForm">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                     <input type="hidden" id="paymentId">
-                    <div class="form-group">
-                        <label for="paymentNumber">งวดที่</label>
-                        <input type="number" class="form-control" id="paymentNumber" required>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="paymentNumber">
+                                    <i class="fas fa-hashtag"></i>
+                                    งวดที่
+                                </label>
+                                <input type="number" class="form-control" id="paymentNumber" required placeholder="ระบุงวดที่">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="status">
+                                    <i class="fas fa-info-circle"></i>
+                                    สถานะ
+                                </label>
+                                <select class="form-control" id="status" required>
+                                    <option value="Pending">รอชำระ</option>
+                                    <option value="Paid">ชำระแล้ว</option>
+                                    <option value="Overdue">เกินกำหนด</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="paymentPercentage">เปอร์เซ็นต์การชำระ (%)</label>
-                        <input type="text" class="form-control" id="paymentPercentage" step="0.01">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="paymentPercentage">
+                                    <i class="fas fa-percentage"></i>
+                                    เปอร์เซ็นต์การชำระ (%)
+                                </label>
+                                <input type="text" class="form-control" id="paymentPercentage" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="amount">
+                                    <i class="fas fa-coins"></i>
+                                    จำนวนเงิน (บาท)
+                                </label>
+                                <input type="text" class="form-control" id="amount" placeholder="0.00">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="amount">จำนวนเงิน (บาท)</label>
-                        <input type="text" class="form-control" id="amount">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="dueDate">
+                                    <i class="far fa-calendar-alt"></i>
+                                    วันครบกำหนด
+                                </label>
+                                <input type="date" class="form-control" id="dueDate">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="paymentDate">
+                                    <i class="far fa-calendar-check"></i>
+                                    วันที่ชำระ
+                                </label>
+                                <input type="date" class="form-control" id="paymentDate">
+                            </div>
+                        </div>
                     </div>
+
                     <div class="form-group">
-                        <label for="dueDate">วันครบกำหนด</label>
-                        <input type="date" class="form-control" id="dueDate">
-                    </div>
-                    <div class="form-group">
-                        <label for="status">สถานะ</label>
-                        <select class="form-control" id="status" required>
-                            <option value="Pending">รอชำระ</option>
-                            <option value="Paid">ชำระแล้ว</option>
-                            <option value="Overdue">เกินกำหนด</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="paymentDate">วันที่ชำระ</label>
-                        <input type="date" class="form-control" id="paymentDate">
-                    </div>
-                    <div class="form-group">
-                        <label for="amountPaid">จำนวนเงินที่ชำระแล้ว (บาท)</label>
-                        <input type="text" class="form-control" id="amountPaid" readonly>
+                        <label for="amountPaid">
+                            <i class="fas fa-check-circle"></i>
+                            จำนวนเงินที่ชำระแล้ว (บาท)
+                        </label>
+                        <input type="text" class="form-control" id="amountPaid" readonly placeholder="0.00">
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
-                <button type="button" class="btn btn-primary" onclick="savePayment()">บันทึก</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> ยกเลิก
+                </button>
+                <button type="button" class="btn btn-primary" onclick="savePayment()">
+                    <i class="fas fa-save"></i> บันทึก
+                </button>
             </div>
         </div>
     </div>

@@ -297,7 +297,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
     <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
 
     <!-- CSS -->
-    <link rel="stylesheet" href="../../assets/css/view_project.css">
+    <link rel="stylesheet" href="../../assets/css/view_project.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="../../assets/css/project/cost_tab/cost_tab.css">
 </head>
 
@@ -616,28 +616,30 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                         <span><i class="fas fa-user mr-2"></i>ข้อมูลลูกค้า</span>
                                                     </div>
                                                     <div class="info-card-body">
-                                                        <table class="table table-striped">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>ชื่อลูกค้า</th>
-                                                                    <th>ตำแหน่ง</th>
-                                                                    <th>บริษัท</th>
-                                                                    <th>โทรศัพท์</th>
-                                                                    <th>อีเมล</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php foreach ($project_customers as $customer): ?>
+                                                        <div class="table-responsive">
+                                                            <table class="table table-striped customer-table">
+                                                                <thead>
                                                                     <tr>
-                                                                        <td><?php echo htmlspecialchars($customer['customer_name']); ?></td>
-                                                                        <td><?php echo htmlspecialchars($customer['position'] ?? 'ไม่ระบุ'); ?></td>
-                                                                        <td><?php echo htmlspecialchars($customer['company'] ?? 'ไม่ระบุ'); ?></td>
-                                                                        <td><?php echo htmlspecialchars($customer['phone'] ?? 'ไม่ระบุ'); ?></td>
-                                                                        <td><?php echo htmlspecialchars($customer['email'] ?? 'ไม่ระบุ'); ?></td>
+                                                                        <th>ชื่อลูกค้า</th>
+                                                                        <th>ตำแหน่ง</th>
+                                                                        <th>บริษัท</th>
+                                                                        <th>โทรศัพท์</th>
+                                                                        <th>อีเมล</th>
                                                                     </tr>
-                                                                <?php endforeach; ?>
-                                                            </tbody>
-                                                        </table>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <?php foreach ($project_customers as $customer): ?>
+                                                                        <tr>
+                                                                            <td data-label="ชื่อลูกค้า"><?php echo htmlspecialchars($customer['customer_name']); ?></td>
+                                                                            <td data-label="ตำแหน่ง"><?php echo htmlspecialchars($customer['position'] ?? 'ไม่ระบุ'); ?></td>
+                                                                            <td data-label="บริษัท"><?php echo htmlspecialchars($customer['company'] ?? 'ไม่ระบุ'); ?></td>
+                                                                            <td data-label="โทรศัพท์"><?php echo htmlspecialchars($customer['phone'] ?? 'ไม่ระบุ'); ?></td>
+                                                                            <td data-label="อีเมล"><?php echo htmlspecialchars($customer['email'] ?? 'ไม่ระบุ'); ?></td>
+                                                                        </tr>
+                                                                    <?php endforeach; ?>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

@@ -11,12 +11,13 @@ body {
 }
 
 .project-header {
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     color: white;
-    padding: 20px;
-    border-radius: 10px;
+    padding: 25px;
+    border-radius: 12px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 5px solid #3498db;
 }
 
 .project-title {
@@ -27,11 +28,13 @@ body {
 
 .project-status {
     display: inline-block;
-    padding: 5px 10px;
+    padding: 6px 15px;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .project-date {
@@ -41,19 +44,26 @@ body {
 
 .info-card {
     background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
     overflow: hidden;
+    border: 1px solid #e9ecef;
+    transition: box-shadow 0.3s ease;
+}
+
+.info-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .info-card-header {
-    background-color: #f8f9fa;
-    color: black;
+    background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 100%);
+    color: #2c3e50;
     padding: 15px 20px;
     font-weight: 600;
     font-size: 18px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 2px solid #dee2e6;
+    border-left: 4px solid #5dade2;
 }
 
 .info-card-body {
@@ -79,10 +89,12 @@ body {
 
 /* สไตล์สำหรับส่วนสรุปทางการเงิน */
 .financial-summary {
-    background-color: #ecf0f1;
+    background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%);
     border-radius: 10px;
     padding: 20px;
     margin-top: 20px;
+    border-left: 4px solid #27ae60;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .financial-item {
@@ -111,18 +123,21 @@ body {
 .edit-button {
     float: right;
     background-color: transparent;
-    color: #6a11cb;
-    border: none;
-    padding: 2px 5px;
-    border-radius: 3px;
+    color: #3498db;
+    border: 1px solid #3498db;
+    padding: 5px 12px;
+    border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
+    transition: all 0.3s ease;
     font-size: 14px;
+    font-weight: 500;
 }
 
 .edit-button:hover {
-    background-color: #6a11cb;
+    background-color: #3498db;
     color: white;
+    box-shadow: 0 2px 6px rgba(52, 152, 219, 0.3);
+    transform: translateY(-1px);
 }
 
 /* สไตล์สำหรับตาราง */
@@ -172,6 +187,166 @@ body {
 @media (max-width: 768px) {
     .table-responsive {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* ปรับ font size ให้อ่านง่ายบนมือถือ */
+    .info-label {
+        font-size: 13px;
+        width: 120px;
+    }
+
+    .info-value {
+        font-size: 13px;
+    }
+
+    /* ปรับ header ให้เหมาะกับมือถือ */
+    .project-header {
+        padding: 15px;
+    }
+
+    .project-title {
+        font-size: 20px;
+    }
+
+    .project-status {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+
+    /* ปรับการ์ดให้แสดงผลดีบนมือถือ */
+    .info-card-header {
+        font-size: 16px;
+        padding: 12px 15px;
+    }
+
+    .info-card-body {
+        padding: 15px;
+    }
+
+    /* ทำให้ตารางแสดงผลแบบ stack บนมือถือ */
+    .table thead {
+        display: none;
+    }
+
+    .table tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .table tbody td:last-child {
+        border-bottom: none;
+    }
+
+    .table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #2c3e50;
+        margin-right: 10px;
+    }
+
+    /* ปรับปุ่มให้เหมาะกับมือถือ */
+    .edit-button {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+
+    .btn-sm {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+
+    /* ตารางลูกค้าบนมือถือ */
+    .customer-table thead {
+        display: none;
+    }
+
+    .customer-table tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .customer-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 13px;
+    }
+
+    .customer-table tbody td:last-child {
+        border-bottom: none;
+    }
+
+    .customer-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #2c3e50;
+        margin-right: 10px;
+        min-width: 100px;
+    }
+
+    /* ปรับส่วนสรุปการเงินบนมือถือ */
+    .financial-summary {
+        padding: 15px;
+    }
+
+    .financial-item {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .financial-label,
+    .financial-value {
+        font-size: 14px;
+    }
+
+    .profit-highlight {
+        font-size: 16px;
+    }
+
+    /* ปรับส่วน info-item ให้แสดงแบบ stack */
+    .info-item {
+        flex-direction: column;
+        margin-bottom: 12px;
+    }
+
+    .info-label {
+        margin-bottom: 5px;
+        width: 100%;
+    }
+
+    .info-value {
+        width: 100%;
+        padding-left: 0;
+    }
+}
+
+/* สำหรับ Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .info-label {
+        width: 180px;
+    }
+
+    .project-title {
+        font-size: 22px;
     }
 }
 
@@ -225,6 +400,27 @@ body {
 .info-card {
     min-height: 300px;
     /* ปรับตามความเหมาะสม */
+}
+
+/* ตารางลูกค้า - Responsive */
+.customer-table {
+    width: 100%;
+    font-size: 14px;
+}
+
+.customer-table thead th {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px;
+    white-space: nowrap;
+}
+
+.customer-table tbody td {
+    padding: 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 
