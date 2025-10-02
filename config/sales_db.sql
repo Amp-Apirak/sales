@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 23, 2025 at 02:34 PM
+-- Generation Time: Oct 02, 2025 at 05:32 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -921,7 +921,7 @@ INSERT INTO `projects` (`project_id`, `project_name`, `start_date`, `end_date`, 
 ('bded5dd9-9eff-4685-89cf-962c1953e0ea', 'Datacenter BK01 -บางพลี-', '0000-00-00', '0000-00-00', 'ใบเสนอราคา (Quotation)', '', 'End user : Mr. CHAWAPAT PRASERTTONGSUK  chawapatp@wtpthailand.com, www.wtpartnership.com\r\nProject lead : ดิว Axis\r\nDistributor : Ying Bacom', '0000-00-00', 'c9245a19-52fa-4b02-a98c-b962f2f51b3f', 6875335.00, 7356608.45, 5718540.00, 6118837.80, 1156795.00, 16.83, 687533.50, 571854.00, 115679.50, '350429f1-d84a-4cec-8c28-d1a2ce9c4763', '2025-03-17 03:26:27', 'c9245a19-52fa-4b02-a98c-b962f2f51b3f', '2025-03-17 03:26:27', NULL, '3431f4cb-f892-4e08-a9af-240a743ebc25', 7.00),
 ('c1eeffcd-ceca-46dc-9b09-dae4d6d00091', 'งานติดตั้งสายสัญญาณคอมพิวเตอร์ และย้ายห้องควบคุมระบบคอมพิวเตอร์', '2024-07-01', '2024-12-28', 'ชนะ (Win)', '105/2567', '', '2024-07-01', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', 4635514.02, 4960000.00, 2921450.00, 3125951.50, 1714064.02, 36.98, 4635514.02, 2921450.00, 1714064.02, '1fb0fb81-4482-438a-ab66-5472c52bf9e4', '2024-11-04 03:42:21', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', '2024-12-11 13:14:59', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', '3431f4cb-f892-4e08-a9af-240a743ebc25', 7.00),
 ('c25a8b9b-64ad-4b8a-b79a-79e97922eb40', 'เช่าใช้ชุดเฝ้าระวังเหตุฉุกเฉินการล้มในผู้สูงอายุภายในบ้านและภายนอกบ้าน อบจ.ชลบุรี 11 อำเภอ', '0000-00-00', '0000-00-00', 'ใบเสนอราคา (Quotation)', '', '', '2025-02-03', '3', 6016600.00, 6437762.00, 4730728.30, 5061879.28, 1285871.70, 21.37, 601660.00, 473072.83, 128587.17, '02e18007-e4e7-4fb7-a2c2-c924ece0a966', '2025-04-09 06:03:50', '3', '2025-06-15 06:13:07', '3', '4c85d842-54f3-4f06-87e6-553f81488234', 7.00),
-('c30ec464-061b-40f2-ae7c-06d6aced3219', 'BSP Hayashi Telempu_Preventive Maintenance Rack Switch Network', '0000-00-00', '0000-00-00', 'ชนะ (Win)', '', '', '2025-07-18', '14d9e34c-b691-4ce8-a5ef-929ace71248a', 74000.00, 79180.00, 3200.00, 3424.00, 70800.00, 95.68, 74000.00, 3200.00, 70800.00, 'c918919d-7d14-4f42-97a8-3357016c382a', '2025-07-21 08:50:04', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2025-09-04 06:23:06', '14d9e34c-b691-4ce8-a5ef-929ace71248a', 'ae10bae3-0b1c-419f-8b21-8c57c607d3de', 7.00),
+('c30ec464-061b-40f2-ae7c-06d6aced3219', 'BSP Hayashi Telempu_Preventive Maintenance Rack Switch Network', '0000-00-00', '0000-00-00', 'ชนะ (Win)', '', '', '2025-07-18', '14d9e34c-b691-4ce8-a5ef-929ace71248a', 74000.00, 79180.00, 3200.00, 3424.00, 70800.00, 95.68, 74000.00, 3200.00, 70800.00, 'c918919d-7d14-4f42-97a8-3357016c382a', '2025-07-21 08:50:04', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2025-10-01 07:25:12', '2', 'ae10bae3-0b1c-419f-8b21-8c57c607d3de', 7.00),
 ('c391eba0-07b0-4ce8-9450-31a9c3c0ea4f', 'โครงการงานก่อสร้างถังเก็บน้ำใส ขนาด 20,000 ลบ.ม.ที่สถานีสูบน้ำสําโรง ค่าแรง', '2024-03-23', '2024-11-29', 'ชนะ (Win)', '', '', '2024-02-13', '193f9eed-2938-4305-ab65-828ac5253b30', 197149.53, 210950.00, 122000.00, 130540.00, 75149.53, 38.12, 197149.53, 122000.00, 75149.53, NULL, '2025-06-11 12:13:41', '193f9eed-2938-4305-ab65-828ac5253b30', '2025-06-11 12:13:41', NULL, '162fd42b-855e-40ac-8696-0d0535fbe2b1', 7.00),
 ('c3cda5cd-242f-4a35-8364-1304577a7d28', 'อุปกรณ์ต่อพ่วง', '0000-00-00', '0000-00-00', 'ใบเสนอราคา (Quotation)', '', '', '0000-00-00', 'e40dedaf-3e9b-4694-8ee9-c173d5c44db6', 2803738.32, 3000000.00, 2056074.77, 2200000.00, 747663.55, 26.67, 280373.83, 205607.48, 74766.36, 'cbf32bae-0896-4e5b-ab8e-f4fdca7916f8', '2024-11-25 01:19:17', 'e40dedaf-3e9b-4694-8ee9-c173d5c44db6', '2024-12-11 13:14:59', NULL, 'de486d4d-c877-40a8-a113-d92b2dfcbda5', 7.00),
 ('c49df822-5bb0-4f5e-84e0-4c3f38d8b6f3', 'Access Control', '0000-00-00', '0000-00-00', 'ชนะ (Win)', '', '', '2025-04-09', 'bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', 495234.58, 529901.00, 442030.00, 472972.10, 53204.58, 10.74, 495234.58, 442030.00, 53204.58, '9ca0c7c9-fd99-41b7-878c-3c0d07b938fa', '2025-06-12 10:36:15', 'bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', '2025-06-12 10:36:15', NULL, 'de486d4d-c877-40a8-a113-d92b2dfcbda5', 7.00),
@@ -1123,6 +1123,7 @@ INSERT INTO `project_customers` (`id`, `project_id`, `customer_id`, `is_primary`
 ('004bea9e-376d-4fdb-a9c4-1d9e0d81f310', 'c25a8b9b-64ad-4b8a-b79a-79e97922eb40', '02e18007-e4e7-4fb7-a2c2-c924ece0a966', 1, '2025-06-15 06:13:07'),
 ('024857e3-6925-4398-a38a-208d39877bbc', '96f5ad4d-3a2d-4f3d-a909-9c74eaf3df55', 'f004cbe4-f666-4de7-8e85-7f940b6d8393', 1, '2025-06-10 09:27:09'),
 ('0275b7c4-8f02-4994-b32c-c350616d4bcf', '6d273c81-2bb0-4628-8954-b10bcccbfdd1', 'ed0e2ae8-3fe0-4df6-a04c-f07019cac0ca', 1, '2025-06-13 04:02:23'),
+('0352b921-09dd-4ea0-a98b-9d86a63465f5', 'c30ec464-061b-40f2-ae7c-06d6aced3219', 'c918919d-7d14-4f42-97a8-3357016c382a', 1, '2025-10-01 07:25:12'),
 ('064232f7-4d8f-44b5-a69d-4d7ef4c8f965', 'a5addc9d-b9be-41a0-b9ae-aae652e47826', 'c918919d-7d14-4f42-97a8-3357016c382a', 1, '2025-02-06 09:30:57'),
 ('0767e2b1-7426-4c7c-b5a5-87177e41bda8', 'bded5dd9-9eff-4685-89cf-962c1953e0ea', '350429f1-d84a-4cec-8c28-d1a2ce9c4763', 1, '2025-03-17 03:26:27'),
 ('08ef3999-01c2-45d5-8435-712d0d26c41f', '6f498e8e-0bc7-45e0-9f5b-117dbdc84c90', 'ed0e2ae8-3fe0-4df6-a04c-f07019cac0ca', 1, '2025-06-13 04:06:01'),
@@ -1170,6 +1171,7 @@ INSERT INTO `project_customers` (`id`, `project_id`, `customer_id`, `is_primary`
 ('3077857d-d133-4391-b7a2-cfd64b340b0d', '29dbf3e9-e0c5-4f32-aa07-9c9460094322', '74f091d7-a81e-426b-a55e-a50eeb43d8e7', 1, '2025-06-23 02:52:06'),
 ('3088acc0-9d36-4b9e-ab8a-53705a76b572', 'd1765bcd-968f-4203-bc56-a62447106389', '65b9a9b5-5272-4b9d-a02f-1b4c85460069', 1, '2025-06-24 00:52:30'),
 ('30cbb715-93c9-49fd-83ec-19e31f429b1d', 'a3fa105e-b258-474a-87e5-e39272e3f127', 'fda15ece-1a00-4583-b354-cb5f3c01bb23', 1, '2025-06-11 08:16:14'),
+('319b91b6-39a7-41f1-a0e0-c2d5580a277e', 'c30ec464-061b-40f2-ae7c-06d6aced3219', '2b5c101f-db79-4143-89f9-2b42fbea06bd', 0, '2025-10-01 07:25:12'),
 ('3252b1db-237d-4f29-a092-28dbbd7c6fff', 'a34537bb-801b-45f1-aa34-f7b3b1f13064', 'fda15ece-1a00-4583-b354-cb5f3c01bb23', 1, '2025-06-11 09:01:04'),
 ('32ee0e85-f113-4af0-a30a-80ec7c807764', 'b56986ef-95fa-4f26-ba4e-ae0a593003f1', '2f12eaa0-9738-484d-8329-80e964ea5ee6', 1, '2025-06-16 04:05:04'),
 ('3416d767-67dc-407d-8abb-3e78c7abef9d', '7f69f115-4ea7-4c58-8b48-d16f6fefe0be', 'ff09ea1e-4e6a-44e0-8637-03ac0670070d', 1, '2025-06-12 10:11:40'),
@@ -1293,7 +1295,6 @@ INSERT INTO `project_customers` (`id`, `project_id`, `customer_id`, `is_primary`
 ('b9126e9a-43f8-4c55-a673-18bb055f50c7', '29556301-fab6-4d8c-aa62-1b1fbf984168', 'ad0ee715-c3b7-4df0-b097-6d0bf1565fb0', 1, '2025-06-11 09:04:36'),
 ('b9783026-96c7-4df9-8460-00e438ce3889', 'bc7d814b-f4e5-4e37-a02a-d33143f66717', '0d4e8645-ff06-4531-bc5a-09e6570248d8', 1, '2025-06-25 09:38:43'),
 ('bdc1cbd7-4353-4cb3-a344-d895165bc06e', 'ecb183b4-4add-4215-8b4b-f7f60e544274', 'cf5b1437-ce07-4f44-a672-ecd9cee08e41', 1, '2025-06-15 06:11:58'),
-('be4add6c-6b66-4cf4-bc7e-4da3041be546', 'c30ec464-061b-40f2-ae7c-06d6aced3219', 'c918919d-7d14-4f42-97a8-3357016c382a', 1, '2025-09-04 06:23:06'),
 ('be5e5db5-adc5-42cd-8264-fe99d3a3c855', 'e96e8f2a-5a2c-48fc-bae1-d19c30217990', 'c918919d-7d14-4f42-97a8-3357016c382a', 1, '2025-01-15 07:40:31'),
 ('bf865c92-8a62-457b-b878-5b3d4f606d5d', 'bc78c5f6-8877-4d6e-8d24-7a0bac4746e0', 'f5489b6a-fd5b-4896-b655-761768e44b8f', 1, '2025-06-11 07:57:34'),
 ('c036b373-0a12-4722-8012-591b2bbabb55', '41b24403-2ab4-48f2-b972-356190dcfc16', '5db776f7-0e5f-42f2-a0de-2f76ffadf235', 1, '2025-06-12 10:13:30'),
@@ -1495,13 +1496,15 @@ INSERT INTO `project_payments` (`payment_id`, `project_id`, `payment_number`, `a
 ('85dd68d7-de46-4e81-99f8-4414590503ac', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 4, 88347.95, 7.69, 88347.95, NULL, '2024-10-01', 'Paid', NULL, NULL, NULL, '2024-10-15 22:05:34', '2024-10-15 22:05:34', '3', ''),
 ('8937df61-8c93-48c6-8984-28b6493ffdaf', '05d29d2b-39ab-4c46-b34b-801ede800172', 2, 640000.00, 20.00, 0.00, NULL, '2024-08-01', 'Pending', NULL, NULL, NULL, '2024-10-17 04:55:42', '2024-10-18 04:19:17', '3', '3'),
 ('8efee306-0748-44f7-9575-fe2ecb19d709', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 5, 88347.95, 7.69, 0.00, NULL, '2024-11-01', 'Pending', NULL, NULL, NULL, '2024-10-15 22:06:08', '2024-10-15 22:06:08', '3', ''),
+('9e63b0d6-f664-47aa-b3f3-4e9fafa4eb08', '9ac3c951-ff30-4432-8ed9-207bc3c4e2bb', 2, 6840.00, 30.00, 6840.00, '2025-10-01', '2025-10-01', 'Paid', NULL, NULL, NULL, '2025-10-01 07:57:06', '2025-10-01 07:57:06', '2', ''),
 ('a229e370-811d-408d-ad8c-bf638ff054e8', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 11, 88347.95, 7.69, 0.00, NULL, '2025-05-01', 'Pending', NULL, NULL, NULL, '2024-10-15 22:07:44', '2024-10-15 22:07:44', '3', ''),
 ('b3ae6692-1ae7-4c27-bc03-0c5b401f85f5', '05d29d2b-39ab-4c46-b34b-801ede800172', 3, 1120000.00, 35.00, 0.00, NULL, '2024-09-02', 'Pending', NULL, NULL, NULL, '2024-10-17 04:56:02', '2024-10-18 04:19:28', '3', '3'),
 ('b76b3d7a-3559-4b8c-93a8-b3dbae92ca48', '05d29d2b-39ab-4c46-b34b-801ede800172', 1, 480000.00, 15.00, 480000.00, NULL, '2024-02-01', 'Paid', NULL, NULL, NULL, '2024-10-18 02:49:48', '2024-10-18 04:18:52', '3', '3'),
 ('b7b50966-c6d0-46ce-8e43-81052cb8e3ce', '7c67ce7e-ee05-487f-a763-4627899516bb', 1, 71690.00, 10.00, 0.00, NULL, '0000-00-00', 'Pending', NULL, NULL, NULL, '2024-10-14 04:59:13', '2024-10-14 09:54:16', '2', '3'),
 ('c096b705-b4fe-43c0-9040-a6a2f298af77', '7c67ce7e-ee05-487f-a763-4627899516bb', 2, 55488.06, 7.74, 0.00, NULL, '0000-00-00', 'Pending', NULL, NULL, NULL, '2024-10-14 09:43:05', '2024-10-14 09:55:15', '3', '3'),
 ('c1a72926-f8af-48b0-a9ed-2431c2a7c9cb', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 10, 88347.95, 7.69, 0.00, NULL, '2025-04-01', 'Pending', NULL, NULL, NULL, '2024-10-15 22:07:27', '2024-10-15 22:07:27', '3', ''),
-('c725bf71-e0c8-43f1-9763-1b15ff94166c', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 2, 88347.95, 7.69, 88347.95, NULL, '2024-08-01', 'Paid', NULL, NULL, NULL, '2024-10-15 22:04:10', '2024-10-15 22:04:10', '3', '');
+('c725bf71-e0c8-43f1-9763-1b15ff94166c', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 2, 88347.95, 7.69, 88347.95, NULL, '2024-08-01', 'Paid', NULL, NULL, NULL, '2024-10-15 22:04:10', '2024-10-15 22:04:10', '3', ''),
+('f58aae6b-dfcc-4d7e-b17a-0350d8ad5d6d', '9ac3c951-ff30-4432-8ed9-207bc3c4e2bb', 1, 11400.00, 50.00, 11400.00, '2025-10-02', '2025-10-01', 'Paid', NULL, NULL, NULL, '2025-10-01 07:46:40', '2025-10-01 07:57:21', '2', '2');
 
 -- --------------------------------------------------------
 
@@ -1566,15 +1569,26 @@ CREATE TABLE `project_tasks` (
 --
 
 INSERT INTO `project_tasks` (`task_id`, `project_id`, `parent_task_id`, `task_name`, `description`, `start_date`, `end_date`, `status`, `progress`, `priority`, `created_by`, `created_at`, `updated_by`, `updated_at`, `task_order`, `task_level`) VALUES
+('00088d72-279f-467b-853b-76d406fe9cb8', '996fd65e-4532-4f9a-97e2-0e05403bc275', '26200adb-71e6-44ea-ba85-f06f6617fb65', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุด', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุด', '2025-10-02', '2025-10-02', 'In Progress', 55.00, 'Low', '2', '2025-10-02 01:45:05', '2', '2025-10-02 01:45:32', 5, 0),
 ('0db715cb-32d5-402d-bc84-fdea13cef6bf', 'ad3b9787-d382-4eb0-ac96-d9a3917d5db6', NULL, '1. Microcontroller Design', 'Microcontroler Desing พี่ซีนประสานงานพี่ตุ้ม ดังนี้ \n1. ออกแบบกล่อง\n2. นำเข้าบอร์ด ER32 \n3. Screen Brand ติดกล่อง ', '2025-01-23', '2025-01-27', 'In Progress', 50.00, 'Medium', '3', '2025-01-23 12:29:25', '3', '2025-01-24 09:03:35', 1, 0),
+('13e83044-6d91-4da7-a5ab-0da314c26485', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', '3d408df9-7c22-41ad-83f3-17a9b30de5a8', 'หดหกดหกดหกด', 'sadas', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:20:38', '2', '2025-10-01 08:28:40', 2, 0),
 ('2318643a-04fd-40de-a557-4563f81152f5', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-8 : User Management Module', 'จัดการผู้ใช้งานและ Role Mapping', '2025-07-06', '2025-07-08', 'Pending', 0.00, 'High', '2', '2025-06-18 06:56:30', NULL, NULL, 11, 0),
 ('249f6394-09d9-4756-a4aa-95549b40c00d', '078a1fd1-f8bb-4c94-86d5-d35fbf00d1bb', NULL, 'รอประกาศผลสิงหาคม. 2568', '', '2025-08-01', '2025-08-05', 'In Progress', 0.00, 'High', '5', '2025-06-16 06:50:12', NULL, NULL, 1, 0),
+('26200adb-71e6-44ea-ba85-f06f6617fb65', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2d362894-b478-4cea-8111-5d7dfb11c514', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อย', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อย', '2025-10-02', '2025-10-02', 'In Progress', 55.00, 'Low', '2', '2025-10-02 01:44:38', '2', '2025-10-02 01:45:32', 5, 0),
 ('2bac2237-e8e7-4f36-92fc-159f784be5c9', '51e62f2e-3b91-44e8-9875-55239e0e8acc', NULL, 'นัดประชุมเรื่องการเปิดบิล', 'รอนัดคุณหมอ บอย และพี่ไฟท์', '2025-06-18', '2025-06-18', 'In Progress', 0.00, 'High', '5', '2025-06-16 00:40:56', NULL, NULL, 1, 0),
+('2d362894-b478-4cea-8111-5d7dfb11c514', '996fd65e-4532-4f9a-97e2-0e05403bc275', '4db417de-d28b-4978-ae24-429698c6b8df', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task รอง ', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task รอง ', '2025-10-02', '2025-10-03', 'In Progress', 55.00, 'Low', '2', '2025-10-02 01:44:08', '2', '2025-10-02 01:45:32', 5, 0),
+('2e64fd98-1e78-4b04-95bb-c5157cb14e87', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', NULL, 'ผแผปแผปแผป', 'ผปแผปแ', '2025-10-01', '2025-10-03', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:23:47', NULL, NULL, 2, 0),
 ('3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', NULL, 'Sub-tasks Development', 'Sub-tasks สำหรับ Development', '2025-06-18', '2025-08-15', 'In Progress', 0.00, 'High', '2', '2025-06-18 05:24:51', '2', '2025-06-18 06:58:28', 8, 1),
 ('3b1e5127-69e4-466c-ba57-15431a3293f4', '66c0508f-b34e-4007-938b-2a1dc2f7e297', '7911293c-bfa0-40e3-9910-ec1e38a0a96d', 'ค่าบริการงบสำรวจ', '1 วัน 2 คน\nค่าตั๋วเครื่องบินไป-กลับอุบล 2 ที่นั่ง\nค่าเช่ารถยนต์\nค่าเบี้ยเลี้ยง 2 คน', '2025-06-20', '2025-06-20', 'Pending', 0.00, 'Urgent', '5', '2025-06-18 02:36:27', NULL, NULL, 2, 0),
+('3d408df9-7c22-41ad-83f3-17a9b30de5a8', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', NULL, 'หัวข้อที่ 1.1.2', 'project-details (4).pdf', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:20:21', '2', '2025-10-01 08:28:40', 1, 0),
 ('3f2b8902-0d5b-40a6-87e4-5cffc9f27e44', 'b403c2e1-8913-4e94-b6c8-b9f7f36a4f31', NULL, 'รอ Confirm PO Q3', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'High', '5', '2025-06-16 07:05:39', NULL, NULL, 1, 0),
+('45820701-ccd7-4bcd-a10c-1ee310968d73', '996fd65e-4532-4f9a-97e2-0e05403bc275', '00088d72-279f-467b-853b-76d406fe9cb8', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุดสุดๆ', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุดสุดๆ', '2025-10-02', '2025-10-02', 'In Progress', 55.00, 'Low', '2', '2025-10-02 01:45:32', NULL, NULL, 5, 0),
+('4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน', '2025-10-02', '2025-10-10', 'In Progress', 60.00, 'Low', '2', '2025-10-02 01:42:27', '2', '2025-10-02 01:46:05', 1, 0),
 ('5612a8da-3d60-47b5-baec-b492f51b0acf', '92a99359-0555-4ff1-9be4-c26808189158', NULL, 'ติดตามงานขาย', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '5', '2025-06-16 01:07:59', NULL, NULL, 1, 0),
+('563f94d6-9c1b-4e76-bafc-9e4b09c51cc1', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', '13e83044-6d91-4da7-a5ab-0da314c26485', 'ปแอปแอ', 'ปแอปแอปแอ', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:28:28', '2', '2025-10-01 08:28:40', 3, 0),
 ('5ac64b8d-5f9f-405b-b191-14fc687c6345', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-01 : Setup Development Environment', 'จัดเตรียม Environment', '2025-06-20', '2025-06-22', 'Pending', 0.00, 'High', '2', '2025-06-18 06:43:45', '2', '2025-06-18 06:54:50', 1, 1),
+('5fbbad43-145b-4544-9809-db995dd590c3', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 4', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 4', '2025-10-02', '2025-10-03', 'In Progress', 10.00, 'Low', '2', '2025-10-02 01:43:35', NULL, NULL, 4, 0),
+('669670d1-746b-4c45-a524-e60619b129d2', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 2', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 2', '2025-10-02', '2025-10-03', 'In Progress', 30.00, 'Low', '2', '2025-10-02 01:42:51', NULL, NULL, 2, 0),
 ('6e5daf27-4ec3-407d-a67b-19950443e2db', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-9 : Role & Permission Management', 'ตั้งค่า Role และ Permission ใน Keycloak', '2025-07-09', '2025-07-10', 'Pending', 0.00, 'High', '2', '2025-06-18 06:58:28', NULL, NULL, 12, 0),
 ('7911293c-bfa0-40e3-9910-ec1e38a0a96d', '66c0508f-b34e-4007-938b-2a1dc2f7e297', NULL, 'ติดตามงานขาย-CPF ศรีษะเกษ กำลังดำเนอนการออก PO ', 'คุณจุ๊ Zoetis ให้ขึ้นไปสำรวจจุดติดตั้ง\n@JACK_INTERNAL @zeen  \nสรุปการเดินทางไป Survey การติดตั้งชุดวัดเกรดซาก BF2 ที่ศรีษะเกษ  \nทีม​ POINT IT ไป 2 คน  คือพี่แจ๊ค และน้องซีน  นัดพบน้องพลอยที่ โรงงาน  วันศุกร์ที่ 20  เช้านี้พี่จะให้ทีมจัดการจองตั๋วเครื่องบินก่อน ไปอุบลและเช่ารถไปที่ โรงงาน  แจ๊คประสานน้องพลอยได้เลยนะ\n1. สำรวจจุดติดตั้ง BF2   ทั้งเครื่องวิเคราะห์ และจำเป็นต้องมีอุปกรณ์เสริมเพื่อควบคุมซากหรือไม่\n2. สำรวจ Network และ Internet\n3. จัดทำรายงานการสำรวจติดตั้ง เพื่อวางแผนกำหนดการติดตั้งระหว่างที่ทางโรงงานกำลังออก PO\n4.ขอชื่อผู้ติดต่อทางโรงงานที่ดูแลด้านระบบ Netowrk และ IT ในการประสานรายละเอียดต่อไป\nพี่หญิงจะให้ @Neit\'(Boss) เป็น Account REP ของโครงการนี้นะ\n__________________________', '2025-06-20', '2025-06-20', 'In Progress', 0.00, 'Urgent', '5', '2025-06-16 01:08:24', '5', '2025-06-18 02:36:27', 1, 0),
 ('793845f3-3412-43d7-8e88-81356c0dc647', 'f68d2b0e-6ba9-468a-bd47-870036ce545d', NULL, 'Project Engineer', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '5', '2025-06-16 04:03:40', '5', '2025-06-16 04:04:02', 1, 0),
@@ -1584,7 +1598,10 @@ INSERT INTO `project_tasks` (`task_id`, `project_id`, `parent_task_id`, `task_na
 ('99b0ab2e-2c86-4b61-b1f1-964385cc5e00', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-02 : Database Design & Setup', 'ออกแบบและจัดตั้งฐานข้อมูล', '2025-06-23', '2025-06-25', 'Pending', 0.00, 'High', '2', '2025-06-18 06:44:58', NULL, '2025-06-18 06:54:50', 5, 2),
 ('a03550ba-9be0-4afd-b133-011dda745576', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-07 : SSO Implementation Frontend', 'Implement SSO ใน Nuxt3', '2025-07-03', '2025-07-05', 'Pending', 0.00, 'High', '2', '2025-06-18 06:52:48', NULL, '2025-06-18 06:54:50', 10, 0),
 ('a0ee357f-10c4-48c4-ad2c-324cc5441ac3', 'a313d528-c1ea-49d7-8bde-f9b1920a4993', NULL, 'ติดตามงานขาย', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '5', '2025-06-16 01:07:28', NULL, NULL, 1, 0),
+('ad38cce7-516c-4463-b7f6-9e912ab1c6a6', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 3', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 3', '2025-10-02', '2025-10-04', 'In Progress', 25.00, 'Low', '2', '2025-10-02 01:43:14', NULL, NULL, 3, 0),
 ('dd02abc1-746d-4ea1-b750-58f7a7ec56a8', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-04 : LDAP Integration with Keycloak', 'เชื่อมต่อ Keycloak กับ LDAP Server', '2025-06-28', '2025-06-30', 'Pending', 0.00, 'High', '2', '2025-06-18 06:48:14', '2', '2025-06-18 06:54:50', 7, 0),
+('e62aabe2-49b3-47c8-89ed-e095b36cbb1f', '996fd65e-4532-4f9a-97e2-0e05403bc275', '4db417de-d28b-4978-ae24-429698c6b8df', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task รอง 2', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task รอง 2', '2025-10-02', '2025-10-02', 'In Progress', 65.00, 'Low', '2', '2025-10-02 01:46:05', NULL, NULL, 6, 0),
+('e7c88d65-c58a-447f-ab36-c529c6f38969', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', '563f94d6-9c1b-4e76-bafc-9e4b09c51cc1', 'ดหกดกหดหกดกห', 'หกดหกดกหดหกดกห', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:28:40', NULL, NULL, 3, 0),
 ('ef547534-053a-47f8-b1fe-7288b9e26d33', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-06 : Authentication System Integration', 'เชื่อมต่อระบบกับ Keycloak', '2025-07-03', '2025-07-05', 'Pending', 0.00, 'High', '2', '2025-06-18 06:51:29', NULL, '2025-06-18 06:54:50', 9, 0);
 
 -- --------------------------------------------------------
@@ -1606,22 +1623,36 @@ CREATE TABLE `project_task_assignments` (
 --
 
 INSERT INTO `project_task_assignments` (`assignment_id`, `task_id`, `user_id`, `assigned_by`, `assigned_at`) VALUES
+('0b4f6a3a-40c4-4354-b0c4-384a3360e944', '3d408df9-7c22-41ad-83f3-17a9b30de5a8', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-01 08:20:21'),
 ('15698cd6-5d86-456a-bcb8-dccef2e2a342', '6e5daf27-4ec3-407d-a67b-19950443e2db', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-06-18 06:58:28'),
 ('281fb257-fb98-41c3-bab6-a4365e6f1a07', '3f2b8902-0d5b-40a6-87e4-5cffc9f27e44', '44ab4e8b-e3e6-431d-ad49-40d4601779b4', '5', '2025-06-16 07:05:39'),
+('3a99e784-3ff7-4ec0-bfc8-ae91764988ac', '5fbbad43-145b-4544-9809-db995dd590c3', '70dd36b5-f587-4aa9-b544-c69542616d34', '2', '2025-10-02 01:43:35'),
+('3e47074d-82e0-469b-9b44-ada407deb4c2', 'e7c88d65-c58a-447f-ab36-c529c6f38969', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '2', '2025-10-01 08:28:40'),
 ('3f1d4c5f-c024-4a8a-8e82-2b49c1a27635', 'a0ee357f-10c4-48c4-ad2c-324cc5441ac3', '3', '5', '2025-06-16 01:07:28'),
+('46dacea7-c034-4f0a-8465-c1d939f6c45a', '2e64fd98-1e78-4b04-95bb-c5157cb14e87', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-01 08:23:47'),
 ('471516ed-ef74-4b84-ba7c-e0dda9c50861', '954d3afb-e95d-4812-b743-4e1064c2d22a', '3', '3', '2025-01-24 09:03:24'),
+('4b2fb5f2-71c0-4320-9cbc-2f140cb0dc93', '4db417de-d28b-4978-ae24-429698c6b8df', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-02 01:42:27'),
 ('52606af6-15e2-432e-bf73-b924a0a4b0ac', '5ac64b8d-5f9f-405b-b191-14fc687c6345', '8c782887-8fd3-4f99-ac27-63054a8a1942', '2', '2025-06-18 06:44:03'),
 ('66fab44b-fc0e-4cd3-857c-2ce2f338c7b2', '85f47a5e-3bbd-47fc-8789-a6e0dd818163', '8c782887-8fd3-4f99-ac27-63054a8a1942', '2', '2025-06-18 06:47:23'),
+('687c5b71-c3c7-483d-911e-991f97d739fe', '26200adb-71e6-44ea-ba85-f06f6617fb65', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-10-02 01:44:38'),
+('6fbbfee8-5bad-4524-b33e-81d1c9103801', 'ad38cce7-516c-4463-b7f6-9e912ab1c6a6', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-02 01:43:14'),
+('708d4533-2b35-4fa8-a393-5b8aed3faf8f', '669670d1-746b-4c45-a524-e60619b129d2', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-02 01:42:51'),
 ('70f09622-174f-4150-aaf0-c8335f69a15e', 'dd02abc1-746d-4ea1-b750-58f7a7ec56a8', '8c782887-8fd3-4f99-ac27-63054a8a1942', '2', '2025-06-18 06:48:37'),
 ('75b381dd-27da-4e8d-a5f6-34c6b8e8e848', '793845f3-3412-43d7-8e88-81356c0dc647', 'a5741799-938b-4d0a-a3dc-4ca1aa164708', '5', '2025-06-16 04:04:02'),
 ('799ccbe1-11e1-46cd-9923-871d3203c10b', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', '3', '2', '2025-06-18 05:24:51'),
+('7f0ce85e-fc27-42f3-8fb6-9826ebdd967a', '13e83044-6d91-4da7-a5ab-0da314c26485', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-01 08:20:38'),
 ('873bd5ba-95c7-4b13-8db1-5c9c7d0ecbfe', '2318643a-04fd-40de-a557-4563f81152f5', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-06-18 06:56:30'),
+('95193d09-8416-4b9d-a6bb-6b67b4c235e1', '45820701-ccd7-4bcd-a10c-1ee310968d73', '86054531-f751-48c7-b257-222c9ccbd946', '2', '2025-10-02 01:45:32'),
 ('9d25ab84-3ca8-422a-ad4a-caacb1275de6', '249f6394-09d9-4756-a4aa-95549b40c00d', '44ab4e8b-e3e6-431d-ad49-40d4601779b4', '5', '2025-06-16 06:50:12'),
 ('aa749e77-2fc2-4e40-8399-6d5957984778', '99b0ab2e-2c86-4b61-b1f1-964385cc5e00', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-06-18 06:44:58'),
 ('ac88fd56-1c5c-4128-a5b3-e5222f0d18d8', '0db715cb-32d5-402d-bc84-fdea13cef6bf', '3', '3', '2025-01-24 09:03:35'),
+('ae0944ad-d728-4091-98b3-b4ce64d40a75', 'e62aabe2-49b3-47c8-89ed-e095b36cbb1f', '86054531-f751-48c7-b257-222c9ccbd946', '2', '2025-10-02 01:46:05'),
 ('ce3b64d4-27e7-4978-8836-d8daa0330bb3', '5612a8da-3d60-47b5-baec-b492f51b0acf', '3', '5', '2025-06-16 01:07:59'),
+('d0f8915f-9765-4288-8bc0-440a2565d3c5', '00088d72-279f-467b-853b-76d406fe9cb8', '2f6d353b-53f1-4492-8878-bc93c18c5de9', '2', '2025-10-02 01:45:05'),
 ('d54e84d1-2827-4c85-a381-f007857cb6e6', 'ef547534-053a-47f8-b1fe-7288b9e26d33', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-06-18 06:51:30'),
+('da2dd184-ebd0-4966-9427-f191f2a41576', '2d362894-b478-4cea-8111-5d7dfb11c514', '97c68703-a8b7-4ceb-9344-65fe4404c4ab', '2', '2025-10-02 01:44:08'),
 ('e07b12c1-5914-479b-9b70-f69d00c410b0', '2bac2237-e8e7-4f36-92fc-159f784be5c9', '5', '5', '2025-06-16 00:40:56'),
+('e69fb429-0dcf-4d5c-bfa2-876a83ef47c6', '563f94d6-9c1b-4e76-bafc-9e4b09c51cc1', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-01 08:28:28'),
 ('e910e652-e005-41ed-b32f-877ab9bc4a02', '7911293c-bfa0-40e3-9910-ec1e38a0a96d', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '5', '2025-06-18 02:34:31'),
 ('f12deb64-3957-4a67-859a-2322711c7b3d', 'a03550ba-9be0-4afd-b133-011dda745576', 'ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '2', '2025-06-18 06:52:48'),
 ('f375fa49-c01f-4d3c-b951-c699b1ad694d', '3b1e5127-69e4-466c-ba57-15431a3293f4', '3efcb87b-ce45-4a66-9d73-91259caba1d0', '5', '2025-06-18 02:36:27'),
@@ -1658,6 +1689,86 @@ CREATE TABLE `suppliers` (
 
 INSERT INTO `suppliers` (`supplier_id`, `supplier_name`, `company`, `contact_name`, `position`, `address`, `phone`, `office_phone`, `extension`, `email`, `suppliers_image`, `remark`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
 ('23722daa-6eec-4a29-aa60-89cdea4dcd8c', 'Point IT', 'Point IT Consulting Co.,Ltd.', NULL, 'Service', '19 ซอยสุภาพงษ์ 1 แยก 6 แขวงหนองบอน เขตประเวศ กรุงเทพมหานคร 10250', '087-687-1184', '02-348-4790', '1041', 'info@pointit.co.th', '', 'บริการงานไอทีครบวงจร', '2025-01-12 05:23:59', '2', '2025-01-12 05:25:33', '2');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_comments`
+--
+
+CREATE TABLE `task_comments` (
+  `comment_id` char(36) NOT NULL COMMENT 'รหัสความคิดเห็น (UUID)',
+  `task_id` char(36) NOT NULL COMMENT 'รหัสงาน (FK -> project_tasks)',
+  `project_id` char(36) NOT NULL COMMENT 'รหัสโครงการ (FK -> projects)',
+  `user_id` char(36) NOT NULL COMMENT 'รหัสผู้แสดงความคิดเห็น (FK -> users)',
+  `comment_text` text NOT NULL COMMENT 'ข้อความความคิดเห็น',
+  `comment_type` enum('comment','status_change','file_upload','progress_update','system_log') DEFAULT 'comment' COMMENT 'ประเภทของ Log',
+  `old_value` varchar(255) DEFAULT NULL COMMENT 'ค่าเดิม (สำหรับ Log การเปลี่ยนแปลง)',
+  `new_value` varchar(255) DEFAULT NULL COMMENT 'ค่าใหม่ (สำหรับ Log การเปลี่ยนแปลง)',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่โพสต์',
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp() COMMENT 'วันที่แก้ไข',
+  `is_edited` tinyint(1) DEFAULT 0 COMMENT 'มีการแก้ไขหรือไม่',
+  `is_deleted` tinyint(1) DEFAULT 0 COMMENT 'ถูกลบหรือไม่'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตาราง Activity Log/Comments ของ Task';
+
+--
+-- Dumping data for table `task_comments`
+--
+
+INSERT INTO `task_comments` (`comment_id`, `task_id`, `project_id`, `user_id`, `comment_text`, `comment_type`, `old_value`, `new_value`, `created_at`, `updated_at`, `is_edited`, `is_deleted`) VALUES
+('1f2cb86e-db75-467d-b9e8-3f9663ec5625', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ดอหดดห ปแอปอปแอ', 'comment', NULL, NULL, '2025-10-02 03:19:50', NULL, 0, 0),
+('3f4a56c2-a828-4888-8eec-2538da2d47e6', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'อัปโหลดไฟล์ 1 ไฟล์', 'file_upload', NULL, NULL, '2025-10-02 03:16:19', NULL, 0, 0),
+('3f92c2a1-42fa-4f1a-b404-b8cbac3bec39', '26200adb-71e6-44ea-ba85-f06f6617fb65', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'sdfsdfdsfds', 'comment', NULL, NULL, '2025-10-02 03:08:03', NULL, 0, 0),
+('4ab30592-66f3-4628-818d-f751d47ce28d', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'หกดหกดหกดหดหกด', 'comment', NULL, NULL, '2025-10-02 03:20:07', '2025-10-02 03:25:18', 0, 1),
+('66bb5d8e-48e7-4fad-8229-196e4b02750c', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'อัปโหลดไฟล์ 1 ไฟล์', 'file_upload', NULL, NULL, '2025-10-02 03:16:28', NULL, 0, 0),
+('81e6f2a2-b6b3-4325-8c36-3d98701c87f4', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ตอนนี้ยังไม่เรียบร้อย \r\n** รอ', 'comment', NULL, NULL, '2025-10-02 03:16:19', NULL, 0, 0),
+('897598de-d1ec-465f-938c-8e460c48a8df', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'หกดหกดหกดหดหกด', 'comment', NULL, NULL, '2025-10-02 03:21:20', '2025-10-02 03:25:11', 0, 1),
+('d6cd43bf-a44f-4b68-94a8-85b1628a8e65', '45820701-ccd7-4bcd-a10c-1ee310968d73', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ทดสอบ', 'comment', NULL, NULL, '2025-10-02 03:26:10', NULL, 0, 0),
+('e6a35a28-6deb-4497-af65-ebb899402d47', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ตอนนี้ยังไม่เรียบร้อย \r\n** รอ', 'comment', NULL, NULL, '2025-10-02 03:16:28', NULL, 0, 0),
+('e7066b53-16aa-4c89-9d77-df839fc1e4ba', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ดอหดดห ปแอปอปแอ', 'comment', NULL, NULL, '2025-10-02 03:19:48', NULL, 0, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_comment_attachments`
+--
+
+CREATE TABLE `task_comment_attachments` (
+  `attachment_id` char(36) NOT NULL COMMENT 'รหัสไฟล์แนบ (UUID)',
+  `comment_id` char(36) NOT NULL COMMENT 'รหัสความคิดเห็น (FK -> task_comments)',
+  `task_id` char(36) NOT NULL COMMENT 'รหัสงาน (FK -> project_tasks)',
+  `file_name` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์ต้นฉบับ',
+  `file_path` varchar(500) NOT NULL COMMENT 'path ของไฟล์ในระบบ',
+  `file_size` bigint(20) DEFAULT NULL COMMENT 'ขนาดไฟล์ (bytes)',
+  `file_type` varchar(100) DEFAULT NULL COMMENT 'ประเภทไฟล์ (MIME type)',
+  `file_extension` varchar(10) DEFAULT NULL COMMENT 'นามสกุลไฟล์',
+  `uploaded_by` char(36) NOT NULL COMMENT 'ผู้อัปโหลด (FK -> users)',
+  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่อัปโหลด'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางไฟล์แนบใน Task Comments';
+
+--
+-- Dumping data for table `task_comment_attachments`
+--
+
+INSERT INTO `task_comment_attachments` (`attachment_id`, `comment_id`, `task_id`, `file_name`, `file_path`, `file_size`, `file_type`, `file_extension`, `uploaded_by`, `uploaded_at`) VALUES
+('4048ac81-634e-4e81-bbef-5a12d08f197c', '81e6f2a2-b6b3-4325-8c36-3d98701c87f4', '4db417de-d28b-4978-ae24-429698c6b8df', '002.png', '../../../uploads/task_attachments/9729d6e4-43f0-4235-94fa-175eda9d2a31.png', 16252, 'image/png', 'png', '2', '2025-10-02 03:16:19'),
+('932c7c71-b8a2-44ae-ba8b-4aca482b6f5e', 'e6a35a28-6deb-4497-af65-ebb899402d47', '4db417de-d28b-4978-ae24-429698c6b8df', '002.png', '../../../uploads/task_attachments/25e409d0-2c0a-499b-b5ee-f1d7ba06638b.png', 16252, 'image/png', 'png', '2', '2025-10-02 03:16:28');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_mentions`
+--
+
+CREATE TABLE `task_mentions` (
+  `mention_id` char(36) NOT NULL COMMENT 'รหัส mention (UUID)',
+  `comment_id` char(36) NOT NULL COMMENT 'รหัสความคิดเห็น (FK -> task_comments)',
+  `task_id` char(36) NOT NULL COMMENT 'รหัสงาน (FK -> project_tasks)',
+  `mentioned_user_id` char(36) NOT NULL COMMENT 'ผู้ถูก mention (FK -> users)',
+  `mentioned_by` char(36) NOT NULL COMMENT 'ผู้ mention (FK -> users)',
+  `is_read` tinyint(1) DEFAULT 0 COMMENT 'อ่านแล้วหรือยัง',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่ mention'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บการ @ mention ใน Task Comments';
 
 -- --------------------------------------------------------
 
@@ -1890,6 +2001,41 @@ INSERT INTO `user_teams` (`user_id`, `team_id`, `is_primary`) VALUES
 ('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '2', 0),
 ('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '28534929-e527-4755-bd37-0acdd51b7b45', 0);
 
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `vw_task_comments`
+-- (See below for the actual view)
+--
+CREATE TABLE `vw_task_comments` (
+`comment_id` char(36)
+,`task_id` char(36)
+,`project_id` char(36)
+,`user_id` char(36)
+,`comment_text` text
+,`comment_type` enum('comment','status_change','file_upload','progress_update','system_log')
+,`old_value` varchar(255)
+,`new_value` varchar(255)
+,`created_at` timestamp
+,`updated_at` timestamp
+,`is_edited` tinyint(1)
+,`is_deleted` tinyint(1)
+,`first_name` varchar(255)
+,`last_name` varchar(255)
+,`user_full_name` varchar(511)
+,`user_email` varchar(255)
+,`attachment_count` bigint(21)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `vw_task_comments`
+--
+DROP TABLE IF EXISTS `vw_task_comments`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_task_comments`  AS SELECT `tc`.`comment_id` AS `comment_id`, `tc`.`task_id` AS `task_id`, `tc`.`project_id` AS `project_id`, `tc`.`user_id` AS `user_id`, `tc`.`comment_text` AS `comment_text`, `tc`.`comment_type` AS `comment_type`, `tc`.`old_value` AS `old_value`, `tc`.`new_value` AS `new_value`, `tc`.`created_at` AS `created_at`, `tc`.`updated_at` AS `updated_at`, `tc`.`is_edited` AS `is_edited`, `tc`.`is_deleted` AS `is_deleted`, `u`.`first_name` AS `first_name`, `u`.`last_name` AS `last_name`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `user_full_name`, `u`.`email` AS `user_email`, (select count(0) from `task_comment_attachments` where `task_comment_attachments`.`comment_id` = `tc`.`comment_id`) AS `attachment_count` FROM (`task_comments` `tc` left join `users` `u` on(`tc`.`user_id` = `u`.`user_id`)) WHERE `tc`.`is_deleted` = 0 ORDER BY `tc`.`created_at` ASC ;
+
 --
 -- Indexes for dumped tables
 --
@@ -2049,6 +2195,38 @@ ALTER TABLE `suppliers`
   ADD PRIMARY KEY (`supplier_id`);
 
 --
+-- Indexes for table `task_comments`
+--
+ALTER TABLE `task_comments`
+  ADD PRIMARY KEY (`comment_id`),
+  ADD KEY `idx_task_id` (`task_id`),
+  ADD KEY `idx_project_id` (`project_id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_created_at` (`created_at`),
+  ADD KEY `idx_comment_type` (`comment_type`),
+  ADD KEY `idx_is_deleted` (`is_deleted`);
+
+--
+-- Indexes for table `task_comment_attachments`
+--
+ALTER TABLE `task_comment_attachments`
+  ADD PRIMARY KEY (`attachment_id`),
+  ADD KEY `idx_comment_id` (`comment_id`),
+  ADD KEY `idx_task_id` (`task_id`),
+  ADD KEY `idx_uploaded_by` (`uploaded_by`),
+  ADD KEY `idx_file_type` (`file_type`);
+
+--
+-- Indexes for table `task_mentions`
+--
+ALTER TABLE `task_mentions`
+  ADD PRIMARY KEY (`mention_id`),
+  ADD KEY `idx_comment_id` (`comment_id`),
+  ADD KEY `idx_task_id` (`task_id`),
+  ADD KEY `idx_mentioned_user` (`mentioned_user_id`),
+  ADD KEY `idx_is_read` (`is_read`);
+
+--
 -- Indexes for table `teams`
 --
 ALTER TABLE `teams`
@@ -2180,6 +2358,30 @@ ALTER TABLE `project_tasks`
 ALTER TABLE `project_task_assignments`
   ADD CONSTRAINT `project_task_assignments_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `project_tasks` (`task_id`),
   ADD CONSTRAINT `project_task_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+
+--
+-- Constraints for table `task_comments`
+--
+ALTER TABLE `task_comments`
+  ADD CONSTRAINT `fk_task_comments_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`project_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_task_comments_task` FOREIGN KEY (`task_id`) REFERENCES `project_tasks` (`task_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_task_comments_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_comment_attachments`
+--
+ALTER TABLE `task_comment_attachments`
+  ADD CONSTRAINT `fk_task_attachments_comment` FOREIGN KEY (`comment_id`) REFERENCES `task_comments` (`comment_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_task_attachments_task` FOREIGN KEY (`task_id`) REFERENCES `project_tasks` (`task_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_task_attachments_user` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_mentions`
+--
+ALTER TABLE `task_mentions`
+  ADD CONSTRAINT `fk_task_mentions_comment` FOREIGN KEY (`comment_id`) REFERENCES `task_comments` (`comment_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_task_mentions_task` FOREIGN KEY (`task_id`) REFERENCES `project_tasks` (`task_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_task_mentions_user` FOREIGN KEY (`mentioned_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `teams`

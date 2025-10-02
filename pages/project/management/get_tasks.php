@@ -282,12 +282,12 @@ function renderTask($task, $level = 0, $taskNumber = '')
         $html .= "<i class='fas fa-circle mr-1' style='font-size: 0.5em; vertical-align: middle;'></i>";
     }
 
-    $html .= "<span class='task-name'>{$taskName}</span>";
+    $html .= "<a href='management/task_detail.php?task_id={$taskId}' class='task-name-link' style='color: #2563eb; text-decoration: none; font-weight: 500;'>{$taskName}</a>";
 
     $html .= "</td>
         <td>
-            <div class='task-description' style='cursor: pointer;' onclick='showTaskDetails(`{$taskName}`, `{$description}`)'>
-                <div class='text-truncate' style='max-width: 300px;' title='คลิกเพื่อดูรายละเอียด'>
+            <div class='task-description' style='cursor: pointer;' onclick='window.location.href=\"management/task_detail.php?task_id={$taskId}\"'>
+                <div class='text-truncate' style='max-width: 300px;' title='คลิกเพื่อดูรายละเอียดและแสดงความคิดเห็น'>
                     {$description}
                 </div>
             </div>
@@ -670,19 +670,43 @@ echo "</tbody></table></div>";
         background-color: rgba(220, 53, 69, 0.05);
     }
 
-    /* สไตล์สำหรับ thead */
+    /* สไตล์สำหรับ thead - โทนสีเรียบง่าย */
     .thead-light th {
-        background-color: #f8f9fa !important;
-        border-bottom: 2px solid #dee2e6;
-        font-weight: 600;
-        color: #495057;
-        font-size: 0.9rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%) !important;
+        border-bottom: 1px solid #e1e8ed;
+        border-top: 1px solid #e1e8ed;
+        font-weight: 500;
+        color: #5a6c7d;
+        font-size: 0.875rem;
         white-space: nowrap;
+        padding: 1rem 0.75rem;
+        letter-spacing: 0.3px;
     }
 
     .thead-light th i {
-        color: #6c757d;
+        color: #8899a6;
         font-size: 0.8rem;
+        margin-right: 0.25rem;
+    }
+
+    /* Task Name Link Style */
+    .task-name-link {
+        transition: all 0.2s ease;
+    }
+
+    .task-name-link:hover {
+        text-decoration: underline !important;
+        color: #1e40af !important;
+    }
+
+    .task-description {
+        transition: background-color 0.2s ease;
+        padding: 0.25rem;
+        border-radius: 4px;
+    }
+
+    .task-description:hover {
+        background-color: rgba(37, 99, 235, 0.05);
     }
 </style>
 

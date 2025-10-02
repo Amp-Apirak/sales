@@ -317,7 +317,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
 
 
                         <?php if ($hasFullAccess || $hasHalfAccess): ?>
-                            <li class="nav-item"><a class="nav-link" href="#tasks" data-toggle="tab" role="tab">บริหารโครงการ</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#tasks" data-toggle="tab" data-tab="tasks" role="tab">บริหารโครงการ</a></li>
                         <?php endif; ?>
 
                         <?php if ($hasFullAccess || $hasHalfAccess): ?>
@@ -858,10 +858,10 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
 
                             <!-- แถบที่ 6 บริหารโครงการ -->
                             <div class="tab-pane" id="tasks">
-                                <div class="card border-primary">
-                                    <div class="card-header bg-primary text-white">
-                                        <h3 class="card-title mb-0">
-                                            <i class="fas fa-project-diagram mr-2"></i>
+                                <div class="card border-light shadow-sm">
+                                    <div class="card-header bg-white" style="border-bottom: 2px solid #e1e8ed;">
+                                        <h3 class="card-title mb-0" style="color: #5a6c7d; font-weight: 500;">
+                                            <i class="fas fa-project-diagram mr-2" style="color: #8899a6;"></i>
                                             ข้อมูลโครงการ
                                         </h3>
                                     </div>
@@ -921,24 +921,24 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                     </div>
                                 </div>
 
-                                <div class="card border-success">
-                                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                                        <h3 class="card-title mb-0">
-                                            <i class="fas fa-tasks mr-2"></i>
+                                <div class="card border-light shadow-sm">
+                                    <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-bottom: 2px solid #e1e8ed;">
+                                        <h3 class="card-title mb-0" style="color: #5a6c7d; font-weight: 500;">
+                                            <i class="fas fa-tasks mr-2" style="color: #8899a6;"></i>
                                             การจัดการงาน
                                         </h3>
                                         <div class="card-tools ml-auto">
-                                            <button type="button" class="btn btn-warning btn-sm mr-1" onclick="expandAllTasks()" title="ขยายทั้งหมด">
-                                                <i class="fas fa-expand-arrows-alt text-dark"></i>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm mr-1" onclick="expandAllTasks()" title="ขยายทั้งหมด" style="border-color: #dee2e6;">
+                                                <i class="fas fa-expand-arrows-alt" style="color: #6c757d;"></i>
                                             </button>
-                                            <button type="button" class="btn btn-info btn-sm mr-2" onclick="collapseAllTasks()" title="ย่อทั้งหมด">
-                                                <i class="fas fa-compress-arrows-alt text-white"></i>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm mr-2" onclick="collapseAllTasks()" title="ย่อทั้งหมด" style="border-color: #dee2e6;">
+                                                <i class="fas fa-compress-arrows-alt" style="color: #6c757d;"></i>
                                             </button>
-                                            <button type="button" class="btn btn-light btn-sm mr-2" onclick="showAddTaskModal()">
+                                            <button type="button" class="btn btn-primary btn-sm mr-2" onclick="showAddTaskModal()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
                                                 <i class="fas fa-plus mr-1"></i> เพิ่มงานใหม่
                                             </button>
-                                            <button type="button" class="btn btn-secondary btn-sm" onclick="loadTasks()" title="รีเฟรช">
-                                                <i class="fas fa-sync-alt text-white"></i>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadTasks()" title="รีเฟรช" style="border-color: #dee2e6;">
+                                                <i class="fas fa-sync-alt" style="color: #6c757d;"></i>
                                             </button>
                                         </div>
                                     </div>
