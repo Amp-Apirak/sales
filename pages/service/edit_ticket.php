@@ -13,6 +13,45 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $csrf_token = $_SESSION['csrf_token'];
 
+// รับ Ticket ID จาก URL
+$ticket_id = $_GET['id'] ?? null;
+
+if (!$ticket_id) {
+    header('Location: service.php?error=missing_ticket_id');
+    exit;
+}
+
+// ดึงข้อมูล Ticket ที่ต้องการแก้ไข
+$ticket = null;
+$onsiteData = null;
+$selectedWatchers = [];
+
+try {
+    $stmt = $condb->prepare("SELECT st.*
+            FROM service_tickets st
+            WHERE st.ticket_id = :ticket_id");
+    $stmt->execute([':ticket_id' => $ticket_id]);
+    $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$ticket) {
+        header('Location: service.php?error=ticket_not_found');
+        exit;
+    }
+
+    // ดึง Onsite Details (ถ้ามี)
+    $stmtOnsite = $condb->prepare("SELECT * FROM service_ticket_onsite WHERE ticket_id = :ticket_id");
+    $stmtOnsite->execute([':ticket_id' => $ticket_id]);
+    $onsiteData = $stmtOnsite->fetch(PDO::FETCH_ASSOC);
+
+    // ดึง Watchers
+    $stmtWatchers = $condb->prepare("SELECT user_id FROM service_ticket_watchers WHERE ticket_id = :ticket_id");
+    $stmtWatchers->execute([':ticket_id' => $ticket_id]);
+    $selectedWatchers = $stmtWatchers->fetchAll(PDO::FETCH_COLUMN);
+
+} catch (PDOException $e) {
+    die('Database Error: ' . $e->getMessage());
+}
+
 // ดึงข้อมูลที่จำเป็นจากฐานข้อมูลเพื่อใช้ใน dropdown
 $owners = [];
 $supportTeams = [];
@@ -20,64 +59,12 @@ $serviceCategories = [];
 $categoriesList = [];
 $subCategoriesList = [];
 $projects = [];
-$reporters = []; // ผู้แจ้ง
-$timelineLogs = [
-    [
-        'order' => 1,
-        'datetime' => '2025-02-03 09:05',
-        'actor' => 'Supaporn N. (Service Desk)',
-        'action' => 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น',
-        'detail' => 'ระบุอาการเบื้องต้นและแนบภาพหน้าจอ 2 ไฟล์',
-        'attachment' => 'incident_screenshot.pdf',
-        'location' => 'ช่องทาง Email'
-    ],
-    [
-        'order' => 2,
-        'datetime' => '2025-02-03 09:20',
-        'actor' => 'Thanakrit K. (Security Team)',
-        'action' => 'รับงาน / เปลี่ยนสถานะเป็น On Process',
-        'detail' => 'ติดต่อผู้ใช้งานและเริ่มสแกนเครื่องปลายทาง',
-        'attachment' => '',
-        'location' => 'Security Command Center'
-    ],
-    [
-        'order' => 3,
-        'datetime' => '2025-02-03 10:05',
-        'actor' => 'Thanakrit K. (Security Team)',
-        'action' => 'อัปโหลดรายงานการสแกน',
-        'detail' => 'พบมัลแวร์ Trojan.Generic ลบสำเร็จ รีบูตเครื่องแล้ว',
-        'attachment' => 'scan_report_0302.docx',
-        'location' => 'ระบบ SOC Report Portal'
-    ],
-    [
-        'order' => 4,
-        'datetime' => '2025-02-03 10:30',
-        'actor' => 'Jirawat P. (Requester)',
-        'action' => 'ยืนยันผลการแก้ไข',
-        'detail' => 'เครื่องกลับมาใช้งานได้ตามปกติ ขอให้ติดตามอีก 24 ชม.',
-        'attachment' => '',
-        'location' => 'สำนักงานใหญ่ ชั้น 12'
-    ],
-];
-
-$latestTimelineIndex = 0;
-if (!empty($timelineLogs)) {
-    $orders = array_column($timelineLogs, 'order');
-    $latestTimelineIndex = $orders ? max($orders) : 0;
-}
+$reporters = [];
 
 $currentUserId = $_SESSION['user_id'] ?? null;
 $currentTeamId = $_SESSION['team_id'] ?? null;
 $currentUserName = trim(($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '')) ?: 'ผู้ใช้ระบบ';
 $currentDateTime = date('Y-m-d\TH:i');
-$defaultTicketType = 'Incident';
-$defaultStatus = 'New';
-$defaultSource = 'Portal';
-$defaultPriority = 'Low';
-$defaultUrgency = 'Low';
-$defaultImpact = 'Department';
-$defaultSlaTarget = 24;
-$defaultStartAt = $currentDateTime;
 
 try {
     // รายชื่อเจ้าของงาน (ผู้ใช้งานระบบทั้งหมด)
@@ -127,7 +114,7 @@ $statusOptions = [
     'Resolved Pending',
     'Containment',
     'Closed',
-    'Canceled'
+    'Cancelled'
 ];
 
 $sourceOptions = ['Email', 'Call Center', 'Portal', 'Self-Service', 'Monitoring', 'Planner', 'Security Alert', 'Product Owner'];
@@ -145,7 +132,7 @@ $menu = 'service';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Service Desk | Create Ticket</title>
+    <title>Service Desk | Edit Ticket</title>
     <?php include '../../include/header.php'; ?>
 
     <style>
@@ -392,13 +379,14 @@ $menu = 'service';
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-12">
-                            <form id="createTicketForm" method="POST" action="#" novalidate>
+                            <form id="editTicketForm" method="POST" action="#" novalidate>
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                <input type="hidden" name="ticket_id" value="<?php echo escapeOutput($ticket_id); ?>">
 
                                 <!-- Header Card -->
                                 <div class="card card-primary mb-4">
                                     <div class="card-header">
-                                        <h3 class="card-title"><i class="fas fa-plus-circle mr-2"></i>สร้าง Service Ticket</h3>
+                                        <h3 class="card-title"><i class="fas fa-edit mr-2"></i>แก้ไข Service Ticket: <?php echo escapeOutput($ticket['ticket_no']); ?></h3>
                                     </div>
                                     <div class="card-body">
                                         <!-- Auto-filled Info Fields -->
@@ -406,23 +394,24 @@ $menu = 'service';
                                             <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label>วันเวลาที่สร้าง</label>
-                                                    <input type="datetime-local" name="created_at" class="form-control" value="<?php echo $currentDateTime; ?>" readonly>
+                                                    <input type="datetime-local" class="form-control" value="<?php echo date('Y-m-d\TH:i', strtotime($ticket['created_at'])); ?>" readonly>
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="form-group">
-                                                    <label>ผู้สร้าง</label>
-                                                    <input type="text" class="form-control" value="<?php echo escapeOutput($currentUserName); ?>" readonly>
-                                                    <input type="hidden" name="created_by" value="<?php echo escapeOutput($currentUserId); ?>">
+                                                    <label>Ticket No.</label>
+                                                    <input type="text" class="form-control" value="<?php echo escapeOutput($ticket['ticket_no']); ?>" readonly>
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label>Project<span class="text-danger">*</span></label>
                                                     <select name="project_id" id="project_id" class="form-control select2" required>
-                                                        <option value="" selected>เลือก</option>
+                                                        <option value="">เลือก</option>
                                                         <?php foreach ($projects as $project): ?>
-                                                            <option value="<?php echo escapeOutput($project['project_id']); ?>"><?php echo escapeOutput($project['project_name']); ?></option>
+                                                            <option value="<?php echo escapeOutput($project['project_id']); ?>" <?php echo $ticket['project_id'] === $project['project_id'] ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($project['project_name']); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -437,7 +426,9 @@ $menu = 'service';
                                                     <select name="ticket_type" id="ticket_type" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($ticketTypes as $type): ?>
-                                                            <option value="<?php echo escapeOutput($type['id']); ?>" <?php echo $type['id'] === $defaultTicketType ? 'selected' : ''; ?>><?php echo escapeOutput($type['label']); ?></option>
+                                                            <option value="<?php echo escapeOutput($type['id']); ?>" <?php echo $ticket['ticket_type'] === $type['id'] ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($type['label']); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -448,7 +439,7 @@ $menu = 'service';
                                                     <select name="job_owner" id="job_owner" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($owners as $owner): ?>
-                                                            <option value="<?php echo escapeOutput($owner['user_id']); ?>" <?php echo (string) $owner['user_id'] === (string) $currentUserId ? 'selected' : ''; ?>>
+                                                            <option value="<?php echo escapeOutput($owner['user_id']); ?>" <?php echo $ticket['job_owner'] == $owner['user_id'] ? 'selected' : ''; ?>>
                                                                 <?php echo escapeOutput($owner['full_name']); ?>
                                                             </option>
                                                         <?php endforeach; ?>
@@ -460,13 +451,13 @@ $menu = 'service';
                                                     <label>SLA Target (ชั่วโมง)</label>
                                                     <select name="sla_target" id="sla_target" class="form-control select2">
                                                         <option value="">เลือก</option>
-                                                        <option value="1">1 ชั่วโมง</option>
-                                                        <option value="2">2 ชั่วโมง</option>
-                                                        <option value="4" selected>4 ชั่วโมง</option>
-                                                        <option value="8">8 ชั่วโมง</option>
-                                                        <option value="24">24 ชั่วโมง</option>
-                                                        <option value="48">48 ชั่วโมง</option>
-                                                        <option value="72">72 ชั่วโมง</option>
+                                                        <option value="1" <?php echo $ticket['sla_target'] == 1 ? 'selected' : ''; ?>>1 ชั่วโมง</option>
+                                                        <option value="2" <?php echo $ticket['sla_target'] == 2 ? 'selected' : ''; ?>>2 ชั่วโมง</option>
+                                                        <option value="4" <?php echo $ticket['sla_target'] == 4 ? 'selected' : ''; ?>>4 ชั่วโมง</option>
+                                                        <option value="8" <?php echo $ticket['sla_target'] == 8 ? 'selected' : ''; ?>>8 ชั่วโมง</option>
+                                                        <option value="24" <?php echo $ticket['sla_target'] == 24 ? 'selected' : ''; ?>>24 ชั่วโมง</option>
+                                                        <option value="48" <?php echo $ticket['sla_target'] == 48 ? 'selected' : ''; ?>>48 ชั่วโมง</option>
+                                                        <option value="72" <?php echo $ticket['sla_target'] == 72 ? 'selected' : ''; ?>>72 ชั่วโมง</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -476,7 +467,9 @@ $menu = 'service';
                                                     <select name="priority" id="priority" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($priorityOptions as $priority): ?>
-                                                            <option value="<?php echo escapeOutput($priority); ?>" <?php echo $priority === $defaultPriority ? 'selected' : ''; ?>><?php echo escapeOutput($priority); ?></option>
+                                                            <option value="<?php echo escapeOutput($priority); ?>" <?php echo $ticket['priority'] === $priority ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($priority); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -487,7 +480,9 @@ $menu = 'service';
                                                     <select name="channel" id="channel" class="form-control select2">
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($channelOptions as $channel): ?>
-                                                            <option value="<?php echo escapeOutput($channel); ?>" <?php echo $channel === 'Office' ? 'selected' : ''; ?>><?php echo escapeOutput($channel); ?></option>
+                                                            <option value="<?php echo escapeOutput($channel); ?>" <?php echo $ticket['channel'] === $channel ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($channel); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -498,7 +493,9 @@ $menu = 'service';
                                                     <select name="urgency" id="urgency" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($urgencyOptions as $urgency): ?>
-                                                            <option value="<?php echo escapeOutput($urgency); ?>" <?php echo $urgency === $defaultUrgency ? 'selected' : ''; ?>><?php echo escapeOutput($urgency); ?></option>
+                                                            <option value="<?php echo escapeOutput($urgency); ?>" <?php echo $ticket['urgency'] === $urgency ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($urgency); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -513,7 +510,9 @@ $menu = 'service';
                                                     <select name="impact" id="impact" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($impactOptions as $impact): ?>
-                                                            <option value="<?php echo escapeOutput($impact); ?>" <?php echo $impact === $defaultImpact ? 'selected' : ''; ?>><?php echo escapeOutput($impact); ?></option>
+                                                            <option value="<?php echo escapeOutput($impact); ?>" <?php echo $ticket['impact'] === $impact ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($impact); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -524,7 +523,9 @@ $menu = 'service';
                                                     <select name="status" id="status" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($statusOptions as $status): ?>
-                                                            <option value="<?php echo escapeOutput($status); ?>" <?php echo $status === $defaultStatus ? 'selected' : ''; ?>><?php echo escapeOutput($status); ?></option>
+                                                            <option value="<?php echo escapeOutput($status); ?>" <?php echo $ticket['status'] === $status ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($status); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -535,7 +536,9 @@ $menu = 'service';
                                                     <select name="service_category" id="service_category" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($serviceCategories as $category): ?>
-                                                            <option value="<?php echo escapeOutput($category['service_category']); ?>"><?php echo escapeOutput($category['service_category']); ?></option>
+                                                            <option value="<?php echo escapeOutput($category['service_category']); ?>" <?php echo $ticket['service_category'] === $category['service_category'] ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($category['service_category']); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -546,7 +549,9 @@ $menu = 'service';
                                                     <select name="category" id="category" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($categoriesList as $cat): ?>
-                                                            <option value="<?php echo escapeOutput($cat['category']); ?>"><?php echo escapeOutput($cat['category']); ?></option>
+                                                            <option value="<?php echo escapeOutput($cat['category']); ?>" <?php echo $ticket['category'] === $cat['category'] ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($cat['category']); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -557,7 +562,9 @@ $menu = 'service';
                                                     <select name="sub_category" id="sub_category" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($subCategoriesList as $subCat): ?>
-                                                            <option value="<?php echo escapeOutput($subCat['sub_category']); ?>"><?php echo escapeOutput($subCat['sub_category']); ?></option>
+                                                            <option value="<?php echo escapeOutput($subCat['sub_category']); ?>" <?php echo $ticket['sub_category'] === $subCat['sub_category'] ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($subCat['sub_category']); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -568,7 +575,9 @@ $menu = 'service';
                                                     <select name="source" id="source" class="form-control select2" required>
                                                         <option value="">เลือก</option>
                                                         <?php foreach ($sourceOptions as $source): ?>
-                                                            <option value="<?php echo escapeOutput($source); ?>" <?php echo $source === $defaultSource ? 'selected' : ''; ?>><?php echo escapeOutput($source); ?></option>
+                                                            <option value="<?php echo escapeOutput($source); ?>" <?php echo $ticket['source'] === $source ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($source); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -583,7 +592,9 @@ $menu = 'service';
                                                     <select name="reporter" id="reporter" class="form-control select2">
                                                         <option value="">เลือกผู้แจ้ง</option>
                                                         <?php foreach ($reporters as $reporter): ?>
-                                                            <option value="<?php echo escapeOutput($reporter['user_id']); ?>"><?php echo escapeOutput($reporter['full_name']); ?></option>
+                                                            <option value="<?php echo escapeOutput($reporter['user_id']); ?>" <?php echo $ticket['reporter'] == $reporter['user_id'] ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($reporter['full_name']); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -593,7 +604,9 @@ $menu = 'service';
                                                     <label>ผู้เกี่ยวข้องเพิ่มเติม (Watcher)</label>
                                                     <select name="watchers[]" class="form-control select2" multiple data-placeholder="เลือกผู้เกี่ยวข้อง">
                                                         <?php foreach ($owners as $owner): ?>
-                                                            <option value="<?php echo escapeOutput($owner['user_id']); ?>"><?php echo escapeOutput($owner['full_name']); ?></option>
+                                                            <option value="<?php echo escapeOutput($owner['user_id']); ?>" <?php echo in_array($owner['user_id'], $selectedWatchers) ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($owner['full_name']); ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -605,13 +618,15 @@ $menu = 'service';
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>กำหนดเริ่มดำเนินการ (วันเวลา)</label>
-                                                    <input type="datetime-local" name="start_at" id="start_at" class="form-control" value="<?php echo escapeOutput($defaultStartAt); ?>">
+                                                    <input type="datetime-local" name="start_at" id="start_at" class="form-control"
+                                                        value="<?php echo $ticket['start_at'] ? date('Y-m-d\TH:i', strtotime($ticket['start_at'])) : ''; ?>">
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>กำหนดแล้วเสร็จ (วันเวลา)</label>
-                                                    <input type="datetime-local" name="due_at" id="due_at" class="form-control">
+                                                    <input type="datetime-local" name="due_at" id="due_at" class="form-control"
+                                                        value="<?php echo $ticket['due_at'] ? date('Y-m-d\TH:i', strtotime($ticket['due_at'])) : ''; ?>">
                                                 </div>
                                             </div>
                                         </div>
@@ -619,45 +634,22 @@ $menu = 'service';
                                         <!-- Subject and Description -->
                                         <div class="form-group">
                                             <label>หัวข้อ / Subject<span class="text-danger">*</span></label>
-                                            <input type="text" name="subject" id="subject" class="form-control" placeholder="สรุปเหตุการณ์หรือคำขอ" maxlength="150" required>
+                                            <input type="text" name="subject" id="subject" class="form-control"
+                                                value="<?php echo escapeOutput($ticket['subject']); ?>"
+                                                placeholder="สรุปเหตุการณ์หรือคำขอ" maxlength="150" required>
                                             <small class="text-muted">จำกัดไม่เกิน 150 ตัวอักษร</small>
                                         </div>
 
                                         <div class="form-group">
                                             <label>รายละเอียดงาน / Symptom</label>
-                                            <textarea name="description" id="description" rows="4" class="form-control" placeholder="ระบุรายละเอียด ปัญหา หรือความต้องการของผู้ใช้งาน"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Attachments Card -->
-                                <div class="card card-outline card-info mb-4">
-                                    <div class="card-header">
-                                        <h3 class="card-title"><i class="fas fa-paperclip mr-2"></i>Attachments (Job Details) - ได้มากกว่า 1 ไฟล์</h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="dropzone-area border-dashed border-2 border-primary p-4 text-center rounded">
-                                            <div class="mb-3">
-                                                <i class="fas fa-cloud-upload-alt fa-3x text-primary"></i>
-                                            </div>
-                                            <p class="mb-2">ลาก & วางไฟล์ที่เกี่ยวข้อง หรือคลิกเพื่อเลือกไฟล์</p>
-                                            <small class="text-muted">รองรับไฟล์ JPG, PNG, PDF, DOCX, XLSX ขนาดรวมไม่เกิน 50 MB</small>
-                                            <div class="mt-3">
-                                                <input type="file" name="attachments[]" multiple class="form-control-file d-none" id="attachmentFiles" accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx">
-                                                <label for="attachmentFiles" class="btn btn-outline-primary">
-                                                    <i class="fas fa-file-upload mr-2"></i>เลือกไฟล์
-                                                </label>
-                                            </div>
-                                            <div id="selectedFiles" class="mt-3"></div>
+                                            <textarea name="description" id="description" rows="4" class="form-control"
+                                                placeholder="ระบุรายละเอียด ปัญหา หรือความต้องการของผู้ใช้งาน"><?php echo escapeOutput($ticket['description'] ?? ''); ?></textarea>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Onsite Details Card -->
-                                <div class="card card-outline card-warning mb-4 d-none" id="onsiteDetailsCard">
+                                <div class="card card-outline card-warning mb-4 <?php echo $ticket['channel'] === 'Onsite' ? '' : 'd-none'; ?>" id="onsiteDetailsCard">
                                     <div class="card-header">
                                         <h3 class="card-title"><i class="fas fa-map-marker-alt mr-2"></i>Onsite Details</h3>
                                         <div class="card-tools">
@@ -674,13 +666,17 @@ $menu = 'service';
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label><i class="fas fa-play-circle text-success mr-1"></i>สถานที่เริ่มต้น / Site Start</label>
-                                                    <input type="text" name="onsite_start_location" id="onsite_start_location" class="form-control" placeholder="เช่น สำนักงานใหญ่ บางนา">
+                                                    <input type="text" name="onsite_start_location" id="onsite_start_location" class="form-control"
+                                                        value="<?php echo escapeOutput($onsiteData['start_location'] ?? ''); ?>"
+                                                        placeholder="เช่น สำนักงานใหญ่ บางนา">
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label><i class="fas fa-stop-circle text-danger mr-1"></i>สถานที่ปลายทาง / Site End</label>
-                                                    <input type="text" name="onsite_end_location" id="onsite_end_location" class="form-control" placeholder="เช่น ศูนย์บริการ ขอนแก่น">
+                                                    <input type="text" name="onsite_end_location" id="onsite_end_location" class="form-control"
+                                                        value="<?php echo escapeOutput($onsiteData['end_location'] ?? ''); ?>"
+                                                        placeholder="เช่น ศูนย์บริการ ขอนแก่น">
                                                 </div>
                                             </div>
                                         </div>
@@ -688,27 +684,27 @@ $menu = 'service';
                                         <div class="row">
                                             <div class="col-md-12">
                                                 <div class="form-group">
-                                                    <label><i class="fas fa-car text-primary mr-1"></i>เดินทางโดย<span class="text-danger">*</span></label>
-                                                    <select name="onsite_travel_mode" id="onsite_travel_mode" class="form-control select2" required>
+                                                    <label><i class="fas fa-car text-primary mr-1"></i>เดินทางโดย</label>
+                                                    <select name="onsite_travel_mode" id="onsite_travel_mode" class="form-control select2">
                                                         <option value="">เลือกวิธีการเดินทาง</option>
                                                         <optgroup label="รถยนต์">
-                                                            <option value="personal_car" data-needs-mileage="1">รถส่วนตัว</option>
-                                                            <option value="company_car" data-needs-mileage="1">รถบริษัท</option>
-                                                            <option value="taxi">แท็กซี่ / รถรับจ้าง</option>
+                                                            <option value="personal_car" data-needs-mileage="1" <?php echo ($onsiteData['travel_mode'] ?? '') === 'personal_car' ? 'selected' : ''; ?>>รถส่วนตัว</option>
+                                                            <option value="company_car" data-needs-mileage="1" <?php echo ($onsiteData['travel_mode'] ?? '') === 'company_car' ? 'selected' : ''; ?>>รถบริษัท</option>
+                                                            <option value="taxi" <?php echo ($onsiteData['travel_mode'] ?? '') === 'taxi' ? 'selected' : ''; ?>>แท็กซี่ / รถรับจ้าง</option>
                                                         </optgroup>
                                                         <optgroup label="ขนส่งสาธารณะ">
-                                                            <option value="electric_train">รถไฟฟ้า (BTS/MRT)</option>
-                                                            <option value="bus">รถโดยสารประจำทาง</option>
-                                                            <option value="van">รถตู้โดยสาร</option>
-                                                            <option value="train">รถไฟ</option>
-                                                            <option value="boat">เรือโดยสาร</option>
+                                                            <option value="electric_train" <?php echo ($onsiteData['travel_mode'] ?? '') === 'electric_train' ? 'selected' : ''; ?>>รถไฟฟ้า (BTS/MRT)</option>
+                                                            <option value="bus" <?php echo ($onsiteData['travel_mode'] ?? '') === 'bus' ? 'selected' : ''; ?>>รถโดยสารประจำทาง</option>
+                                                            <option value="van" <?php echo ($onsiteData['travel_mode'] ?? '') === 'van' ? 'selected' : ''; ?>>รถตู้โดยสาร</option>
+                                                            <option value="train" <?php echo ($onsiteData['travel_mode'] ?? '') === 'train' ? 'selected' : ''; ?>>รถไฟ</option>
+                                                            <option value="boat" <?php echo ($onsiteData['travel_mode'] ?? '') === 'boat' ? 'selected' : ''; ?>>เรือโดยสาร</option>
                                                         </optgroup>
                                                         <optgroup label="เครื่องบิน">
-                                                            <option value="plane">เครื่องบิน</option>
+                                                            <option value="plane" <?php echo ($onsiteData['travel_mode'] ?? '') === 'plane' ? 'selected' : ''; ?>>เครื่องบิน</option>
                                                         </optgroup>
                                                         <optgroup label="อื่นๆ">
-                                                            <option value="others_mileage" data-needs-mileage="1">อื่นๆ (ต้องบันทึกเลขไมล์)</option>
-                                                            <option value="others">อื่นๆ (ไม่ต้องบันทึกเลขไมล์)</option>
+                                                            <option value="others_mileage" data-needs-mileage="1" <?php echo ($onsiteData['travel_mode'] ?? '') === 'others_mileage' ? 'selected' : ''; ?>>อื่นๆ (ต้องบันทึกเลขไมล์)</option>
+                                                            <option value="others" <?php echo ($onsiteData['travel_mode'] ?? '') === 'others' ? 'selected' : ''; ?>>อื่นๆ (ไม่ต้องบันทึกเลขไมล์)</option>
                                                         </optgroup>
                                                     </select>
                                                 </div>
@@ -720,13 +716,17 @@ $menu = 'service';
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label><i class="fas fa-tachometer-alt text-info mr-1"></i>เลขไมล์จุดเริ่มต้น</label>
-                                                    <input type="number" step="0.1" min="0" name="onsite_odometer_start" id="onsite_odometer_start" class="form-control" placeholder="เช่น 10351.5">
+                                                    <input type="number" step="0.1" min="0" name="onsite_odometer_start" id="onsite_odometer_start" class="form-control"
+                                                        value="<?php echo escapeOutput($onsiteData['odometer_start'] ?? ''); ?>"
+                                                        placeholder="เช่น 10351.5">
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label><i class="fas fa-tachometer-alt text-warning mr-1"></i>เลขไมล์จุดสิ้นสุด</label>
-                                                    <input type="number" step="0.1" min="0" name="onsite_odometer_end" id="onsite_odometer_end" class="form-control" placeholder="เช่น 10980.2">
+                                                    <input type="number" step="0.1" min="0" name="onsite_odometer_end" id="onsite_odometer_end" class="form-control"
+                                                        value="<?php echo escapeOutput($onsiteData['odometer_end'] ?? ''); ?>"
+                                                        placeholder="เช่น 10980.2">
                                                 </div>
                                             </div>
                                         </div>
@@ -736,42 +736,40 @@ $menu = 'service';
                                             <div class="col-md-12">
                                                 <div class="form-group">
                                                     <label><i class="fas fa-info-circle text-info mr-1"></i>รายละเอียดพาหนะเพิ่มเติม</label>
-                                                    <input type="text" name="onsite_travel_note" id="onsite_travel_note" class="form-control" placeholder="ระบุพาหนะ เช่น รถเช่า จังหวัดเชียงใหม่">
+                                                    <input type="text" name="onsite_travel_note" id="onsite_travel_note" class="form-control"
+                                                        value="<?php echo escapeOutput($onsiteData['travel_note'] ?? ''); ?>"
+                                                        placeholder="ระบุพาหนะ เช่น รถเช่า จังหวัดเชียงใหม่">
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div class="form-group">
                                             <label><i class="fas fa-sticky-note text-secondary mr-1"></i>หมายเหตุเพิ่มเติม</label>
-                                            <textarea name="onsite_note" id="onsite_note" rows="3" class="form-control" placeholder="รายละเอียดเพิ่มเติมที่ทีมควรรับทราบ เช่น นัดหมายติดต่อผู้ประสานงาน หรือข้อมูลเบิกจ่าย"></textarea>
+                                            <textarea name="onsite_note" id="onsite_note" rows="3" class="form-control"
+                                                placeholder="รายละเอียดเพิ่มเติมที่ทีมควรรับทราบ เช่น นัดหมายติดต่อผู้ประสานงาน หรือข้อมูลเบิกจ่าย"><?php echo escapeOutput($onsiteData['note'] ?? ''); ?></textarea>
                                         </div>
                                     </div>
                                 </div>
-
 
                                 <!-- Action Buttons -->
                                 <div class="card card-outline card-success mb-4">
                                     <div class="card-body text-center py-3">
                                         <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
-                                            <button type="reset" class="btn btn-outline-secondary btn-sm px-3">
-                                                <i class="fas fa-undo mr-1"></i>ล้างฟอร์ม
-                                            </button>
-                                            <button type="button" class="btn btn-warning btn-sm px-3" id="btnDraft">
-                                                <i class="fas fa-save mr-1"></i>บันทึก Draft
-                                            </button>
+                                            <a href="view_ticket.php?id=<?php echo urlencode($ticket_id); ?>" class="btn btn-outline-secondary btn-sm px-3">
+                                                <i class="fas fa-times mr-1"></i>ยกเลิก
+                                            </a>
                                             <button type="submit" class="btn btn-success btn-sm px-3">
-                                                <i class="fas fa-paper-plane mr-1"></i>สร้าง Ticket
+                                                <i class="fas fa-save mr-1"></i>บันทึกการแก้ไข
                                             </button>
                                         </div>
                                         <small class="text-muted mt-2 d-block">
                                             <i class="fas fa-info-circle mr-1"></i>
-                                            กรุณาตรวจสอบข้อมูลก่อนกดสร้าง Ticket
+                                            กรุณาตรวจสอบข้อมูลก่อนกดบันทึก
                                         </small>
                                     </div>
                                 </div>
                             </form>
                         </div>
-
                     </div>
                 </div>
             </section>
@@ -788,63 +786,11 @@ $menu = 'service';
                 width: '100%'
             });
 
-            const previewMap = {
-                type: '#preview-pill-type',
-                status: '#preview-pill-status',
-                priority: '#preview-pill-priority',
-                subject: '#preview-subject',
-                service_category: '#preview-service-category',
-                project: '#preview-project',
-                category: '#preview-category',
-                sub_category: '#preview-sub_category',
-                owner: '#preview-owner',
-                sla: '#preview-sla',
-                start_at: '#preview-start_at',
-                due_at: '#preview-due_at'
-            };
-
-            const $statusSelect = $('#status');
-            const $caseGroup = $('#caseDescriptionGroup');
-            const $resolveGroup = $('#resolveActionGroup');
-            const $nextGroup = $('#nextActionGroup');
-            const $caseField = $('#case_description');
-            const $resolveField = $('#resolve_action');
-            const $nextField = $('#next_action');
-            const $caseRequired = $('#caseDescriptionRequired');
-            const $resolveRequired = $('#resolveActionRequired');
-            const $nextRequired = $('#nextActionRequired');
-
             const $channelSelect = $('#channel');
             const $onsiteCard = $('#onsiteDetailsCard');
             const $onsiteTravelMode = $('#onsite_travel_mode');
             const $onsiteMileageRow = $('#onsiteMileageRow');
             const $onsiteOtherRow = $('#onsiteOtherRow');
-
-            function updateStatusDependentFields() {
-                const isResolved = $statusSelect.val() === 'Resolved';
-
-                if (isResolved) {
-                    $caseGroup.removeClass('d-none');
-                    $resolveGroup.removeClass('d-none');
-                    $nextGroup.addClass('d-none');
-                    $caseField.prop('required', true);
-                    $resolveField.prop('required', true);
-                    $nextField.prop('required', false);
-                    $caseRequired.text('*');
-                    $resolveRequired.text('*');
-                    $nextRequired.text('');
-                } else {
-                    $caseGroup.addClass('d-none');
-                    $resolveGroup.addClass('d-none');
-                    $nextGroup.removeClass('d-none');
-                    $caseField.prop('required', false);
-                    $resolveField.prop('required', false);
-                    $nextField.prop('required', true);
-                    $caseRequired.text('');
-                    $resolveRequired.text('');
-                    $nextRequired.text('*');
-                }
-            }
 
             function updateOnsiteTravelMode() {
                 const value = $onsiteTravelMode.val();
@@ -867,27 +813,17 @@ $menu = 'service';
 
             function updateOnsiteCardVisibility() {
                 const selectedChannel = $channelSelect.val();
-                console.log('Selected channel:', selectedChannel); // Debug log
 
                 if (selectedChannel === 'Onsite') {
                     $onsiteCard.removeClass('d-none');
-                    // Make travel mode required when onsite is selected
-                    $onsiteTravelMode.prop('required', true);
                 } else {
                     $onsiteCard.addClass('d-none');
                     $onsiteMileageRow.addClass('d-none');
                     $onsiteOtherRow.addClass('d-none');
-                    // Remove required attribute when not onsite
-                    $onsiteTravelMode.prop('required', false);
-                    // Clear values when hiding
-                    $onsiteTravelMode.val('').trigger('change');
-                    $('#onsite_start_location, #onsite_end_location, #onsite_travel_note, #onsite_odometer_start, #onsite_odometer_end, #onsite_note').val('');
                 }
             }
 
-
             $channelSelect.on('change', function() {
-                console.log('Channel changed to:', $(this).val());
                 updateOnsiteCardVisibility();
             });
 
@@ -895,20 +831,16 @@ $menu = 'service';
                 updateOnsiteTravelMode();
             });
 
-            $statusSelect.on('change', function() {
-                updateStatusDependentFields();
-            });
-
             // Initialize visibility states
             updateOnsiteCardVisibility();
             updateOnsiteTravelMode();
 
-            $('#createTicketForm').on('submit', function(e) {
+            $('#editTicketForm').on('submit', function(e) {
                 e.preventDefault();
 
                 // แสดง Loading
                 Swal.fire({
-                    title: 'กำลังสร้าง Ticket...',
+                    title: 'กำลังบันทึก...',
                     allowOutsideClick: false,
                     didOpen: () => {
                         Swal.showLoading();
@@ -919,7 +851,7 @@ $menu = 'service';
                 const formData = new FormData(this);
 
                 $.ajax({
-                    url: 'api/create_ticket.php',
+                    url: 'api/update_ticket.php',
                     type: 'POST',
                     data: formData,
                     processData: false,
@@ -940,10 +872,10 @@ $menu = 'service';
                                 },
                                 buttonsStyling: false
                             }).then((result) => {
-                                if (result.isConfirmed && response.data.redirect) {
-                                    window.location.href = response.data.redirect;
+                                if (result.isConfirmed) {
+                                    window.location.href = 'view_ticket.php?id=<?php echo urlencode($ticket_id); ?>';
                                 } else {
-                                    window.location.href = 'index.php';
+                                    window.location.href = 'service.php';
                                 }
                             });
                         } else {
@@ -955,7 +887,7 @@ $menu = 'service';
                         }
                     },
                     error: function(xhr, status, error) {
-                        let errorMessage = 'เกิดข้อผิดพลาดในการสร้าง Ticket';
+                        let errorMessage = 'เกิดข้อผิดพลาดในการบันทึก';
 
                         try {
                             const response = JSON.parse(xhr.responseText);
@@ -972,28 +904,6 @@ $menu = 'service';
                         });
                     }
                 });
-            });
-
-            $('#btnDraft').on('click', function() {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'บันทึกเป็น Draft แล้ว',
-                    text: 'สามารถกลับมาแก้ไขได้ในภายหลัง',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            });
-
-            // Real-time field validation
-            $('input[required], select[required], textarea[required]').on('blur change', function() {
-                const $field = $(this);
-                const value = $field.val();
-
-                if (!value || (Array.isArray(value) && value.length === 0)) {
-                    $field.addClass('is-invalid');
-                } else {
-                    $field.removeClass('is-invalid');
-                }
             });
         });
     </script>

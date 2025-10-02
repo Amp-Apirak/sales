@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 02, 2025 at 05:32 AM
+-- Generation Time: Sep 23, 2025 at 10:22 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -921,7 +921,7 @@ INSERT INTO `projects` (`project_id`, `project_name`, `start_date`, `end_date`, 
 ('bded5dd9-9eff-4685-89cf-962c1953e0ea', 'Datacenter BK01 -บางพลี-', '0000-00-00', '0000-00-00', 'ใบเสนอราคา (Quotation)', '', 'End user : Mr. CHAWAPAT PRASERTTONGSUK  chawapatp@wtpthailand.com, www.wtpartnership.com\r\nProject lead : ดิว Axis\r\nDistributor : Ying Bacom', '0000-00-00', 'c9245a19-52fa-4b02-a98c-b962f2f51b3f', 6875335.00, 7356608.45, 5718540.00, 6118837.80, 1156795.00, 16.83, 687533.50, 571854.00, 115679.50, '350429f1-d84a-4cec-8c28-d1a2ce9c4763', '2025-03-17 03:26:27', 'c9245a19-52fa-4b02-a98c-b962f2f51b3f', '2025-03-17 03:26:27', NULL, '3431f4cb-f892-4e08-a9af-240a743ebc25', 7.00),
 ('c1eeffcd-ceca-46dc-9b09-dae4d6d00091', 'งานติดตั้งสายสัญญาณคอมพิวเตอร์ และย้ายห้องควบคุมระบบคอมพิวเตอร์', '2024-07-01', '2024-12-28', 'ชนะ (Win)', '105/2567', '', '2024-07-01', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', 4635514.02, 4960000.00, 2921450.00, 3125951.50, 1714064.02, 36.98, 4635514.02, 2921450.00, 1714064.02, '1fb0fb81-4482-438a-ab66-5472c52bf9e4', '2024-11-04 03:42:21', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', '2024-12-11 13:14:59', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', '3431f4cb-f892-4e08-a9af-240a743ebc25', 7.00),
 ('c25a8b9b-64ad-4b8a-b79a-79e97922eb40', 'เช่าใช้ชุดเฝ้าระวังเหตุฉุกเฉินการล้มในผู้สูงอายุภายในบ้านและภายนอกบ้าน อบจ.ชลบุรี 11 อำเภอ', '0000-00-00', '0000-00-00', 'ใบเสนอราคา (Quotation)', '', '', '2025-02-03', '3', 6016600.00, 6437762.00, 4730728.30, 5061879.28, 1285871.70, 21.37, 601660.00, 473072.83, 128587.17, '02e18007-e4e7-4fb7-a2c2-c924ece0a966', '2025-04-09 06:03:50', '3', '2025-06-15 06:13:07', '3', '4c85d842-54f3-4f06-87e6-553f81488234', 7.00),
-('c30ec464-061b-40f2-ae7c-06d6aced3219', 'BSP Hayashi Telempu_Preventive Maintenance Rack Switch Network', '0000-00-00', '0000-00-00', 'ชนะ (Win)', '', '', '2025-07-18', '14d9e34c-b691-4ce8-a5ef-929ace71248a', 74000.00, 79180.00, 3200.00, 3424.00, 70800.00, 95.68, 74000.00, 3200.00, 70800.00, 'c918919d-7d14-4f42-97a8-3357016c382a', '2025-07-21 08:50:04', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2025-10-01 07:25:12', '2', 'ae10bae3-0b1c-419f-8b21-8c57c607d3de', 7.00),
+('c30ec464-061b-40f2-ae7c-06d6aced3219', 'BSP Hayashi Telempu_Preventive Maintenance Rack Switch Network', '0000-00-00', '0000-00-00', 'ชนะ (Win)', '', '', '2025-07-18', '14d9e34c-b691-4ce8-a5ef-929ace71248a', 74000.00, 79180.00, 3200.00, 3424.00, 70800.00, 95.68, 74000.00, 3200.00, 70800.00, 'c918919d-7d14-4f42-97a8-3357016c382a', '2025-07-21 08:50:04', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2025-09-04 06:23:06', '14d9e34c-b691-4ce8-a5ef-929ace71248a', 'ae10bae3-0b1c-419f-8b21-8c57c607d3de', 7.00),
 ('c391eba0-07b0-4ce8-9450-31a9c3c0ea4f', 'โครงการงานก่อสร้างถังเก็บน้ำใส ขนาด 20,000 ลบ.ม.ที่สถานีสูบน้ำสําโรง ค่าแรง', '2024-03-23', '2024-11-29', 'ชนะ (Win)', '', '', '2024-02-13', '193f9eed-2938-4305-ab65-828ac5253b30', 197149.53, 210950.00, 122000.00, 130540.00, 75149.53, 38.12, 197149.53, 122000.00, 75149.53, NULL, '2025-06-11 12:13:41', '193f9eed-2938-4305-ab65-828ac5253b30', '2025-06-11 12:13:41', NULL, '162fd42b-855e-40ac-8696-0d0535fbe2b1', 7.00),
 ('c3cda5cd-242f-4a35-8364-1304577a7d28', 'อุปกรณ์ต่อพ่วง', '0000-00-00', '0000-00-00', 'ใบเสนอราคา (Quotation)', '', '', '0000-00-00', 'e40dedaf-3e9b-4694-8ee9-c173d5c44db6', 2803738.32, 3000000.00, 2056074.77, 2200000.00, 747663.55, 26.67, 280373.83, 205607.48, 74766.36, 'cbf32bae-0896-4e5b-ab8e-f4fdca7916f8', '2024-11-25 01:19:17', 'e40dedaf-3e9b-4694-8ee9-c173d5c44db6', '2024-12-11 13:14:59', NULL, 'de486d4d-c877-40a8-a113-d92b2dfcbda5', 7.00),
 ('c49df822-5bb0-4f5e-84e0-4c3f38d8b6f3', 'Access Control', '0000-00-00', '0000-00-00', 'ชนะ (Win)', '', '', '2025-04-09', 'bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', 495234.58, 529901.00, 442030.00, 472972.10, 53204.58, 10.74, 495234.58, 442030.00, 53204.58, '9ca0c7c9-fd99-41b7-878c-3c0d07b938fa', '2025-06-12 10:36:15', 'bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', '2025-06-12 10:36:15', NULL, 'de486d4d-c877-40a8-a113-d92b2dfcbda5', 7.00),
@@ -1123,7 +1123,6 @@ INSERT INTO `project_customers` (`id`, `project_id`, `customer_id`, `is_primary`
 ('004bea9e-376d-4fdb-a9c4-1d9e0d81f310', 'c25a8b9b-64ad-4b8a-b79a-79e97922eb40', '02e18007-e4e7-4fb7-a2c2-c924ece0a966', 1, '2025-06-15 06:13:07'),
 ('024857e3-6925-4398-a38a-208d39877bbc', '96f5ad4d-3a2d-4f3d-a909-9c74eaf3df55', 'f004cbe4-f666-4de7-8e85-7f940b6d8393', 1, '2025-06-10 09:27:09'),
 ('0275b7c4-8f02-4994-b32c-c350616d4bcf', '6d273c81-2bb0-4628-8954-b10bcccbfdd1', 'ed0e2ae8-3fe0-4df6-a04c-f07019cac0ca', 1, '2025-06-13 04:02:23'),
-('0352b921-09dd-4ea0-a98b-9d86a63465f5', 'c30ec464-061b-40f2-ae7c-06d6aced3219', 'c918919d-7d14-4f42-97a8-3357016c382a', 1, '2025-10-01 07:25:12'),
 ('064232f7-4d8f-44b5-a69d-4d7ef4c8f965', 'a5addc9d-b9be-41a0-b9ae-aae652e47826', 'c918919d-7d14-4f42-97a8-3357016c382a', 1, '2025-02-06 09:30:57'),
 ('0767e2b1-7426-4c7c-b5a5-87177e41bda8', 'bded5dd9-9eff-4685-89cf-962c1953e0ea', '350429f1-d84a-4cec-8c28-d1a2ce9c4763', 1, '2025-03-17 03:26:27'),
 ('08ef3999-01c2-45d5-8435-712d0d26c41f', '6f498e8e-0bc7-45e0-9f5b-117dbdc84c90', 'ed0e2ae8-3fe0-4df6-a04c-f07019cac0ca', 1, '2025-06-13 04:06:01'),
@@ -1171,7 +1170,6 @@ INSERT INTO `project_customers` (`id`, `project_id`, `customer_id`, `is_primary`
 ('3077857d-d133-4391-b7a2-cfd64b340b0d', '29dbf3e9-e0c5-4f32-aa07-9c9460094322', '74f091d7-a81e-426b-a55e-a50eeb43d8e7', 1, '2025-06-23 02:52:06'),
 ('3088acc0-9d36-4b9e-ab8a-53705a76b572', 'd1765bcd-968f-4203-bc56-a62447106389', '65b9a9b5-5272-4b9d-a02f-1b4c85460069', 1, '2025-06-24 00:52:30'),
 ('30cbb715-93c9-49fd-83ec-19e31f429b1d', 'a3fa105e-b258-474a-87e5-e39272e3f127', 'fda15ece-1a00-4583-b354-cb5f3c01bb23', 1, '2025-06-11 08:16:14'),
-('319b91b6-39a7-41f1-a0e0-c2d5580a277e', 'c30ec464-061b-40f2-ae7c-06d6aced3219', '2b5c101f-db79-4143-89f9-2b42fbea06bd', 0, '2025-10-01 07:25:12'),
 ('3252b1db-237d-4f29-a092-28dbbd7c6fff', 'a34537bb-801b-45f1-aa34-f7b3b1f13064', 'fda15ece-1a00-4583-b354-cb5f3c01bb23', 1, '2025-06-11 09:01:04'),
 ('32ee0e85-f113-4af0-a30a-80ec7c807764', 'b56986ef-95fa-4f26-ba4e-ae0a593003f1', '2f12eaa0-9738-484d-8329-80e964ea5ee6', 1, '2025-06-16 04:05:04'),
 ('3416d767-67dc-407d-8abb-3e78c7abef9d', '7f69f115-4ea7-4c58-8b48-d16f6fefe0be', 'ff09ea1e-4e6a-44e0-8637-03ac0670070d', 1, '2025-06-12 10:11:40'),
@@ -1295,6 +1293,7 @@ INSERT INTO `project_customers` (`id`, `project_id`, `customer_id`, `is_primary`
 ('b9126e9a-43f8-4c55-a673-18bb055f50c7', '29556301-fab6-4d8c-aa62-1b1fbf984168', 'ad0ee715-c3b7-4df0-b097-6d0bf1565fb0', 1, '2025-06-11 09:04:36'),
 ('b9783026-96c7-4df9-8460-00e438ce3889', 'bc7d814b-f4e5-4e37-a02a-d33143f66717', '0d4e8645-ff06-4531-bc5a-09e6570248d8', 1, '2025-06-25 09:38:43'),
 ('bdc1cbd7-4353-4cb3-a344-d895165bc06e', 'ecb183b4-4add-4215-8b4b-f7f60e544274', 'cf5b1437-ce07-4f44-a672-ecd9cee08e41', 1, '2025-06-15 06:11:58'),
+('be4add6c-6b66-4cf4-bc7e-4da3041be546', 'c30ec464-061b-40f2-ae7c-06d6aced3219', 'c918919d-7d14-4f42-97a8-3357016c382a', 1, '2025-09-04 06:23:06'),
 ('be5e5db5-adc5-42cd-8264-fe99d3a3c855', 'e96e8f2a-5a2c-48fc-bae1-d19c30217990', 'c918919d-7d14-4f42-97a8-3357016c382a', 1, '2025-01-15 07:40:31'),
 ('bf865c92-8a62-457b-b878-5b3d4f606d5d', 'bc78c5f6-8877-4d6e-8d24-7a0bac4746e0', 'f5489b6a-fd5b-4896-b655-761768e44b8f', 1, '2025-06-11 07:57:34'),
 ('c036b373-0a12-4722-8012-591b2bbabb55', '41b24403-2ab4-48f2-b972-356190dcfc16', '5db776f7-0e5f-42f2-a0de-2f76ffadf235', 1, '2025-06-12 10:13:30'),
@@ -1496,15 +1495,13 @@ INSERT INTO `project_payments` (`payment_id`, `project_id`, `payment_number`, `a
 ('85dd68d7-de46-4e81-99f8-4414590503ac', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 4, 88347.95, 7.69, 88347.95, NULL, '2024-10-01', 'Paid', NULL, NULL, NULL, '2024-10-15 22:05:34', '2024-10-15 22:05:34', '3', ''),
 ('8937df61-8c93-48c6-8984-28b6493ffdaf', '05d29d2b-39ab-4c46-b34b-801ede800172', 2, 640000.00, 20.00, 0.00, NULL, '2024-08-01', 'Pending', NULL, NULL, NULL, '2024-10-17 04:55:42', '2024-10-18 04:19:17', '3', '3'),
 ('8efee306-0748-44f7-9575-fe2ecb19d709', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 5, 88347.95, 7.69, 0.00, NULL, '2024-11-01', 'Pending', NULL, NULL, NULL, '2024-10-15 22:06:08', '2024-10-15 22:06:08', '3', ''),
-('9e63b0d6-f664-47aa-b3f3-4e9fafa4eb08', '9ac3c951-ff30-4432-8ed9-207bc3c4e2bb', 2, 6840.00, 30.00, 6840.00, '2025-10-01', '2025-10-01', 'Paid', NULL, NULL, NULL, '2025-10-01 07:57:06', '2025-10-01 07:57:06', '2', ''),
 ('a229e370-811d-408d-ad8c-bf638ff054e8', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 11, 88347.95, 7.69, 0.00, NULL, '2025-05-01', 'Pending', NULL, NULL, NULL, '2024-10-15 22:07:44', '2024-10-15 22:07:44', '3', ''),
 ('b3ae6692-1ae7-4c27-bc03-0c5b401f85f5', '05d29d2b-39ab-4c46-b34b-801ede800172', 3, 1120000.00, 35.00, 0.00, NULL, '2024-09-02', 'Pending', NULL, NULL, NULL, '2024-10-17 04:56:02', '2024-10-18 04:19:28', '3', '3'),
 ('b76b3d7a-3559-4b8c-93a8-b3dbae92ca48', '05d29d2b-39ab-4c46-b34b-801ede800172', 1, 480000.00, 15.00, 480000.00, NULL, '2024-02-01', 'Paid', NULL, NULL, NULL, '2024-10-18 02:49:48', '2024-10-18 04:18:52', '3', '3'),
 ('b7b50966-c6d0-46ce-8e43-81052cb8e3ce', '7c67ce7e-ee05-487f-a763-4627899516bb', 1, 71690.00, 10.00, 0.00, NULL, '0000-00-00', 'Pending', NULL, NULL, NULL, '2024-10-14 04:59:13', '2024-10-14 09:54:16', '2', '3'),
 ('c096b705-b4fe-43c0-9040-a6a2f298af77', '7c67ce7e-ee05-487f-a763-4627899516bb', 2, 55488.06, 7.74, 0.00, NULL, '0000-00-00', 'Pending', NULL, NULL, NULL, '2024-10-14 09:43:05', '2024-10-14 09:55:15', '3', '3'),
 ('c1a72926-f8af-48b0-a9ed-2431c2a7c9cb', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 10, 88347.95, 7.69, 0.00, NULL, '2025-04-01', 'Pending', NULL, NULL, NULL, '2024-10-15 22:07:27', '2024-10-15 22:07:27', '3', ''),
-('c725bf71-e0c8-43f1-9763-1b15ff94166c', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 2, 88347.95, 7.69, 88347.95, NULL, '2024-08-01', 'Paid', NULL, NULL, NULL, '2024-10-15 22:04:10', '2024-10-15 22:04:10', '3', ''),
-('f58aae6b-dfcc-4d7e-b17a-0350d8ad5d6d', '9ac3c951-ff30-4432-8ed9-207bc3c4e2bb', 1, 11400.00, 50.00, 11400.00, '2025-10-02', '2025-10-01', 'Paid', NULL, NULL, NULL, '2025-10-01 07:46:40', '2025-10-01 07:57:21', '2', '2');
+('c725bf71-e0c8-43f1-9763-1b15ff94166c', '4ae49ab9-51d6-43f4-a6f3-ad20f3ed16c4', 2, 88347.95, 7.69, 88347.95, NULL, '2024-08-01', 'Paid', NULL, NULL, NULL, '2024-10-15 22:04:10', '2024-10-15 22:04:10', '3', '');
 
 -- --------------------------------------------------------
 
@@ -1569,26 +1566,15 @@ CREATE TABLE `project_tasks` (
 --
 
 INSERT INTO `project_tasks` (`task_id`, `project_id`, `parent_task_id`, `task_name`, `description`, `start_date`, `end_date`, `status`, `progress`, `priority`, `created_by`, `created_at`, `updated_by`, `updated_at`, `task_order`, `task_level`) VALUES
-('00088d72-279f-467b-853b-76d406fe9cb8', '996fd65e-4532-4f9a-97e2-0e05403bc275', '26200adb-71e6-44ea-ba85-f06f6617fb65', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุด', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุด', '2025-10-02', '2025-10-02', 'In Progress', 55.00, 'Low', '2', '2025-10-02 01:45:05', '2', '2025-10-02 01:45:32', 5, 0),
 ('0db715cb-32d5-402d-bc84-fdea13cef6bf', 'ad3b9787-d382-4eb0-ac96-d9a3917d5db6', NULL, '1. Microcontroller Design', 'Microcontroler Desing พี่ซีนประสานงานพี่ตุ้ม ดังนี้ \n1. ออกแบบกล่อง\n2. นำเข้าบอร์ด ER32 \n3. Screen Brand ติดกล่อง ', '2025-01-23', '2025-01-27', 'In Progress', 50.00, 'Medium', '3', '2025-01-23 12:29:25', '3', '2025-01-24 09:03:35', 1, 0),
-('13e83044-6d91-4da7-a5ab-0da314c26485', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', '3d408df9-7c22-41ad-83f3-17a9b30de5a8', 'หดหกดหกดหกด', 'sadas', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:20:38', '2', '2025-10-01 08:28:40', 2, 0),
 ('2318643a-04fd-40de-a557-4563f81152f5', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-8 : User Management Module', 'จัดการผู้ใช้งานและ Role Mapping', '2025-07-06', '2025-07-08', 'Pending', 0.00, 'High', '2', '2025-06-18 06:56:30', NULL, NULL, 11, 0),
 ('249f6394-09d9-4756-a4aa-95549b40c00d', '078a1fd1-f8bb-4c94-86d5-d35fbf00d1bb', NULL, 'รอประกาศผลสิงหาคม. 2568', '', '2025-08-01', '2025-08-05', 'In Progress', 0.00, 'High', '5', '2025-06-16 06:50:12', NULL, NULL, 1, 0),
-('26200adb-71e6-44ea-ba85-f06f6617fb65', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2d362894-b478-4cea-8111-5d7dfb11c514', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อย', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อย', '2025-10-02', '2025-10-02', 'In Progress', 55.00, 'Low', '2', '2025-10-02 01:44:38', '2', '2025-10-02 01:45:32', 5, 0),
 ('2bac2237-e8e7-4f36-92fc-159f784be5c9', '51e62f2e-3b91-44e8-9875-55239e0e8acc', NULL, 'นัดประชุมเรื่องการเปิดบิล', 'รอนัดคุณหมอ บอย และพี่ไฟท์', '2025-06-18', '2025-06-18', 'In Progress', 0.00, 'High', '5', '2025-06-16 00:40:56', NULL, NULL, 1, 0),
-('2d362894-b478-4cea-8111-5d7dfb11c514', '996fd65e-4532-4f9a-97e2-0e05403bc275', '4db417de-d28b-4978-ae24-429698c6b8df', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task รอง ', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task รอง ', '2025-10-02', '2025-10-03', 'In Progress', 55.00, 'Low', '2', '2025-10-02 01:44:08', '2', '2025-10-02 01:45:32', 5, 0),
-('2e64fd98-1e78-4b04-95bb-c5157cb14e87', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', NULL, 'ผแผปแผปแผป', 'ผปแผปแ', '2025-10-01', '2025-10-03', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:23:47', NULL, NULL, 2, 0),
 ('3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', NULL, 'Sub-tasks Development', 'Sub-tasks สำหรับ Development', '2025-06-18', '2025-08-15', 'In Progress', 0.00, 'High', '2', '2025-06-18 05:24:51', '2', '2025-06-18 06:58:28', 8, 1),
 ('3b1e5127-69e4-466c-ba57-15431a3293f4', '66c0508f-b34e-4007-938b-2a1dc2f7e297', '7911293c-bfa0-40e3-9910-ec1e38a0a96d', 'ค่าบริการงบสำรวจ', '1 วัน 2 คน\nค่าตั๋วเครื่องบินไป-กลับอุบล 2 ที่นั่ง\nค่าเช่ารถยนต์\nค่าเบี้ยเลี้ยง 2 คน', '2025-06-20', '2025-06-20', 'Pending', 0.00, 'Urgent', '5', '2025-06-18 02:36:27', NULL, NULL, 2, 0),
-('3d408df9-7c22-41ad-83f3-17a9b30de5a8', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', NULL, 'หัวข้อที่ 1.1.2', 'project-details (4).pdf', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:20:21', '2', '2025-10-01 08:28:40', 1, 0),
 ('3f2b8902-0d5b-40a6-87e4-5cffc9f27e44', 'b403c2e1-8913-4e94-b6c8-b9f7f36a4f31', NULL, 'รอ Confirm PO Q3', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'High', '5', '2025-06-16 07:05:39', NULL, NULL, 1, 0),
-('45820701-ccd7-4bcd-a10c-1ee310968d73', '996fd65e-4532-4f9a-97e2-0e05403bc275', '00088d72-279f-467b-853b-76d406fe9cb8', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุดสุดๆ', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุดสุดๆ', '2025-10-02', '2025-10-02', 'In Progress', 55.00, 'Low', '2', '2025-10-02 01:45:32', NULL, NULL, 5, 0),
-('4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน', '2025-10-02', '2025-10-10', 'In Progress', 60.00, 'Low', '2', '2025-10-02 01:42:27', '2', '2025-10-02 01:46:05', 1, 0),
 ('5612a8da-3d60-47b5-baec-b492f51b0acf', '92a99359-0555-4ff1-9be4-c26808189158', NULL, 'ติดตามงานขาย', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '5', '2025-06-16 01:07:59', NULL, NULL, 1, 0),
-('563f94d6-9c1b-4e76-bafc-9e4b09c51cc1', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', '13e83044-6d91-4da7-a5ab-0da314c26485', 'ปแอปแอ', 'ปแอปแอปแอ', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:28:28', '2', '2025-10-01 08:28:40', 3, 0),
 ('5ac64b8d-5f9f-405b-b191-14fc687c6345', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-01 : Setup Development Environment', 'จัดเตรียม Environment', '2025-06-20', '2025-06-22', 'Pending', 0.00, 'High', '2', '2025-06-18 06:43:45', '2', '2025-06-18 06:54:50', 1, 1),
-('5fbbad43-145b-4544-9809-db995dd590c3', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 4', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 4', '2025-10-02', '2025-10-03', 'In Progress', 10.00, 'Low', '2', '2025-10-02 01:43:35', NULL, NULL, 4, 0),
-('669670d1-746b-4c45-a524-e60619b129d2', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 2', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 2', '2025-10-02', '2025-10-03', 'In Progress', 30.00, 'Low', '2', '2025-10-02 01:42:51', NULL, NULL, 2, 0),
 ('6e5daf27-4ec3-407d-a67b-19950443e2db', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-9 : Role & Permission Management', 'ตั้งค่า Role และ Permission ใน Keycloak', '2025-07-09', '2025-07-10', 'Pending', 0.00, 'High', '2', '2025-06-18 06:58:28', NULL, NULL, 12, 0),
 ('7911293c-bfa0-40e3-9910-ec1e38a0a96d', '66c0508f-b34e-4007-938b-2a1dc2f7e297', NULL, 'ติดตามงานขาย-CPF ศรีษะเกษ กำลังดำเนอนการออก PO ', 'คุณจุ๊ Zoetis ให้ขึ้นไปสำรวจจุดติดตั้ง\n@JACK_INTERNAL @zeen  \nสรุปการเดินทางไป Survey การติดตั้งชุดวัดเกรดซาก BF2 ที่ศรีษะเกษ  \nทีม​ POINT IT ไป 2 คน  คือพี่แจ๊ค และน้องซีน  นัดพบน้องพลอยที่ โรงงาน  วันศุกร์ที่ 20  เช้านี้พี่จะให้ทีมจัดการจองตั๋วเครื่องบินก่อน ไปอุบลและเช่ารถไปที่ โรงงาน  แจ๊คประสานน้องพลอยได้เลยนะ\n1. สำรวจจุดติดตั้ง BF2   ทั้งเครื่องวิเคราะห์ และจำเป็นต้องมีอุปกรณ์เสริมเพื่อควบคุมซากหรือไม่\n2. สำรวจ Network และ Internet\n3. จัดทำรายงานการสำรวจติดตั้ง เพื่อวางแผนกำหนดการติดตั้งระหว่างที่ทางโรงงานกำลังออก PO\n4.ขอชื่อผู้ติดต่อทางโรงงานที่ดูแลด้านระบบ Netowrk และ IT ในการประสานรายละเอียดต่อไป\nพี่หญิงจะให้ @Neit\'(Boss) เป็น Account REP ของโครงการนี้นะ\n__________________________', '2025-06-20', '2025-06-20', 'In Progress', 0.00, 'Urgent', '5', '2025-06-16 01:08:24', '5', '2025-06-18 02:36:27', 1, 0),
 ('793845f3-3412-43d7-8e88-81356c0dc647', 'f68d2b0e-6ba9-468a-bd47-870036ce545d', NULL, 'Project Engineer', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '5', '2025-06-16 04:03:40', '5', '2025-06-16 04:04:02', 1, 0),
@@ -1598,10 +1584,7 @@ INSERT INTO `project_tasks` (`task_id`, `project_id`, `parent_task_id`, `task_na
 ('99b0ab2e-2c86-4b61-b1f1-964385cc5e00', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-02 : Database Design & Setup', 'ออกแบบและจัดตั้งฐานข้อมูล', '2025-06-23', '2025-06-25', 'Pending', 0.00, 'High', '2', '2025-06-18 06:44:58', NULL, '2025-06-18 06:54:50', 5, 2),
 ('a03550ba-9be0-4afd-b133-011dda745576', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-07 : SSO Implementation Frontend', 'Implement SSO ใน Nuxt3', '2025-07-03', '2025-07-05', 'Pending', 0.00, 'High', '2', '2025-06-18 06:52:48', NULL, '2025-06-18 06:54:50', 10, 0),
 ('a0ee357f-10c4-48c4-ad2c-324cc5441ac3', 'a313d528-c1ea-49d7-8bde-f9b1920a4993', NULL, 'ติดตามงานขาย', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '5', '2025-06-16 01:07:28', NULL, NULL, 1, 0),
-('ad38cce7-516c-4463-b7f6-9e912ab1c6a6', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 3', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน 3', '2025-10-02', '2025-10-04', 'In Progress', 25.00, 'Low', '2', '2025-10-02 01:43:14', NULL, NULL, 3, 0),
 ('dd02abc1-746d-4ea1-b750-58f7a7ec56a8', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-04 : LDAP Integration with Keycloak', 'เชื่อมต่อ Keycloak กับ LDAP Server', '2025-06-28', '2025-06-30', 'Pending', 0.00, 'High', '2', '2025-06-18 06:48:14', '2', '2025-06-18 06:54:50', 7, 0),
-('e62aabe2-49b3-47c8-89ed-e095b36cbb1f', '996fd65e-4532-4f9a-97e2-0e05403bc275', '4db417de-d28b-4978-ae24-429698c6b8df', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task รอง 2', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task รอง 2', '2025-10-02', '2025-10-02', 'In Progress', 65.00, 'Low', '2', '2025-10-02 01:46:05', NULL, NULL, 6, 0),
-('e7c88d65-c58a-447f-ab36-c529c6f38969', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', '563f94d6-9c1b-4e76-bafc-9e4b09c51cc1', 'ดหกดกหดหกดกห', 'หกดหกดกหดหกดกห', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:28:40', NULL, NULL, 3, 0),
 ('ef547534-053a-47f8-b1fe-7288b9e26d33', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-06 : Authentication System Integration', 'เชื่อมต่อระบบกับ Keycloak', '2025-07-03', '2025-07-05', 'Pending', 0.00, 'High', '2', '2025-06-18 06:51:29', NULL, '2025-06-18 06:54:50', 9, 0);
 
 -- --------------------------------------------------------
@@ -1623,36 +1606,22 @@ CREATE TABLE `project_task_assignments` (
 --
 
 INSERT INTO `project_task_assignments` (`assignment_id`, `task_id`, `user_id`, `assigned_by`, `assigned_at`) VALUES
-('0b4f6a3a-40c4-4354-b0c4-384a3360e944', '3d408df9-7c22-41ad-83f3-17a9b30de5a8', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-01 08:20:21'),
 ('15698cd6-5d86-456a-bcb8-dccef2e2a342', '6e5daf27-4ec3-407d-a67b-19950443e2db', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-06-18 06:58:28'),
 ('281fb257-fb98-41c3-bab6-a4365e6f1a07', '3f2b8902-0d5b-40a6-87e4-5cffc9f27e44', '44ab4e8b-e3e6-431d-ad49-40d4601779b4', '5', '2025-06-16 07:05:39'),
-('3a99e784-3ff7-4ec0-bfc8-ae91764988ac', '5fbbad43-145b-4544-9809-db995dd590c3', '70dd36b5-f587-4aa9-b544-c69542616d34', '2', '2025-10-02 01:43:35'),
-('3e47074d-82e0-469b-9b44-ada407deb4c2', 'e7c88d65-c58a-447f-ab36-c529c6f38969', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '2', '2025-10-01 08:28:40'),
 ('3f1d4c5f-c024-4a8a-8e82-2b49c1a27635', 'a0ee357f-10c4-48c4-ad2c-324cc5441ac3', '3', '5', '2025-06-16 01:07:28'),
-('46dacea7-c034-4f0a-8465-c1d939f6c45a', '2e64fd98-1e78-4b04-95bb-c5157cb14e87', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-01 08:23:47'),
 ('471516ed-ef74-4b84-ba7c-e0dda9c50861', '954d3afb-e95d-4812-b743-4e1064c2d22a', '3', '3', '2025-01-24 09:03:24'),
-('4b2fb5f2-71c0-4320-9cbc-2f140cb0dc93', '4db417de-d28b-4978-ae24-429698c6b8df', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-02 01:42:27'),
 ('52606af6-15e2-432e-bf73-b924a0a4b0ac', '5ac64b8d-5f9f-405b-b191-14fc687c6345', '8c782887-8fd3-4f99-ac27-63054a8a1942', '2', '2025-06-18 06:44:03'),
 ('66fab44b-fc0e-4cd3-857c-2ce2f338c7b2', '85f47a5e-3bbd-47fc-8789-a6e0dd818163', '8c782887-8fd3-4f99-ac27-63054a8a1942', '2', '2025-06-18 06:47:23'),
-('687c5b71-c3c7-483d-911e-991f97d739fe', '26200adb-71e6-44ea-ba85-f06f6617fb65', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-10-02 01:44:38'),
-('6fbbfee8-5bad-4524-b33e-81d1c9103801', 'ad38cce7-516c-4463-b7f6-9e912ab1c6a6', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-02 01:43:14'),
-('708d4533-2b35-4fa8-a393-5b8aed3faf8f', '669670d1-746b-4c45-a524-e60619b129d2', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-02 01:42:51'),
 ('70f09622-174f-4150-aaf0-c8335f69a15e', 'dd02abc1-746d-4ea1-b750-58f7a7ec56a8', '8c782887-8fd3-4f99-ac27-63054a8a1942', '2', '2025-06-18 06:48:37'),
 ('75b381dd-27da-4e8d-a5f6-34c6b8e8e848', '793845f3-3412-43d7-8e88-81356c0dc647', 'a5741799-938b-4d0a-a3dc-4ca1aa164708', '5', '2025-06-16 04:04:02'),
 ('799ccbe1-11e1-46cd-9923-871d3203c10b', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', '3', '2', '2025-06-18 05:24:51'),
-('7f0ce85e-fc27-42f3-8fb6-9826ebdd967a', '13e83044-6d91-4da7-a5ab-0da314c26485', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-01 08:20:38'),
 ('873bd5ba-95c7-4b13-8db1-5c9c7d0ecbfe', '2318643a-04fd-40de-a557-4563f81152f5', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-06-18 06:56:30'),
-('95193d09-8416-4b9d-a6bb-6b67b4c235e1', '45820701-ccd7-4bcd-a10c-1ee310968d73', '86054531-f751-48c7-b257-222c9ccbd946', '2', '2025-10-02 01:45:32'),
 ('9d25ab84-3ca8-422a-ad4a-caacb1275de6', '249f6394-09d9-4756-a4aa-95549b40c00d', '44ab4e8b-e3e6-431d-ad49-40d4601779b4', '5', '2025-06-16 06:50:12'),
 ('aa749e77-2fc2-4e40-8399-6d5957984778', '99b0ab2e-2c86-4b61-b1f1-964385cc5e00', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-06-18 06:44:58'),
 ('ac88fd56-1c5c-4128-a5b3-e5222f0d18d8', '0db715cb-32d5-402d-bc84-fdea13cef6bf', '3', '3', '2025-01-24 09:03:35'),
-('ae0944ad-d728-4091-98b3-b4ce64d40a75', 'e62aabe2-49b3-47c8-89ed-e095b36cbb1f', '86054531-f751-48c7-b257-222c9ccbd946', '2', '2025-10-02 01:46:05'),
 ('ce3b64d4-27e7-4978-8836-d8daa0330bb3', '5612a8da-3d60-47b5-baec-b492f51b0acf', '3', '5', '2025-06-16 01:07:59'),
-('d0f8915f-9765-4288-8bc0-440a2565d3c5', '00088d72-279f-467b-853b-76d406fe9cb8', '2f6d353b-53f1-4492-8878-bc93c18c5de9', '2', '2025-10-02 01:45:05'),
 ('d54e84d1-2827-4c85-a381-f007857cb6e6', 'ef547534-053a-47f8-b1fe-7288b9e26d33', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-06-18 06:51:30'),
-('da2dd184-ebd0-4966-9427-f191f2a41576', '2d362894-b478-4cea-8111-5d7dfb11c514', '97c68703-a8b7-4ceb-9344-65fe4404c4ab', '2', '2025-10-02 01:44:08'),
 ('e07b12c1-5914-479b-9b70-f69d00c410b0', '2bac2237-e8e7-4f36-92fc-159f784be5c9', '5', '5', '2025-06-16 00:40:56'),
-('e69fb429-0dcf-4d5c-bfa2-876a83ef47c6', '563f94d6-9c1b-4e76-bafc-9e4b09c51cc1', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-01 08:28:28'),
 ('e910e652-e005-41ed-b32f-877ab9bc4a02', '7911293c-bfa0-40e3-9910-ec1e38a0a96d', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '5', '2025-06-18 02:34:31'),
 ('f12deb64-3957-4a67-859a-2322711c7b3d', 'a03550ba-9be0-4afd-b133-011dda745576', 'ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '2', '2025-06-18 06:52:48'),
 ('f375fa49-c01f-4d3c-b951-c699b1ad694d', '3b1e5127-69e4-466c-ba57-15431a3293f4', '3efcb87b-ce45-4a66-9d73-91259caba1d0', '5', '2025-06-18 02:36:27'),
@@ -1689,86 +1658,6 @@ CREATE TABLE `suppliers` (
 
 INSERT INTO `suppliers` (`supplier_id`, `supplier_name`, `company`, `contact_name`, `position`, `address`, `phone`, `office_phone`, `extension`, `email`, `suppliers_image`, `remark`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
 ('23722daa-6eec-4a29-aa60-89cdea4dcd8c', 'Point IT', 'Point IT Consulting Co.,Ltd.', NULL, 'Service', '19 ซอยสุภาพงษ์ 1 แยก 6 แขวงหนองบอน เขตประเวศ กรุงเทพมหานคร 10250', '087-687-1184', '02-348-4790', '1041', 'info@pointit.co.th', '', 'บริการงานไอทีครบวงจร', '2025-01-12 05:23:59', '2', '2025-01-12 05:25:33', '2');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `task_comments`
---
-
-CREATE TABLE `task_comments` (
-  `comment_id` char(36) NOT NULL COMMENT 'รหัสความคิดเห็น (UUID)',
-  `task_id` char(36) NOT NULL COMMENT 'รหัสงาน (FK -> project_tasks)',
-  `project_id` char(36) NOT NULL COMMENT 'รหัสโครงการ (FK -> projects)',
-  `user_id` char(36) NOT NULL COMMENT 'รหัสผู้แสดงความคิดเห็น (FK -> users)',
-  `comment_text` text NOT NULL COMMENT 'ข้อความความคิดเห็น',
-  `comment_type` enum('comment','status_change','file_upload','progress_update','system_log') DEFAULT 'comment' COMMENT 'ประเภทของ Log',
-  `old_value` varchar(255) DEFAULT NULL COMMENT 'ค่าเดิม (สำหรับ Log การเปลี่ยนแปลง)',
-  `new_value` varchar(255) DEFAULT NULL COMMENT 'ค่าใหม่ (สำหรับ Log การเปลี่ยนแปลง)',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่โพสต์',
-  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp() COMMENT 'วันที่แก้ไข',
-  `is_edited` tinyint(1) DEFAULT 0 COMMENT 'มีการแก้ไขหรือไม่',
-  `is_deleted` tinyint(1) DEFAULT 0 COMMENT 'ถูกลบหรือไม่'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตาราง Activity Log/Comments ของ Task';
-
---
--- Dumping data for table `task_comments`
---
-
-INSERT INTO `task_comments` (`comment_id`, `task_id`, `project_id`, `user_id`, `comment_text`, `comment_type`, `old_value`, `new_value`, `created_at`, `updated_at`, `is_edited`, `is_deleted`) VALUES
-('1f2cb86e-db75-467d-b9e8-3f9663ec5625', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ดอหดดห ปแอปอปแอ', 'comment', NULL, NULL, '2025-10-02 03:19:50', NULL, 0, 0),
-('3f4a56c2-a828-4888-8eec-2538da2d47e6', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'อัปโหลดไฟล์ 1 ไฟล์', 'file_upload', NULL, NULL, '2025-10-02 03:16:19', NULL, 0, 0),
-('3f92c2a1-42fa-4f1a-b404-b8cbac3bec39', '26200adb-71e6-44ea-ba85-f06f6617fb65', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'sdfsdfdsfds', 'comment', NULL, NULL, '2025-10-02 03:08:03', NULL, 0, 0),
-('4ab30592-66f3-4628-818d-f751d47ce28d', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'หกดหกดหกดหดหกด', 'comment', NULL, NULL, '2025-10-02 03:20:07', '2025-10-02 03:25:18', 0, 1),
-('66bb5d8e-48e7-4fad-8229-196e4b02750c', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'อัปโหลดไฟล์ 1 ไฟล์', 'file_upload', NULL, NULL, '2025-10-02 03:16:28', NULL, 0, 0),
-('81e6f2a2-b6b3-4325-8c36-3d98701c87f4', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ตอนนี้ยังไม่เรียบร้อย \r\n** รอ', 'comment', NULL, NULL, '2025-10-02 03:16:19', NULL, 0, 0),
-('897598de-d1ec-465f-938c-8e460c48a8df', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'หกดหกดหกดหดหกด', 'comment', NULL, NULL, '2025-10-02 03:21:20', '2025-10-02 03:25:11', 0, 1),
-('d6cd43bf-a44f-4b68-94a8-85b1628a8e65', '45820701-ccd7-4bcd-a10c-1ee310968d73', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ทดสอบ', 'comment', NULL, NULL, '2025-10-02 03:26:10', NULL, 0, 0),
-('e6a35a28-6deb-4497-af65-ebb899402d47', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ตอนนี้ยังไม่เรียบร้อย \r\n** รอ', 'comment', NULL, NULL, '2025-10-02 03:16:28', NULL, 0, 0),
-('e7066b53-16aa-4c89-9d77-df839fc1e4ba', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ดอหดดห ปแอปอปแอ', 'comment', NULL, NULL, '2025-10-02 03:19:48', NULL, 0, 0);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `task_comment_attachments`
---
-
-CREATE TABLE `task_comment_attachments` (
-  `attachment_id` char(36) NOT NULL COMMENT 'รหัสไฟล์แนบ (UUID)',
-  `comment_id` char(36) NOT NULL COMMENT 'รหัสความคิดเห็น (FK -> task_comments)',
-  `task_id` char(36) NOT NULL COMMENT 'รหัสงาน (FK -> project_tasks)',
-  `file_name` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์ต้นฉบับ',
-  `file_path` varchar(500) NOT NULL COMMENT 'path ของไฟล์ในระบบ',
-  `file_size` bigint(20) DEFAULT NULL COMMENT 'ขนาดไฟล์ (bytes)',
-  `file_type` varchar(100) DEFAULT NULL COMMENT 'ประเภทไฟล์ (MIME type)',
-  `file_extension` varchar(10) DEFAULT NULL COMMENT 'นามสกุลไฟล์',
-  `uploaded_by` char(36) NOT NULL COMMENT 'ผู้อัปโหลด (FK -> users)',
-  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่อัปโหลด'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางไฟล์แนบใน Task Comments';
-
---
--- Dumping data for table `task_comment_attachments`
---
-
-INSERT INTO `task_comment_attachments` (`attachment_id`, `comment_id`, `task_id`, `file_name`, `file_path`, `file_size`, `file_type`, `file_extension`, `uploaded_by`, `uploaded_at`) VALUES
-('4048ac81-634e-4e81-bbef-5a12d08f197c', '81e6f2a2-b6b3-4325-8c36-3d98701c87f4', '4db417de-d28b-4978-ae24-429698c6b8df', '002.png', '../../../uploads/task_attachments/9729d6e4-43f0-4235-94fa-175eda9d2a31.png', 16252, 'image/png', 'png', '2', '2025-10-02 03:16:19'),
-('932c7c71-b8a2-44ae-ba8b-4aca482b6f5e', 'e6a35a28-6deb-4497-af65-ebb899402d47', '4db417de-d28b-4978-ae24-429698c6b8df', '002.png', '../../../uploads/task_attachments/25e409d0-2c0a-499b-b5ee-f1d7ba06638b.png', 16252, 'image/png', 'png', '2', '2025-10-02 03:16:28');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `task_mentions`
---
-
-CREATE TABLE `task_mentions` (
-  `mention_id` char(36) NOT NULL COMMENT 'รหัส mention (UUID)',
-  `comment_id` char(36) NOT NULL COMMENT 'รหัสความคิดเห็น (FK -> task_comments)',
-  `task_id` char(36) NOT NULL COMMENT 'รหัสงาน (FK -> project_tasks)',
-  `mentioned_user_id` char(36) NOT NULL COMMENT 'ผู้ถูก mention (FK -> users)',
-  `mentioned_by` char(36) NOT NULL COMMENT 'ผู้ mention (FK -> users)',
-  `is_read` tinyint(1) DEFAULT 0 COMMENT 'อ่านแล้วหรือยัง',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่ mention'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บการ @ mention ใน Task Comments';
 
 -- --------------------------------------------------------
 
@@ -1818,6 +1707,7 @@ CREATE TABLE `users` (
   `username` varchar(255) NOT NULL COMMENT 'ชื่อผู้ใช้สำหรับล็อกอิน',
   `email` varchar(255) NOT NULL COMMENT 'อีเมล',
   `role` enum('Executive','Sale Supervisor','Seller','Engineer') NOT NULL COMMENT 'บทบาท (เช่น Executive, Sale Supervisor)',
+  `team_id` char(36) DEFAULT NULL COMMENT 'รหัสทีม (เชื่อมโยงกับตาราง teams)',
   `position` varchar(255) NOT NULL COMMENT 'ตำแหน่งงาน',
   `phone` varchar(20) DEFAULT NULL COMMENT 'เบอร์โทรศัพท์',
   `password` varchar(255) NOT NULL COMMENT 'รหัสผ่าน',
@@ -1831,51 +1721,51 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, `role`, `position`, `phone`, `password`, `company`, `created_at`, `created_by`, `profile_image`) VALUES
-('1', 'Sale', 'Test Platform', 'Sale', 'Saletest@gmail.com', 'Seller', 'Sale Test Platform', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', ''),
-('14d9e34c-b691-4ce8-a5ef-929ace71248a', 'Boongred', 'Theephukhieo', 'boongerd', 'boongerd@pointit.co.th', 'Sale Supervisor', 'System Engineer Manager', '0818741889', '$2y$10$nOlaLUtPDsBhJxyi37sYZukj7i8dJJ811mbTxeC749VKxZZuYO1vW', 'Point IT Consulting Co.,Ltd.', '2024-10-31 23:55:23', '34e67e45-92f6-4e20-a78b-a4ffe97b3775', NULL),
-('193f9eed-2938-4305-ab65-828ac5253b30', 'อรรถกร', 'ปุญญะฐิติ', 'Atthakorn', 'atthakorn.pm@gmail.com', 'Seller', '', '0859936540', '$2y$10$Gi1tK2Xsl0dZ28YasSajjeusUsK2.1LcP0GYzZGgYhqB6NLNIf5Qm', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2025-06-11 07:47:19', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
-('1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Arunnee', 'Thiamthawisin', 'Arunnee', 'arunnee@pointit.co.th', 'Seller', 'Account Executive Manager', '', '$2y$10$gcxTM193rEDPM.Ynw.GfEed.RYEBQl7640PXfEzH7Qj05kXleZ5QK', 'Point IT Consulting Co.,Ltd.', '2024-11-04 03:05:45', '5', NULL),
-('1f540668-fa06-45ec-8881-b50c378cf648', 'Podchanan', 'Setthanan', 'Podchanan', 'Podchanan@pointit.co.th', 'Seller', 'Account Executive', '', '$2y$10$4Wtf3LOLe3wXebNw4co/e.58NEKkRyjxqUE7vceMnEFSLqA.D7eym', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:23:35', '5', NULL),
-('2', 'Systems', 'Admin', 'Admin', 'Systems_admin@gmail.com', 'Executive', 'Systems Admin', '0839595800', '$2y$10$lMfm90VV7oVMLHypibv3Xuc1enYtrj4hkiHyFxQM3FXPC7n8vALRy', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', ''),
-('270c74ec-9124-4eb5-9469-0253ba8530af', 'Awirut', 'Somsanguan', 'Awirut', 'Awirut@pointit.co.th', 'Sale Supervisor', 'Smart Innovation Technology Consulting Manager', '', '$2y$10$zbqZ8JHuuGejCPqkozcYb.wzIfiTgY.peFop7RJInr9HIUPjzZFra', 'Point IT Consulting Co.,LTD.', '2024-11-06 02:20:29', '5', NULL),
-('2f6d353b-53f1-4492-8878-bc93c18c5de9', 'Prakorb', 'Jongjarussang', 'Prakorb', 'prakorb@pointit.co.th', 'Executive', 'MD', '', '$2y$10$kZrq7.zXl241JjNXWWd0oOGi/f20GFYfBH0veRAL4sMCr20reES3C', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:31:48', '5', NULL),
-('3', 'Miss Phattraorn', 'Amornophakun', 'Phattraorn', 'phattraorn.a@pointit.co.th', 'Seller', 'Sales', '0619522111', '$2y$10$SHSFHBjru2xyAaGHphNVr.LjUAaFzhY9uiewWlXCWesvpRI50nlgW', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', '670e42ef5b4a3.jpg'),
-('30750fba-88ab-44ce-baf2-d0894357c67c', 'Bulakorn', 'Puapun', 'Bulakorn', 'bulakorn@gmail.com', 'Sale Supervisor', 'AI Business Consulting Director', '', '$2y$10$h7OSSaVYQM5CLz9rmn37Z.4qQ2Hax0D17UerN.BTqrixUTv6U69Ta', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:14:26', '5', NULL),
-('3140fdaf-5103-4423-bf87-11b7c1153416', 'Direk', 'Wongsngam', 'Direk', 'Direk@pointit.co.th', 'Seller', 'Bank & Corporate SalesDirector', '', '$2y$10$M/bAx1lFykgf1LklAvbQKONKI4OQfpu7NofVfwA.r1GDy9xx94uGO', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:39:01', '5', NULL),
-('34e67e45-92f6-4e20-a78b-a4ffe97b3775', 'Pisarn', 'Siribandit', 'Pisarn', 'pisarn@pointit.co.th', 'Sale Supervisor', 'Digital Transformation Consulting Director', '', '$2y$10$aEOtRUxIfKi52ib5Jj.Vpue/FP7eIWKeNRdM68DEr1GCH5OUa1uOy', 'Point IT Consulting Co.,Ltd.', '2024-10-31 18:08:53', '5', '67242a25ce524.png'),
-('3d82b654-e49f-46f8-b698-fceaa5d4cdae', 'Natapornsuang', 'Chanasan', 'Natapornsuang', 'natapornsuang@pointit.co.th', 'Seller', 'Senior Account Executive', '', '$2y$10$b5wxlKujVAxTagneuJOtqOJ4xBWQNkZ8lqJHmjs4CVFb4GIi0NrOi', 'Point IT Consulting Co.,Ltd.', '2024-11-04 03:00:40', '5', NULL),
-('3efcb87b-ce45-4a66-9d73-91259caba1d0', 'Teerayut', 'Kaengjai', 'Teerayut', 'Teerayut@pointit.co.th', 'Engineer', 'Head of Enterprise Engineer Service', '', '$2y$10$u5SlcRNFVTOxQ1aFabruaeLG49neZPwAQEWo6ToVm8ZwwZul8lqVS', 'Point IT Consulting Co.,Ltd.', '2024-11-06 02:29:31', '5', NULL),
-('4', 'Support', 'Platform', 'Support', 'Support@gmail.com', 'Executive', 'Application Support', '0839595811', '$2y$10$RAWOJU03Vy72u4zMVF/M/O9Af1HSbGOHAjlDKZHgrzbSZodZUcuky', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:55:43', '2', '6724613260590.png'),
-('44ab4e8b-e3e6-431d-ad49-40d4601779b4', 'Nutjaree', 'Chaothonglang', 'Nutjaree', 'nutjaree@pointit.co.th', 'Sale Supervisor', 'Assistant Service Manager', '', '$2y$10$OeTqb/woFTv/pt7uaBRx4ujA7jJYTuyGzSmx2y4jtijxn9oJcRuky', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:04:37', '97c68703-a8b7-4ceb-9344-65fe4404c4ab', NULL),
-('5', 'Panit', 'Paophan', 'Panit', 'panit@poinitit.co.th', 'Executive', 'Executive Director', '0814834619', '$2y$10$Td6gIdc/jANDPx3gJJEbGOPMY1Y7MMigduUt6tJ9DeB3KRGykTmg2', 'Point IT Consulting Co.,Ltd.', '2024-09-17 08:15:37', '2', NULL),
-('5b698e22-ba83-43c4-a39e-e6d68f98791f', 'Chawanon', 'Tanchairittikul', 'Chawanon', 'Chawanon@pointit.co.th', 'Engineer', 'Project Management', '', '$2y$10$kRhzV6oQJ79bn/tZuuhMD.WBTbSR.NkPniYOL2si5WfsJyzjgtaau', 'Point IT Consulting Co.,Ltd.', '2025-06-18 02:00:45', '2', NULL),
-('5eef69ba-15ee-4414-a2e4-be4f68b8839e', 'Kanitta', 'Ongsathan', 'Kanitta', 'kanitta@pointit.co.th', 'Sale Supervisor', 'Senior Procurement', '0880223292', '$2y$10$6BcDhIY.7m7X2s7D6iAXkOTuden3sQucRuN.8mcV4WF44RMmFHHui', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:01:23', '5', NULL),
-('6614b721-a8b4-46d2-9c80-0caab04772dc', 'Woradol', 'Daoduang', 'Woradol', 'Woradol@pointit.co.th', 'Executive', 'Executive Director', '', '$2y$10$l454f/PTDFOabJbIz0BAkedEGdUGc000TRpac7ffYJrRzlIIwcUc2', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:34:51', '5', NULL),
-('70dd36b5-f587-4aa9-b544-c69542616d34', 'Narumon', 'Wongkrua', 'Narumon', 'wongkrua.na@gmail.com', 'Seller', '', '0642614635', '$2y$10$D4Ab6d51oqyzTj4IOTHGsuv5oubG0u37VfDRVoT/xvpJVPWpk8LG.', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2025-06-11 09:15:44', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
-('85c114ec-a416-41c0-9859-12b90dc5b488', 'Porapath', 'Yanthukij', 'Porapath', 'porapath@pointit.co.th', 'Seller', 'Procurement', '0956422238', '$2y$10$U1hx.FejkNpt5/ltAvw.b.gxPyzq3fS5WpqMh4H.10negrF/7qVk6', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:02:44', '5', NULL),
-('86054531-f751-48c7-b257-222c9ccbd946', 'สารภี', 'ทองแก้ว', 'Kai', 'Acct@pointit.co.th', 'Executive', 'สมุห์บัญชี', '', '$2y$10$flZPg1wESq1UvwWrsS1wDuu2v1dFccAL70ZmJgZtHtlLGCEr54q5y', '', '2025-06-10 05:18:57', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', NULL),
-('8ae1a02d-32c2-4469-ba98-818dfc76dcdb', 'Pawitcha', 'Katekhong', 'Pawitcha', 'Pawitcha@pointit.co.th', 'Seller', 'Bank &amp; Corporate Account Executive', '', '$2y$10$k1TyBLrPo0z7gk/wWE0N8u08grMt8IoLb0sbcYu82YAUFLkhNC9.6', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:43:57', '5', NULL),
-('8c1c0a55-2610-4081-8d12-b2a6971ffbe8', 'Yuthana', 'Jaturajitraporn', 'Yuthana', 'yuthana@pointit.co.th', 'Seller', 'Senior Sales Backend Developer', '', '$2y$10$.ZJ0wDC827yYB5BqJmbrD.sbXB8sk1m4QPbEXHeVsXCrKofMhC0km', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:07:14', '5', NULL),
-('8c782887-8fd3-4f99-ac27-63054a8a1942', 'Surapan', 'Pawanrum', 'Surapan', 'Surapan@pointit.co.th', 'Sale Supervisor', 'Platform Development Manager', '', '$2y$10$wf6P22p7BIpJ2bIdRuyyyur2jxxyliqEi4T084m6Slq.4FZsQxCOa', 'Point IT Consulting Co.,Ltd.', '2024-12-02 06:48:59', '5', NULL),
-('97c68703-a8b7-4ceb-9344-65fe4404c4ab', 'Chittichai', 'Duangnang', 'Chittichai', 'chittichai@pointit.co.th', 'Sale Supervisor', 'Service Manager', '', '$2y$10$va/6nCSzdBqd/kCyMgYN7.gtksHhW2t14s3Qr1EClGsr10cSFJyza', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:00:10', '5', NULL),
-('a5741799-938b-4d0a-a3dc-4ca1aa164708', 'Theerachart', 'Tiyapongpattana', 'Theerachart', 'theerachart@pointit.co.th', 'Engineer', 'Innovation Business Consulting Manager', '', '$2y$10$FcspHzhkNMDUaSMshYrZdOGC/8OHya2fH8nwgcppvoFI0HT9w8W7O', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:28:08', '5', NULL),
-('b27b56e5-6f28-4d30-8add-4bddafa38841', 'Decha', 'Suratkullwattana', 'Decha', 'khadectemp@outlook.com', 'Engineer', 'Software Business Consultant', '', '$2y$10$YUnc5HvQZ1UQFx64cdsP2.0S3y38hdWzvqDur3v2Plj8gnE8w3iXa', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:11:18', '5', NULL),
-('b3d20651-6a09-4fb7-b1f8-c72c9cd9e91a', 'Nanthika', 'Chongcharassang', 'nanthika', 'nanthika@pointit.co.th', 'Sale Supervisor', 'Project Manager', '0631979263', '$2y$10$n5MxPcCUuAbzhssVwMIZ7.LYmuR6qzjlzdnDDyv.hjBuoPHXZ4S1e', 'Point IT Consulting Co.,Ltd.', '2024-10-31 23:57:35', '34e67e45-92f6-4e20-a78b-a4ffe97b3775', NULL),
-('ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', 'Gun', 'Oran', 'Oran.gun', 'oran.gun@gmail.com', 'Sale Supervisor', 'MD', '', '$2y$10$uXZ59F.TyI624FgfXbeXdO7KPTHbsz//KLltxxz6PMbukwGEa526K', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:34:43', '5', '672824b3cb14d.png'),
-('bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', 'Yanisa', 'Khemthong', 'Yanisa_Pit', 'Yanisa@pointit.co.th', 'Seller', 'Senior Account Executive, Smart City Solution', '', '$2y$10$haXSQgdafMSbDh2Idbq4EuqglczuOEcc63XtUSjg3QOB0PO8ygtFa', 'Point IT Consulting Co.,Ltd.', '2024-11-04 01:49:55', 'ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', NULL),
-('c81eb76b-260d-4d5f-a8fe-d4f72ca6630a', 'Yanisa', 'Zoom', 'Yanisa_Zoom', 'yanisa8742@gmail.com', 'Seller', 'Senior Account Executive, Smart City Solution', '', '$2y$10$wH8YfNGAu/AN//ljfPduDOhzhADKMi8RBdz6aUXm3g/VwKYQ0TT9m', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:54:45', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
-('c89b96f1-f916-448d-9725-2e0957cdba49', 'Versual Teams', '(Mazk)', 'mazk', 'innovation@pointit.co.th', 'Sale Supervisor', 'Project Management', '0619512111', '$2y$10$KLN.d4rgbQqAiGH8s2LYYeD.4XgakfQLDzGESSV/HUuLcz0oCaBVG', 'Point IT Consulting Co.,Ltd.', '2025-01-16 06:51:41', '2', '6788ac7dea3bd.jpg'),
-('c9245a19-52fa-4b02-a98c-b962f2f51b3f', 'Jakkrit', 'Pontpai', 'Jakkrit', 'jakkrit@pointit.co.th', 'Sale Supervisor', 'Smart City Business Consulting Manager', '', '$2y$10$Vd8C2.69FvbUIvmAejUz4eZddOs.rEUiemJ.e94.7B15R2O0CQJ7S', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:18:56', '5', NULL),
-('e23160ec-23a4-4724-9690-adb205162afb', 'Wilaiwan', 'Vutipram', 'Wilaiwan', 'wilaiwan@pointit.co.th', 'Seller', 'Project Management , Smart city solutions', '', '$2y$10$GdkL6jMtVHIyWuKlOv7KUO2aXwQTB1cC4v2E7GItr3oFjesZRjE36', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:21:15', '5', NULL),
-('e40dedaf-3e9b-4694-8ee9-c173d5c44db6', 'Woraluck', 'Khunsuwanchai', 'Woraluck', 'Woraluck@pointit.co.th', 'Sale Supervisor', 'Account Executive Manager', '', '$2y$10$kCmDHGdpiHxlkPPj6wNL2OLy4OzaSo8EshQaBC1cMtW6Eeq6rdhQC', 'Point IT Consulting Co.,Ltd.', '2024-11-06 01:17:45', '5', NULL),
-('e79e9929-6132-41ae-ab06-65b29fe70f6c', 'Panuwat', 'Sukcheep', 'Panuwat.S', 'panuwat@pointit.co.th', 'Engineer', 'IT Outsourcing Service Manager', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,LTD.', '2024-11-25 01:33:50', '5', NULL),
-('e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', 'Daranee', 'Punyathiti', 'Daranee', 'daranee@pointit.co.th', 'Executive', 'MD', '', '$2y$10$TUQFW2R8NYBX4TJs6UNX0eur7UHXFj7VAptbi7/UD//DA7iRVpyIO', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:30:21', '5', '672823ad217eb.png'),
-('ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', 'Oran.gun', 'Point IT', 'Oran.pit', 'Oran@pointit.co.th', 'Sale Supervisor', 'Smart City Consulting Director', '', '$2y$10$H6/.6cFDBCBXHaqn/HS6Nu7C2AT4P9yIlMgr/DLnSm7TbJchvMuWC', 'Point IT Consulting Co.,Ltd.', '2024-11-04 01:45:31', '5', NULL),
-('f30e8b87-d047-4bca-9b34-d223170df87c', 'Jiratip', 'vittayanusak', 'Jiratip', 'j.vittayanusak@gmail.com', 'Engineer', 'Software Tester', '0902215120', '$2y$10$FHjLgmFWhJC2vBmL6yJh9.9dKpyLGaJPa.8M.92nBUEiZtSpIcGdC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 10:08:45', '2', NULL),
-('f384c704-5291-4413-8f52-dc25e10b5d4f', 'Piti', 'Nithitanabhornkul', 'Piti', 'piti@pointit.co.th', 'Engineer', 'Senior Backend Software Develper', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:02:34', '5', NULL),
-('f4c662e1-82d1-4d5a-ba11-b8ddac4c21a0', 'Pongsan', 'chakranon', 'Pongsan', 'pongsan.chakranon@gmail.com', 'Engineer', 'Ai Software Developer', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 02:57:19', '5', NULL),
-('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', 'Poomsak', 'Janluan', 'Poomsak', 'poomsak1994@gmail.com', 'Engineer', 'Software Development', '0862295093', '$2y$10$5aIz95Ht4HwaaOYKtaaDwOe562YBgYlenBguBwicL4WrhVBaAHCDq', 'Point IT Consulting Co.,Ltd.', '2024-12-09 09:27:12', '2', NULL);
+INSERT INTO `users` (`user_id`, `first_name`, `last_name`, `username`, `email`, `role`, `team_id`, `position`, `phone`, `password`, `company`, `created_at`, `created_by`, `profile_image`) VALUES
+('1', 'Sale', 'Test Platform', 'Sale', 'Saletest@gmail.com', 'Seller', '4', 'Sale Test Platform', '0839595800', '$2y$10$AFDgtICvjsQ6EkPk.cUizOTf1HE1bCnBJXsLtCjJy7WijtNWTQsji', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', ''),
+('14d9e34c-b691-4ce8-a5ef-929ace71248a', 'Boongred', 'Theephukhieo', 'boongerd', 'boongerd@pointit.co.th', 'Sale Supervisor', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 'System Engineer Manager', '0818741889', '$2y$10$nOlaLUtPDsBhJxyi37sYZukj7i8dJJ811mbTxeC749VKxZZuYO1vW', 'Point IT Consulting Co.,Ltd.', '2024-10-31 23:55:23', '34e67e45-92f6-4e20-a78b-a4ffe97b3775', NULL),
+('193f9eed-2938-4305-ab65-828ac5253b30', 'อรรถกร', 'ปุญญะฐิติ', 'Atthakorn', 'atthakorn.pm@gmail.com', 'Seller', '2', '', '0859936540', '$2y$10$Gi1tK2Xsl0dZ28YasSajjeusUsK2.1LcP0GYzZGgYhqB6NLNIf5Qm', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2025-06-11 07:47:19', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
+('1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Arunnee', 'Thiamthawisin', 'Arunnee', 'arunnee@pointit.co.th', 'Seller', 'b9db21db-cfd7-4887-9ca7-5088a12f1bda', 'Account Executive Manager', '', '$2y$10$gcxTM193rEDPM.Ynw.GfEed.RYEBQl7640PXfEzH7Qj05kXleZ5QK', 'Point IT Consulting Co.,Ltd.', '2024-11-04 03:05:45', '5', NULL),
+('1f540668-fa06-45ec-8881-b50c378cf648', 'Podchanan', 'Setthanan', 'Podchanan', 'Podchanan@pointit.co.th', 'Seller', '28534929-e527-4755-bd37-0acdd51b7b45', 'Account Executive', '', '$2y$10$4Wtf3LOLe3wXebNw4co/e.58NEKkRyjxqUE7vceMnEFSLqA.D7eym', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:23:35', '5', NULL),
+('2', 'Systems', 'Admin', 'Admin', 'Systems_admin@gmail.com', 'Executive', '1', 'Systems Admin', '0839595800', '$2y$10$lMfm90VV7oVMLHypibv3Xuc1enYtrj4hkiHyFxQM3FXPC7n8vALRy', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', ''),
+('270c74ec-9124-4eb5-9469-0253ba8530af', 'Awirut', 'Somsanguan', 'Awirut', 'Awirut@pointit.co.th', 'Sale Supervisor', '28534929-e527-4755-bd37-0acdd51b7b45', 'Smart Innovation Technology Consulting Manager', '', '$2y$10$zbqZ8JHuuGejCPqkozcYb.wzIfiTgY.peFop7RJInr9HIUPjzZFra', 'Point IT Consulting Co.,LTD.', '2024-11-06 02:20:29', '5', NULL),
+('2f6d353b-53f1-4492-8878-bc93c18c5de9', 'Prakorb', 'Jongjarussang', 'Prakorb', 'prakorb@pointit.co.th', 'Executive', '4', 'MD', '', '$2y$10$kZrq7.zXl241JjNXWWd0oOGi/f20GFYfBH0veRAL4sMCr20reES3C', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:31:48', '5', NULL),
+('3', 'Miss Phattraorn', 'Amornophakun', 'Phattraorn', 'phattraorn.a@pointit.co.th', 'Seller', '1', 'Sales', '0619522111', '$2y$10$SHSFHBjru2xyAaGHphNVr.LjUAaFzhY9uiewWlXCWesvpRI50nlgW', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:43:58', '2', '670e42ef5b4a3.jpg'),
+('30750fba-88ab-44ce-baf2-d0894357c67c', 'Bulakorn', 'Puapun', 'Bulakorn', 'bulakorn@gmail.com', 'Sale Supervisor', '1', 'AI Business Consulting Director', '', '$2y$10$h7OSSaVYQM5CLz9rmn37Z.4qQ2Hax0D17UerN.BTqrixUTv6U69Ta', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:14:26', '5', NULL),
+('3140fdaf-5103-4423-bf87-11b7c1153416', 'Direk', 'Wongsngam', 'Direk', 'Direk@pointit.co.th', 'Seller', 'db32697a-0f69-41f7-9413-58ffe920ad7d', 'Bank & Corporate SalesDirector', '', '$2y$10$M/bAx1lFykgf1LklAvbQKONKI4OQfpu7NofVfwA.r1GDy9xx94uGO', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:39:01', '5', NULL),
+('34e67e45-92f6-4e20-a78b-a4ffe97b3775', 'Pisarn', 'Siribandit', 'Pisarn', 'pisarn@pointit.co.th', 'Sale Supervisor', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 'Digital Transformation Consulting Director', '', '$2y$10$aEOtRUxIfKi52ib5Jj.Vpue/FP7eIWKeNRdM68DEr1GCH5OUa1uOy', 'Point IT Consulting Co.,Ltd.', '2024-10-31 18:08:53', '5', '67242a25ce524.png'),
+('3d82b654-e49f-46f8-b698-fceaa5d4cdae', 'Natapornsuang', 'Chanasan', 'Natapornsuang', 'natapornsuang@pointit.co.th', 'Seller', 'b9db21db-cfd7-4887-9ca7-5088a12f1bda', 'Senior Account Executive', '', '$2y$10$b5wxlKujVAxTagneuJOtqOJ4xBWQNkZ8lqJHmjs4CVFb4GIi0NrOi', 'Point IT Consulting Co.,Ltd.', '2024-11-04 03:00:40', '5', NULL),
+('3efcb87b-ce45-4a66-9d73-91259caba1d0', 'Teerayut', 'Kaengjai', 'Teerayut', 'Teerayut@pointit.co.th', 'Engineer', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 'Head of Enterprise Engineer Service', '', '$2y$10$u5SlcRNFVTOxQ1aFabruaeLG49neZPwAQEWo6ToVm8ZwwZul8lqVS', 'Point IT Consulting Co.,Ltd.', '2024-11-06 02:29:31', '5', NULL),
+('4', 'Support', 'Platform', 'Support', 'Support@gmail.com', 'Executive', '4', 'Application Support', '0839595811', '$2y$10$RAWOJU03Vy72u4zMVF/M/O9Af1HSbGOHAjlDKZHgrzbSZodZUcuky', 'Point IT Consulting Co.,Ltd.', '2024-09-15 09:55:43', '2', '6724613260590.png'),
+('44ab4e8b-e3e6-431d-ad49-40d4601779b4', 'Nutjaree', 'Chaothonglang', 'Nutjaree', 'nutjaree@pointit.co.th', 'Sale Supervisor', '3', 'Assistant Service Manager', '', '$2y$10$OeTqb/woFTv/pt7uaBRx4ujA7jJYTuyGzSmx2y4jtijxn9oJcRuky', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:04:37', '97c68703-a8b7-4ceb-9344-65fe4404c4ab', NULL),
+('5', 'Panit', 'Paophan', 'Panit', 'panit@poinitit.co.th', 'Executive', '4', 'Executive Director', '0814834619', '$2y$10$Td6gIdc/jANDPx3gJJEbGOPMY1Y7MMigduUt6tJ9DeB3KRGykTmg2', 'Point IT Consulting Co.,Ltd.', '2024-09-17 08:15:37', '2', NULL),
+('5b698e22-ba83-43c4-a39e-e6d68f98791f', 'Chawanon', 'Tanchairittikul', 'Chawanon', 'Chawanon@pointit.co.th', 'Engineer', '1', 'Project Management', '', '$2y$10$kRhzV6oQJ79bn/tZuuhMD.WBTbSR.NkPniYOL2si5WfsJyzjgtaau', 'Point IT Consulting Co.,Ltd.', '2025-06-18 02:00:45', '2', NULL),
+('5eef69ba-15ee-4414-a2e4-be4f68b8839e', 'Kanitta', 'Ongsathan', 'Kanitta', 'kanitta@pointit.co.th', 'Sale Supervisor', '4', 'Senior Procurement', '0880223292', '$2y$10$6BcDhIY.7m7X2s7D6iAXkOTuden3sQucRuN.8mcV4WF44RMmFHHui', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:01:23', '5', NULL),
+('6614b721-a8b4-46d2-9c80-0caab04772dc', 'Woradol', 'Daoduang', 'Woradol', 'Woradol@pointit.co.th', 'Executive', '4', 'Executive Director', '', '$2y$10$l454f/PTDFOabJbIz0BAkedEGdUGc000TRpac7ffYJrRzlIIwcUc2', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:34:51', '5', NULL),
+('70dd36b5-f587-4aa9-b544-c69542616d34', 'Narumon', 'Wongkrua', 'Narumon', 'wongkrua.na@gmail.com', 'Seller', '2', '', '0642614635', '$2y$10$D4Ab6d51oqyzTj4IOTHGsuv5oubG0u37VfDRVoT/xvpJVPWpk8LG.', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2025-06-11 09:15:44', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
+('85c114ec-a416-41c0-9859-12b90dc5b488', 'Porapath', 'Yanthukij', 'Porapath', 'porapath@pointit.co.th', 'Seller', '4', 'Procurement', '0956422238', '$2y$10$U1hx.FejkNpt5/ltAvw.b.gxPyzq3fS5WpqMh4H.10negrF/7qVk6', 'Point IT Consulting Co.,Ltd.', '2024-12-03 04:02:44', '5', NULL),
+('86054531-f751-48c7-b257-222c9ccbd946', 'สารภี', 'ทองแก้ว', 'Kai', 'Acct@pointit.co.th', 'Executive', '4', 'สมุห์บัญชี', '', '$2y$10$flZPg1wESq1UvwWrsS1wDuu2v1dFccAL70ZmJgZtHtlLGCEr54q5y', '', '2025-06-10 05:18:57', 'e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', NULL),
+('8ae1a02d-32c2-4469-ba98-818dfc76dcdb', 'Pawitcha', 'Katekhong', 'Pawitcha', 'Pawitcha@pointit.co.th', 'Seller', 'db32697a-0f69-41f7-9413-58ffe920ad7d', 'Bank &amp; Corporate Account Executive', '', '$2y$10$k1TyBLrPo0z7gk/wWE0N8u08grMt8IoLb0sbcYu82YAUFLkhNC9.6', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:43:57', '5', NULL),
+('8c1c0a55-2610-4081-8d12-b2a6971ffbe8', 'Yuthana', 'Jaturajitraporn', 'Yuthana', 'yuthana@pointit.co.th', 'Seller', '1', 'Senior Sales Backend Developer', '', '$2y$10$.ZJ0wDC827yYB5BqJmbrD.sbXB8sk1m4QPbEXHeVsXCrKofMhC0km', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:07:14', '5', NULL),
+('8c782887-8fd3-4f99-ac27-63054a8a1942', 'Surapan', 'Pawanrum', 'Surapan', 'Surapan@pointit.co.th', 'Sale Supervisor', '1', 'Platform Development Manager', '', '$2y$10$wf6P22p7BIpJ2bIdRuyyyur2jxxyliqEi4T084m6Slq.4FZsQxCOa', 'Point IT Consulting Co.,Ltd.', '2024-12-02 06:48:59', '5', NULL),
+('97c68703-a8b7-4ceb-9344-65fe4404c4ab', 'Chittichai', 'Duangnang', 'Chittichai', 'chittichai@pointit.co.th', 'Sale Supervisor', '3', 'Service Manager', '', '$2y$10$va/6nCSzdBqd/kCyMgYN7.gtksHhW2t14s3Qr1EClGsr10cSFJyza', 'Point IT Consulting Co.,Ltd.', '2024-11-04 02:00:10', '5', NULL),
+('a5741799-938b-4d0a-a3dc-4ca1aa164708', 'Theerachart', 'Tiyapongpattana', 'Theerachart', 'theerachart@pointit.co.th', 'Engineer', '1', 'Innovation Business Consulting Manager', '', '$2y$10$FcspHzhkNMDUaSMshYrZdOGC/8OHya2fH8nwgcppvoFI0HT9w8W7O', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:28:08', '5', NULL),
+('b27b56e5-6f28-4d30-8add-4bddafa38841', 'Decha', 'Suratkullwattana', 'Decha', 'khadectemp@outlook.com', 'Engineer', '1', 'Software Business Consultant', '', '$2y$10$YUnc5HvQZ1UQFx64cdsP2.0S3y38hdWzvqDur3v2Plj8gnE8w3iXa', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:11:18', '5', NULL),
+('b3d20651-6a09-4fb7-b1f8-c72c9cd9e91a', 'Nanthika', 'Chongcharassang', 'nanthika', 'nanthika@pointit.co.th', 'Sale Supervisor', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 'Project Manager', '0631979263', '$2y$10$n5MxPcCUuAbzhssVwMIZ7.LYmuR6qzjlzdnDDyv.hjBuoPHXZ4S1e', 'Point IT Consulting Co.,Ltd.', '2024-10-31 23:57:35', '34e67e45-92f6-4e20-a78b-a4ffe97b3775', NULL),
+('ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', 'Gun', 'Oran', 'Oran.gun', 'oran.gun@gmail.com', 'Sale Supervisor', '2', 'MD', '', '$2y$10$uXZ59F.TyI624FgfXbeXdO7KPTHbsz//KLltxxz6PMbukwGEa526K', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:34:43', '5', '672824b3cb14d.png'),
+('bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', 'Yanisa', 'Khemthong', 'Yanisa_Pit', 'Yanisa@pointit.co.th', 'Seller', 'f4b11a86-0fca-45e5-8511-6a946c7f21d4', 'Senior Account Executive, Smart City Solution', '', '$2y$10$haXSQgdafMSbDh2Idbq4EuqglczuOEcc63XtUSjg3QOB0PO8ygtFa', 'Point IT Consulting Co.,Ltd.', '2024-11-04 01:49:55', 'ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', NULL),
+('c81eb76b-260d-4d5f-a8fe-d4f72ca6630a', 'Yanisa', 'Zoom', 'Yanisa_Zoom', 'yanisa8742@gmail.com', 'Seller', '2', 'Senior Account Executive, Smart City Solution', '', '$2y$10$wH8YfNGAu/AN//ljfPduDOhzhADKMi8RBdz6aUXm3g/VwKYQ0TT9m', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:54:45', 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', NULL),
+('c89b96f1-f916-448d-9725-2e0957cdba49', 'Versual Teams', '(Mazk)', 'mazk', 'innovation@pointit.co.th', 'Sale Supervisor', '715e81f0-4985-4981-982c-45cafb9748dc', 'Project Management', '0619512111', '$2y$10$KLN.d4rgbQqAiGH8s2LYYeD.4XgakfQLDzGESSV/HUuLcz0oCaBVG', 'Point IT Consulting Co.,Ltd.', '2025-01-16 06:51:41', '2', '6788ac7dea3bd.jpg'),
+('c9245a19-52fa-4b02-a98c-b962f2f51b3f', 'Jakkrit', 'Pontpai', 'Jakkrit', 'jakkrit@pointit.co.th', 'Sale Supervisor', 'de3fc0f5-9ebf-4c47-88dd-da5a570653ae', 'Smart City Business Consulting Manager', '', '$2y$10$Vd8C2.69FvbUIvmAejUz4eZddOs.rEUiemJ.e94.7B15R2O0CQJ7S', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:18:56', '5', NULL),
+('e23160ec-23a4-4724-9690-adb205162afb', 'Wilaiwan', 'Vutipram', 'Wilaiwan', 'wilaiwan@pointit.co.th', 'Seller', 'de3fc0f5-9ebf-4c47-88dd-da5a570653ae', 'Project Management , Smart city solutions', '', '$2y$10$GdkL6jMtVHIyWuKlOv7KUO2aXwQTB1cC4v2E7GItr3oFjesZRjE36', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:21:15', '5', NULL),
+('e40dedaf-3e9b-4694-8ee9-c173d5c44db6', 'Woraluck', 'Khunsuwanchai', 'Woraluck', 'Woraluck@pointit.co.th', 'Sale Supervisor', '28534929-e527-4755-bd37-0acdd51b7b45', 'Account Executive Manager', '', '$2y$10$kCmDHGdpiHxlkPPj6wNL2OLy4OzaSo8EshQaBC1cMtW6Eeq6rdhQC', 'Point IT Consulting Co.,Ltd.', '2024-11-06 01:17:45', '5', NULL),
+('e79e9929-6132-41ae-ab06-65b29fe70f6c', 'Panuwat', 'Sukcheep', 'Panuwat.S', 'panuwat@pointit.co.th', 'Engineer', 'c8fcdec8-4a28-4b6b-be8b-8bb0579d74bc', 'IT Outsourcing Service Manager', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,LTD.', '2024-11-25 01:33:50', '5', NULL),
+('e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', 'Daranee', 'Punyathiti', 'Daranee', 'daranee@pointit.co.th', 'Executive', '2', 'MD', '', '$2y$10$TUQFW2R8NYBX4TJs6UNX0eur7UHXFj7VAptbi7/UD//DA7iRVpyIO', 'บริษัท ซูม อินฟอร์เมชั่น ซิสเต็ม จํากัด', '2024-11-04 01:30:21', '5', '672823ad217eb.png'),
+('ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', 'Oran.gun', 'Point IT', 'Oran.pit', 'Oran@pointit.co.th', 'Sale Supervisor', 'f4b11a86-0fca-45e5-8511-6a946c7f21d4', 'Smart City Consulting Director', '', '$2y$10$H6/.6cFDBCBXHaqn/HS6Nu7C2AT4P9yIlMgr/DLnSm7TbJchvMuWC', 'Point IT Consulting Co.,Ltd.', '2024-11-04 01:45:31', '5', NULL),
+('f30e8b87-d047-4bca-9b34-d223170df87c', 'Jiratip', 'vittayanusak', 'Jiratip', 'j.vittayanusak@gmail.com', 'Engineer', '1', 'Software Tester', '0902215120', '$2y$10$FHjLgmFWhJC2vBmL6yJh9.9dKpyLGaJPa.8M.92nBUEiZtSpIcGdC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 10:08:45', '2', NULL),
+('f384c704-5291-4413-8f52-dc25e10b5d4f', 'Piti', 'Nithitanabhornkul', 'Piti', 'piti@pointit.co.th', 'Engineer', '1', 'Senior Backend Software Develper', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 03:02:34', '5', NULL),
+('f4c662e1-82d1-4d5a-ba11-b8ddac4c21a0', 'Pongsan', 'chakranon', 'Pongsan', 'pongsan.chakranon@gmail.com', 'Engineer', '1', 'Ai Software Developer', '', '$2y$10$Y.4Xgneo59aAcdNUcz9Zx.Aa71Fj2bLqIZJhVYt95a19ztua6wSxC', 'Point IT Consulting Co.,Ltd.', '2024-12-09 02:57:19', '5', NULL),
+('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', 'Poomsak', 'Janluan', 'Poomsak', 'poomsak1994@gmail.com', 'Engineer', '1', 'Software Development', '0862295093', '$2y$10$UfE9pBMdOS8o5wSNumgtAOxcdd.Uwghm0aaAt8QwLHhczh7EXf7Wm', 'Point IT Consulting Co.,Ltd.', '2024-12-09 09:27:12', '2', NULL);
 
 -- --------------------------------------------------------
 
@@ -1936,105 +1826,6 @@ INSERT INTO `user_creation_logs` (`id`, `creator_id`, `new_user_id`, `new_user_r
 (38, 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', '193f9eed-2938-4305-ab65-828ac5253b30', 'Seller', '2025-06-11 07:47:19'),
 (39, 'ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', '70dd36b5-f587-4aa9-b544-c69542616d34', 'Seller', '2025-06-11 09:15:44'),
 (40, '2', '5b698e22-ba83-43c4-a39e-e6d68f98791f', 'Engineer', '2025-06-18 02:00:45');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `user_teams`
---
-
-CREATE TABLE `user_teams` (
-  `user_id` char(36) NOT NULL,
-  `team_id` char(36) NOT NULL,
-  `is_primary` tinyint(1) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `user_teams`
---
-
-INSERT INTO `user_teams` (`user_id`, `team_id`, `is_primary`) VALUES
-('1', '4', 1),
-('14d9e34c-b691-4ce8-a5ef-929ace71248a', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 1),
-('193f9eed-2938-4305-ab65-828ac5253b30', '2', 1),
-('1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'b9db21db-cfd7-4887-9ca7-5088a12f1bda', 1),
-('1f540668-fa06-45ec-8881-b50c378cf648', '28534929-e527-4755-bd37-0acdd51b7b45', 1),
-('2', '1', 1),
-('270c74ec-9124-4eb5-9469-0253ba8530af', '28534929-e527-4755-bd37-0acdd51b7b45', 1),
-('2f6d353b-53f1-4492-8878-bc93c18c5de9', '4', 1),
-('3', '1', 1),
-('30750fba-88ab-44ce-baf2-d0894357c67c', '1', 1),
-('3140fdaf-5103-4423-bf87-11b7c1153416', 'db32697a-0f69-41f7-9413-58ffe920ad7d', 1),
-('34e67e45-92f6-4e20-a78b-a4ffe97b3775', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 1),
-('3d82b654-e49f-46f8-b698-fceaa5d4cdae', 'b9db21db-cfd7-4887-9ca7-5088a12f1bda', 1),
-('3efcb87b-ce45-4a66-9d73-91259caba1d0', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 1),
-('4', '4', 1),
-('44ab4e8b-e3e6-431d-ad49-40d4601779b4', '3', 1),
-('5', '4', 1),
-('5b698e22-ba83-43c4-a39e-e6d68f98791f', '1', 1),
-('5eef69ba-15ee-4414-a2e4-be4f68b8839e', '4', 1),
-('6614b721-a8b4-46d2-9c80-0caab04772dc', '4', 1),
-('70dd36b5-f587-4aa9-b544-c69542616d34', '2', 1),
-('85c114ec-a416-41c0-9859-12b90dc5b488', '4', 1),
-('86054531-f751-48c7-b257-222c9ccbd946', '4', 1),
-('8ae1a02d-32c2-4469-ba98-818dfc76dcdb', 'db32697a-0f69-41f7-9413-58ffe920ad7d', 1),
-('8c1c0a55-2610-4081-8d12-b2a6971ffbe8', '1', 1),
-('8c782887-8fd3-4f99-ac27-63054a8a1942', '1', 1),
-('97c68703-a8b7-4ceb-9344-65fe4404c4ab', '3', 1),
-('a5741799-938b-4d0a-a3dc-4ca1aa164708', '1', 1),
-('b27b56e5-6f28-4d30-8add-4bddafa38841', '1', 1),
-('b3d20651-6a09-4fb7-b1f8-c72c9cd9e91a', '37547921-5387-4be1-bde0-e9ba5c4e0fdf', 1),
-('ba194fb5-b62a-40e3-99a3-c4b82f9bd84f', '2', 1),
-('bd9e0c55-0c75-44b1-9475-c11dfc91fbf4', 'f4b11a86-0fca-45e5-8511-6a946c7f21d4', 1),
-('c81eb76b-260d-4d5f-a8fe-d4f72ca6630a', '2', 1),
-('c89b96f1-f916-448d-9725-2e0957cdba49', '715e81f0-4985-4981-982c-45cafb9748dc', 1),
-('c9245a19-52fa-4b02-a98c-b962f2f51b3f', 'de3fc0f5-9ebf-4c47-88dd-da5a570653ae', 1),
-('e23160ec-23a4-4724-9690-adb205162afb', 'de3fc0f5-9ebf-4c47-88dd-da5a570653ae', 1),
-('e40dedaf-3e9b-4694-8ee9-c173d5c44db6', '28534929-e527-4755-bd37-0acdd51b7b45', 1),
-('e79e9929-6132-41ae-ab06-65b29fe70f6c', 'c8fcdec8-4a28-4b6b-be8b-8bb0579d74bc', 1),
-('e8237f0d-f317-4b92-a1f2-61e97d8eaaa1', '2', 1),
-('ef458c7c-2dff-4dda-8c1b-8aa7c9520c3f', 'f4b11a86-0fca-45e5-8511-6a946c7f21d4', 1),
-('f30e8b87-d047-4bca-9b34-d223170df87c', '1', 1),
-('f384c704-5291-4413-8f52-dc25e10b5d4f', '1', 1),
-('f4c662e1-82d1-4d5a-ba11-b8ddac4c21a0', '1', 1),
-('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '1', 1),
-('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '2', 0),
-('ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '28534929-e527-4755-bd37-0acdd51b7b45', 0);
-
--- --------------------------------------------------------
-
---
--- Stand-in structure for view `vw_task_comments`
--- (See below for the actual view)
---
-CREATE TABLE `vw_task_comments` (
-`comment_id` char(36)
-,`task_id` char(36)
-,`project_id` char(36)
-,`user_id` char(36)
-,`comment_text` text
-,`comment_type` enum('comment','status_change','file_upload','progress_update','system_log')
-,`old_value` varchar(255)
-,`new_value` varchar(255)
-,`created_at` timestamp
-,`updated_at` timestamp
-,`is_edited` tinyint(1)
-,`is_deleted` tinyint(1)
-,`first_name` varchar(255)
-,`last_name` varchar(255)
-,`user_full_name` varchar(511)
-,`user_email` varchar(255)
-,`attachment_count` bigint(21)
-);
-
--- --------------------------------------------------------
-
---
--- Structure for view `vw_task_comments`
---
-DROP TABLE IF EXISTS `vw_task_comments`;
-
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_task_comments`  AS SELECT `tc`.`comment_id` AS `comment_id`, `tc`.`task_id` AS `task_id`, `tc`.`project_id` AS `project_id`, `tc`.`user_id` AS `user_id`, `tc`.`comment_text` AS `comment_text`, `tc`.`comment_type` AS `comment_type`, `tc`.`old_value` AS `old_value`, `tc`.`new_value` AS `new_value`, `tc`.`created_at` AS `created_at`, `tc`.`updated_at` AS `updated_at`, `tc`.`is_edited` AS `is_edited`, `tc`.`is_deleted` AS `is_deleted`, `u`.`first_name` AS `first_name`, `u`.`last_name` AS `last_name`, concat(`u`.`first_name`,' ',`u`.`last_name`) AS `user_full_name`, `u`.`email` AS `user_email`, (select count(0) from `task_comment_attachments` where `task_comment_attachments`.`comment_id` = `tc`.`comment_id`) AS `attachment_count` FROM (`task_comments` `tc` left join `users` `u` on(`tc`.`user_id` = `u`.`user_id`)) WHERE `tc`.`is_deleted` = 0 ORDER BY `tc`.`created_at` ASC ;
 
 --
 -- Indexes for dumped tables
@@ -2195,38 +1986,6 @@ ALTER TABLE `suppliers`
   ADD PRIMARY KEY (`supplier_id`);
 
 --
--- Indexes for table `task_comments`
---
-ALTER TABLE `task_comments`
-  ADD PRIMARY KEY (`comment_id`),
-  ADD KEY `idx_task_id` (`task_id`),
-  ADD KEY `idx_project_id` (`project_id`),
-  ADD KEY `idx_user_id` (`user_id`),
-  ADD KEY `idx_created_at` (`created_at`),
-  ADD KEY `idx_comment_type` (`comment_type`),
-  ADD KEY `idx_is_deleted` (`is_deleted`);
-
---
--- Indexes for table `task_comment_attachments`
---
-ALTER TABLE `task_comment_attachments`
-  ADD PRIMARY KEY (`attachment_id`),
-  ADD KEY `idx_comment_id` (`comment_id`),
-  ADD KEY `idx_task_id` (`task_id`),
-  ADD KEY `idx_uploaded_by` (`uploaded_by`),
-  ADD KEY `idx_file_type` (`file_type`);
-
---
--- Indexes for table `task_mentions`
---
-ALTER TABLE `task_mentions`
-  ADD PRIMARY KEY (`mention_id`),
-  ADD KEY `idx_comment_id` (`comment_id`),
-  ADD KEY `idx_task_id` (`task_id`),
-  ADD KEY `idx_mentioned_user` (`mentioned_user_id`),
-  ADD KEY `idx_is_read` (`is_read`);
-
---
 -- Indexes for table `teams`
 --
 ALTER TABLE `teams`
@@ -2237,7 +1996,8 @@ ALTER TABLE `teams`
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
-  ADD PRIMARY KEY (`user_id`);
+  ADD PRIMARY KEY (`user_id`),
+  ADD KEY `users_team_fk` (`team_id`);
 
 --
 -- Indexes for table `user_creation_logs`
@@ -2246,14 +2006,6 @@ ALTER TABLE `user_creation_logs`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_creator` (`creator_id`),
   ADD KEY `fk_new_user` (`new_user_id`);
-
---
--- Indexes for table `user_teams`
---
-ALTER TABLE `user_teams`
-  ADD PRIMARY KEY (`user_id`,`team_id`),
-  ADD KEY `user_teams_user_id_foreign` (`user_id`),
-  ADD KEY `user_teams_team_id_foreign` (`team_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -2360,693 +2112,12 @@ ALTER TABLE `project_task_assignments`
   ADD CONSTRAINT `project_task_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
 
 --
--- Constraints for table `task_comments`
---
-ALTER TABLE `task_comments`
-  ADD CONSTRAINT `fk_task_comments_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`project_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_task_comments_task` FOREIGN KEY (`task_id`) REFERENCES `project_tasks` (`task_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_task_comments_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `task_comment_attachments`
---
-ALTER TABLE `task_comment_attachments`
-  ADD CONSTRAINT `fk_task_attachments_comment` FOREIGN KEY (`comment_id`) REFERENCES `task_comments` (`comment_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_task_attachments_task` FOREIGN KEY (`task_id`) REFERENCES `project_tasks` (`task_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_task_attachments_user` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `task_mentions`
---
-ALTER TABLE `task_mentions`
-  ADD CONSTRAINT `fk_task_mentions_comment` FOREIGN KEY (`comment_id`) REFERENCES `task_comments` (`comment_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_task_mentions_task` FOREIGN KEY (`task_id`) REFERENCES `project_tasks` (`task_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_task_mentions_user` FOREIGN KEY (`mentioned_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
 -- Constraints for table `teams`
 --
 ALTER TABLE `teams`
   ADD CONSTRAINT `fk_team_leader` FOREIGN KEY (`team_leader`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `user_teams`
---
-ALTER TABLE `user_teams`
-  ADD CONSTRAINT `user_teams_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `teams` (`team_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `user_teams_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
--- ============================================================================
--- Service Tickets Database Schema
--- Created: 2025-10-02
--- Description: โครงสร้างฐานข้อมูลสำหรับระบบ Service Ticket Management
--- ============================================================================
-
--- ============================================================================
--- ตาราง 1: service_tickets (ตารางหลัก)
--- ============================================================================
-CREATE TABLE `service_tickets` (
-  `ticket_id` CHAR(36) NOT NULL COMMENT 'รหัส Ticket (UUID)',
-  `ticket_no` VARCHAR(50) UNIQUE NOT NULL COMMENT 'เลข Ticket (เช่น TCK-202510-0001)',
-
-  -- ข้อมูลพื้นฐาน
-  `project_id` CHAR(36) NOT NULL COMMENT 'รหัสโครงการ',
-  `ticket_type` ENUM('Incident', 'Service', 'Change') NOT NULL DEFAULT 'Incident' COMMENT 'ประเภท Ticket',
-  `subject` VARCHAR(150) NOT NULL COMMENT 'หัวข้อ',
-  `description` TEXT COMMENT 'รายละเอียด/อาการ',
-
-  -- สถานะและความสำคัญ
-  `status` ENUM('Draft','New','On Process','Pending','Waiting for Approval','Scheduled','Resolved','Resolved Pending','Containment','Closed','Canceled') NOT NULL DEFAULT 'New' COMMENT 'สถานะ',
-  `priority` ENUM('Critical','High','Medium','Low') NOT NULL DEFAULT 'Low' COMMENT 'ความสำคัญ',
-  `urgency` ENUM('High','Medium','Low') NOT NULL DEFAULT 'Low' COMMENT 'ความเร่งด่วน',
-  `impact` VARCHAR(100) COMMENT 'ผลกระทบ',
-
-  -- หมวดหมู่
-  `service_category` VARCHAR(255) COMMENT 'หมวดหมู่บริการ',
-  `category` VARCHAR(255) COMMENT 'หมวดหมู่',
-  `sub_category` VARCHAR(255) COMMENT 'หมวดหมู่ย่อย',
-
-  -- ผู้เกี่ยวข้อง
-  `job_owner` CHAR(36) COMMENT 'รหัสผู้รับผิดชอบ',
-  `reporter` CHAR(36) COMMENT 'รหัสผู้แจ้ง',
-  `source` VARCHAR(100) COMMENT 'ช่องทางแจ้ง (Email, Call Center, Portal, etc.)',
-
-  -- เวลาและ SLA
-  `sla_target` INT COMMENT 'SLA เป้าหมาย (ชั่วโมง)',
-  `sla_deadline` DATETIME COMMENT 'วันเวลาครบ SLA (คำนวณอัตโนมัติ)',
-  `sla_status` ENUM('Within SLA','Near SLA','Overdue') DEFAULT 'Within SLA' COMMENT 'สถานะ SLA',
-  `start_at` DATETIME COMMENT 'วันเวลาเริ่มดำเนินการ',
-  `due_at` DATETIME COMMENT 'วันเวลากำหนดเสร็จ',
-  `resolved_at` DATETIME COMMENT 'วันเวลาแก้ไขเสร็จ',
-  `closed_at` DATETIME COMMENT 'วันเวลาปิด Ticket',
-
-  -- ช่องทางการทำงาน
-  `channel` ENUM('Onsite','Remote','Office') COMMENT 'ช่องทางการทำงาน',
-
-  -- Soft Delete
-  `deleted_at` DATETIME COMMENT 'วันเวลาลบ (Soft Delete)',
-
-  -- Audit
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'วันเวลาสร้าง',
-  `created_by` CHAR(36) NOT NULL COMMENT 'ผู้สร้าง',
-  `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'วันเวลาอัปเดตล่าสุด',
-  `updated_by` CHAR(36) COMMENT 'ผู้อัปเดตล่าสุด',
-
-  -- Primary Key
-  PRIMARY KEY (`ticket_id`),
-
-  -- Indexes
-  INDEX idx_ticket_no (`ticket_no`),
-  INDEX idx_status (`status`),
-  INDEX idx_priority (`priority`),
-  INDEX idx_job_owner (`job_owner`),
-  INDEX idx_created_at (`created_at`),
-  INDEX idx_sla_status (`sla_status`),
-  INDEX idx_deleted_at (`deleted_at`),
-
-  -- Foreign Keys
-  FOREIGN KEY (`project_id`) REFERENCES `projects`(`project_id`) ON DELETE RESTRICT,
-  FOREIGN KEY (`job_owner`) REFERENCES `users`(`user_id`) ON DELETE SET NULL,
-  FOREIGN KEY (`reporter`) REFERENCES `users`(`user_id`) ON DELETE SET NULL,
-  FOREIGN KEY (`created_by`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บข้อมูล Service Ticket หลัก';
-
--- ============================================================================
--- ตาราง 2: service_ticket_onsite (ข้อมูล Onsite)
--- ============================================================================
-CREATE TABLE `service_ticket_onsite` (
-  `onsite_id` CHAR(36) NOT NULL COMMENT 'รหัส Onsite (UUID)',
-  `ticket_id` CHAR(36) NOT NULL COMMENT 'รหัส Ticket',
-
-  -- ข้อมูลสถานที่
-  `start_location` VARCHAR(255) COMMENT 'สถานที่เริ่มต้น',
-  `end_location` VARCHAR(255) COMMENT 'สถานที่ปลายทาง',
-
-  -- ข้อมูลการเดินทาง
-  `travel_mode` VARCHAR(100) COMMENT 'วิธีการเดินทาง (รถส่วนตัว, รถบริษัท, etc.)',
-  `travel_note` VARCHAR(255) COMMENT 'หมายเหตุพาหนะ',
-
-  -- ข้อมูลเลขไมล์
-  `odometer_start` DECIMAL(10,2) COMMENT 'เลขไมล์เริ่มต้น',
-  `odometer_end` DECIMAL(10,2) COMMENT 'เลขไมล์สิ้นสุด',
-  `distance` DECIMAL(10,2) GENERATED ALWAYS AS (odometer_end - odometer_start) STORED COMMENT 'ระยะทาง (คำนวณอัตโนมัติ)',
-
-  -- หมายเหตุ
-  `note` TEXT COMMENT 'หมายเหตุเพิ่มเติม',
-
-  -- Audit
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'วันเวลาสร้าง',
-  `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'วันเวลาอัปเดต',
-
-  -- Primary Key
-  PRIMARY KEY (`onsite_id`),
-
-  -- Indexes
-  INDEX idx_ticket_id (`ticket_id`),
-
-  -- Foreign Keys
-  FOREIGN KEY (`ticket_id`) REFERENCES `service_tickets`(`ticket_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บข้อมูล Onsite Details';
-
--- ============================================================================
--- ตาราง 3: service_ticket_attachments (ไฟล์แนบ)
--- ============================================================================
-CREATE TABLE `service_ticket_attachments` (
-  `attachment_id` CHAR(36) NOT NULL COMMENT 'รหัสไฟล์แนบ (UUID)',
-  `ticket_id` CHAR(36) NOT NULL COMMENT 'รหัส Ticket',
-
-  -- ข้อมูลไฟล์
-  `file_name` VARCHAR(255) NOT NULL COMMENT 'ชื่อไฟล์',
-  `file_path` VARCHAR(500) NOT NULL COMMENT 'ที่อยู่ไฟล์',
-  `file_size` BIGINT COMMENT 'ขนาดไฟล์ (bytes)',
-  `file_type` VARCHAR(50) COMMENT 'ประเภทไฟล์ (jpg, pdf, docx, etc.)',
-  `mime_type` VARCHAR(100) COMMENT 'MIME Type',
-
-  -- Audit
-  `uploaded_by` CHAR(36) NOT NULL COMMENT 'ผู้อัปโหลด',
-  `uploaded_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'วันเวลาอัปโหลด',
-
-  -- Primary Key
-  PRIMARY KEY (`attachment_id`),
-
-  -- Indexes
-  INDEX idx_ticket_id (`ticket_id`),
-  INDEX idx_uploaded_by (`uploaded_by`),
-
-  -- Foreign Keys
-  FOREIGN KEY (`ticket_id`) REFERENCES `service_tickets`(`ticket_id`) ON DELETE CASCADE,
-  FOREIGN KEY (`uploaded_by`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บไฟล์แนบของ Ticket';
-
--- ============================================================================
--- ตาราง 4: service_ticket_watchers (ผู้ติดตาม/Watcher)
--- ============================================================================
-CREATE TABLE `service_ticket_watchers` (
-  `watcher_id` CHAR(36) NOT NULL COMMENT 'รหัส Watcher (UUID)',
-  `ticket_id` CHAR(36) NOT NULL COMMENT 'รหัส Ticket',
-  `user_id` CHAR(36) NOT NULL COMMENT 'รหัสผู้ติดตาม',
-
-  -- Audit
-  `added_by` CHAR(36) COMMENT 'ผู้เพิ่ม',
-  `added_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'วันเวลาเพิ่ม',
-
-  -- Primary Key
-  PRIMARY KEY (`watcher_id`),
-
-  -- Indexes
-  INDEX idx_ticket_id (`ticket_id`),
-  INDEX idx_user_id (`user_id`),
-
-  -- Unique Constraint
-  UNIQUE KEY `unique_watcher` (`ticket_id`, `user_id`),
-
-  -- Foreign Keys
-  FOREIGN KEY (`ticket_id`) REFERENCES `service_tickets`(`ticket_id`) ON DELETE CASCADE,
-  FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-  FOREIGN KEY (`added_by`) REFERENCES `users`(`user_id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บผู้ติดตาม Ticket';
-
--- ============================================================================
--- ตาราง 5: service_ticket_timeline (Timeline/ประวัติ)
--- ============================================================================
-CREATE TABLE `service_ticket_timeline` (
-  `timeline_id` CHAR(36) NOT NULL COMMENT 'รหัส Timeline (UUID)',
-  `ticket_id` CHAR(36) NOT NULL COMMENT 'รหัส Ticket',
-
-  -- ข้อมูล Timeline
-  `order` INT NOT NULL COMMENT 'ลำดับ',
-  `actor` VARCHAR(255) NOT NULL COMMENT 'ผู้ดำเนินการ',
-  `action` VARCHAR(500) NOT NULL COMMENT 'การกระทำ',
-  `detail` TEXT COMMENT 'รายละเอียด',
-  `attachment` VARCHAR(255) COMMENT 'ไฟล์แนบ',
-  `location` VARCHAR(255) COMMENT 'สถานที่/ช่องทาง',
-
-  -- Audit
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'วันเวลาสร้าง',
-
-  -- Primary Key
-  PRIMARY KEY (`timeline_id`),
-
-  -- Indexes
-  INDEX idx_ticket_order (`ticket_id`, `order`),
-  INDEX idx_created_at (`created_at`),
-
-  -- Foreign Keys
-  FOREIGN KEY (`ticket_id`) REFERENCES `service_tickets`(`ticket_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บ Timeline/ประวัติการดำเนินการ';
-
--- ============================================================================
--- ตาราง 6: service_ticket_history (บันทึกการเปลี่ยนแปลง)
--- ============================================================================
-CREATE TABLE `service_ticket_history` (
-  `history_id` CHAR(36) NOT NULL COMMENT 'รหัสประวัติ (UUID)',
-  `ticket_id` CHAR(36) NOT NULL COMMENT 'รหัส Ticket',
-
-  -- ข้อมูลการเปลี่ยนแปลง
-  `field_name` VARCHAR(100) NOT NULL COMMENT 'ชื่อฟิลด์ที่เปลี่ยน',
-  `old_value` TEXT COMMENT 'ค่าเดิม',
-  `new_value` TEXT COMMENT 'ค่าใหม่',
-
-  -- Audit
-  `changed_by` CHAR(36) NOT NULL COMMENT 'ผู้เปลี่ยนแปลง',
-  `changed_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'วันเวลาเปลี่ยนแปลง',
-
-  -- Primary Key
-  PRIMARY KEY (`history_id`),
-
-  -- Indexes
-  INDEX idx_ticket_id (`ticket_id`),
-  INDEX idx_field_name (`field_name`),
-  INDEX idx_changed_at (`changed_at`),
-
-  -- Foreign Keys
-  FOREIGN KEY (`ticket_id`) REFERENCES `service_tickets`(`ticket_id`) ON DELETE CASCADE,
-  FOREIGN KEY (`changed_by`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางบันทึกประวัติการเปลี่ยนแปลงข้อมูล';
-
--- ============================================================================
--- ตาราง 7: service_ticket_comments (ความคิดเห็น/หมายเหตุ)
--- ============================================================================
-CREATE TABLE `service_ticket_comments` (
-  `comment_id` CHAR(36) NOT NULL COMMENT 'รหัสความคิดเห็น (UUID)',
-  `ticket_id` CHAR(36) NOT NULL COMMENT 'รหัส Ticket',
-
-  -- ข้อมูลความคิดเห็น
-  `comment` TEXT NOT NULL COMMENT 'ความคิดเห็น',
-  `is_internal` TINYINT(1) DEFAULT 0 COMMENT 'ความคิดเห็นภายใน (1=ใช่, 0=ไม่ใช่)',
-
-  -- Audit
-  `created_by` CHAR(36) NOT NULL COMMENT 'ผู้สร้าง',
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'วันเวลาสร้าง',
-  `updated_by` CHAR(36) COMMENT 'ผู้อัปเดต',
-  `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'วันเวลาอัปเดต',
-
-  -- Soft Delete
-  `deleted_at` DATETIME COMMENT 'วันเวลาลบ',
-
-  -- Primary Key
-  PRIMARY KEY (`comment_id`),
-
-  -- Indexes
-  INDEX idx_ticket_id (`ticket_id`),
-  INDEX idx_created_at (`created_at`),
-
-  -- Foreign Keys
-  FOREIGN KEY (`ticket_id`) REFERENCES `service_tickets`(`ticket_id`) ON DELETE CASCADE,
-  FOREIGN KEY (`created_by`) REFERENCES `users`(`user_id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บความคิดเห็น/หมายเหตุ';
-
--- ============================================================================
--- ตาราง 8: service_ticket_notifications (การแจ้งเตือน)
--- ============================================================================
-CREATE TABLE `service_ticket_notifications` (
-  `notification_id` CHAR(36) NOT NULL COMMENT 'รหัสการแจ้งเตือน (UUID)',
-  `ticket_id` CHAR(36) NOT NULL COMMENT 'รหัส Ticket',
-  `user_id` CHAR(36) NOT NULL COMMENT 'รหัสผู้รับแจ้งเตือน',
-
-  -- ข้อมูลการแจ้งเตือน
-  `type` ENUM('SLA_NEAR','SLA_OVERDUE','STATUS_CHANGE','NEW_COMMENT','ASSIGNED','MENTIONED') NOT NULL COMMENT 'ประเภทการแจ้งเตือน',
-  `message` TEXT NOT NULL COMMENT 'ข้อความแจ้งเตือน',
-  `is_read` TINYINT(1) DEFAULT 0 COMMENT 'อ่านแล้ว (1=ใช่, 0=ยังไม่อ่าน)',
-
-  -- Audit
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'วันเวลาสร้าง',
-  `read_at` DATETIME COMMENT 'วันเวลาที่อ่าน',
-
-  -- Primary Key
-  PRIMARY KEY (`notification_id`),
-
-  -- Indexes
-  INDEX idx_user_id (`user_id`),
-  INDEX idx_ticket_id (`ticket_id`),
-  INDEX idx_is_read (`is_read`),
-  INDEX idx_created_at (`created_at`),
-
-  -- Foreign Keys
-  FOREIGN KEY (`ticket_id`) REFERENCES `service_tickets`(`ticket_id`) ON DELETE CASCADE,
-  FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บการแจ้งเตือน';
-
--- ============================================================================
--- TRIGGERS
--- ============================================================================
-
--- Trigger 1: Auto-generate UUID for service_tickets
-DELIMITER $$
-CREATE TRIGGER `before_insert_service_tickets` BEFORE INSERT ON `service_tickets` FOR EACH ROW
-BEGIN
-    -- สร้าง UUID ถ้ายังไม่ได้กำหนด
-    IF NEW.ticket_id IS NULL OR NEW.ticket_id = '' THEN
-        SET NEW.ticket_id = UUID();
-    END IF;
-
-    -- สร้างเลข Ticket Number อัตโนมัติ (TCK-YYYYMM-XXXX)
-    IF NEW.ticket_no IS NULL OR NEW.ticket_no = '' THEN
-        SET @ticket_count = (
-            SELECT COUNT(*) + 1
-            FROM service_tickets
-            WHERE DATE_FORMAT(created_at, '%Y%m') = DATE_FORMAT(NOW(), '%Y%m')
-        );
-        SET NEW.ticket_no = CONCAT('TCK-', DATE_FORMAT(NOW(), '%Y%m'), '-', LPAD(@ticket_count, 4, '0'));
-    END IF;
-
-    -- คำนวณ SLA Deadline
-    IF NEW.sla_target IS NOT NULL AND NEW.sla_target > 0 THEN
-        SET NEW.sla_deadline = DATE_ADD(NEW.created_at, INTERVAL NEW.sla_target HOUR);
-    END IF;
-END$$
-DELIMITER ;
-
--- Trigger 2: Auto-generate UUID for other tables
-DELIMITER $$
-CREATE TRIGGER `before_insert_service_ticket_onsite` BEFORE INSERT ON `service_ticket_onsite` FOR EACH ROW
-BEGIN
-    IF NEW.onsite_id IS NULL OR NEW.onsite_id = '' THEN
-        SET NEW.onsite_id = UUID();
-    END IF;
-END$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE TRIGGER `before_insert_service_ticket_attachments` BEFORE INSERT ON `service_ticket_attachments` FOR EACH ROW
-BEGIN
-    IF NEW.attachment_id IS NULL OR NEW.attachment_id = '' THEN
-        SET NEW.attachment_id = UUID();
-    END IF;
-END$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE TRIGGER `before_insert_service_ticket_watchers` BEFORE INSERT ON `service_ticket_watchers` FOR EACH ROW
-BEGIN
-    IF NEW.watcher_id IS NULL OR NEW.watcher_id = '' THEN
-        SET NEW.watcher_id = UUID();
-    END IF;
-END$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE TRIGGER `before_insert_service_ticket_timeline` BEFORE INSERT ON `service_ticket_timeline` FOR EACH ROW
-BEGIN
-    IF NEW.timeline_id IS NULL OR NEW.timeline_id = '' THEN
-        SET NEW.timeline_id = UUID();
-    END IF;
-END$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE TRIGGER `before_insert_service_ticket_history` BEFORE INSERT ON `service_ticket_history` FOR EACH ROW
-BEGIN
-    IF NEW.history_id IS NULL OR NEW.history_id = '' THEN
-        SET NEW.history_id = UUID();
-    END IF;
-END$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE TRIGGER `before_insert_service_ticket_comments` BEFORE INSERT ON `service_ticket_comments` FOR EACH ROW
-BEGIN
-    IF NEW.comment_id IS NULL OR NEW.comment_id = '' THEN
-        SET NEW.comment_id = UUID();
-    END IF;
-END$$
-DELIMITER ;
-
-DELIMITER $$
-CREATE TRIGGER `before_insert_service_ticket_notifications` BEFORE INSERT ON `service_ticket_notifications` FOR EACH ROW
-BEGIN
-    IF NEW.notification_id IS NULL OR NEW.notification_id = '' THEN
-        SET NEW.notification_id = UUID();
-    END IF;
-END$$
-DELIMITER ;
-
--- Trigger 3: Update SLA Status
-DELIMITER $$
-CREATE TRIGGER `before_update_service_tickets` BEFORE UPDATE ON `service_tickets` FOR EACH ROW
-BEGIN
-    -- อัปเดต SLA Status
-    IF NEW.sla_deadline IS NOT NULL THEN
-        IF NOW() > NEW.sla_deadline THEN
-            SET NEW.sla_status = 'Overdue';
-        ELSEIF TIMESTAMPDIFF(HOUR, NOW(), NEW.sla_deadline) <= 4 THEN
-            SET NEW.sla_status = 'Near SLA';
-        ELSE
-            SET NEW.sla_status = 'Within SLA';
-        END IF;
-    END IF;
-
-    -- บันทึกเวลาแก้ไขเสร็จ
-    IF NEW.status = 'Resolved' AND OLD.status != 'Resolved' THEN
-        SET NEW.resolved_at = NOW();
-    END IF;
-
-    -- บันทึกเวลาปิด Ticket
-    IF NEW.status = 'Closed' AND OLD.status != 'Closed' THEN
-        SET NEW.closed_at = NOW();
-    END IF;
-END$$
-DELIMITER ;
-
--- Trigger 4: Auto-log History when ticket updated
-DELIMITER $$
-CREATE TRIGGER `after_update_service_tickets` AFTER UPDATE ON `service_tickets` FOR EACH ROW
-BEGIN
-    -- บันทึก Status change
-    IF OLD.status != NEW.status THEN
-        INSERT INTO service_ticket_history (history_id, ticket_id, field_name, old_value, new_value, changed_by, changed_at)
-        VALUES (UUID(), NEW.ticket_id, 'status', OLD.status, NEW.status, NEW.updated_by, NOW());
-    END IF;
-
-    -- บันทึก Priority change
-    IF OLD.priority != NEW.priority THEN
-        INSERT INTO service_ticket_history (history_id, ticket_id, field_name, old_value, new_value, changed_by, changed_at)
-        VALUES (UUID(), NEW.ticket_id, 'priority', OLD.priority, NEW.priority, NEW.updated_by, NOW());
-    END IF;
-
-    -- บันทึก Job Owner change
-    IF OLD.job_owner != NEW.job_owner OR (OLD.job_owner IS NULL AND NEW.job_owner IS NOT NULL) THEN
-        INSERT INTO service_ticket_history (history_id, ticket_id, field_name, old_value, new_value, changed_by, changed_at)
-        VALUES (UUID(), NEW.ticket_id, 'job_owner', OLD.job_owner, NEW.job_owner, NEW.updated_by, NOW());
-    END IF;
-END$$
-DELIMITER ;
-
--- ============================================================================
--- VIEWS
--- ============================================================================
-
--- View 1: ดูข้อมูล Ticket พร้อมรายละเอียดทั้งหมด
-CREATE OR REPLACE VIEW `vw_service_tickets_full` AS
-SELECT
-    t.ticket_id,
-    t.ticket_no,
-    t.ticket_type,
-    t.subject,
-    t.description,
-    t.status,
-    t.priority,
-    t.urgency,
-    t.impact,
-    t.service_category,
-    t.category,
-    t.sub_category,
-    t.source,
-    t.sla_target,
-    t.sla_deadline,
-    t.sla_status,
-    t.channel,
-    t.start_at,
-    t.due_at,
-    t.resolved_at,
-    t.closed_at,
-
-    -- Project Info
-    p.project_name,
-
-    -- Job Owner Info
-    CONCAT(owner.first_name, ' ', owner.last_name) AS job_owner_name,
-    owner.role AS job_owner_role,
-
-    -- Reporter Info
-    CONCAT(reporter.first_name, ' ', reporter.last_name) AS reporter_name,
-
-    -- Creator Info
-    CONCAT(creator.first_name, ' ', creator.last_name) AS created_by_name,
-
-    -- Onsite Info
-    onsite.start_location,
-    onsite.end_location,
-    onsite.travel_mode,
-    onsite.distance,
-
-    -- Counts
-    (SELECT COUNT(*) FROM service_ticket_attachments WHERE ticket_id = t.ticket_id) AS attachment_count,
-    (SELECT COUNT(*) FROM service_ticket_watchers WHERE ticket_id = t.ticket_id) AS watcher_count,
-    (SELECT COUNT(*) FROM service_ticket_comments WHERE ticket_id = t.ticket_id AND deleted_at IS NULL) AS comment_count,
-
-    -- Timestamps
-    t.created_at,
-    t.updated_at
-FROM service_tickets t
-LEFT JOIN projects p ON t.project_id = p.project_id
-LEFT JOIN users owner ON t.job_owner = owner.user_id
-LEFT JOIN users reporter ON t.reporter = reporter.user_id
-LEFT JOIN users creator ON t.created_by = creator.user_id
-LEFT JOIN service_ticket_onsite onsite ON t.ticket_id = onsite.ticket_id
-WHERE t.deleted_at IS NULL;
-
--- View 2: Dashboard สำหรับแสดง Metrics
-CREATE OR REPLACE VIEW `vw_service_tickets_metrics` AS
-SELECT
-    COUNT(*) AS total_tickets,
-    SUM(CASE WHEN status = 'On Process' THEN 1 ELSE 0 END) AS on_process,
-    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending,
-    SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) AS resolved,
-    SUM(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) AS closed,
-    SUM(CASE WHEN status = 'Canceled' THEN 1 ELSE 0 END) AS canceled,
-    SUM(CASE WHEN sla_status = 'Overdue' THEN 1 ELSE 0 END) AS sla_overdue,
-    SUM(CASE WHEN sla_status = 'Near SLA' THEN 1 ELSE 0 END) AS sla_near,
-    SUM(CASE WHEN priority = 'Critical' THEN 1 ELSE 0 END) AS critical_priority,
-    SUM(CASE WHEN priority = 'High' THEN 1 ELSE 0 END) AS high_priority
-FROM service_tickets
-WHERE deleted_at IS NULL;
-
--- View 3: Tickets ที่ต้องติดตาม (SLA ใกล้หมด หรือ Overdue)
-CREATE OR REPLACE VIEW `vw_service_tickets_alert` AS
-SELECT
-    t.ticket_id,
-    t.ticket_no,
-    t.subject,
-    t.status,
-    t.priority,
-    t.sla_deadline,
-    t.sla_status,
-    CONCAT(owner.first_name, ' ', owner.last_name) AS job_owner_name,
-    TIMESTAMPDIFF(HOUR, NOW(), t.sla_deadline) AS hours_remaining
-FROM service_tickets t
-LEFT JOIN users owner ON t.job_owner = owner.user_id
-WHERE t.deleted_at IS NULL
-  AND t.status NOT IN ('Closed', 'Canceled')
-  AND (t.sla_status IN ('Near SLA', 'Overdue') OR t.priority = 'Critical')
-ORDER BY
-    CASE t.sla_status
-        WHEN 'Overdue' THEN 1
-        WHEN 'Near SLA' THEN 2
-        ELSE 3
-    END,
-    t.sla_deadline ASC;
-
--- ============================================================================
--- STORED PROCEDURES
--- ============================================================================
-
--- Procedure 1: คำนวณ SLA ทั้งหมด
-DELIMITER $$
-CREATE PROCEDURE `sp_update_all_sla_status`()
-BEGIN
-    UPDATE service_tickets
-    SET
-        sla_status = CASE
-            WHEN sla_deadline IS NULL THEN sla_status
-            WHEN NOW() > sla_deadline THEN 'Overdue'
-            WHEN TIMESTAMPDIFF(HOUR, NOW(), sla_deadline) <= 4 THEN 'Near SLA'
-            ELSE 'Within SLA'
-        END
-    WHERE deleted_at IS NULL
-      AND status NOT IN ('Closed', 'Canceled');
-END$$
-DELIMITER ;
-
--- Procedure 2: สร้าง Notification สำหรับ SLA
-DELIMITER $$
-CREATE PROCEDURE `sp_create_sla_notifications`()
-BEGIN
-    -- สร้าง Notification สำหรับ Tickets ที่ใกล้ SLA
-    INSERT INTO service_ticket_notifications (notification_id, ticket_id, user_id, type, message)
-    SELECT
-        UUID(),
-        t.ticket_id,
-        t.job_owner,
-        'SLA_NEAR',
-        CONCAT('Ticket ', t.ticket_no, ' ใกล้ครบ SLA (เหลือ ', TIMESTAMPDIFF(HOUR, NOW(), t.sla_deadline), ' ชั่วโมง)')
-    FROM service_tickets t
-    WHERE t.sla_status = 'Near SLA'
-      AND t.deleted_at IS NULL
-      AND t.status NOT IN ('Closed', 'Canceled')
-      AND NOT EXISTS (
-          SELECT 1 FROM service_ticket_notifications n
-          WHERE n.ticket_id = t.ticket_id
-            AND n.type = 'SLA_NEAR'
-            AND DATE(n.created_at) = CURDATE()
-      );
-
-    -- สร้าง Notification สำหรับ Tickets ที่เลย SLA
-    INSERT INTO service_ticket_notifications (notification_id, ticket_id, user_id, type, message)
-    SELECT
-        UUID(),
-        t.ticket_id,
-        t.job_owner,
-        'SLA_OVERDUE',
-        CONCAT('Ticket ', t.ticket_no, ' เลย SLA แล้ว!')
-    FROM service_tickets t
-    WHERE t.sla_status = 'Overdue'
-      AND t.deleted_at IS NULL
-      AND t.status NOT IN ('Closed', 'Canceled')
-      AND NOT EXISTS (
-          SELECT 1 FROM service_ticket_notifications n
-          WHERE n.ticket_id = t.ticket_id
-            AND n.type = 'SLA_OVERDUE'
-            AND DATE(n.created_at) = CURDATE()
-      );
-END$$
-DELIMITER ;
-
--- Procedure 3: ดึงข้อมูล Ticket ตาม User Role
-DELIMITER $$
-CREATE PROCEDURE `sp_get_tickets_by_user`(
-    IN p_user_id CHAR(36),
-    IN p_role VARCHAR(50)
-)
-BEGIN
-    IF p_role = 'Executive' THEN
-        -- Executive เห็นทั้งหมด
-        SELECT * FROM vw_service_tickets_full WHERE deleted_at IS NULL;
-    ELSEIF p_role = 'Sale Supervisor' THEN
-        -- Sale Supervisor เห็นของทีม
-        SELECT vw.* FROM vw_service_tickets_full vw
-        INNER JOIN service_tickets t ON vw.ticket_id = t.ticket_id
-        INNER JOIN users u ON t.job_owner = u.user_id
-        WHERE (SELECT team_id FROM users WHERE user_id = p_user_id) = u.team_id
-          AND vw.deleted_at IS NULL;
-    ELSE
-        -- Seller, Engineer เห็นของตัวเอง
-        SELECT * FROM vw_service_tickets_full
-        WHERE job_owner = p_user_id AND deleted_at IS NULL;
-    END IF;
-END$$
-DELIMITER ;
-
--- ============================================================================
--- EVENT SCHEDULER (ต้อง Enable Event Scheduler ก่อน: SET GLOBAL event_scheduler = ON;)
--- ============================================================================
-
--- Event 1: อัปเดต SLA Status ทุก 30 นาที
-CREATE EVENT IF NOT EXISTS `evt_update_sla_status`
-ON SCHEDULE EVERY 30 MINUTE
-DO
-    CALL sp_update_all_sla_status();
-
--- Event 2: สร้าง Notification SLA ทุก 1 ชั่วโมง
-CREATE EVENT IF NOT EXISTS `evt_create_sla_notifications`
-ON SCHEDULE EVERY 1 HOUR
-DO
-    CALL sp_create_sla_notifications();
-
--- ============================================================================
--- สิ้นสุดไฟล์ Schema
--- ============================================================================

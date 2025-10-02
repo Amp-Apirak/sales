@@ -2,324 +2,123 @@
 // เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
 
-// ข้อมูลจำลองสำหรับแสดงผลการ์ดสถานะ (ปรับแก้เมื่อเชื่อมฐานข้อมูลจริง)
+// ดึงข้อมูลโดยตรงจากฐานข้อมูล (ไม่ใช้ API ชั่วคราว)
+$user_id = $_SESSION['user_id'];
+$role = $_SESSION['role'];
+$team_id = $_SESSION['team_id'] ?? null;
+
+// ดึง Tickets
+$sqlTickets = "SELECT st.*,
+        CONCAT(u.first_name, ' ', u.last_name) as job_owner_name,
+        CONCAT(r.first_name, ' ', r.last_name) as reporter_name,
+        p.project_name
+        FROM service_tickets st
+        LEFT JOIN users u ON st.job_owner = u.user_id
+        LEFT JOIN users r ON st.reporter = r.user_id
+        LEFT JOIN projects p ON st.project_id = p.project_id
+        WHERE 1=1";
+
+// กรองตาม Role
+if ($role === 'Executive') {
+    // Executive เห็นทั้งหมด
+} elseif ($role === 'Sale Supervisor') {
+    if ($team_id) {
+        $sqlTickets .= " AND st.job_owner IN (SELECT user_id FROM users WHERE team_id = :team_id)";
+    }
+} else {
+    $sqlTickets .= " AND st.job_owner = :user_id";
+}
+
+$sqlTickets .= " ORDER BY st.created_at DESC LIMIT 100";
+
+$stmtTickets = $condb->prepare($sqlTickets);
+
+if ($role === 'Sale Supervisor' && $team_id) {
+    $stmtTickets->bindValue(':team_id', $team_id);
+} elseif ($role !== 'Executive') {
+    $stmtTickets->bindValue(':user_id', $user_id);
+}
+
+$stmtTickets->execute();
+$tickets = $stmtTickets->fetchAll(PDO::FETCH_ASSOC);
+
+// ดึง Metrics
+$sqlMetrics = "SELECT
+    COUNT(*) as total_tickets,
+    SUM(CASE WHEN status = 'New' THEN 1 ELSE 0 END) as status_new,
+    SUM(CASE WHEN status = 'On Process' THEN 1 ELSE 0 END) as status_on_process,
+    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as status_pending,
+    SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as status_resolved,
+    SUM(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) as status_closed,
+    SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as status_cancelled,
+    SUM(CASE WHEN sla_status = 'Overdue' THEN 1 ELSE 0 END) as sla_overdue
+    FROM service_tickets";
+
+$stmtMetrics = $condb->query($sqlMetrics);
+$metricsData = $stmtMetrics->fetch(PDO::FETCH_ASSOC);
+
+// แปลง Metrics จาก API เป็นรูปแบบที่ใช้แสดงผล
 $serviceMetrics = [
     [
         'title' => 'All Ticket',
         'description' => 'จำนวนงานทั้งหมด',
-        'value' => 128,
+        'value' => $metricsData['total_tickets'] ?? 0,
         'color' => 'bg-info',
         'icon'  => 'fas fa-ticket-alt'
     ],
     [
+        'title' => 'New',
+        'description' => 'งานใหม่',
+        'value' => $metricsData['status_new'] ?? 0,
+        'color' => 'bg-primary',
+        'icon'  => 'fas fa-plus-circle'
+    ],
+    [
         'title' => 'On Process',
-        'description' => 'งานที่คงค้าง',
-        'value' => 32,
+        'description' => 'งานที่กำลังดำเนินการ',
+        'value' => $metricsData['status_on_process'] ?? 0,
         'color' => 'bg-warning',
         'icon'  => 'fas fa-tasks'
     ],
     [
         'title' => 'Pending',
-        'description' => 'งานที่อยู่ระหว่างดำเนินการ',
-        'value' => 18,
-        'color' => 'bg-primary',
+        'description' => 'งานที่รอดำเนินการ',
+        'value' => $metricsData['status_pending'] ?? 0,
+        'color' => 'bg-secondary',
         'icon'  => 'fas fa-hourglass-half'
     ],
     [
-        'title' => 'SAL',
-        'description' => 'งานที่ตก SAL',
-        'value' => 9,
+        'title' => 'Resolved',
+        'description' => 'งานที่แก้ไขแล้ว',
+        'value' => $metricsData['status_resolved'] ?? 0,
         'color' => 'bg-success',
-        'icon'  => 'fas fa-clipboard-check'
+        'icon'  => 'fas fa-check-circle'
     ],
     [
-        'title' => 'Cancal',
+        'title' => 'Closed',
+        'description' => 'งานที่ปิดแล้ว',
+        'value' => $metricsData['status_closed'] ?? 0,
+        'color' => 'bg-teal',
+        'icon'  => 'fas fa-lock'
+    ],
+    [
+        'title' => 'Cancelled',
         'description' => 'งานที่ยกเลิก',
-        'value' => 5,
+        'value' => $metricsData['status_cancelled'] ?? 0,
         'color' => 'bg-danger',
         'icon'  => 'fas fa-times-circle'
     ],
     [
-        'title' => 'จำนวนงานที่แก้ไขแล้ว',
-        'description' => 'งานที่ได้รับการแก้ไขเรียบร้อย',
-        'value' => 21,
-        'color' => 'bg-secondary',
-        'icon'  => 'fas fa-tools'
-    ],
-    [
-        'title' => 'จำนวนที่รอยืนยัน',
-        'description' => 'งานที่รอการยืนยันผล',
-        'value' => 12,
-        'color' => 'bg-indigo',
-        'icon'  => 'fas fa-user-check'
-    ],
-    [
-        'title' => 'จำนวนงานที่ปิดสมบูรณ์',
-        'description' => 'งานที่ปิดงานแล้วทั้งหมด',
-        'value' => 14,
-        'color' => 'bg-teal',
-        'icon'  => 'fas fa-lock'
+        'title' => 'Overdue SLA',
+        'description' => 'งานที่เกิน SLA',
+        'value' => $metricsData['sla_overdue'] ?? 0,
+        'color' => 'bg-maroon',
+        'icon'  => 'fas fa-exclamation-triangle'
     ],
 ];
 
-// ข้อมูลตัวอย่างสำหรับตาราง Ticket (Mockup)
-$mockTickets = [
-    [
-        'no' => 'TCK-202501',
-        'type' => 'Incident',
-        'service_category' => 'Network Service',
-        'category' => 'Firewall',
-        'sub_category' => 'Policy Update',
-        'project' => 'Network Refresh 2025',
-        'subject' => 'ปรับ Rule อนุญาตระบบ HR',
-        'status' => 'On Process',
-        'owner' => 'Supaporn N.',
-        'source' => 'Email',
-        'priority' => 'High',
-        'urgency' => 'High',
-        'impact' => 'Site',
-        'sla' => '4 ชม.',
-        'created_at' => '2025-02-01 09:15'
-    ],
-    [
-        'no' => 'TCK-202502',
-        'type' => 'Service',
-        'service_category' => 'Application Support',
-        'category' => 'CRM',
-        'sub_category' => 'User Training',
-        'project' => 'CRM Enablement FY25',
-        'subject' => 'อบรมการใช้งาน CRM รุ่นใหม่',
-        'status' => 'Pending',
-        'owner' => 'Jakkrit P.',
-        'source' => 'Portal',
-        'priority' => 'Medium',
-        'urgency' => 'Medium',
-        'impact' => 'Department',
-        'sla' => '3 วัน',
-        'created_at' => '2025-02-01 10:40'
-    ],
-    [
-        'no' => 'TCK-202503',
-        'type' => 'Change',
-        'service_category' => 'Infrastructure',
-        'category' => 'Server',
-        'sub_category' => 'OS Patch',
-        'project' => 'Data Center Reliability',
-        'subject' => 'แพตช์ Windows Server เดือน ก.พ.',
-        'status' => 'Waiting for Approval',
-        'owner' => 'Waranya S.',
-        'source' => 'Planner',
-        'priority' => 'Medium',
-        'urgency' => 'Low',
-        'impact' => 'Multiple Sites',
-        'sla' => '7 วัน',
-        'created_at' => '2025-02-01 12:00'
-    ],
-    [
-        'no' => 'TCK-202504',
-        'type' => 'Incident',
-        'service_category' => 'Workspace',
-        'category' => 'Printer',
-        'sub_category' => 'Driver',
-        'project' => 'Office Support Program',
-        'subject' => 'ไม่สามารถพิมพ์จากแผนกบัญชี',
-        'status' => 'In Progress',
-        'owner' => 'Somchai T.',
-        'source' => 'Call Center',
-        'priority' => 'High',
-        'urgency' => 'High',
-        'impact' => 'Department',
-        'sla' => '8 ชม.',
-        'created_at' => '2025-02-02 08:25'
-    ],
-    [
-        'no' => 'TCK-202505',
-        'type' => 'Service',
-        'service_category' => 'Database',
-        'category' => 'Backup',
-        'sub_category' => 'Schedule Review',
-        'project' => 'Database Modernization',
-        'subject' => 'ตรวจสอบตาราง Backup Oracle',
-        'status' => 'Resolved',
-        'owner' => 'Saranphong M.',
-        'source' => 'Email',
-        'priority' => 'Medium',
-        'urgency' => 'Medium',
-        'impact' => 'Application',
-        'sla' => '2 วัน',
-        'created_at' => '2025-02-02 09:50'
-    ],
-    [
-        'no' => 'TCK-202506',
-        'type' => 'Incident',
-        'service_category' => 'Security',
-        'category' => 'Endpoint',
-        'sub_category' => 'Virus Detected',
-        'project' => 'Endpoint Security Uplift',
-        'subject' => 'พบ Malware บนเครื่องผู้บริหาร',
-        'status' => 'On Process',
-        'owner' => 'Thanakrit K.',
-        'source' => 'Security Alert',
-        'priority' => 'Critical',
-        'urgency' => 'High',
-        'impact' => 'Executive',
-        'sla' => '2 ชม.',
-        'created_at' => '2025-02-02 10:15'
-    ],
-    [
-        'no' => 'TCK-202507',
-        'type' => 'Change',
-        'service_category' => 'Network Service',
-        'category' => 'VPN',
-        'sub_category' => 'Bandwidth Upgrade',
-        'project' => 'Sales Connect Expansion',
-        'subject' => 'ขยาย VPN สำหรับทีมขาย',
-        'status' => 'Approved',
-        'owner' => 'Chayathon B.',
-        'source' => 'Portal',
-        'priority' => 'High',
-        'urgency' => 'Medium',
-        'impact' => 'Remote Users',
-        'sla' => '5 วัน',
-        'created_at' => '2025-02-02 13:30'
-    ],
-    [
-        'no' => 'TCK-202508',
-        'type' => 'Incident',
-        'service_category' => 'Application Support',
-        'category' => 'ERP',
-        'sub_category' => 'Login Issue',
-        'project' => 'ERP Stabilization',
-        'subject' => 'เข้าสู่ระบบ ERP ไม่ได้ (รหัสผิด)',
-        'status' => 'Resolved Pending',
-        'owner' => 'Natthapong C.',
-        'source' => 'Self-Service',
-        'priority' => 'Low',
-        'urgency' => 'Low',
-        'impact' => 'Single User',
-        'sla' => '1 วัน',
-        'created_at' => '2025-02-02 15:55'
-    ],
-    [
-        'no' => 'TCK-202509',
-        'type' => 'Service',
-        'service_category' => 'Workspace',
-        'category' => 'Laptop',
-        'sub_category' => 'New Hire Setup',
-        'project' => 'Onboarding Excellence',
-        'subject' => 'เตรียม Laptop สำหรับพนักงานใหม่',
-        'status' => 'Scheduled',
-        'owner' => 'Suphakorn J.',
-        'source' => 'HR Form',
-        'priority' => 'Medium',
-        'urgency' => 'Medium',
-        'impact' => 'Single User',
-        'sla' => '3 วัน',
-        'created_at' => '2025-02-03 08:00'
-    ],
-    [
-        'no' => 'TCK-202510',
-        'type' => 'Incident',
-        'service_category' => 'Network Service',
-        'category' => 'Wi-Fi',
-        'sub_category' => 'Access Point',
-        'project' => 'Campus Wi-Fi Upgrade',
-        'subject' => 'ชั้น 3 สัญญาณ Wi-Fi อ่อน',
-        'status' => 'In Progress',
-        'owner' => 'Kittisak W.',
-        'source' => 'Call Center',
-        'priority' => 'High',
-        'urgency' => 'Medium',
-        'impact' => 'Floor',
-        'sla' => '6 ชม.',
-        'created_at' => '2025-02-03 09:20'
-    ],
-    [
-        'no' => 'TCK-202511',
-        'type' => 'Service',
-        'service_category' => 'Security',
-        'category' => 'Access Control',
-        'sub_category' => 'Badge Request',
-        'project' => 'Security Access 2.0',
-        'subject' => 'ขอสร้าง Badge ชั่วคราวสำหรับ Vendor',
-        'status' => 'Pending Approval',
-        'owner' => 'Narumon L.',
-        'source' => 'Portal',
-        'priority' => 'Low',
-        'urgency' => 'Medium',
-        'impact' => 'External',
-        'sla' => '2 วัน',
-        'created_at' => '2025-02-03 10:10'
-    ],
-    [
-        'no' => 'TCK-202512',
-        'type' => 'Change',
-        'service_category' => 'Application Support',
-        'category' => 'HR System',
-        'sub_category' => 'Feature Enhancement',
-        'project' => 'HR Digitalization Wave 3',
-        'subject' => 'เพิ่มฟิลด์ OT ในระบบ HR',
-        'status' => 'CAB Review',
-        'owner' => 'Piyanuch Y.',
-        'source' => 'Product Owner',
-        'priority' => 'High',
-        'urgency' => 'High',
-        'impact' => 'Company',
-        'sla' => '14 วัน',
-        'created_at' => '2025-02-03 11:35'
-    ],
-    [
-        'no' => 'TCK-202513',
-        'type' => 'Incident',
-        'service_category' => 'Database',
-        'category' => 'Performance',
-        'sub_category' => 'Slow Query',
-        'project' => 'Sales Analytics Accelerator',
-        'subject' => 'รายงานขายดึงข้อมูลช้ามาก',
-        'status' => 'On Process',
-        'owner' => 'Athid T.',
-        'source' => 'Monitoring',
-        'priority' => 'High',
-        'urgency' => 'High',
-        'impact' => 'Executive',
-        'sla' => '4 ชม.',
-        'created_at' => '2025-02-03 13:05'
-    ],
-    [
-        'no' => 'TCK-202514',
-        'type' => 'Service',
-        'service_category' => 'Workspace',
-        'category' => 'Accessories',
-        'sub_category' => 'Docking Station',
-        'project' => 'Workspace Upgrade 2025',
-        'subject' => 'ขอสั่ง Docking Station เพิ่ม',
-        'status' => 'Assigned',
-        'owner' => 'Montira K.',
-        'source' => 'Procurement',
-        'priority' => 'Medium',
-        'urgency' => 'Low',
-        'impact' => 'Single User',
-        'sla' => '5 วัน',
-        'created_at' => '2025-02-03 14:20'
-    ],
-    [
-        'no' => 'TCK-202515',
-        'type' => 'Incident',
-        'service_category' => 'Security',
-        'category' => 'Email',
-        'sub_category' => 'Phishing',
-        'project' => 'Email Security Awareness',
-        'subject' => 'แจ้งอีเมล Phishing ล็อกอินธนาคารdsfsfdsfdsfsfsfdsfsdfsfsdf',
-        'status' => 'Containment',
-        'owner' => 'Thanawat R.',
-        'source' => 'User Report',
-        'priority' => 'Critical',
-        'urgency' => 'High',
-        'impact' => 'Organization',
-        'sla' => '1 ชม.',
-        'created_at' => '2025-02-03 15:45'
-    ]
-];
+// แปลงรูปแบบข้อมูล Tickets จาก API
+// Note: ไม่ต้องใช้ Mock Data แล้ว ใช้ข้อมูลจริงจาก $tickets
 
 $typeStyles = [
     'Incident' => ['class' => 'badge badge-pill badge-incident', 'label' => 'Incident'],
@@ -328,11 +127,15 @@ $typeStyles = [
 ];
 
 $statusStyles = [
+    'Draft'                 => ['class' => 'badge badge-pill badge-status-default'],
+    'New'                   => ['class' => 'badge badge-pill badge-status-assigned'],
     'On Process'            => ['class' => 'badge badge-pill badge-status-process'],
     'Pending'               => ['class' => 'badge badge-pill badge-status-pending'],
     'Waiting for Approval'  => ['class' => 'badge badge-pill badge-status-waiting'],
     'In Progress'           => ['class' => 'badge badge-pill badge-status-progress'],
     'Resolved'              => ['class' => 'badge badge-pill badge-status-resolved'],
+    'Closed'                => ['class' => 'badge badge-pill badge-status-containment'],
+    'Cancelled'             => ['class' => 'badge badge-pill badge-status-cab-review'],
     'Approved'              => ['class' => 'badge badge-pill badge-status-approved'],
     'Resolved Pending'      => ['class' => 'badge badge-pill badge-status-resolved-pending'],
     'Scheduled'             => ['class' => 'badge badge-pill badge-status-scheduled'],
@@ -573,7 +376,7 @@ if (!function_exists('summarizeSubject')) {
                                                 <i class="<?php echo htmlspecialchars($metric['icon']); ?>"></i>
                                             </div>
                                             <div class="small-box-footer text-xs text-white-50 text-center">
-                                                Mockup Data
+                                                Real-time Data
                                             </div>
                                         </div>
                                     </div>
@@ -785,37 +588,56 @@ if (!function_exists('summarizeSubject')) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php foreach ($mockTickets as $ticket): ?>
-                                                <?php
-                                                    $typeConfig = $typeStyles[$ticket['type']] ?? ['class' => 'badge badge-pill badge-secondary', 'label' => htmlspecialchars($ticket['type'])];
-                                                    $statusConfig = $statusStyles[$ticket['status']] ?? ['class' => 'badge badge-pill badge-status-default'];
-                                                    [$subjectDisplay, $subjectFull] = summarizeSubject($ticket['subject']);
-                                                ?>
+                                            <?php if (empty($tickets)): ?>
                                                 <tr>
-                                                    <td class="text-nowrap text-center font-weight-bold"><?php echo htmlspecialchars($ticket['no']); ?></td>
-                                                    <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $typeConfig['class']; ?>"><?php echo htmlspecialchars($typeConfig['label']); ?></span></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($ticket['service_category']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($ticket['category']); ?></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($ticket['sub_category']); ?></td>
-                                                    <td class="text-nowrap" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($ticket['project'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ticket['project']); ?></td>
-                                                    <td class="subject-cell" data-toggle="tooltip" data-placement="top" title="<?php echo $subjectFull; ?>"><?php echo $subjectDisplay; ?></td>
-                                                    <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $statusConfig['class']; ?>"><?php echo htmlspecialchars($ticket['status']); ?></span></td>
-                                                    <td class="text-nowrap"><?php echo htmlspecialchars($ticket['owner']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['source']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['priority']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['urgency']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['impact']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['sla']); ?></td>
-                                                    <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['created_at']); ?></td>
-                                                    <td class="text-nowrap text-center">
-                                                        <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                                            <a href="#" class="btn btn-info" title="Edit"><i class="fas fa-edit"></i></a>
-                                                            <a href="#" class="btn btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></a>
-                                                            <a href="#" class="btn btn-primary" title="Assign To"><i class="fas fa-user-plus"></i></a>
-                                                        </div>
-                                                    </td>
+                                                    <td colspan="16" class="text-center">ไม่พบข้อมูล Ticket</td>
                                                 </tr>
-                                            <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <?php foreach ($tickets as $ticket): ?>
+                                                    <?php
+                                                        $typeConfig = $typeStyles[$ticket['ticket_type']] ?? ['class' => 'badge badge-pill badge-secondary', 'label' => htmlspecialchars($ticket['ticket_type'])];
+                                                        $statusConfig = $statusStyles[$ticket['status']] ?? ['class' => 'badge badge-pill badge-status-default'];
+                                                        [$subjectDisplay, $subjectFull] = summarizeSubject($ticket['subject']);
+
+                                                        // คำนวณ SLA
+                                                        $slaDisplay = '-';
+                                                        if ($ticket['sla_target']) {
+                                                            if ($ticket['sla_target'] < 24) {
+                                                                $slaDisplay = $ticket['sla_target'] . ' ชม.';
+                                                            } else {
+                                                                $slaDisplay = round($ticket['sla_target'] / 24, 1) . ' วัน';
+                                                            }
+                                                        }
+                                                    ?>
+                                                    <tr>
+                                                        <td class="text-nowrap text-center font-weight-bold">
+                                                            <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="text-primary">
+                                                                <?php echo htmlspecialchars($ticket['ticket_no']); ?>
+                                                            </a>
+                                                        </td>
+                                                        <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $typeConfig['class']; ?>"><?php echo htmlspecialchars($typeConfig['label']); ?></span></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['service_category'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['category'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['sub_category'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($ticket['project_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ticket['project_name'] ?? '-'); ?></td>
+                                                        <td class="subject-cell" data-toggle="tooltip" data-placement="top" title="<?php echo $subjectFull; ?>"><?php echo $subjectDisplay; ?></td>
+                                                        <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $statusConfig['class']; ?>"><?php echo htmlspecialchars($ticket['status']); ?></span></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['job_owner_name'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['source'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['priority']); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['urgency'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['impact'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo $slaDisplay; ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo date('Y-m-d H:i', strtotime($ticket['created_at'])); ?></td>
+                                                        <td class="text-nowrap text-center">
+                                                            <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                                                <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
+                                                                <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
                                         </tbody>
                                         <tfoot class="bg-light">
                                             <tr class="text-center align-middle">
