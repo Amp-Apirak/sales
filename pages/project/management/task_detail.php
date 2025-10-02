@@ -515,17 +515,23 @@ $csrf_token = $_SESSION['csrf_token'];
         <?php include '../../../include/navbar.php'; ?>
 
         <div class="content-wrapper task-detail-container">
-            <div class="container-fluid">
+            <div class="container-fluid" style="max-width: 100%; padding: 0 2rem;">
                 <!-- Task Header -->
                 <div class="task-header-card">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-1">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap">
+                        <div style="flex: 1; min-width: 300px;">
                             <a href="../view_project.php?project_id=<?php echo urlencode(encryptUserId($project_id)); ?>&tab=tasks" class="text-muted mb-2 d-inline-block">
                                 <i class="fas fa-arrow-left mr-1"></i> กลับไปยังโครงการ: <?php echo htmlspecialchars($task['project_name']); ?>
                             </a>
-                            <h1 class="task-title">
-                                <?php echo htmlspecialchars($task['task_name']); ?>
-                            </h1>
+                            <div class="d-flex align-items-center gap-3">
+                                <h1 class="task-title mb-0">
+                                    <?php echo htmlspecialchars($task['task_name']); ?>
+                                </h1>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEditTaskModal()" title="แก้ไขข้อมูลงาน">
+                                    <i class="fas fa-edit"></i> แก้ไข
+                                </button>
+                            </div>
+                        </div>
 
                             <div class="task-meta">
                                 <div class="meta-item">
@@ -652,6 +658,100 @@ $csrf_token = $_SESSION['csrf_token'];
         </div>
 
         <?php include '../../../include/footer.php'; ?>
+    </div>
+
+    <!-- Modal แก้ไข Task -->
+    <div class="modal fade" id="editTaskModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit mr-2"></i>แก้ไขข้อมูลงาน
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editTaskForm">
+                        <input type="hidden" name="task_id" value="<?php echo $task_id; ?>">
+                        <input type="hidden" name="project_id" value="<?php echo $project_id; ?>">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>ชื่องาน <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="task_name"
+                                           value="<?php echo htmlspecialchars($task['task_name']); ?>" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>สถานะ <span class="text-danger">*</span></label>
+                                    <select class="form-control" name="status" id="edit_status" required>
+                                        <option value="Pending" <?php echo $task['status'] == 'Pending' ? 'selected' : ''; ?>>รอดำเนินการ</option>
+                                        <option value="In Progress" <?php echo $task['status'] == 'In Progress' ? 'selected' : ''; ?>>กำลังดำเนินการ</option>
+                                        <option value="Completed" <?php echo $task['status'] == 'Completed' ? 'selected' : ''; ?>>เสร็จสิ้น</option>
+                                        <option value="Cancelled" <?php echo $task['status'] == 'Cancelled' ? 'selected' : ''; ?>>ยกเลิก</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>รายละเอียด</label>
+                            <textarea class="form-control" name="description" rows="3"><?php echo htmlspecialchars($task['description'] ?? ''); ?></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>วันที่เริ่ม</label>
+                                    <input type="date" class="form-control" name="start_date"
+                                           value="<?php echo $task['start_date']; ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>วันที่สิ้นสุด</label>
+                                    <input type="date" class="form-control" name="end_date"
+                                           value="<?php echo $task['end_date']; ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>ความคืบหน้า (%)</label>
+                                    <input type="number" class="form-control" name="progress" id="edit_progress"
+                                           min="0" max="100" value="<?php echo $task['progress']; ?>">
+                                    <div class="progress mt-2" style="height: 8px;">
+                                        <div class="progress-bar bg-success" id="edit_progress_bar"
+                                             style="width: <?php echo $task['progress']; ?>%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>ระดับความสำคัญ</label>
+                            <select class="form-control" name="priority" id="edit_priority">
+                                <option value="Low" <?php echo $task['priority'] == 'Low' ? 'selected' : ''; ?>>ต่ำ</option>
+                                <option value="Medium" <?php echo $task['priority'] == 'Medium' ? 'selected' : ''; ?>>ปานกลาง</option>
+                                <option value="High" <?php echo $task['priority'] == 'High' ? 'selected' : ''; ?>>สูง</option>
+                                <option value="Urgent" <?php echo $task['priority'] == 'Urgent' ? 'selected' : ''; ?>>เร่งด่วน</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>ยกเลิก
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="updateTask()">
+                        <i class="fas fa-save mr-1"></i>บันทึกการเปลี่ยนแปลง
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -927,6 +1027,58 @@ $csrf_token = $_SESSION['csrf_token'];
                                 text: 'ไม่สามารถลบความคิดเห็นได้'
                             });
                         }
+                    });
+                }
+            });
+        }
+
+        // แสดง Modal แก้ไข Task
+        function showEditTaskModal() {
+            $('#editTaskModal').modal('show');
+        }
+
+        // อัปเดต Progress Bar แบบ Real-time
+        $('#edit_progress').on('input', function() {
+            const value = $(this).val();
+            $('#edit_progress_bar').css('width', value + '%');
+        });
+
+        // บันทึกการแก้ไข Task พร้อม Log
+        function updateTask() {
+            const formData = $('#editTaskForm').serialize();
+
+            $.ajax({
+                url: 'update_task.php',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $('#editTaskModal').modal('hide');
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'บันทึกสำเร็จ!',
+                            text: 'ข้อมูลงานถูกอัปเดตแล้ว',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            // Reload หน้าเพื่อแสดงข้อมูลใหม่
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: response.message || 'ไม่สามารถบันทึกข้อมูลได้'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
                     });
                 }
             });
