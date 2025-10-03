@@ -5,7 +5,7 @@
 
 USE sales_db;
 
--- สร้าง View สำหรับ Metrics Dashboard
+-- สร้าง View สำหรับ Metrics Dashboardฤฉ
 CREATE OR REPLACE VIEW vw_service_tickets_metrics AS
 SELECT
     COUNT(*) as total_tickets,

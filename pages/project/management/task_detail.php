@@ -81,6 +81,77 @@ try {
         exit;
     }
 
+    // ตรวจสอบสิทธิ์การแก้ไขผู้รับผิดชอบ
+    // สามารถแก้ไขได้เฉพาะ: Executive, ผู้สร้าง, ผู้รับผิดชอบปัจจุบัน, Project Manager
+    $canEditAssignee = false;
+
+    // Executive สามารถแก้ไขได้เสมอ
+    if ($role === 'Executive') {
+        $canEditAssignee = true;
+    }
+
+    // ผู้สร้างงานสามารถแก้ไขได้
+    if ($task['created_by'] === $user_id) {
+        $canEditAssignee = true;
+    }
+
+    // ตรวจสอบว่าเป็นผู้รับผิดชอบปัจจุบันหรือไม่
+    $assignee_check = $condb->prepare("SELECT user_id FROM project_task_assignments WHERE task_id = ? AND user_id = ?");
+    $assignee_check->execute([$task_id, $user_id]);
+    if ($assignee_check->fetch()) {
+        $canEditAssignee = true;
+    }
+
+    // ตรวจสอบว่าเป็น Project Manager หรือไม่
+    $pm_check = $condb->prepare("
+        SELECT 1 FROM project_members pm
+        INNER JOIN project_roles pr ON pm.role_id = pr.role_id
+        WHERE pm.project_id = ? AND pm.user_id = ? AND pr.role_name = 'Project Manager'
+    ");
+    $pm_check->execute([$project_id, $user_id]);
+    if ($pm_check->fetch()) {
+        $canEditAssignee = true;
+    }
+
+    // ดึงรายชื่อสมาชิกในโครงการสำหรับ dropdown
+    // รวมจากหลายแหล่ง: project_members, task_assignments, created_by, seller
+    $members_stmt = $condb->prepare("
+        SELECT DISTINCT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as full_name
+        FROM users u
+        WHERE u.user_id IN (
+            -- สมาชิกในโครงการ
+            SELECT pm.user_id FROM project_members pm
+            WHERE pm.project_id = ? AND pm.is_active = 1
+            UNION
+            -- ผู้รับผิดชอบงานในโครงการ
+            SELECT pta.user_id FROM project_task_assignments pta
+            INNER JOIN project_tasks pt ON pta.task_id = pt.task_id
+            WHERE pt.project_id = ?
+            UNION
+            -- ผู้สร้างงานในโครงการ
+            SELECT pt.created_by FROM project_tasks pt
+            WHERE pt.project_id = ?
+            UNION
+            -- ผู้ขาย/เจ้าของโครงการ
+            SELECT p.seller FROM projects p
+            WHERE p.project_id = ?
+        )
+        ORDER BY u.first_name, u.last_name
+    ");
+    $members_stmt->execute([$project_id, $project_id, $project_id, $project_id]);
+    $project_members = $members_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // ดึงผู้รับผิดชอบปัจจุบัน
+    $current_assignees_stmt = $condb->prepare("
+        SELECT pta.user_id, CONCAT(u.first_name, ' ', u.last_name) as full_name
+        FROM project_task_assignments pta
+        INNER JOIN users u ON pta.user_id = u.user_id
+        WHERE pta.task_id = ?
+    ");
+    $current_assignees_stmt->execute([$task_id]);
+    $current_assignees = $current_assignees_stmt->fetchAll(PDO::FETCH_ASSOC);
+    $current_assignee_ids = array_column($current_assignees, 'user_id');
+
 } catch (PDOException $e) {
     echo "Error: " . $e->getMessage();
     exit;
@@ -731,14 +802,49 @@ $csrf_token = $_SESSION['csrf_token'];
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label>ระดับความสำคัญ</label>
-                            <select class="form-control" name="priority" id="edit_priority">
-                                <option value="Low" <?php echo $task['priority'] == 'Low' ? 'selected' : ''; ?>>ต่ำ</option>
-                                <option value="Medium" <?php echo $task['priority'] == 'Medium' ? 'selected' : ''; ?>>ปานกลาง</option>
-                                <option value="High" <?php echo $task['priority'] == 'High' ? 'selected' : ''; ?>>สูง</option>
-                                <option value="Urgent" <?php echo $task['priority'] == 'Urgent' ? 'selected' : ''; ?>>เร่งด่วน</option>
-                            </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>ระดับความสำคัญ</label>
+                                    <select class="form-control" name="priority" id="edit_priority">
+                                        <option value="Low" <?php echo $task['priority'] == 'Low' ? 'selected' : ''; ?>>ต่ำ</option>
+                                        <option value="Medium" <?php echo $task['priority'] == 'Medium' ? 'selected' : ''; ?>>ปานกลาง</option>
+                                        <option value="High" <?php echo $task['priority'] == 'High' ? 'selected' : ''; ?>>สูง</option>
+                                        <option value="Urgent" <?php echo $task['priority'] == 'Urgent' ? 'selected' : ''; ?>>เร่งด่วน</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>ผู้รับผิดชอบ</label>
+                                    <?php if ($canEditAssignee): ?>
+                                        <select class="form-control select2" name="assigned_users[]" id="edit_assigned_users" multiple="multiple" style="width: 100%;">
+                                            <?php
+                                            if (empty($project_members)) {
+                                                echo '<option value="" disabled>ไม่พบสมาชิกในโครงการ</option>';
+                                            } else {
+                                                foreach ($project_members as $member):
+                                            ?>
+                                                <option value="<?php echo $member['user_id']; ?>"
+                                                    <?php echo in_array($member['user_id'], $current_assignee_ids) ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($member['full_name']); ?>
+                                                </option>
+                                            <?php
+                                                endforeach;
+                                            }
+                                            ?>
+                                        </select>
+                                        <small class="text-muted">
+                                            สามารถเลือกได้หลายคน
+                                            (มีสมาชิก: <?php echo count($project_members); ?> คน,
+                                            ผู้รับผิดชอบปัจจุบัน: <?php echo count($current_assignee_ids); ?> คน)
+                                        </small>
+                                    <?php else: ?>
+                                        <input type="text" class="form-control" value="<?php echo htmlspecialchars($task['assigned_users'] ?: 'ยังไม่กำหนด'); ?>" disabled>
+                                        <small class="text-muted">ไม่มีสิทธิ์แก้ไขผู้รับผิดชอบ</small>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -1036,6 +1142,46 @@ $csrf_token = $_SESSION['csrf_token'];
         function showEditTaskModal() {
             $('#editTaskModal').modal('show');
         }
+
+        // Initialize Select2 เมื่อ Modal แสดงเสร็จ
+        <?php if ($canEditAssignee): ?>
+        $(document).ready(function() {
+            // ตรวจสอบว่า Select2 โหลดแล้ว
+            if (typeof $.fn.select2 === 'undefined') {
+                console.error('Select2 is not loaded!');
+                return;
+            }
+            console.log('Select2 is available');
+
+            $('#editTaskModal').on('shown.bs.modal', function () {
+                console.log('Modal shown, initializing Select2...');
+
+                // ทำลาย Select2 เก่าก่อน (ถ้ามี)
+                if ($('#edit_assigned_users').hasClass("select2-hidden-accessible")) {
+                    console.log('Destroying old Select2...');
+                    $('#edit_assigned_users').select2('destroy');
+                }
+
+                // ตรวจสอบ element
+                console.log('Select element:', $('#edit_assigned_users').length);
+                console.log('Options count:', $('#edit_assigned_users option').length);
+
+                // Initialize Select2 ใหม่
+                try {
+                    $('#edit_assigned_users').select2({
+                        placeholder: 'เลือกผู้รับผิดชอบ',
+                        allowClear: true,
+                        theme: 'bootstrap4',
+                        dropdownParent: $('#editTaskModal'),
+                        width: '100%'
+                    });
+                    console.log('Select2 initialized successfully');
+                } catch (e) {
+                    console.error('Select2 initialization error:', e);
+                }
+            });
+        });
+        <?php endif; ?>
 
         // อัปเดต Progress Bar แบบ Real-time
         $('#edit_progress').on('input', function() {

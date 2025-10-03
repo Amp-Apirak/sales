@@ -202,6 +202,80 @@ try {
         $changes[] = 'รายละเอียด';
     }
 
+    // อัปเดตผู้รับผิดชอบ (ถ้ามีการส่งมา)
+    if (isset($_POST['assigned_users'])) {
+        $new_assigned_users = is_array($_POST['assigned_users']) ? $_POST['assigned_users'] : [];
+
+        // ดึงผู้รับผิดชอบเก่า
+        $stmt_old_assignees = $condb->prepare("SELECT user_id FROM project_task_assignments WHERE task_id = ?");
+        $stmt_old_assignees->execute([$task_id]);
+        $old_assignee_ids = $stmt_old_assignees->fetchAll(PDO::FETCH_COLUMN);
+        $old_assignee_ids = $old_assignee_ids ?: [];
+
+        // เปรียบเทียบ
+        $removed_users = array_diff($old_assignee_ids, $new_assigned_users);
+        $added_users = array_diff($new_assigned_users, $old_assignee_ids);
+
+        // ลบผู้รับผิดชอบที่ถูกนำออก
+        if (!empty($removed_users)) {
+            $placeholders = str_repeat('?,', count($removed_users) - 1) . '?';
+            $stmt_remove = $condb->prepare("DELETE FROM project_task_assignments WHERE task_id = ? AND user_id IN ($placeholders)");
+            $stmt_remove->execute(array_merge([$task_id], $removed_users));
+
+            // สร้าง Log
+            foreach ($removed_users as $removed_user_id) {
+                $stmt_user = $condb->prepare("SELECT CONCAT(first_name, ' ', last_name) as name FROM users WHERE user_id = ?");
+                $stmt_user->execute([$removed_user_id]);
+                $removed_user_name = $stmt_user->fetchColumn();
+
+                $log_id = generateUUID();
+                $stmt_log = $condb->prepare("
+                    INSERT INTO task_comments (comment_id, task_id, project_id, user_id, comment_text, comment_type, created_at)
+                    VALUES (?, ?, ?, ?, ?, 'system_log', NOW())
+                ");
+                $stmt_log->execute([
+                    $log_id,
+                    $task_id,
+                    $project_id,
+                    $user_id,
+                    "นำ {$removed_user_name} ออกจากผู้รับผิดชอบ"
+                ]);
+            }
+            $changes[] = 'ผู้รับผิดชอบ';
+        }
+
+        // เพิ่มผู้รับผิดชอบใหม่
+        if (!empty($added_users)) {
+            foreach ($added_users as $added_user_id) {
+                $assignment_id = generateUUID();
+                $stmt_add = $condb->prepare("
+                    INSERT INTO project_task_assignments (assignment_id, task_id, user_id, assigned_by, assigned_at)
+                    VALUES (?, ?, ?, ?, NOW())
+                ");
+                $stmt_add->execute([$assignment_id, $task_id, $added_user_id, $user_id]);
+
+                // สร้าง Log
+                $stmt_user = $condb->prepare("SELECT CONCAT(first_name, ' ', last_name) as name FROM users WHERE user_id = ?");
+                $stmt_user->execute([$added_user_id]);
+                $added_user_name = $stmt_user->fetchColumn();
+
+                $log_id = generateUUID();
+                $stmt_log = $condb->prepare("
+                    INSERT INTO task_comments (comment_id, task_id, project_id, user_id, comment_text, comment_type, created_at)
+                    VALUES (?, ?, ?, ?, ?, 'system_log', NOW())
+                ");
+                $stmt_log->execute([
+                    $log_id,
+                    $task_id,
+                    $project_id,
+                    $user_id,
+                    "เพิ่ม {$added_user_name} เป็นผู้รับผิดชอบ"
+                ]);
+            }
+            $changes[] = 'ผู้รับผิดชอบ';
+        }
+    }
+
     $condb->commit();
 
     echo json_encode([
