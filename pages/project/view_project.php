@@ -953,66 +953,115 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                             <!-- แถบที่ 7 จัดการสมาชิก -->
                             <div class="tab-pane" id="members">
                                 <!-- ตารางแสดงสมาชิกในโครงการ -->
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3 class="card-title">สมาชิกในโครงการ</h3>
+                                <div class="card member-card">
+                                    <div class="card-header member-card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-user-friends"></i>
+                                            สมาชิกในโครงการ
+                                        </h3>
                                         <?php if ($hasAccessToFinancialInfo): ?>
                                             <div class="card-tools">
-                                                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addMemberModal">
+                                                <button type="button" class="btn btn-add-member" data-toggle="modal" data-target="#addMemberModal">
                                                     <i class="fas fa-user-plus"></i> เพิ่มสมาชิก
                                                 </button>
                                             </div>
                                         <?php endif; ?>
                                     </div>
-                                    <div class="card-body">
-                                        <table id="membersTable" class="table table-bordered table-striped">
-                                            <thead>
-                                                <tr>
-                                                    <th>ลำดับ</th>
-                                                    <th>ชื่อ-นามสกุล</th>
-                                                    <th>บทบาท</th>
-                                                    <th>วันที่เข้าร่วม</th>
-                                                    <th>สถานะ</th>
-                                                    <?php if ($hasAccessToFinancialInfo): ?>
-                                                        <th>จัดการ</th>
-                                                    <?php endif; ?>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <?php foreach ($members as $index => $member): ?>
+                                    <div class="card-body members-table-wrapper">
+                                        <?php if (count($members) > 0): ?>
+                                            <table id="membersTable" class="table">
+                                                <thead>
                                                     <tr>
-                                                        <td><?php echo $index + 1; ?></td>
-                                                        <td><?php echo htmlspecialchars((isset($member['first_name']) ? $member['first_name'] : '') . ' ' . (isset($member['last_name']) ? $member['last_name'] : '')); ?></td>
-                                                        <td><?php echo htmlspecialchars($member['role_name']); ?></td>
-                                                        <td><?php echo date('d/m/Y', strtotime($member['joined_date'])); ?></td>
-                                                        <td>
-                                                            <?php if ($member['is_active'] == 1): ?>
-                                                                <span class="badge badge-success">View</span>
-                                                            <?php elseif ($member['is_active'] == 2): ?>
-                                                                <span class="badge badge-primary">Half Acesss</span>
-                                                            <?php else: ?>
-                                                                <span class="badge badge-danger">Full Access</span>
-                                                            <?php endif; ?>
-                                                        </td>
+                                                        <th style="width: 5%;">#</th>
+                                                        <th style="width: 30%;">สมาชิก</th>
+                                                        <th style="width: 20%;">บทบาท</th>
+                                                        <th style="width: 15%;">วันที่เข้าร่วม</th>
+                                                        <th style="width: 15%;">ระดับสิทธิ์</th>
                                                         <?php if ($hasAccessToFinancialInfo): ?>
-                                                            <td>
-                                                                <button type="button" class="btn btn-info btn-sm"
-                                                                    onclick="editMember('<?php echo $member['member_id']; ?>', 
-                                                                           '<?php echo $member['role_id']; ?>', 
-                                                                           <?php echo $member['is_active']; ?>)">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                                <button type="button" class="btn btn-danger btn-sm"
-                                                                    onclick="confirmDelete('<?php echo $member['member_id']; ?>', 
-                                                                             '<?php echo $member['first_name'] . ' ' . $member['last_name']; ?>')">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </td>
+                                                            <th style="width: 15%;" class="text-center">จัดการ</th>
                                                         <?php endif; ?>
                                                     </tr>
-                                                <?php endforeach; ?>
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    <?php foreach ($members as $index => $member):
+                                                        $fullName = (isset($member['first_name']) ? $member['first_name'] : '') . ' ' . (isset($member['last_name']) ? $member['last_name'] : '');
+                                                        $initials = '';
+                                                        if (isset($member['first_name'][0])) {
+                                                            $initials .= mb_substr($member['first_name'], 0, 1);
+                                                        }
+                                                        if (isset($member['last_name'][0])) {
+                                                            $initials .= mb_substr($member['last_name'], 0, 1);
+                                                        }
+                                                    ?>
+                                                        <tr>
+                                                            <td class="text-center"><?php echo $index + 1; ?></td>
+                                                            <td>
+                                                                <div class="member-info">
+                                                                    <div class="member-avatar">
+                                                                        <?php echo $initials; ?>
+                                                                    </div>
+                                                                    <div class="member-name">
+                                                                        <?php echo htmlspecialchars($fullName); ?>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span class="role-badge">
+                                                                    <i class="fas fa-user-tag"></i>
+                                                                    <?php echo htmlspecialchars($member['role_name']); ?>
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="date-text">
+                                                                    <i class="far fa-calendar-alt"></i>
+                                                                    <?php echo date('d/m/Y', strtotime($member['joined_date'])); ?>
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <?php if ($member['is_active'] == 1): ?>
+                                                                    <span class="badge badge-access badge-view-only">
+                                                                        <i class="fas fa-eye"></i> View Only
+                                                                    </span>
+                                                                <?php elseif ($member['is_active'] == 2): ?>
+                                                                    <span class="badge badge-access badge-half-access">
+                                                                        <i class="fas fa-user-shield"></i> Half Access
+                                                                    </span>
+                                                                <?php else: ?>
+                                                                    <span class="badge badge-access badge-full-access">
+                                                                        <i class="fas fa-user-check"></i> Full Access
+                                                                    </span>
+                                                                <?php endif; ?>
+                                                            </td>
+                                                            <?php if ($hasAccessToFinancialInfo): ?>
+                                                                <td class="text-center">
+                                                                    <button type="button" class="btn btn-action btn-edit" title="แก้ไข"
+                                                                        onclick="editMember('<?php echo $member['member_id']; ?>',
+                                                                               '<?php echo $member['role_id']; ?>',
+                                                                               <?php echo $member['is_active']; ?>)">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-action btn-delete" title="ลบ"
+                                                                        onclick="confirmDelete('<?php echo $member['member_id']; ?>',
+                                                                                 '<?php echo htmlspecialchars($fullName); ?>')">
+                                                                        <i class="fas fa-trash-alt"></i>
+                                                                    </button>
+                                                                </td>
+                                                            <?php endif; ?>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        <?php else: ?>
+                                            <div class="empty-state">
+                                                <i class="fas fa-users"></i>
+                                                <p>ยังไม่มีสมาชิกในโครงการ</p>
+                                                <?php if ($hasAccessToFinancialInfo): ?>
+                                                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addMemberModal">
+                                                        <i class="fas fa-user-plus"></i> เพิ่มสมาชิกคนแรก
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
