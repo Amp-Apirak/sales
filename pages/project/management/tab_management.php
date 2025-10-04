@@ -43,7 +43,12 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>วันที่สิ้นสุด</label>
-                                <input type="date" class="form-control" id="end_date" name="end_date">
+                                <input type="date" class="form-control" id="end_date" name="end_date"
+                                    <?php if ($role === 'Seller' || $role === 'Engineer'): ?>
+                                        readonly
+                                        style="background-color: #e9ecef; cursor: not-allowed;"
+                                        title="คุณไม่มีสิทธิ์แก้ไขวันที่สิ้นสุด"
+                                    <?php endif; ?>>
                             </div>
                         </div>
                     </div>
