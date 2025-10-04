@@ -145,8 +145,25 @@ try {
             ':task_order' => $taskOrder
         ]);
     } else {
+        // ตรวจสอบสิทธิ์ในการแก้ไข end_date
+        // Seller และ Engineer ไม่สามารถแก้ไข end_date ได้
+        $userRole = $_SESSION['role'] ?? '';
+
+        // ดึงข้อมูล end_date เดิมจากฐานข้อมูล
+        $stmt = $condb->prepare("SELECT end_date FROM project_tasks WHERE task_id = ?");
+        $stmt->execute([$taskId]);
+        $currentTask = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // ถ้าเป็น Seller หรือ Engineer ให้ใช้ end_date เดิม ไม่ยอมให้แก้ไข
+        if ($userRole === 'Seller' || $userRole === 'Engineer') {
+            $end_date = $currentTask['end_date']; // ใช้ค่าเดิม
+        } else {
+            // Executive และ Sale Supervisor สามารถแก้ไขได้
+            $end_date = $input['end_date'] ?? null;
+        }
+
         // SQL สำหรับอัพเดทข้อมูล
-        $sql = "UPDATE project_tasks SET 
+        $sql = "UPDATE project_tasks SET
                     task_name = :task_name,
                     description = :description,
                     start_date = :start_date,
@@ -164,7 +181,7 @@ try {
             ':task_name' => $input['task_name'],
             ':description' => $input['description'] ?? null,
             ':start_date' => $input['start_date'] ?? null,
-            ':end_date' => $input['end_date'] ?? null,
+            ':end_date' => $end_date, // ใช้ค่าที่ตรวจสอบสิทธิ์แล้ว
             ':status' => $input['status'] ?? 'Pending',
             ':progress' => $input['progress'] ?? 0,
             ':priority' => $input['priority'] ?? 'Medium',
