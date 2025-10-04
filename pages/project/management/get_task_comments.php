@@ -142,31 +142,40 @@ try {
 
         // Header
         echo "<div class='comment-header'>";
-        echo "<div class='user-avatar' style='background: {$avatarColor};'>{$initials}</div>";
+        echo "<div class='comment-user-section'>";
+
+        // Avatar
+        if (!$isSystemLog) {
+            echo "<div class='user-avatar' style='background: {$avatarColor};'>{$initials}</div>";
+        } else {
+            echo "<div class='user-avatar'><i class='fas fa-robot'></i></div>";
+        }
+
         echo "<div class='comment-user-info'>";
         echo "<div class='comment-username'>" . htmlspecialchars($comment['user_name']) . "</div>";
         echo "<div class='comment-time'>";
-        echo "<i class='far fa-clock mr-1'></i>{$timeAgo}";
+        echo "<i class='far fa-clock' style='margin-right: 0.25rem;'></i>{$timeAgo}";
         if ($comment['is_edited']) {
-            echo " <span class='text-muted'>(แก้ไขแล้ว)</span>";
+            echo " <span style='color: #9ca3af; font-size: 0.75rem;'>(แก้ไขแล้ว)</span>";
         }
         echo "</div>";
         echo "</div>";
+        echo "</div>"; // close comment-user-section
 
         // ปุ่มแก้ไข/ลบ (เฉพาะเจ้าของ Comment)
         $current_user_id = $_SESSION['user_id'] ?? null;
         if ($current_user_id && $comment['user_id'] == $current_user_id && !$isSystemLog) {
-            echo "<div class='comment-actions-menu'>";
-            echo "<button class='btn-edit-comment' onclick='editComment(\"{$comment['comment_id']}\", \"" . htmlspecialchars(addslashes($comment['comment_text'])) . "\")' title='แก้ไข'>";
+            echo "<div class='comment-actions'>";
+            echo "<button class='btn btn-sm btn-light' onclick='editComment(\"{$comment['comment_id']}\", \"" . htmlspecialchars(addslashes($comment['comment_text'])) . "\")' title='แก้ไข' style='border: 1px solid #e5e7eb;'>";
             echo "<i class='fas fa-edit'></i>";
             echo "</button>";
-            echo "<button class='btn-delete-comment' onclick='deleteComment(\"{$comment['comment_id']}\")' title='ลบ'>";
-            echo "<i class='fas fa-trash'></i>";
+            echo "<button class='btn btn-sm btn-light text-danger' onclick='deleteComment(\"{$comment['comment_id']}\")' title='ลบ' style='border: 1px solid #e5e7eb;'>";
+            echo "<i class='fas fa-trash-alt'></i>";
             echo "</button>";
             echo "</div>";
         }
 
-        echo "</div>";
+        echo "</div>"; // close comment-header
 
         // Content
         if ($isSystemLog) {
@@ -224,37 +233,3 @@ try {
 }
 ?>
 
-<style>
-    /* Comment Actions Menu */
-    .comment-actions-menu {
-        display: flex;
-        gap: 0.5rem;
-        margin-left: auto;
-    }
-
-    .btn-edit-comment,
-    .btn-delete-comment {
-        background: none;
-        border: none;
-        padding: 0.375rem 0.5rem;
-        cursor: pointer;
-        border-radius: 6px;
-        transition: all 0.2s;
-        color: #64748b;
-        font-size: 0.875rem;
-    }
-
-    .btn-edit-comment:hover {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .btn-delete-comment:hover {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .comment-header {
-        position: relative;
-    }
-</style>
