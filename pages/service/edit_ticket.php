@@ -48,6 +48,11 @@ try {
     $stmtWatchers->execute([':ticket_id' => $ticket_id]);
     $selectedWatchers = $stmtWatchers->fetchAll(PDO::FETCH_COLUMN);
 
+    // ดึง Attachments
+    $stmtAttach = $condb->prepare("SELECT attachment_id, file_name, file_path, file_size, uploaded_at FROM service_ticket_attachments WHERE ticket_id = :ticket_id ORDER BY uploaded_at DESC");
+    $stmtAttach->execute([':ticket_id' => $ticket_id]);
+    $attachments = $stmtAttach->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (PDOException $e) {
     die('Database Error: ' . $e->getMessage());
 }
@@ -364,6 +369,18 @@ $menu = 'service';
                 padding: 1rem;
             }
         }
+        /* Attachments header customization */
+        .attachment-card .card-header.attachment-header {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            color: #fff;
+            border-top-left-radius: 1rem !important;
+            border-top-right-radius: 1rem !important;
+        }
+        .attachment-card .attachment-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
+        .attachment-card .btn-choose-files { background: #ffffff; color: #1f2937; border: none; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+        .attachment-card .btn-upload-files { background: #ff9800; color: #212529; border: none; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+        .attachment-card .btn-choose-files:hover, .attachment-card .btn-upload-files:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+
     </style>
 </head>
 
@@ -446,21 +463,20 @@ $menu = 'service';
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                                                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
-                                                    <label>SLA Target (ชั่วโมง)</label>
-                                                    <select name="sla_target" id="sla_target" class="form-control select2">
+                                                    <label>Impact<span class="text-danger">*</span></label>
+                                                    <select name="impact" id="impact" class="form-control select2" required>
                                                         <option value="">เลือก</option>
-                                                        <option value="1" <?php echo $ticket['sla_target'] == 1 ? 'selected' : ''; ?>>1 ชั่วโมง</option>
-                                                        <option value="2" <?php echo $ticket['sla_target'] == 2 ? 'selected' : ''; ?>>2 ชั่วโมง</option>
-                                                        <option value="4" <?php echo $ticket['sla_target'] == 4 ? 'selected' : ''; ?>>4 ชั่วโมง</option>
-                                                        <option value="8" <?php echo $ticket['sla_target'] == 8 ? 'selected' : ''; ?>>8 ชั่วโมง</option>
-                                                        <option value="24" <?php echo $ticket['sla_target'] == 24 ? 'selected' : ''; ?>>24 ชั่วโมง</option>
-                                                        <option value="48" <?php echo $ticket['sla_target'] == 48 ? 'selected' : ''; ?>>48 ชั่วโมง</option>
-                                                        <option value="72" <?php echo $ticket['sla_target'] == 72 ? 'selected' : ''; ?>>72 ชั่วโมง</option>
+                                                        <?php foreach ($impactOptions as $impact): ?>
+                                                            <option value="<?php echo escapeOutput($impact); ?>" <?php echo $ticket['impact'] === $impact ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($impact); ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                             </div>
+
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
                                                     <label>Priority<span class="text-danger">*</span></label>
@@ -474,19 +490,7 @@ $menu = 'service';
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                                                <div class="form-group">
-                                                    <label>Channel</label>
-                                                    <select name="channel" id="channel" class="form-control select2">
-                                                        <option value="">เลือก</option>
-                                                        <?php foreach ($channelOptions as $channel): ?>
-                                                            <option value="<?php echo escapeOutput($channel); ?>" <?php echo $ticket['channel'] === $channel ? 'selected' : ''; ?>>
-                                                                <?php echo escapeOutput($channel); ?>
-                                                            </option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                            </div>
+
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
                                                     <label>Urgency<span class="text-danger">*</span></label>
@@ -500,18 +504,25 @@ $menu = 'service';
                                                     </select>
                                                 </div>
                                             </div>
+                                                                                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>SLA Target (ชั่วโมง) <small class="text-muted">(คำนวณอัตโนมัติ)</small></label>
+                                                    <input type="text" class="form-control" id="sla_target_display" value="<?php echo (int)($ticket['sla_target'] ?? 0); ?>" disabled>
+
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <!-- Second Row of Main Fields -->
                                         <div class="row">
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
-                                                    <label>Impact<span class="text-danger">*</span></label>
-                                                    <select name="impact" id="impact" class="form-control select2" required>
+                                                    <label>Channel</label>
+                                                    <select name="channel" id="channel" class="form-control select2">
                                                         <option value="">เลือก</option>
-                                                        <?php foreach ($impactOptions as $impact): ?>
-                                                            <option value="<?php echo escapeOutput($impact); ?>" <?php echo $ticket['impact'] === $impact ? 'selected' : ''; ?>>
-                                                                <?php echo escapeOutput($impact); ?>
+                                                        <?php foreach ($channelOptions as $channel): ?>
+                                                            <option value="<?php echo escapeOutput($channel); ?>" <?php echo $ticket['channel'] === $channel ? 'selected' : ''; ?>>
+                                                                <?php echo escapeOutput($channel); ?>
                                                             </option>
                                                         <?php endforeach; ?>
                                                     </select>
@@ -638,6 +649,42 @@ $menu = 'service';
                                                 value="<?php echo escapeOutput($ticket['subject']); ?>"
                                                 placeholder="สรุปเหตุการณ์หรือคำขอ" maxlength="150" required>
                                             <small class="text-muted">จำกัดไม่เกิน 150 ตัวอักษร</small>
+                                        </div>
+
+
+                                        <!-- Attachments Card -->
+                                        <div class="card mt-3 attachment-card border">
+                                            <div class="card-header attachment-header py-2 d-flex align-items-center justify-content-between w-100">
+                                                <h3 class="card-title attachment-title mb-0 mr-auto"><i class="fas fa-paperclip mr-2"></i>Attachments (<span id="attachmentCount"><?php echo count($attachments ?? []); ?></span>)</h3>
+                                                <div class="btn-group btn-group-sm ml-auto">
+                                                    <input type="file" id="editAttachmentFiles" multiple class="d-none" />
+                                                    <button type="button" id="btnChooseFiles" class="btn btn-light btn-choose-files"><i class="fas fa-folder-open mr-1"></i>เลือกไฟล์</button>
+                                                    <button type="button" id="btnUploadFiles" class="btn btn-warning btn-upload-files"><i class="fas fa-upload mr-1"></i>อัปโหลด</button>
+                                                </div>
+                                            </div>
+                                            <div class="card-body p-2">
+                                                <div id="selectedFiles" class="mb-2 text-muted small"></div>
+                                                <div id="attachmentList">
+                                                    <?php if (!empty($attachments)): ?>
+                                                        <?php foreach ($attachments as $file): ?>
+                                                            <div class="d-flex justify-content-between align-items-center mb-1 py-1 px-2 border rounded" data-attach-id="<?php echo escapeOutput($file['attachment_id']); ?>">
+                                                                <div>
+                                                                    <i class="fas fa-file text-secondary mr-2"></i>
+                                                                    <a href="<?php echo htmlspecialchars($file['file_path']); ?>" target="_blank" rel="noopener">
+                                                                        <small><?php echo htmlspecialchars($file['file_name']); ?></small>
+                                                                    </a>
+                                                                    <small class="text-muted ml-2"><?php echo number_format(($file['file_size'] ?? 0)/1024, 1); ?> KB</small>
+                                                                </div>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger btnDeleteAttachment" data-id="<?php echo escapeOutput($file['attachment_id']); ?>">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    <?php else: ?>
+                                                        <p class="text-muted mb-0">ยังไม่มีไฟล์แนบ</p>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div class="form-group">
@@ -835,6 +882,89 @@ $menu = 'service';
             updateOnsiteCardVisibility();
             updateOnsiteTravelMode();
 
+
+            // ===== Attachments JS (edit mode) =====
+            const csrfToken = <?php echo json_encode($csrf_token); ?>;
+            const ticketId = <?php echo json_encode($ticket_id); ?>;
+            const $fileInput = $('#editAttachmentFiles');
+            const $btnChoose = $('#btnChooseFiles');
+            const $btnUpload = $('#btnUploadFiles');
+            const $list = $('#attachmentList');
+            const $count = $('#attachmentCount');
+            const $sel = $('#selectedFiles');
+
+            function renderSelectedFiles(files){
+                if (!files || files.length === 0) { $sel.text(''); return; }
+                const names = [];
+                for (let i = 0; i < files.length; i++) { names.push(files[i].name); }
+                $sel.text('เลือกแล้ว: ' + names.join(', '));
+            }
+
+            $btnChoose.on('click', ()=> $fileInput.trigger('click'));
+            $fileInput.on('change', function(){ renderSelectedFiles(this.files); });
+
+            function loadAttachments(){
+                $.post('api/get_attachments.php', { csrf_token: csrfToken, ticket_id: ticketId }, function(resp){
+                    if (!resp || !resp.success) return;
+                    $count.text(resp.count || 0);
+                    $list.empty();
+                    if (!resp.data || resp.data.length === 0) {
+                        $list.append('<p class="text-muted mb-0">ยังไม่มีไฟล์แนบ</p>');
+                        return;
+                    }
+                    resp.data.forEach(function(f){
+                        const sizeKb = f.file_size ? (f.file_size/1024).toFixed(1) : '0.0';
+                        const row = $(
+                            '<div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded" data-attach-id="'+(f.attachment_id||'')+'">'
+                            + '<div><i class="fas fa-file text-info mr-2"></i>'
+                            + '<a target="_blank" rel="noopener" href="'+(f.file_path||'#')+'"><small>'+ $('<div>').text(f.file_name||'').html() +'</small></a>'
+                            + '<small class="text-muted ml-2">'+ sizeKb +' KB</small>'
+                            + '</div>'
+                            + '<button type="button" class="btn btn-sm btn-outline-danger btnDeleteAttachment" data-id="'+(f.attachment_id||'')+'"><i class="fas fa-trash"></i></button>'
+                            + '</div>'
+                        );
+                        $list.append(row);
+                    });
+                }, 'json');
+            }
+
+            $list.on('click', '.btnDeleteAttachment', function(){
+                const id = $(this).data('id');
+                if (!id) return;
+                Swal.fire({
+                    icon: 'warning', title: 'ลบไฟล์นี้?', showCancelButton: true,
+                    confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก'
+                }).then(function(r){
+                    if (!r.isConfirmed) return;
+                    $.post('api/delete_attachment.php', { csrf_token: csrfToken, ticket_id: ticketId, attachment_id: id }, function(resp){
+                        if (resp && resp.success) { loadAttachments(); }
+                        else { Swal.fire('ผิดพลาด', (resp && resp.message) || 'ลบไม่สำเร็จ', 'error'); }
+                    }, 'json');
+                });
+            });
+
+            $btnUpload.on('click', function(){
+                const files = $fileInput[0].files;
+                if (!files || files.length === 0) { Swal.fire('แจ้งเตือน','กรุณาเลือกไฟล์ก่อน','info'); return; }
+                const fd = new FormData();
+                fd.append('csrf_token', csrfToken);
+                fd.append('ticket_id', ticketId);
+                for (let i = 0; i < files.length; i++) { fd.append('attachments[]', files[i]); }
+                $.ajax({
+                    url: 'api/upload_attachment.php', type: 'POST', data: fd, processData: false, contentType: false, dataType: 'json'
+                }).done(function(resp){
+                    if (resp && resp.success) {
+                        $fileInput.val(''); $sel.text('');
+                        loadAttachments();
+                    } else {
+                        Swal.fire('ผิดพลาด', (resp && resp.message) || 'อัปโหลดไม่สำเร็จ', 'error');
+                    }
+                }).fail(function(){ Swal.fire('ผิดพลาด','อัปโหลดไม่สำเร็จ','error'); });
+            });
+
+            // initial load for attachments
+            loadAttachments();
+
             $('#editTicketForm').on('submit', function(e) {
                 e.preventDefault();
 
@@ -845,6 +975,8 @@ $menu = 'service';
                     didOpen: () => {
                         Swal.showLoading();
                     }
+
+
                 });
 
                 // ส่งข้อมูลไปยัง API
@@ -867,8 +999,8 @@ $menu = 'service';
                                 showCancelButton: true,
                                 cancelButtonText: 'กลับหน้ารายการ',
                                 customClass: {
-                                    confirmButton: 'btn btn-success',
-                                    cancelButton: 'btn btn-secondary'
+                                    confirmButton: 'btn btn-success btn-sm mr-2',
+                                    cancelButton: 'btn btn-secondary btn-sm'
                                 },
                                 buttonsStyling: false
                             }).then((result) => {

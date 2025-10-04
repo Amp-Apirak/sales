@@ -72,7 +72,7 @@ try {
     $allowedFields = [
         'subject', 'description', 'status', 'priority', 'urgency', 'impact',
         'service_category', 'category', 'sub_category',
-        'job_owner', 'reporter', 'source', 'sla_target', 'channel',
+        'job_owner', 'reporter', 'source', 'channel',
         'start_at', 'due_at'
     ];
 
@@ -80,6 +80,25 @@ try {
         if (isset($_POST[$field])) {
             $updateFields[] = "$field = :$field";
             $params[":$field"] = $_POST[$field];
+        }
+    }
+
+
+    // Recompute SLA target if priority/urgency/impact changed
+    if (isset($_POST['priority']) || isset($_POST['urgency']) || isset($_POST['impact'])) {
+        require_once __DIR__ . '/../sla_helpers.php';
+        $newPriority = $_POST['priority'] ?? $existingTicket['priority'];
+        $newUrgency  = $_POST['urgency']  ?? $existingTicket['urgency'];
+        $newImpact   = $_POST['impact']   ?? $existingTicket['impact'];
+        $newSlaTarget = computeSlaTarget($condb, $newPriority, $newUrgency, $newImpact);
+        $updateFields[] = "sla_target = :sla_target";
+        $params[':sla_target'] = $newSlaTarget;
+
+        if (!empty($newSlaTarget) && !empty($existingTicket['created_at'])) {
+            $createdAt = new DateTime($existingTicket['created_at']);
+            $createdAt->modify('+' . (int)$newSlaTarget . ' hour');
+            $updateFields[] = "sla_deadline = :sla_deadline";
+            $params[':sla_deadline'] = $createdAt->format('Y-m-d H:i:s');
         }
     }
 
@@ -190,35 +209,85 @@ try {
     $userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
     $actorName = $userData['full_name'] ?? 'Unknown';
 
-    // สร้าง detail สำหรับ Timeline
-    $changedFields = [];
-    foreach ($allowedFields as $field) {
-        if (isset($_POST[$field]) && $existingTicket[$field] != $_POST[$field]) {
-            $changedFields[] = $field;
+    // สร้าง detail สำหรับ Timeline (เฉพาะฟิลด์ที่เปลี่ยนจริง)
+    $fieldLabels = [
+        'subject' => 'หัวข้อ / Subject',
+        'description' => 'รายละเอียด',
+        'status' => 'สถานะ',
+        'priority' => 'Priority',
+        'urgency' => 'Urgency',
+        'impact' => 'Impact',
+        'service_category' => 'Service Category',
+        'category' => 'Category',
+        'sub_category' => 'Sub Category',
+        'job_owner' => 'Job Owner',
+        'reporter' => 'ผู้แจ้ง',
+        'source' => 'Ticket Source',
+        'channel' => 'Channel',
+        'start_at' => 'กำหนดเริ่มดำเนินการ',
+        'due_at' => 'กำหนดแล้วเสร็จ'
+    ];
+
+    $normalize = function($v, $field) {
+        if ($v === '' || $v === null) return null;
+        if (in_array($field, ['start_at','due_at'])) {
+            // รับทั้งรูปแบบ Y-m-d H:i และอื่นๆ แล้ว normalize เป็น Y-m-d H:i:s
+            $ts = strtotime($v);
+            return $ts ? date('Y-m-d H:i:s', $ts) : null;
         }
+        return is_string($v) ? trim($v) : $v;
+    };
+
+    $userNameById = function($id) use ($condb) {
+        if (!$id) return '-';
+        $stmt = $condb->prepare("SELECT CONCAT(first_name,' ',last_name) AS n FROM users WHERE user_id = :id");
+        $stmt->execute([':id' => $id]);
+        $r = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $r['n'] ?? $id;
+    };
+
+    $pretty = function($v, $field) use ($userNameById) {
+        if ($v === null) return '-';
+        if (in_array($field, ['start_at','due_at'])) {
+            $ts = strtotime($v);
+            return $ts ? date('d/m/Y H:i', $ts) : '-';
+        }
+        if (in_array($field, ['job_owner','reporter'])) {
+            return $userNameById($v);
+        }
+        return (string)$v;
+    };
+
+    $changes = [];
+    foreach ($allowedFields as $field) {
+        if (!array_key_exists($field, $_POST)) continue; // อัปเดตเฉพาะฟิลด์ที่ส่งมา
+        $old = $normalize($existingTicket[$field] ?? null, $field);
+        $new = $normalize($_POST[$field], $field);
+        if ($old === $new) continue; // ไม่มีการเปลี่ยน
+        $label = $fieldLabels[$field] ?? $field;
+        $changes[] = $label . ': ' . $pretty($old, $field) . ' → ' . $pretty($new, $field);
     }
 
-    $detail = 'แก้ไขข้อมูล Ticket';
-    if (!empty($changedFields)) {
-        $detail .= ': ' . implode(', ', $changedFields);
+    if (!empty($changes)) {
+        $detail = 'เปลี่ยนแปลง: ' . implode('; ', $changes);
+
+        // Insert Timeline Entry เฉพาะเมื่อมีการเปลี่ยนแปลงจริง
+        $sqlTimeline = "INSERT INTO service_ticket_timeline (
+            timeline_id, ticket_id, `order`, actor, action, detail, location, created_at
+        ) VALUES (
+            UUID(), :ticket_id, :order, :actor, :action, :detail, :location, NOW()
+        )";
+
+        $stmtTimeline = $condb->prepare($sqlTimeline);
+        $stmtTimeline->execute([
+            ':ticket_id' => $ticket_id,
+            ':order' => $nextOrder,
+            ':actor' => $actorName,
+            ':action' => 'แก้ไข Ticket',
+            ':detail' => $detail,
+            ':location' => null
+        ]);
     }
-
-    // Insert Timeline Entry
-    $sqlTimeline = "INSERT INTO service_ticket_timeline (
-        timeline_id, ticket_id, `order`, actor, action, detail, location, created_at
-    ) VALUES (
-        UUID(), :ticket_id, :order, :actor, :action, :detail, :location, NOW()
-    )";
-
-    $stmtTimeline = $condb->prepare($sqlTimeline);
-    $stmtTimeline->execute([
-        ':ticket_id' => $ticket_id,
-        ':order' => $nextOrder,
-        ':actor' => $actorName,
-        ':action' => 'แก้ไข Ticket',
-        ':detail' => $detail,
-        ':location' => null
-    ]);
 
     // Commit Transaction
     $condb->commit();

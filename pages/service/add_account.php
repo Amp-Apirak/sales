@@ -103,6 +103,17 @@ try {
     $stmtProjects = $condb->query("SELECT project_id, project_name FROM projects ORDER BY project_name ASC");
     $projects = $stmtProjects->fetchAll();
 
+
+    // รายการ Impact ที่ Active จาก Settings
+    try {
+        $stmtImp = $condb->query("SELECT impact_name FROM service_sla_impacts WHERE active = 1 ORDER BY impact_name ASC");
+        $impactOptions = array_map(function ($r) {
+            return $r['impact_name'];
+        }, $stmtImp->fetchAll(PDO::FETCH_ASSOC));
+    } catch (PDOException $e) {
+        $impactOptions = [];
+    }
+
     // ผู้แจ้ง (ใช้รายชื่อผู้ใช้งานเดียวกันกับ Job Owner)
     $reporters = $owners;
 } catch (PDOException $e) {
@@ -133,7 +144,7 @@ $statusOptions = [
 $sourceOptions = ['Email', 'Call Center', 'Portal', 'Self-Service', 'Monitoring', 'Planner', 'Security Alert', 'Product Owner'];
 $priorityOptions = ['Critical', 'High', 'Medium', 'Low'];
 $urgencyOptions = ['High', 'Medium', 'Low'];
-$impactOptions = ['Organization', 'Multiple Sites', 'Site', 'Department', 'Application', 'Executive', 'Remote Users', 'Single User', 'External'];
+// $impactOptions is populated from DB (service_sla_impacts.active=1). If empty, UI will show only the placeholder option.
 $channelOptions = ['Onsite', 'Remote', 'Office'];
 
 $menu = 'service';
@@ -331,6 +342,7 @@ $menu = 'service';
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -392,7 +404,7 @@ $menu = 'service';
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-12">
-                            <form id="createTicketForm" method="POST" action="#" novalidate>
+                            <form id="createTicketForm" method="POST" action="#" enctype="multipart/form-data" novalidate>
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
                                 <!-- Header Card -->
@@ -457,19 +469,16 @@ $menu = 'service';
                                             </div>
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
-                                                    <label>SLA Target (ชั่วโมง)</label>
-                                                    <select name="sla_target" id="sla_target" class="form-control select2">
+                                                    <label>Impact<span class="text-danger">*</span></label>
+                                                    <select name="impact" id="impact" class="form-control select2" required>
                                                         <option value="">เลือก</option>
-                                                        <option value="1">1 ชั่วโมง</option>
-                                                        <option value="2">2 ชั่วโมง</option>
-                                                        <option value="4" selected>4 ชั่วโมง</option>
-                                                        <option value="8">8 ชั่วโมง</option>
-                                                        <option value="24">24 ชั่วโมง</option>
-                                                        <option value="48">48 ชั่วโมง</option>
-                                                        <option value="72">72 ชั่วโมง</option>
+                                                        <?php foreach ($impactOptions as $impact): ?>
+                                                            <option value="<?php echo escapeOutput($impact); ?>" <?php echo $impact === $defaultImpact ? 'selected' : ''; ?>><?php echo escapeOutput($impact); ?></option>
+                                                        <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                             </div>
+
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
                                                     <label>Priority<span class="text-danger">*</span></label>
@@ -481,17 +490,7 @@ $menu = 'service';
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                                                <div class="form-group">
-                                                    <label>Channel</label>
-                                                    <select name="channel" id="channel" class="form-control select2">
-                                                        <option value="">เลือก</option>
-                                                        <?php foreach ($channelOptions as $channel): ?>
-                                                            <option value="<?php echo escapeOutput($channel); ?>" <?php echo $channel === 'Office' ? 'selected' : ''; ?>><?php echo escapeOutput($channel); ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                            </div>
+
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
                                                     <label>Urgency<span class="text-danger">*</span></label>
@@ -503,17 +502,24 @@ $menu = 'service';
                                                     </select>
                                                 </div>
                                             </div>
+                                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                                <div class="form-group">
+                                                    <label>SLA Target (ชั่วโมง)</label>
+                                                    <input type="text" class="form-control" id="sla_target_display" value="<?php echo (int)$defaultSlaTarget; ?>" disabled>
+
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <!-- Second Row of Main Fields -->
                                         <div class="row">
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
-                                                    <label>Impact<span class="text-danger">*</span></label>
-                                                    <select name="impact" id="impact" class="form-control select2" required>
+                                                    <label>Channel</label>
+                                                    <select name="channel" id="channel" class="form-control select2" required>
                                                         <option value="">เลือก</option>
-                                                        <?php foreach ($impactOptions as $impact): ?>
-                                                            <option value="<?php echo escapeOutput($impact); ?>" <?php echo $impact === $defaultImpact ? 'selected' : ''; ?>><?php echo escapeOutput($impact); ?></option>
+                                                        <?php foreach ($channelOptions as $channel): ?>
+                                                            <option value="<?php echo escapeOutput($channel); ?>" <?php echo $channel === 'Office' ? 'selected' : ''; ?>><?php echo escapeOutput($channel); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -580,10 +586,10 @@ $menu = 'service';
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>ผู้แจ้ง</label>
-                                                    <select name="reporter" id="reporter" class="form-control select2">
+                                                    <select name="reporter" id="reporter" class="form-control select2" required>
                                                         <option value="">เลือกผู้แจ้ง</option>
                                                         <?php foreach ($reporters as $reporter): ?>
-                                                            <option value="<?php echo escapeOutput($reporter['user_id']); ?>"><?php echo escapeOutput($reporter['full_name']); ?></option>
+                                                            <option value="<?php echo escapeOutput($reporter['user_id']); ?>" <?php echo (string)$reporter['user_id'] === (string)$currentUserId ? 'selected' : ''; ?>><?php echo escapeOutput($reporter['full_name']); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -605,13 +611,13 @@ $menu = 'service';
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>กำหนดเริ่มดำเนินการ (วันเวลา)</label>
-                                                    <input type="datetime-local" name="start_at" id="start_at" class="form-control" value="<?php echo escapeOutput($defaultStartAt); ?>">
+                                                    <input type="datetime-local" name="start_at" id="start_at" class="form-control" value="<?php echo escapeOutput($defaultStartAt); ?>" required>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>กำหนดแล้วเสร็จ (วันเวลา)</label>
-                                                    <input type="datetime-local" name="due_at" id="due_at" class="form-control">
+                                                    <input type="datetime-local" name="due_at" id="due_at" class="form-control" required>
                                                 </div>
                                             </div>
                                         </div>
@@ -625,7 +631,7 @@ $menu = 'service';
 
                                         <div class="form-group">
                                             <label>รายละเอียดงาน / Symptom</label>
-                                            <textarea name="description" id="description" rows="4" class="form-control" placeholder="ระบุรายละเอียด ปัญหา หรือความต้องการของผู้ใช้งาน"></textarea>
+                                            <textarea name="description" id="description" rows="4" class="form-control" placeholder="ระบุรายละเอียด ปัญหา หรือความต้องการของผู้ใช้งาน" required></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -733,6 +739,7 @@ $menu = 'service';
 
                                         <!-- ฟิลด์รายละเอียดเพิ่มเติมสำหรับพาหนะอื่นๆ -->
                                         <div class="row d-none" id="onsiteOtherRow">
+
                                             <div class="col-md-12">
                                                 <div class="form-group">
                                                     <label><i class="fas fa-info-circle text-info mr-1"></i>รายละเอียดพาหนะเพิ่มเติม</label>
@@ -903,6 +910,104 @@ $menu = 'service';
             updateOnsiteCardVisibility();
             updateOnsiteTravelMode();
 
+            // Compute Due = Start + SLA hours (editable by user; this just sets default)
+            function formatDateToLocalInput(d) {
+                const pad = n => String(n).padStart(2, '0');
+                return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            }
+
+            function recomputeDue() {
+                const startVal = $('#start_at').val();
+                const slaH = parseInt($slaDisp.val(), 10);
+                if (!startVal || isNaN(slaH)) return;
+                const d = new Date(startVal);
+                if (isNaN(d.getTime())) return;
+                d.setHours(d.getHours() + slaH);
+                $('#due_at').val(formatDateToLocalInput(d));
+            }
+
+
+
+            // === SLA auto-compute from Priority/Urgency/Impact ===
+            const $priority = $('#priority');
+            const $urgency = $('#urgency');
+            const $impact = $('#impact');
+            const $slaDisp = $('#sla_target_display');
+            const csrfToken = <?php echo json_encode($csrf_token); ?>;
+
+            function refreshSLA() {
+                const pr = $priority.val() || '';
+                const ur = $urgency.val() || '';
+                const im = $impact.val() || '';
+                if (!pr && !ur && !im) {
+                    $slaDisp.val('');
+                    return;
+                }
+                $.ajax({
+                    url: 'api/compute_sla.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        csrf_token: csrfToken,
+                        priority: pr,
+                        urgency: ur,
+                        impact: im
+                    },
+                }).done(function(resp) {
+                    if (resp && resp.success) {
+                        $slaDisp.val(resp.sla_hours);
+                        recomputeDue();
+                    } else {
+                        $slaDisp.val('');
+                        recomputeDue();
+                    }
+                }).fail(function() {
+                    $slaDisp.val('');
+                    recomputeDue();
+                });
+            }
+
+            $priority.on('change', refreshSLA);
+            $urgency.on('change', refreshSLA);
+            $impact.on('change', refreshSLA);
+            $('#start_at').on('change', recomputeDue);
+            // initial compute
+            refreshSLA();
+            recomputeDue();
+
+            // === Attachments preview and click handler ===
+            const $fileInput = $('#attachmentFiles');
+            const $filesList = $('#selectedFiles');
+
+            function escapeHtml(str) {
+                return String(str || '').replace(/[&<>"']/g, s => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    '\'': '&#39;'
+                } [s]));
+            }
+
+            function renderSelectedFiles(files) {
+                const arr = Array.from(files || []);
+                if (!arr.length) {
+                    $filesList.html('<small class="text-muted">ยังไม่ได้เลือกไฟล์</small>');
+                    return;
+                }
+                const items = arr.map(f => `<li class="small mb-1"><i class="far fa-file mr-1"></i>${escapeHtml(f.name)} <span class="text-muted">(${(f.size/1024).toFixed(1)} KB)</span></li>`).join('');
+                $filesList.html(`<ul class="list-unstyled mb-0">${items}</ul>`);
+            }
+            $fileInput.on('change', function() {
+                renderSelectedFiles(this.files);
+            });
+            $('.dropzone-area').on('click', function(e) {
+                if (!$(e.target).closest('label[for="attachmentFiles"]').length) {
+                    $fileInput.trigger('click');
+                }
+            });
+
+
             $('#createTicketForm').on('submit', function(e) {
                 e.preventDefault();
 
@@ -912,6 +1017,7 @@ $menu = 'service';
                     allowOutsideClick: false,
                     didOpen: () => {
                         Swal.showLoading();
+
                     }
                 });
 
@@ -927,25 +1033,71 @@ $menu = 'service';
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'สำเร็จ!',
-                                text: response.message,
-                                confirmButtonText: 'ดู Ticket',
-                                showCancelButton: true,
-                                cancelButtonText: 'กลับหน้ารายการ',
-                                customClass: {
-                                    confirmButton: 'btn btn-success',
-                                    cancelButton: 'btn btn-secondary'
-                                },
-                                buttonsStyling: false
-                            }).then((result) => {
-                                if (result.isConfirmed && response.data.redirect) {
-                                    window.location.href = response.data.redirect;
-                                } else {
-                                    window.location.href = 'index.php';
+                            const ticketId = response.data && response.data.ticket_id;
+                            const files = ($('#attachmentFiles')[0] && $('#attachmentFiles')[0].files) ? $('#attachmentFiles')[0].files : [];
+
+                            function finalizeSuccess(extraMsg) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'สำเร็จ!',
+                                    text: (response.message || 'สร้าง Ticket สำเร็จ') + (extraMsg ? ' — ' + extraMsg : ''),
+                                    confirmButtonText: 'ดู Ticket',
+                                    showCancelButton: true,
+                                    cancelButtonText: 'กลับหน้ารายการ',
+                                    customClass: {
+                                        confirmButton: 'btn btn-success btn-sm mr-2',
+                                        cancelButton: 'btn btn-secondary btn-sm'
+                                    },
+                                    buttonsStyling: false
+                                }).then((result) => {
+                                    if (result.isConfirmed && response.data.redirect) {
+                                        window.location.href = response.data.redirect;
+                                    } else {
+                                        window.location.href = 'index.php';
+                                    }
+                                });
+                            }
+
+                            // ถ้ามีไฟล์แนบให้เรียก API อัปโหลดหลังจากสร้าง Ticket แล้ว
+                            if (ticketId && files && files.length > 0) {
+                                const fd = new FormData();
+                                fd.append('csrf_token', csrfToken);
+                                fd.append('ticket_id', ticketId);
+                                for (let i = 0; i < files.length; i++) {
+                                    fd.append('attachments[]', files[i]);
                                 }
-                            });
+
+                                Swal.fire({
+                                    title: 'กำลังอัปโหลดไฟล์แนบ...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => Swal.showLoading()
+                                });
+
+                                $.ajax({
+                                    url: 'api/upload_attachment.php',
+                                    type: 'POST',
+                                    data: fd,
+                                    processData: false,
+                                    contentType: false,
+                                    dataType: 'json'
+                                }).done(function(up) {
+                                    if (up && up.success) {
+                                        finalizeSuccess('อัปโหลดไฟล์ ' + (up.data ? up.data.length : files.length) + ' ไฟล์สำเร็จ');
+                                    } else {
+                                        finalizeSuccess('อัปโหลดไฟล์ไม่สำเร็จ');
+                                    }
+                                }).fail(function(xhr) {
+                                    let msg = 'อัปโหลดไฟล์ไม่สำเร็จ';
+                                    try {
+                                        const r = JSON.parse(xhr.responseText);
+                                        if (r.message) msg = r.message;
+                                    } catch (e) {}
+                                    finalizeSuccess(msg);
+                                });
+                            } else {
+                                // ไม่มีไฟล์แนบ
+                                finalizeSuccess('');
+                            }
                         } else {
                             Swal.fire({
                                 icon: 'error',
@@ -960,7 +1112,7 @@ $menu = 'service';
                         try {
                             const response = JSON.parse(xhr.responseText);
                             errorMessage = response.message || errorMessage;
-                        } catch(e) {
+                        } catch (e) {
                             errorMessage = xhr.responseText || errorMessage;
                         }
 

@@ -118,20 +118,22 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
 </nav>
 
 <script>
-function switchTeam(teamId) {
-    $.ajax({
-        url: '<?php echo BASE_URL; ?>switch_team.php', // We will create this file next
-        type: 'POST',
-        data: { team_id: teamId },
-        success: function(response) {
-            // Reload the page to reflect the change
-            window.location.reload();
-        },
-        error: function() {
-            alert('Failed to switch team. Please try again.');
-        }
-    });
-}
+    function switchTeam(teamId) {
+        $.ajax({
+            url: '<?php echo BASE_URL; ?>switch_team.php', // We will create this file next
+            type: 'POST',
+            data: {
+                team_id: teamId
+            },
+            success: function(response) {
+                // Reload the page to reflect the change
+                window.location.reload();
+            },
+            error: function() {
+                alert('Failed to switch team. Please try again.');
+            }
+        });
+    }
 </script>
 
 <!-- LOGO -->
@@ -482,8 +484,8 @@ function switchTeam(teamId) {
 
                 <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>pages/service/service.php" class="nav-link <?php if ($menu == "service") {
-                                                    echo "active";
-                                                } ?> ">
+                                                                                                    echo "active";
+                                                                                                } ?> ">
                         <i class="nav-icon fas fa-receipt"></i>
                         <p>
                             IT Service
@@ -491,7 +493,7 @@ function switchTeam(teamId) {
                     </a>
                 </li>
 
-                <li class="nav-header text-primary">Setting</li>
+                <li class="nav-header text-primary">Sales Setting</li>
                 <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>pages/setting/suppliers/supplier.php" class="nav-link <?php if ($menu == "supplier") {
                                                                                                                 echo "active";
@@ -538,6 +540,22 @@ function switchTeam(teamId) {
                         </a>
                     </li>
                 <?php endif; ?>
+
+
+                <li class="nav-header text-primary">Service Setting</li>
+                <?php if ($role === 'Executive'): ?>
+                    <li class="nav-item">
+                        <a href="<?php echo BASE_URL; ?>pages/setting/service/sal_setting.php" class="nav-link <?php if ($menu == "sla_setting") {
+                                                                                                                    echo "active";
+                                                                                                                } ?>" data-no-reset-team="true">
+                            <i class="nav-icon fas fa-clock"></i>
+                            <p>SLA Settings</p>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+
+
 
 
 
@@ -737,7 +755,7 @@ function switchTeam(teamId) {
 <!-- /.Preloader -->
 <script>
     // Reset active team to ALL when navigating to other menu links (for users with >1 team)
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         var shouldReset = <?php echo (isset($_SESSION['user_teams']) && count($_SESSION['user_teams']) > 1) ? 'true' : 'false'; ?>;
         if (!shouldReset) return;
 
@@ -748,9 +766,9 @@ function switchTeam(teamId) {
         function shouldBypass(link) {
             var href = link.getAttribute('href') || '';
             if (!href || href === '#' || href.indexOf('javascript:') === 0) return true; // non-navigation
-            if (link.dataset && link.dataset.noResetTeam === 'true') return true;       // explicit opt-out
-            if (href.indexOf('switch_team.php') !== -1) return true;                     // team switch actions
-            if (href.indexOf('logout.php') !== -1) return true;                          // logout
+            if (link.dataset && link.dataset.noResetTeam === 'true') return true; // explicit opt-out
+            if (href.indexOf('switch_team.php') !== -1) return true; // team switch actions
+            if (href.indexOf('logout.php') !== -1) return true; // logout
             return false;
         }
 
@@ -761,16 +779,18 @@ function switchTeam(teamId) {
             var target = a.href;
             fetch('<?php echo BASE_URL; ?>switch_team.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
                 body: 'team_id=' + encodeURIComponent('ALL'),
                 credentials: 'same-origin'
-            }).catch(function () {}).finally(function () {
+            }).catch(function() {}).finally(function() {
                 window.location.href = target;
             });
         }
 
         var selector = '.main-sidebar a.nav-link, .navbar a.nav-link';
-        document.querySelectorAll(selector).forEach(function (link) {
+        document.querySelectorAll(selector).forEach(function(link) {
             link.addEventListener('click', handleNavClick);
         });
     });

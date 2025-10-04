@@ -15,10 +15,12 @@ try {
     $stmt = $condb->prepare("SELECT st.*,
             CONCAT(u.first_name, ' ', u.last_name) as job_owner_name,
             CONCAT(r.first_name, ' ', r.last_name) as reporter_name,
+            CONCAT(cu.first_name, ' ', cu.last_name) as created_by_name,
             p.project_name
             FROM service_tickets st
             LEFT JOIN users u ON st.job_owner = u.user_id
             LEFT JOIN users r ON st.reporter = r.user_id
+            LEFT JOIN users cu ON st.created_by = cu.user_id
             LEFT JOIN projects p ON st.project_id = p.project_id
             WHERE st.ticket_id = :ticket_id");
     $stmt->execute([':ticket_id' => $ticket_id]);
@@ -116,6 +118,9 @@ $priorityColors = [
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            z-index: 3; /* show on top of cards */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            pointer-events: none;
         }
         .info-row {
             display: flex;
@@ -130,6 +135,9 @@ $priorityColors = [
         }
         .info-value {
             flex: 1;
+        }
+        .timeline-item .card {
+            overflow: visible;
         }
     </style>
 </head>
@@ -246,6 +254,21 @@ $priorityColors = [
                                             <?php echo htmlspecialchars($ticket['sub_category'] ?? '-'); ?>
                                         </div>
                                     </div>
+
+	                                    <div class="info-row">
+	                                        <div class="info-label">กำหนดเริ่มดำเนินการ (วันเวลา):</div>
+	                                        <div class="info-value">
+	                                            <?php echo !empty($ticket['start_at']) ? date('d/m/Y H:i', strtotime($ticket['start_at'])) : '-'; ?>
+	                                        </div>
+	                                    </div>
+
+	                                    <div class="info-row">
+	                                        <div class="info-label">กำหนดแล้วเสร็จ (วันเวลา):</div>
+	                                        <div class="info-value">
+	                                            <?php echo !empty($ticket['due_at']) ? date('d/m/Y H:i', strtotime($ticket['due_at'])) : '-'; ?>
+	                                        </div>
+	                                    </div>
+
 
                                     <div class="info-row">
                                         <div class="info-label">SLA Target:</div>

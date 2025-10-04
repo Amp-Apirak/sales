@@ -64,7 +64,8 @@ try {
     $reporter = $_POST['reporter'] ?? null;
     $source = $_POST['source'] ?? 'Portal';
 
-    $sla_target = !empty($_POST['sla_target']) ? intval($_POST['sla_target']) : null;
+    require_once __DIR__ . '/../sla_helpers.php';
+    $sla_target = computeSlaTarget($condb, $priority, $urgency, $impact);
     $channel = $_POST['channel'] ?? null;
 
     $start_at = !empty($_POST['start_at']) ? $_POST['start_at'] : null;
@@ -75,13 +76,24 @@ try {
     // Watchers (array)
     $watchers = isset($_POST['watchers']) ? $_POST['watchers'] : [];
 
-    // Validation
-    if (empty($project_id)) {
-        throw new Exception('กรุณาเลือกโครงการ');
-    }
-    if (empty($subject)) {
-        throw new Exception('กรุณากระบุหัวข้อ Ticket');
-    }
+    // Validation (required fields)
+    if (empty($project_id)) { throw new Exception('กรุณาเลือกโครงการ'); }
+    if (empty($ticket_type)) { throw new Exception('กรุณาเลือก Ticket Type'); }
+    if (empty($job_owner)) { throw new Exception('กรุณาเลือก Job Owner'); }
+    if (empty($priority)) { throw new Exception('กรุณาเลือก Priority'); }
+    if (empty($channel)) { throw new Exception('กรุณาเลือก Channel'); }
+    if (empty($urgency)) { throw new Exception('กรุณาเลือก Urgency'); }
+    if (empty($impact)) { throw new Exception('กรุณาเลือก Impact'); }
+    if (empty($status)) { throw new Exception('กรุณาเลือก Status'); }
+    if (empty($service_category)) { throw new Exception('กรุณาเลือก Service Category'); }
+    if (empty($category)) { throw new Exception('กรุณาเลือก Category'); }
+    if (empty($sub_category)) { throw new Exception('กรุณาเลือก Sub Category'); }
+    if (empty($source)) { throw new Exception('กรุณาเลือก Ticket Source'); }
+    if (empty($reporter)) { throw new Exception('กรุณาเลือกผู้แจ้ง'); }
+    if (empty($start_at)) { throw new Exception('กรุณาเลือกกำหนดเริ่มดำเนินการ'); }
+    if (empty($due_at)) { throw new Exception('กรุณาเลือกกำหนดแล้วเสร็จ'); }
+    if (empty($subject)) { throw new Exception('กรุณากระบุหัวข้อ Ticket'); }
+    if (empty($description)) { throw new Exception('กรุณากรอกรายละเอียดงาน'); }
 
     // เริ่ม Transaction
     $condb->beginTransaction();

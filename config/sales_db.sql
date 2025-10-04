@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 02, 2025 at 06:21 PM
+-- Generation Time: Oct 04, 2025 at 11:25 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -1431,11 +1431,13 @@ CREATE TABLE `project_members` (
 INSERT INTO `project_members` (`member_id`, `project_id`, `user_id`, `role_id`, `is_active`, `joined_date`, `left_date`, `created_by`, `created_at`, `updated_by`, `updated_at`, `remark`) VALUES
 ('4b68fa62-1f2e-11f0-a04a-005056b8f6d0', '26b7618c-cba9-47bd-a7f5-026e193dd543', 'b3d20651-6a09-4fb7-b1f8-c72c9cd9e91a', '91e08e89-d8a9-11ef-8216-005056b8f6d0', 1, '2025-04-22 04:00:14', NULL, '3', '2025-04-22 04:00:14', NULL, NULL, NULL),
 ('4b9d807c-4a4f-11f0-bc6e-005056b8f6d0', 'f68d2b0e-6ba9-468a-bd47-870036ce545d', 'c9245a19-52fa-4b02-a98c-b962f2f51b3f', '91dec191-d8a9-11ef-8216-005056b8f6d0', 0, '2025-06-16 01:14:49', '2025-06-16 01:14:56', '5', '2025-06-16 01:14:49', '5', '2025-06-16 01:14:56', NULL),
+('55dc77a4-a0e2-11f0-bd9a-3417ebbed40a', '996fd65e-4532-4f9a-97e2-0e05403bc275', '270c74ec-9124-4eb5-9469-0253ba8530af', '91e08a79-d8a9-11ef-8216-005056b8f6d0', 1, '2025-10-04 05:24:01', NULL, '2', '2025-10-04 05:24:01', NULL, NULL, NULL),
 ('60ec2fd4-4a4f-11f0-bc6e-005056b8f6d0', 'f68d2b0e-6ba9-468a-bd47-870036ce545d', 'a5741799-938b-4d0a-a3dc-4ca1aa164708', '91e086ae-d8a9-11ef-8216-005056b8f6d0', 0, '2025-06-16 01:15:25', '2025-06-16 01:15:33', '5', '2025-06-16 01:15:25', '5', '2025-06-16 01:15:33', NULL),
 ('648fa312-4a56-11f0-bc6e-005056b8f6d0', '66c0508f-b34e-4007-938b-2a1dc2f7e297', '3', '91e086ae-d8a9-11ef-8216-005056b8f6d0', 1, '2025-06-16 02:05:37', NULL, '5', '2025-06-16 02:05:37', '5', '2025-06-16 02:05:53', NULL),
 ('74121b6a-4a4f-11f0-bc6e-005056b8f6d0', 'f68d2b0e-6ba9-468a-bd47-870036ce545d', 'e40dedaf-3e9b-4694-8ee9-c173d5c44db6', '91e086ae-d8a9-11ef-8216-005056b8f6d0', 1, '2025-06-16 01:15:57', NULL, '5', '2025-06-16 01:15:57', NULL, NULL, NULL),
 ('8ea635b7-4a48-11f0-bc6e-005056b8f6d0', '51e62f2e-3b91-44e8-9875-55239e0e8acc', '3', '91e086ae-d8a9-11ef-8216-005056b8f6d0', 0, '2025-06-16 00:26:35', '2025-06-16 00:27:16', '5', '2025-06-16 00:26:35', '5', '2025-06-16 00:27:16', NULL),
 ('af2694eb-d99b-11ef-8216-005056b8f6d0', '6f882833-ac9e-4367-8468-ebb05dd81a8e', 'f30e8b87-d047-4bca-9b34-d223170df87c', '91e08c3d-d8a9-11ef-8216-005056b8f6d0', 1, '2025-01-23 15:07:00', NULL, '2', '2025-01-23 15:07:00', NULL, NULL, NULL),
+('de7da1ef-a0e2-11f0-bd9a-3417ebbed40a', '996fd65e-4532-4f9a-97e2-0e05403bc275', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '91e08a79-d8a9-11ef-8216-005056b8f6d0', 0, '2025-10-04 05:27:50', '2025-10-04 05:27:57', '2', '2025-10-04 05:27:50', '2', '2025-10-04 05:27:57', NULL),
 ('e774b9d8-4bec-11f0-bc6e-005056b8f6d0', '66c0508f-b34e-4007-938b-2a1dc2f7e297', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '91e09076-d8a9-11ef-8216-005056b8f6d0', 2, '2025-06-18 02:35:34', NULL, '2', '2025-06-18 02:35:34', '2', '2025-06-18 09:13:25', NULL),
 ('fe3f3aed-d984-11ef-8216-005056b8f6d0', 'ad3b9787-d382-4eb0-ac96-d9a3917d5db6', '3', '91e086ae-d8a9-11ef-8216-005056b8f6d0', 1, '2025-01-23 12:24:34', NULL, '2', '2025-01-23 12:24:34', NULL, NULL, NULL);
 
@@ -1583,7 +1585,7 @@ INSERT INTO `project_tasks` (`task_id`, `project_id`, `parent_task_id`, `task_na
 ('3d408df9-7c22-41ad-83f3-17a9b30de5a8', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', NULL, 'หัวข้อที่ 1.1.2', 'project-details (4).pdf', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:20:21', '2', '2025-10-01 08:28:40', 1, 0),
 ('3f2b8902-0d5b-40a6-87e4-5cffc9f27e44', 'b403c2e1-8913-4e94-b6c8-b9f7f36a4f31', NULL, 'รอ Confirm PO Q3', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'High', '5', '2025-06-16 07:05:39', NULL, NULL, 1, 0),
 ('45820701-ccd7-4bcd-a10c-1ee310968d73', '996fd65e-4532-4f9a-97e2-0e05403bc275', '00088d72-279f-467b-853b-76d406fe9cb8', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุดสุดๆ', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน Task ย่อยสุดสุดๆ', '2025-10-02', '2025-10-02', 'In Progress', 55.00, 'Low', '2', '2025-10-02 01:45:32', NULL, NULL, 5, 0),
-('4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน', '2025-10-02', '2025-10-10', 'In Progress', 60.00, 'Low', '2', '2025-10-02 01:42:27', '2', '2025-10-02 01:46:05', 1, 0),
+('4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', NULL, 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน', 'หัวข้อหลัก : สำหรับทดสอบการใช้งาน', '2025-10-02', '2025-10-10', 'Completed', 60.00, 'Low', '2', '2025-10-02 01:42:27', '2', '2025-10-03 17:22:49', 1, 0),
 ('5612a8da-3d60-47b5-baec-b492f51b0acf', '92a99359-0555-4ff1-9be4-c26808189158', NULL, 'ติดตามงานขาย', '', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '5', '2025-06-16 01:07:59', NULL, NULL, 1, 0),
 ('563f94d6-9c1b-4e76-bafc-9e4b09c51cc1', '4d537c51-ec3d-412b-8c7c-4f12cb07b45c', '13e83044-6d91-4da7-a5ab-0da314c26485', 'ปแอปแอ', 'ปแอปแอปแอ', '0000-00-00', '0000-00-00', 'Pending', 0.00, 'Low', '2', '2025-10-01 08:28:28', '2', '2025-10-01 08:28:40', 3, 0),
 ('5ac64b8d-5f9f-405b-b191-14fc687c6345', '5c65a5f9-7d33-40b3-9f28-42ad0867aeb1', '3881ba5c-1db3-4aa4-ac0f-6de1fa1950e8', 'DEV-01 : Setup Development Environment', 'จัดเตรียม Environment', '2025-06-20', '2025-06-22', 'Pending', 0.00, 'High', '2', '2025-06-18 06:43:45', '2', '2025-06-18 06:54:50', 1, 1),
@@ -1623,8 +1625,10 @@ CREATE TABLE `project_task_assignments` (
 --
 
 INSERT INTO `project_task_assignments` (`assignment_id`, `task_id`, `user_id`, `assigned_by`, `assigned_at`) VALUES
+('09b5301c-5415-4f12-8946-8ae36ec329a2', '4db417de-d28b-4978-ae24-429698c6b8df', '70dd36b5-f587-4aa9-b544-c69542616d34', '2', '2025-10-03 17:22:49'),
 ('0b4f6a3a-40c4-4354-b0c4-384a3360e944', '3d408df9-7c22-41ad-83f3-17a9b30de5a8', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-01 08:20:21'),
 ('15698cd6-5d86-456a-bcb8-dccef2e2a342', '6e5daf27-4ec3-407d-a67b-19950443e2db', 'f384c704-5291-4413-8f52-dc25e10b5d4f', '2', '2025-06-18 06:58:28'),
+('24aa125f-b030-4630-bfb1-c43f8bae1cc7', '4db417de-d28b-4978-ae24-429698c6b8df', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-03 17:22:49'),
 ('281fb257-fb98-41c3-bab6-a4365e6f1a07', '3f2b8902-0d5b-40a6-87e4-5cffc9f27e44', '44ab4e8b-e3e6-431d-ad49-40d4601779b4', '5', '2025-06-16 07:05:39'),
 ('3a99e784-3ff7-4ec0-bfc8-ae91764988ac', '5fbbad43-145b-4544-9809-db995dd590c3', '70dd36b5-f587-4aa9-b544-c69542616d34', '2', '2025-10-02 01:43:35'),
 ('3e47074d-82e0-469b-9b44-ada407deb4c2', 'e7c88d65-c58a-447f-ab36-c529c6f38969', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '2', '2025-10-01 08:28:40'),
@@ -1657,6 +1661,147 @@ INSERT INTO `project_task_assignments` (`assignment_id`, `task_id`, `user_id`, `
 ('f12deb64-3957-4a67-859a-2322711c7b3d', 'a03550ba-9be0-4afd-b133-011dda745576', 'ff2acbbb-4ec0-4214-8a30-eb1fc6e02700', '2', '2025-06-18 06:52:48'),
 ('f375fa49-c01f-4d3c-b951-c699b1ad694d', '3b1e5127-69e4-466c-ba57-15431a3293f4', '3efcb87b-ce45-4a66-9d73-91259caba1d0', '5', '2025-06-18 02:36:27'),
 ('f78cc41d-da7e-4472-a627-87ed29a8982f', '7cc60017-fb38-4d5c-bfe6-3b5b9d4c8e18', '8c782887-8fd3-4f99-ac27-63054a8a1942', '2', '2025-06-18 06:50:06');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `service_sla_impacts`
+--
+
+CREATE TABLE `service_sla_impacts` (
+  `impact_id` char(36) NOT NULL,
+  `impact_name` varchar(100) NOT NULL,
+  `impact_level` enum('High','Medium','Low') NOT NULL DEFAULT 'Medium',
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `service_sla_impacts`
+--
+
+INSERT INTO `service_sla_impacts` (`impact_id`, `impact_name`, `impact_level`, `active`, `created_at`, `updated_at`) VALUES
+('c734575f-a0f4-11f0-bd9a-3417ebbed40a', 'hhh', 'Medium', 1, '2025-10-04 07:36:02', NULL),
+('d1eac485-a0e8-11f0-bd9a-3417ebbed40a', 'Organization', 'High', 1, '2025-10-04 06:10:26', NULL),
+('d1ead534-a0e8-11f0-bd9a-3417ebbed40a', 'Multiple Sites', 'High', 1, '2025-10-04 06:10:26', NULL),
+('d1ead5d0-a0e8-11f0-bd9a-3417ebbed40a', 'Executive', 'High', 1, '2025-10-04 06:10:26', NULL),
+('d1ead609-a0e8-11f0-bd9a-3417ebbed40a', 'Site', 'Medium', 1, '2025-10-04 06:10:26', NULL),
+('d1ead63d-a0e8-11f0-bd9a-3417ebbed40a', 'Department', 'Medium', 1, '2025-10-04 06:10:26', NULL),
+('d1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Application', 'Medium', 1, '2025-10-04 06:10:26', NULL),
+('d1ead694-a0e8-11f0-bd9a-3417ebbed40a', 'Multiple Users', 'Medium', 1, '2025-10-04 06:10:26', NULL),
+('d1ead6c1-a0e8-11f0-bd9a-3417ebbed40a', 'Remote Users', 'Low', 1, '2025-10-04 06:10:26', NULL),
+('d1ead6f3-a0e8-11f0-bd9a-3417ebbed40a', 'Single User', 'Low', 1, '2025-10-04 06:10:26', NULL),
+('d1ead71f-a0e8-11f0-bd9a-3417ebbed40a', 'External', 'Low', 1, '2025-10-04 06:10:26', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `service_sla_priority_matrix`
+--
+
+CREATE TABLE `service_sla_priority_matrix` (
+  `id` char(36) NOT NULL,
+  `impact_id` char(36) NOT NULL,
+  `urgency` enum('High','Medium','Low') NOT NULL,
+  `priority` enum('Critical','High','Medium','Low') NOT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `service_sla_priority_matrix`
+--
+
+INSERT INTO `service_sla_priority_matrix` (`id`, `impact_id`, `urgency`, `priority`, `updated_at`) VALUES
+('479eec88-a0f5-11f0-bd9a-3417ebbed40a', 'c734575f-a0f4-11f0-bd9a-3417ebbed40a', 'High', 'Critical', '2025-10-04 07:39:37'),
+('479f1f80-a0f5-11f0-bd9a-3417ebbed40a', 'c734575f-a0f4-11f0-bd9a-3417ebbed40a', 'Medium', 'Critical', '2025-10-04 07:39:37'),
+('479f4fe1-a0f5-11f0-bd9a-3417ebbed40a', 'c734575f-a0f4-11f0-bd9a-3417ebbed40a', 'Low', 'Critical', '2025-10-04 07:39:37'),
+('d1ed78f7-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead5d0-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'Critical', '2025-10-04 06:10:26'),
+('d1ed8b9f-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead534-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'Critical', '2025-10-04 06:10:26'),
+('d1ed8c82-a0e8-11f0-bd9a-3417ebbed40a', 'd1eac485-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'Critical', '2025-10-04 06:10:26'),
+('d1efd62a-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead5d0-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'High', '2025-10-04 06:10:26'),
+('d1efe71f-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead534-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'High', '2025-10-04 06:10:26'),
+('d1efe79e-a0e8-11f0-bd9a-3417ebbed40a', 'd1eac485-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'High', '2025-10-04 06:10:26'),
+('d1f21a46-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead5d0-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Medium', '2025-10-04 06:10:26'),
+('d1f22c49-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead534-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Medium', '2025-10-04 06:10:26'),
+('d1f22cdb-a0e8-11f0-bd9a-3417ebbed40a', 'd1eac485-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Medium', '2025-10-04 06:10:26'),
+('d1f4a9fa-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'High', '2025-10-04 07:39:37'),
+('d1f4beb5-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead63d-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'High', '2025-10-04 06:10:26'),
+('d1f4bf47-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead694-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'High', '2025-10-04 06:10:26'),
+('d1f4bfa7-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead609-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'High', '2025-10-04 06:10:26'),
+('d1f6f591-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Medium', '2025-10-04 07:39:37'),
+('d1f70a09-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead63d-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Medium', '2025-10-04 06:10:26'),
+('d1f70a9d-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead694-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Medium', '2025-10-04 06:10:26'),
+('d1f70b04-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead609-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Medium', '2025-10-04 06:10:26'),
+('d1f93b1e-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Low', '2025-10-04 06:10:26'),
+('d1f94f28-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead63d-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Low', '2025-10-04 06:10:26'),
+('d1f94fec-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead694-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Low', '2025-10-04 06:10:26'),
+('d1f9505b-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead609-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Low', '2025-10-04 06:10:26'),
+('d1fba74e-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead71f-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'Medium', '2025-10-04 06:10:26'),
+('d1fbbe43-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead6c1-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'Medium', '2025-10-04 06:10:26'),
+('d1fbbee7-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead6f3-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'Medium', '2025-10-04 06:10:26'),
+('d1fde809-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead71f-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Low', '2025-10-04 06:10:26'),
+('d1fded18-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead6c1-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Low', '2025-10-04 06:10:26'),
+('d1fded89-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead6f3-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Low', '2025-10-04 06:10:26'),
+('d20022f4-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead71f-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Low', '2025-10-04 06:10:26'),
+('d200392d-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead6c1-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Low', '2025-10-04 06:10:26'),
+('d20039c9-a0e8-11f0-bd9a-3417ebbed40a', 'd1ead6f3-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Low', '2025-10-04 06:10:26');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `service_sla_targets`
+--
+
+CREATE TABLE `service_sla_targets` (
+  `id` char(36) NOT NULL,
+  `priority` enum('Critical','High','Medium','Low') NOT NULL,
+  `sla_hours` int(11) NOT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `service_sla_targets`
+--
+
+INSERT INTO `service_sla_targets` (`id`, `priority`, `sla_hours`, `updated_at`) VALUES
+('d1e84624-a0e8-11f0-bd9a-3417ebbed40a', 'Critical', 4, '2025-10-04 07:51:48'),
+('d1e8532b-a0e8-11f0-bd9a-3417ebbed40a', 'High', 8, '2025-10-04 07:51:48'),
+('d1e853c3-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 24, '2025-10-04 07:51:48'),
+('d1e853f5-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 72, '2025-10-04 07:51:48');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `service_sla_time_matrix`
+--
+
+CREATE TABLE `service_sla_time_matrix` (
+  `id` char(36) NOT NULL,
+  `impact_id` char(36) NOT NULL,
+  `urgency` enum('High','Medium','Low') NOT NULL,
+  `priority` enum('Critical','High','Medium','Low') NOT NULL,
+  `sla_hours` int(11) NOT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `service_sla_time_matrix`
+--
+
+INSERT INTO `service_sla_time_matrix` (`id`, `impact_id`, `urgency`, `priority`, `sla_hours`, `updated_at`) VALUES
+('02813b03-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'Critical', 1, '2025-10-04 07:37:41'),
+('0281fcce-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'High', 3, '2025-10-04 07:37:41'),
+('02823ced-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'Medium', 4, '2025-10-04 07:37:41'),
+('0282d584-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'High', 'Low', 5, '2025-10-04 07:37:41'),
+('02831637-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Critical', 6, '2025-10-04 07:37:41'),
+('0283526b-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'High', 7, '2025-10-04 07:37:41'),
+('02839a77-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Medium', 8, '2025-10-04 07:37:41'),
+('0283ce89-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Medium', 'Low', 9, '2025-10-04 07:37:41'),
+('0284023a-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Critical', 10, '2025-10-04 07:37:41'),
+('02842e17-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'High', 11, '2025-10-04 07:37:41'),
+('02845f72-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Medium', 12, '2025-10-04 07:37:41'),
+('02849275-a0f5-11f0-bd9a-3417ebbed40a', 'd1ead669-a0e8-11f0-bd9a-3417ebbed40a', 'Low', 'Low', 13, '2025-10-04 07:37:41');
 
 -- --------------------------------------------------------
 
@@ -1701,9 +1846,15 @@ CREATE TABLE `service_tickets` (
 --
 
 INSERT INTO `service_tickets` (`ticket_id`, `ticket_no`, `project_id`, `ticket_type`, `subject`, `description`, `status`, `priority`, `urgency`, `impact`, `service_category`, `category`, `sub_category`, `job_owner`, `reporter`, `source`, `sla_target`, `sla_deadline`, `sla_status`, `start_at`, `due_at`, `resolved_at`, `closed_at`, `channel`, `deleted_at`, `created_at`, `created_by`, `updated_at`, `updated_by`) VALUES
-('07b331c84ceaa7888c5d3518774c1fd5', 'TCK-202510-0003', '1338b661-5cb2-438f-ad71-e24316d9b2ae', 'Incident', 'ทดสอบ 3', 'SELECT ticket_id, ticket_no, subject, status, priority\r\n  FROM service_tickets\r\n  ORDER BY created_at DESC\r\n  LIMIT 3;', 'New', 'Low', 'Low', 'Department', '', '', '', '2', '14d9e34c-b691-4ce8-a5ef-929ace71248a', 'Portal', 4, '2025-10-03 03:04:56', 'Within SLA', '2025-10-02 18:04:00', '2025-10-02 23:04:00', NULL, NULL, 'Office', NULL, '2025-10-02 16:04:56', '2', NULL, NULL),
-('0f57cdc499e8703518398c164bae9269', 'TCK-202510-0001', 'b3e78fb7-7d86-44f0-aaf1-3a099f279bad', 'Incident', 'ทดสอบ 2', 'ทดสอบ 2', 'New', 'Low', 'Low', 'Department', 'Notebook', 'Monitor', 'Edit', '2', '1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Portal', 4, '2025-10-03 03:00:04', 'Within SLA', '2025-10-02 17:59:00', '2025-10-02 22:59:00', NULL, NULL, 'Office', NULL, '2025-10-02 16:00:04', '2', NULL, NULL),
+('07b331c84ceaa7888c5d3518774c1fd5', 'TCK-202510-0003', '1338b661-5cb2-438f-ad71-e24316d9b2ae', 'Incident', 'ทดสอบ 3', 'SELECT ticket_id, ticket_no, subject, status, priority\r\n  FROM service_tickets\r\n  ORDER BY created_at DESC\r\n  LIMIT 3;', 'Scheduled', 'Low', 'Medium', 'Department', 'Notebook', 'Monitor', 'Edit', '2', '14d9e34c-b691-4ce8-a5ef-929ace71248a', 'Portal', 48, '2025-10-03 03:04:56', 'Near SLA', '2025-10-02 18:04:00', '2025-10-02 23:04:00', NULL, NULL, 'Office', NULL, '2025-10-02 16:04:56', '2', '2025-10-02 16:46:42', '2'),
+('08b18285e498d62f84d293def60edbca', 'TCK-202510-0009', '1338b661-5cb2-438f-ad71-e24316d9b2ae', 'Incident', 'ทดสอบ', 'กหดหกดหกด', 'New', 'Low', 'Low', 'Organization', 'Notebook', 'Monitor', 'Edit', '2', '270c74ec-9124-4eb5-9469-0253ba8530af', 'Portal', 72, '2025-10-07 13:58:12', 'Within SLA', '2025-10-04 08:57:00', '0000-00-00 00:00:00', NULL, NULL, 'Office', NULL, '2025-10-04 06:58:12', '2', '2025-10-04 08:12:07', '2'),
+('0f57cdc499e8703518398c164bae9269', 'TCK-202510-0001', 'b3e78fb7-7d86-44f0-aaf1-3a099f279bad', 'Incident', 'ทดสอบ 2', 'ทดสอบ 2', 'New', 'Low', 'Low', 'Department', 'Notebook', 'Monitor', 'Edit', '2', '1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Portal', 4, '2025-10-03 03:00:04', 'Overdue', '2025-10-02 17:59:00', '2025-10-02 22:59:00', NULL, NULL, 'Office', NULL, '2025-10-02 16:00:04', '2', '2025-10-04 05:38:07', '2'),
+('2234f9b4538d4a9b192269d072409668', 'TCK-202510-0010', '6a50ca74-9f27-483a-a312-126660ddcfc7', 'Incident', 'แจ้งปัญหาคอมพิวเตอร์ใช้งานไมไ่ด้', 'แจ้งปัญหาคอมพิวเตอร์ใช้งานไมไ่ด้ อาการเปิดแล้วสักพักดับ ตามไฟล์แนบ ได้เลย', 'New', 'Low', 'Low', 'Department', 'Notebook', 'Monitor', 'Edit', 'a5741799-938b-4d0a-a3dc-4ca1aa164708', '2', 'Portal', 72, '2025-10-07 15:18:14', 'Within SLA', '2025-10-04 10:17:00', '2025-10-07 10:17:00', NULL, NULL, 'Onsite', NULL, '2025-10-04 08:18:14', '2', '2025-10-04 09:13:53', '2'),
+('48f9653326d17e19caa947ec497d4b8f', 'TCK-202510-0008', 'e4b1a5aa-dba3-40dd-8ccb-ddf06547fa9e', 'Incident', 'แจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้ว', 'แจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้วแจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้วแจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้วแจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้วแจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้วแจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้วแจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้วแจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้วแจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้วแจ้งปัญหาไม่สามารถพัฒนางานต่อได้แล้ว', 'On Process', 'Low', 'Low', 'Department', 'เครือข่าย', 'การเชื่อมต่อเครือข่าย', 'Edit', '2', '1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Portal', 72, '2025-10-07 13:41:40', 'Within SLA', '2025-10-04 08:40:00', '2025-10-04 13:41:00', NULL, NULL, 'Office', NULL, '2025-10-04 06:41:40', '2', NULL, NULL),
 ('a360d855b5b3cfdd5233f6af3008e4a0', 'TCK-202510-0002', 'b3e78fb7-7d86-44f0-aaf1-3a099f279bad', 'Incident', 'SELECT project_id, project_name FROM projects LIMIT 5;', 'SELECT project_id, project_name FROM projects LIMIT 5;', 'New', 'Low', 'Low', 'Department', '', '', '', '2', '1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Portal', 4, '2025-10-03 03:01:59', 'Within SLA', '2025-10-02 18:01:00', '2025-10-02 23:01:00', NULL, NULL, 'Office', NULL, '2025-10-02 16:01:59', '2', NULL, NULL),
+('be97729845f913b12197322ed1c20ad8', 'TCK-202510-0005', '0781e56d-1e40-4dec-8b65-0bd316277935', 'Incident', 'ทดสอบ 3', 'ทดสอบ', 'New', 'Low', 'Low', 'Department', 'Notebook', 'Monitor', 'Edit', '2', '1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Email', 72, '2025-10-05 23:26:35', 'Within SLA', '2025-10-02 18:25:00', '2025-10-02 23:26:00', NULL, NULL, 'Office', NULL, '2025-10-02 16:26:35', '2', '2025-10-04 06:31:23', '2'),
+('df53ce5b33de68eacdb84a26ec862505', 'TCK-202510-0007', '1338b661-5cb2-438f-ad71-e24316d9b2ae', 'Incident', 'ทดสอบ 3', 'หดหกดหกดหกดหด', 'New', 'Low', 'Low', 'Department', '', '', '', '2', '1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Portal', 72, '2025-10-07 13:34:26', 'Within SLA', '2025-10-04 08:32:00', '2025-10-04 13:32:00', NULL, NULL, 'Office', NULL, '2025-10-04 06:34:26', '2', '2025-10-04 06:35:43', '2'),
+('f5d04ab890719963ba6b757d36e3507f', 'TCK-202510-0006', '1338b661-5cb2-438f-ad71-e24316d9b2ae', 'Incident', 'ทดสอบ 3', 'หดหกดหกดหกดหด', 'New', 'Low', 'Low', 'Department', '', '', '', '2', '1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Portal', 72, '2025-10-07 13:32:47', 'Within SLA', '2025-10-04 08:32:00', '2025-10-04 13:32:00', NULL, NULL, 'Office', NULL, '2025-10-04 06:32:47', '2', NULL, NULL),
 ('f7d5d6d0edb2dfa5cd443cfd5206c201', 'TCK-202510-0004', 'e96e8f2a-5a2c-48fc-bae1-d19c30217990', 'Incident', 'ทดสอบ', 'ทดสอบ', 'Resolved', 'Low', 'Low', 'Department', 'Notebook', 'Monitor', 'Edit', '2', '1b9c09d2-dc91-4b5e-a62b-8c42a41958ab', 'Portal', 4, '2025-10-03 03:15:51', 'Near SLA', '2025-10-02 18:15:00', '2025-10-02 23:15:00', '2025-10-02 23:20:41', '2025-10-02 23:17:43', 'Office', NULL, '2025-10-02 16:15:51', '2', '2025-10-02 16:20:41', '2');
 
 --
@@ -1800,6 +1951,15 @@ CREATE TABLE `service_ticket_attachments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บไฟล์แนบของ Ticket';
 
 --
+-- Dumping data for table `service_ticket_attachments`
+--
+
+INSERT INTO `service_ticket_attachments` (`attachment_id`, `ticket_id`, `file_name`, `file_path`, `file_size`, `file_type`, `mime_type`, `uploaded_by`, `uploaded_at`) VALUES
+('7e62f2dc-a0ef-11f0-bd9a-3417ebbed40a', '08b18285e498d62f84d293def60edbca', 'โครงสร้างฐานข้อมูล.pdf', '/sales/uploads/service_tickets/08b18285e498d62f84d293def60edbca/68e0c5849abee_1759561092.pdf', 175161, 'pdf', 'application/pdf', '2', '2025-10-04 06:58:12'),
+('ac4119dd-a0fa-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', 'โครงสร้างฐานข้อมูล.pdf', '/sales/uploads/service_tickets/2234f9b4538d4a9b192269d072409668/68e0d8460bf14_1759565894.pdf', 175161, 'pdf', 'application/pdf', '2', '2025-10-04 08:18:14'),
+('e6c3a633-a0ff-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', 'project-details (9).pdf', '/sales/uploads/service_tickets/2234f9b4538d4a9b192269d072409668/68e0e10b9a6ba_1759568139.pdf', 303646, 'pdf', 'application/pdf', '2', '2025-10-04 08:55:39');
+
+--
 -- Triggers `service_ticket_attachments`
 --
 DELIMITER $$
@@ -1864,6 +2024,8 @@ CREATE TABLE `service_ticket_history` (
 INSERT INTO `service_ticket_history` (`history_id`, `ticket_id`, `field_name`, `old_value`, `new_value`, `changed_by`, `changed_at`) VALUES
 ('4e0a9e9a-9fab-11f0-a304-3417ebbed40a', 'f7d5d6d0edb2dfa5cd443cfd5206c201', 'status', 'New', 'Resolved', '2', '2025-10-02 16:17:34'),
 ('5354eb52-9fab-11f0-a304-3417ebbed40a', 'f7d5d6d0edb2dfa5cd443cfd5206c201', 'status', 'Resolved', 'Closed', '2', '2025-10-02 16:17:43'),
+('5f95f184-9faf-11f0-a304-3417ebbed40a', '07b331c84ceaa7888c5d3518774c1fd5', 'status', 'New', 'Scheduled', '2', '2025-10-02 16:46:42'),
+('72adda17-a102-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', 'job_owner', '2', 'a5741799-938b-4d0a-a3dc-4ca1aa164708', '2', '2025-10-04 09:13:53'),
 ('bd784a11-9fab-11f0-a304-3417ebbed40a', 'f7d5d6d0edb2dfa5cd443cfd5206c201', 'status', 'Closed', 'Resolved', '2', '2025-10-02 16:20:41');
 
 --
@@ -1929,6 +2091,13 @@ CREATE TABLE `service_ticket_onsite` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บข้อมูล Onsite Details';
 
 --
+-- Dumping data for table `service_ticket_onsite`
+--
+
+INSERT INTO `service_ticket_onsite` (`onsite_id`, `ticket_id`, `start_location`, `end_location`, `travel_mode`, `travel_note`, `odometer_start`, `odometer_end`, `note`, `created_at`, `updated_at`) VALUES
+('3c1d6baf-a0fb-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', 'บางนา', 'สำโรง', 'personal_car', '', 16001.00, 16051.00, 'ไปทำงาน', '2025-10-04 08:22:15', '2025-10-04 09:13:53');
+
+--
 -- Triggers `service_ticket_onsite`
 --
 DELIMITER $$
@@ -1965,8 +2134,26 @@ CREATE TABLE `service_ticket_timeline` (
 INSERT INTO `service_ticket_timeline` (`timeline_id`, `ticket_id`, `order`, `actor`, `action`, `detail`, `attachment`, `location`, `created_at`) VALUES
 ('109156b6-9fab-11f0-a304-3417ebbed40a', 'f7d5d6d0edb2dfa5cd443cfd5206c201', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-02 16:15:51'),
 ('2064fab0-9fa9-11f0-a304-3417ebbed40a', 'a360d855b5b3cfdd5233f6af3008e4a0', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-02 16:01:59'),
+('2c15183f-a0ec-11f0-bd9a-3417ebbed40a', 'df53ce5b33de68eacdb84a26ec862505', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-04 06:34:26'),
+('2f3558ba-a0ed-11f0-bd9a-3417ebbed40a', '48f9653326d17e19caa947ec497d4b8f', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-04 06:41:40'),
+('3c1e05fc-a0fb-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', 2, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: channel, start_at, due_at', NULL, NULL, '2025-10-04 08:22:15'),
+('4c429429-9faf-11f0-a304-3417ebbed40a', 'be97729845f913b12197322ed1c20ad8', 4, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: start_at, due_at', NULL, NULL, '2025-10-02 16:46:09'),
+('4e7338f9-a0e4-11f0-bd9a-3417ebbed40a', '0f57cdc499e8703518398c164bae9269', 2, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: start_at, due_at', NULL, NULL, '2025-10-04 05:38:07'),
+('5a0862e7-a0ec-11f0-bd9a-3417ebbed40a', 'df53ce5b33de68eacdb84a26ec862505', 2, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: start_at, due_at', NULL, NULL, '2025-10-04 06:35:43'),
+('5f980649-9faf-11f0-a304-3417ebbed40a', '07b331c84ceaa7888c5d3518774c1fd5', 2, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: status, start_at, due_at', NULL, NULL, '2025-10-02 16:46:42'),
+('6360cf28-a0fc-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', 3, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: start_at, due_at', NULL, NULL, '2025-10-04 08:30:30'),
+('72b01563-a102-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', 5, 'Systems Admin', 'แก้ไข Ticket', 'เปลี่ยนแปลง: Job Owner: Systems Admin → Theerachart Tiyapongpattana', NULL, NULL, '2025-10-04 09:13:53'),
+('7e59332b-a0ef-11f0-bd9a-3417ebbed40a', '08b18285e498d62f84d293def60edbca', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-04 06:58:12'),
 ('8a56d481-9fa9-11f0-a304-3417ebbed40a', '07b331c84ceaa7888c5d3518774c1fd5', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-02 16:04:56'),
-('dc1bda4e-9fa8-11f0-a304-3417ebbed40a', '0f57cdc499e8703518398c164bae9269', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-02 16:00:04');
+('9034e08e-9fac-11f0-a304-3417ebbed40a', 'be97729845f913b12197322ed1c20ad8', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-02 16:26:35'),
+('ac39571d-a0fa-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-04 08:18:14'),
+('b8246fbb-a0fd-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', 4, 'Systems Admin', 'แก้ไข Ticket', 'เปลี่ยนแปลง: รายละเอียด: แจ้งปัญหาคอมพิวเตอร์ใช้งานไมไ่ด้ อาการเปิดแล้วสักพักดับ ตามไฟล์แนบ → แจ้งปัญหาคอมพิวเตอร์ใช้งานไมไ่ด้ อาการเปิดแล้วสักพักดับ ตามไฟล์แนบ ได้เลย', NULL, NULL, '2025-10-04 08:40:02'),
+('bef8bc83-a0eb-11f0-bd9a-3417ebbed40a', 'be97729845f913b12197322ed1c20ad8', 5, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: start_at, due_at', NULL, NULL, '2025-10-04 06:31:23'),
+('d1e4450c-a0f9-11f0-bd9a-3417ebbed40a', '08b18285e498d62f84d293def60edbca', 2, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: subject, start_at', NULL, NULL, '2025-10-04 08:12:07'),
+('d27500a5-9fae-11f0-a304-3417ebbed40a', 'be97729845f913b12197322ed1c20ad8', 2, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: start_at, due_at', NULL, NULL, '2025-10-02 16:42:45'),
+('dc1bda4e-9fa8-11f0-a304-3417ebbed40a', '0f57cdc499e8703518398c164bae9269', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-02 16:00:04'),
+('e28c7a05-9fae-11f0-a304-3417ebbed40a', 'be97729845f913b12197322ed1c20ad8', 3, 'Systems Admin', 'แก้ไข Ticket', 'แก้ไขข้อมูล Ticket: source, start_at, due_at', NULL, NULL, '2025-10-02 16:43:12'),
+('f13d21d0-a0eb-11f0-bd9a-3417ebbed40a', 'f5d04ab890719963ba6b757d36e3507f', 1, 'Systems Admin (Executive)', 'สร้าง Ticket', 'สร้าง Ticket พร้อมรายละเอียดเบื้องต้น', NULL, 'Portal', '2025-10-04 06:32:47');
 
 --
 -- Triggers `service_ticket_timeline`
@@ -2003,9 +2190,18 @@ INSERT INTO `service_ticket_watchers` (`watcher_id`, `ticket_id`, `user_id`, `ad
 ('1090cc3c-9fab-11f0-a304-3417ebbed40a', 'f7d5d6d0edb2dfa5cd443cfd5206c201', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-02 16:15:51'),
 ('2063435f-9fa9-11f0-a304-3417ebbed40a', 'a360d855b5b3cfdd5233f6af3008e4a0', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-02 16:01:59'),
 ('2064627e-9fa9-11f0-a304-3417ebbed40a', 'a360d855b5b3cfdd5233f6af3008e4a0', '30750fba-88ab-44ce-baf2-d0894357c67c', '2', '2025-10-02 16:01:59'),
-('8a55f875-9fa9-11f0-a304-3417ebbed40a', '07b331c84ceaa7888c5d3518774c1fd5', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-02 16:04:56'),
-('8a564729-9fa9-11f0-a304-3417ebbed40a', '07b331c84ceaa7888c5d3518774c1fd5', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '2', '2025-10-02 16:04:56'),
-('dc1b7637-9fa8-11f0-a304-3417ebbed40a', '0f57cdc499e8703518398c164bae9269', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-02 16:00:04');
+('2f34a59d-a0ed-11f0-bd9a-3417ebbed40a', '48f9653326d17e19caa947ec497d4b8f', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-04 06:41:40'),
+('2f34b8fa-a0ed-11f0-bd9a-3417ebbed40a', '48f9653326d17e19caa947ec497d4b8f', '30750fba-88ab-44ce-baf2-d0894357c67c', '2', '2025-10-04 06:41:40'),
+('2f34c32c-a0ed-11f0-bd9a-3417ebbed40a', '48f9653326d17e19caa947ec497d4b8f', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '2', '2025-10-04 06:41:40'),
+('4e6fe555-a0e4-11f0-bd9a-3417ebbed40a', '0f57cdc499e8703518398c164bae9269', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-04 05:38:07'),
+('5a07c224-a0ec-11f0-bd9a-3417ebbed40a', 'df53ce5b33de68eacdb84a26ec862505', '30750fba-88ab-44ce-baf2-d0894357c67c', '2', '2025-10-04 06:35:43'),
+('5f96d33f-9faf-11f0-a304-3417ebbed40a', '07b331c84ceaa7888c5d3518774c1fd5', '14d9e34c-b691-4ce8-a5ef-929ace71248a', '2', '2025-10-02 16:46:42'),
+('5f97d28b-9faf-11f0-a304-3417ebbed40a', '07b331c84ceaa7888c5d3518774c1fd5', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '2', '2025-10-02 16:46:42'),
+('72af613c-a102-11f0-bd9a-3417ebbed40a', '2234f9b4538d4a9b192269d072409668', '270c74ec-9124-4eb5-9469-0253ba8530af', '2', '2025-10-04 09:13:53'),
+('bef84f22-a0eb-11f0-bd9a-3417ebbed40a', 'be97729845f913b12197322ed1c20ad8', '30750fba-88ab-44ce-baf2-d0894357c67c', '2', '2025-10-04 06:31:23'),
+('bef861e7-a0eb-11f0-bd9a-3417ebbed40a', 'be97729845f913b12197322ed1c20ad8', '5b698e22-ba83-43c4-a39e-e6d68f98791f', '2', '2025-10-04 06:31:23'),
+('d1e36088-a0f9-11f0-bd9a-3417ebbed40a', '08b18285e498d62f84d293def60edbca', '30750fba-88ab-44ce-baf2-d0894357c67c', '2', '2025-10-04 08:12:07'),
+('f13d1931-a0eb-11f0-bd9a-3417ebbed40a', 'f5d04ab890719963ba6b757d36e3507f', '30750fba-88ab-44ce-baf2-d0894357c67c', '2', '2025-10-04 06:32:47');
 
 --
 -- Triggers `service_ticket_watchers`
@@ -2077,16 +2273,24 @@ CREATE TABLE `task_comments` (
 --
 
 INSERT INTO `task_comments` (`comment_id`, `task_id`, `project_id`, `user_id`, `comment_text`, `comment_type`, `old_value`, `new_value`, `created_at`, `updated_at`, `is_edited`, `is_deleted`) VALUES
+('17f5e94a-1045-444d-9353-1585b8770b14', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'gsdvxcvcxvcxvcx', 'comment', NULL, NULL, '2025-10-03 17:19:55', NULL, 0, 0),
 ('1f2cb86e-db75-467d-b9e8-3f9663ec5625', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ดอหดดห ปแอปอปแอ', 'comment', NULL, NULL, '2025-10-02 03:19:50', NULL, 0, 0),
 ('3f4a56c2-a828-4888-8eec-2538da2d47e6', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'อัปโหลดไฟล์ 1 ไฟล์', 'file_upload', NULL, NULL, '2025-10-02 03:16:19', NULL, 0, 0),
 ('3f92c2a1-42fa-4f1a-b404-b8cbac3bec39', '26200adb-71e6-44ea-ba85-f06f6617fb65', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'sdfsdfdsfds', 'comment', NULL, NULL, '2025-10-02 03:08:03', NULL, 0, 0),
+('49582d5f-ff0a-4c15-b9e9-df875eb92912', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ggggggggggggggggg', 'comment', NULL, NULL, '2025-10-03 17:21:45', NULL, 0, 0),
 ('4ab30592-66f3-4628-818d-f751d47ce28d', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'หกดหกดหกดหดหกด', 'comment', NULL, NULL, '2025-10-02 03:20:07', '2025-10-02 03:25:18', 0, 1),
+('53807b9d-61d3-4735-9e8c-782c9ca31461', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'dasdadasdadasd', 'comment', NULL, NULL, '2025-10-03 17:08:58', NULL, 0, 0),
+('5f12c208-3190-480f-8292-a3c90b592cb8', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'เปลี่ยนสถานะจาก In Progress เป็น Completed', 'status_change', 'In Progress', 'Completed', '2025-10-03 17:22:00', NULL, 0, 0),
 ('66bb5d8e-48e7-4fad-8229-196e4b02750c', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'อัปโหลดไฟล์ 1 ไฟล์', 'file_upload', NULL, NULL, '2025-10-02 03:16:28', NULL, 0, 0),
+('6fbb3caf-cd26-4c4b-9ddf-ba218eb887a1', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'เพิ่ม Narumon Wongkrua เป็นผู้รับผิดชอบ', 'system_log', NULL, NULL, '2025-10-03 17:22:49', NULL, 0, 0),
 ('81e6f2a2-b6b3-4325-8c36-3d98701c87f4', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ตอนนี้ยังไม่เรียบร้อย \r\n** รอ', 'comment', NULL, NULL, '2025-10-02 03:16:19', NULL, 0, 0),
 ('897598de-d1ec-465f-938c-8e460c48a8df', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'หกดหกดหกดหดหกด', 'comment', NULL, NULL, '2025-10-02 03:21:20', '2025-10-02 03:25:11', 0, 1),
 ('d6cd43bf-a44f-4b68-94a8-85b1628a8e65', '45820701-ccd7-4bcd-a10c-1ee310968d73', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ทดสอบ', 'comment', NULL, NULL, '2025-10-02 03:26:10', NULL, 0, 0),
+('dc67df03-a1ab-412b-a652-7cc55d415fe3', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'เพิ่ม Boongred Theephukhieo เป็นผู้รับผิดชอบ', 'system_log', NULL, NULL, '2025-10-03 17:22:49', NULL, 0, 0),
 ('e6a35a28-6deb-4497-af65-ebb899402d47', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ตอนนี้ยังไม่เรียบร้อย \r\n** รอ', 'comment', NULL, NULL, '2025-10-02 03:16:28', NULL, 0, 0),
-('e7066b53-16aa-4c89-9d77-df839fc1e4ba', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ดอหดดห ปแอปอปแอ', 'comment', NULL, NULL, '2025-10-02 03:19:48', NULL, 0, 0);
+('e7066b53-16aa-4c89-9d77-df839fc1e4ba', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'ดอหดดห ปแอปอปแอ', 'comment', NULL, NULL, '2025-10-02 03:19:48', NULL, 0, 0),
+('f15c6604-e801-4d4b-91c2-9e1618e203b0', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'rtdgdgdfgsgdsfg', 'comment', NULL, NULL, '2025-10-03 17:21:40', NULL, 0, 0),
+('fc082ae1-1237-4aac-8dfc-4b8e9658a70b', '4db417de-d28b-4978-ae24-429698c6b8df', '996fd65e-4532-4f9a-97e2-0e05403bc275', '2', 'dgsgdfgfdg', 'comment', NULL, NULL, '2025-10-03 17:08:49', NULL, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -2427,6 +2631,40 @@ CREATE TABLE `vw_service_tickets_full` (
 -- --------------------------------------------------------
 
 --
+-- Stand-in structure for view `vw_service_tickets_metrics`
+-- (See below for the actual view)
+--
+CREATE TABLE `vw_service_tickets_metrics` (
+`total_tickets` bigint(21)
+,`status_draft` decimal(22,0)
+,`status_new` decimal(22,0)
+,`status_on_process` decimal(22,0)
+,`status_pending` decimal(22,0)
+,`status_waiting_approval` decimal(22,0)
+,`status_approved` decimal(22,0)
+,`status_in_progress` decimal(22,0)
+,`status_resolved` decimal(22,0)
+,`status_closed` decimal(22,0)
+,`status_cancelled` decimal(22,0)
+,`priority_critical` decimal(22,0)
+,`priority_high` decimal(22,0)
+,`priority_medium` decimal(22,0)
+,`priority_low` decimal(22,0)
+,`type_incident` decimal(22,0)
+,`type_service` decimal(22,0)
+,`type_change` decimal(22,0)
+,`sla_within` decimal(22,0)
+,`sla_near` decimal(22,0)
+,`sla_overdue` decimal(22,0)
+,`active_tickets` decimal(22,0)
+,`today_tickets` decimal(22,0)
+,`week_tickets` decimal(22,0)
+,`month_tickets` decimal(22,0)
+);
+
+-- --------------------------------------------------------
+
+--
 -- Stand-in structure for view `vw_task_comments`
 -- (See below for the actual view)
 --
@@ -2467,6 +2705,15 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `vw_service_tick
 DROP TABLE IF EXISTS `vw_service_tickets_full`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `vw_service_tickets_full`  AS SELECT `t`.`ticket_id` AS `ticket_id`, `t`.`ticket_no` AS `ticket_no`, `t`.`ticket_type` AS `ticket_type`, `t`.`subject` AS `subject`, `t`.`description` AS `description`, `t`.`status` AS `status`, `t`.`priority` AS `priority`, `t`.`urgency` AS `urgency`, `t`.`impact` AS `impact`, `t`.`service_category` AS `service_category`, `t`.`category` AS `category`, `t`.`sub_category` AS `sub_category`, `t`.`source` AS `source`, `t`.`sla_target` AS `sla_target`, `t`.`sla_deadline` AS `sla_deadline`, `t`.`sla_status` AS `sla_status`, `t`.`channel` AS `channel`, `t`.`start_at` AS `start_at`, `t`.`due_at` AS `due_at`, `t`.`resolved_at` AS `resolved_at`, `t`.`closed_at` AS `closed_at`, `p`.`project_name` AS `project_name`, concat(`owner`.`first_name`,' ',`owner`.`last_name`) AS `job_owner_name`, `owner`.`role` AS `job_owner_role`, concat(`reporter`.`first_name`,' ',`reporter`.`last_name`) AS `reporter_name`, concat(`creator`.`first_name`,' ',`creator`.`last_name`) AS `created_by_name`, `onsite`.`start_location` AS `start_location`, `onsite`.`end_location` AS `end_location`, `onsite`.`travel_mode` AS `travel_mode`, `onsite`.`distance` AS `distance`, (select count(0) from `service_ticket_attachments` where `service_ticket_attachments`.`ticket_id` = `t`.`ticket_id`) AS `attachment_count`, (select count(0) from `service_ticket_watchers` where `service_ticket_watchers`.`ticket_id` = `t`.`ticket_id`) AS `watcher_count`, (select count(0) from `service_ticket_comments` where `service_ticket_comments`.`ticket_id` = `t`.`ticket_id` and `service_ticket_comments`.`deleted_at` is null) AS `comment_count`, `t`.`created_at` AS `created_at`, `t`.`updated_at` AS `updated_at` FROM (((((`service_tickets` `t` left join `projects` `p` on(`t`.`project_id` = `p`.`project_id`)) left join `users` `owner` on(`t`.`job_owner` = `owner`.`user_id`)) left join `users` `reporter` on(`t`.`reporter` = `reporter`.`user_id`)) left join `users` `creator` on(`t`.`created_by` = `creator`.`user_id`)) left join `service_ticket_onsite` `onsite` on(`t`.`ticket_id` = `onsite`.`ticket_id`)) WHERE `t`.`deleted_at` is null ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `vw_service_tickets_metrics`
+--
+DROP TABLE IF EXISTS `vw_service_tickets_metrics`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`` SQL SECURITY DEFINER VIEW `vw_service_tickets_metrics`  AS SELECT count(0) AS `total_tickets`, sum(case when `service_tickets`.`status` = 'Draft' then 1 else 0 end) AS `status_draft`, sum(case when `service_tickets`.`status` = 'New' then 1 else 0 end) AS `status_new`, sum(case when `service_tickets`.`status` = 'On Process' then 1 else 0 end) AS `status_on_process`, sum(case when `service_tickets`.`status` = 'Pending' then 1 else 0 end) AS `status_pending`, sum(case when `service_tickets`.`status` = 'Waiting for Approval' then 1 else 0 end) AS `status_waiting_approval`, sum(case when `service_tickets`.`status` = 'Approved' then 1 else 0 end) AS `status_approved`, sum(case when `service_tickets`.`status` = 'In Progress' then 1 else 0 end) AS `status_in_progress`, sum(case when `service_tickets`.`status` = 'Resolved' then 1 else 0 end) AS `status_resolved`, sum(case when `service_tickets`.`status` = 'Closed' then 1 else 0 end) AS `status_closed`, sum(case when `service_tickets`.`status` = 'Cancelled' then 1 else 0 end) AS `status_cancelled`, sum(case when `service_tickets`.`priority` = 'Critical' then 1 else 0 end) AS `priority_critical`, sum(case when `service_tickets`.`priority` = 'High' then 1 else 0 end) AS `priority_high`, sum(case when `service_tickets`.`priority` = 'Medium' then 1 else 0 end) AS `priority_medium`, sum(case when `service_tickets`.`priority` = 'Low' then 1 else 0 end) AS `priority_low`, sum(case when `service_tickets`.`ticket_type` = 'Incident' then 1 else 0 end) AS `type_incident`, sum(case when `service_tickets`.`ticket_type` = 'Service' then 1 else 0 end) AS `type_service`, sum(case when `service_tickets`.`ticket_type` = 'Change' then 1 else 0 end) AS `type_change`, sum(case when `service_tickets`.`sla_status` = 'Within SLA' then 1 else 0 end) AS `sla_within`, sum(case when `service_tickets`.`sla_status` = 'Near SLA' then 1 else 0 end) AS `sla_near`, sum(case when `service_tickets`.`sla_status` = 'Overdue' then 1 else 0 end) AS `sla_overdue`, sum(case when `service_tickets`.`status` not in ('Closed','Cancelled') then 1 else 0 end) AS `active_tickets`, sum(case when cast(`service_tickets`.`created_at` as date) = curdate() then 1 else 0 end) AS `today_tickets`, sum(case when yearweek(`service_tickets`.`created_at`,1) = yearweek(curdate(),1) then 1 else 0 end) AS `week_tickets`, sum(case when year(`service_tickets`.`created_at`) = year(curdate()) and month(`service_tickets`.`created_at`) = month(curdate()) then 1 else 0 end) AS `month_tickets` FROM `service_tickets` WHERE `service_tickets`.`deleted_at` is null ;
 
 -- --------------------------------------------------------
 
@@ -2628,6 +2875,34 @@ ALTER TABLE `project_task_assignments`
   ADD PRIMARY KEY (`assignment_id`),
   ADD KEY `task_id` (`task_id`),
   ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `service_sla_impacts`
+--
+ALTER TABLE `service_sla_impacts`
+  ADD PRIMARY KEY (`impact_id`),
+  ADD UNIQUE KEY `uniq_impact_name` (`impact_name`);
+
+--
+-- Indexes for table `service_sla_priority_matrix`
+--
+ALTER TABLE `service_sla_priority_matrix`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_impact_urgency` (`impact_id`,`urgency`);
+
+--
+-- Indexes for table `service_sla_targets`
+--
+ALTER TABLE `service_sla_targets`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_priority` (`priority`);
+
+--
+-- Indexes for table `service_sla_time_matrix`
+--
+ALTER TABLE `service_sla_time_matrix`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_impact_priority_urgency` (`impact_id`,`priority`,`urgency`);
 
 --
 -- Indexes for table `service_tickets`
@@ -2878,6 +3153,18 @@ ALTER TABLE `project_tasks`
 ALTER TABLE `project_task_assignments`
   ADD CONSTRAINT `project_task_assignments_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `project_tasks` (`task_id`),
   ADD CONSTRAINT `project_task_assignments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+
+--
+-- Constraints for table `service_sla_priority_matrix`
+--
+ALTER TABLE `service_sla_priority_matrix`
+  ADD CONSTRAINT `fk_matrix_impact` FOREIGN KEY (`impact_id`) REFERENCES `service_sla_impacts` (`impact_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `service_sla_time_matrix`
+--
+ALTER TABLE `service_sla_time_matrix`
+  ADD CONSTRAINT `fk_time_matrix_impact` FOREIGN KEY (`impact_id`) REFERENCES `service_sla_impacts` (`impact_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `service_tickets`

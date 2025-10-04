@@ -2,10 +2,89 @@
 // เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
 
-// ดึงข้อมูลโดยตรงจากฐานข้อมูล (ไม่ใช้ API ชั่วคราว)
+// ใช้ข้อมูลจริง + รองรับตัวกรองจากแบบฟอร์ม
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'] ?? null;
+
+// รับค่าตัวกรอง (GET) และกำหนดค่าเริ่มต้น
+$searchText       = $_GET['searchservice']   ?? '';
+$filterType       = $_GET['categorytype']    ?? '';
+$filterJobOwner   = $_GET['jobowner']        ?? $user_id; // ค่าเริ่มต้นเป็นผู้ใช้ปัจจุบัน (ทุกบทบาท)
+$filterSla        = $_GET['sla']             ?? '';
+$filterPriority   = $_GET['priority']        ?? '';
+$filterSource     = $_GET['source']          ?? '';
+$filterUrgency    = $_GET['urgency']         ?? '';
+$filterImpact     = $_GET['impact']          ?? '';
+$filterStatus     = $_GET['status']          ?? '';
+$filterServiceCat = $_GET['servicecategory'] ?? '';
+$filterCategory   = $_GET['category']        ?? '';
+$filterSubCat     = $_GET['subcategory']     ?? '';
+
+// โหลดตัวเลือกสำหรับ dropdown
+// Job Owner: Executive เห็นทั้งหมด, Supervisor เห็นเฉพาะทีม, อื่นๆ เห็นเฉพาะตนเอง
+$jobOwnerSql = "SELECT user_id, CONCAT(first_name,' ',last_name) AS full_name FROM users";
+if ($role === 'Sale Supervisor' && $team_id) {
+    $jobOwnerSql .= " WHERE team_id = :team_id";
+} elseif ($role !== 'Executive') {
+    $jobOwnerSql .= " WHERE user_id = :self_id";
+}
+$jobOwnerSql .= " ORDER BY full_name";
+$stmtJO = $condb->prepare($jobOwnerSql);
+if ($role === 'Sale Supervisor' && $team_id) { $stmtJO->bindValue(':team_id', $team_id); }
+if ($role !== 'Executive' && $role !== 'Sale Supervisor') { $stmtJO->bindValue(':self_id', $user_id); }
+$stmtJO->execute();
+$jobOwnerOptions = $stmtJO->fetchAll(PDO::FETCH_ASSOC);
+
+function distinctOptions(PDO $db, $col) {
+    $sql = "SELECT DISTINCT $col AS v FROM service_tickets WHERE $col IS NOT NULL AND $col <> '' ORDER BY v";
+    $st  = $db->query($sql);
+    return $st ? $st->fetchAll(PDO::FETCH_COLUMN) : [];
+}
+
+$categoryTypeOptions = distinctOptions($condb, 'ticket_type');
+$slaOptions          = distinctOptions($condb, 'sla_target');
+$priorityOptions     = distinctOptions($condb, 'priority');
+$sourceOptions       = distinctOptions($condb, 'source');
+$urgencyOptions      = distinctOptions($condb, 'urgency');
+$impactOptions       = distinctOptions($condb, 'impact');
+$statusOptions       = distinctOptions($condb, 'status');
+$serviceCatOptions   = distinctOptions($condb, 'service_category');
+$categoryOptions     = distinctOptions($condb, 'category');
+$subCategoryOptions  = distinctOptions($condb, 'sub_category');
+
+// สร้าง WHERE/Params ใช้ซ้ำได้ ทั้งรายการและ Metrics
+$where = " WHERE 1=1";
+$params = [];
+
+// กรองตาม Role พื้นฐาน
+if ($role === 'Sale Supervisor') {
+    if ($team_id) { $where .= " AND st.job_owner IN (SELECT user_id FROM users WHERE team_id = :team_id)"; $params[':team_id']=$team_id; }
+} elseif ($role !== 'Executive') {
+    $where .= " AND st.job_owner = :user_id"; $params[':user_id']=$user_id;
+}
+// กรองตาม Job Owner จากตัวเลือก (หากมี)
+if (!empty($filterJobOwner)) { $where .= " AND st.job_owner = :job_owner"; $params[':job_owner'] = $filterJobOwner; }
+
+// กรองฟิลด์อื่นๆ
+$mapFilters = [
+    'ticket_type'      => $filterType,
+    'priority'         => $filterPriority,
+    'source'           => $filterSource,
+    'urgency'          => $filterUrgency,
+    'impact'           => $filterImpact,
+    'status'           => $filterStatus,
+    'service_category' => $filterServiceCat,
+    'category'         => $filterCategory,
+    'sub_category'     => $filterSubCat,
+    'sla_target'       => $filterSla,
+];
+foreach ($mapFilters as $col => $val) {
+    if ($val !== '' && $val !== null) { $where .= " AND st.$col = :$col"; $params[":$col"] = $val; }
+}
+
+// ค้นหาข้อความ
+if ($searchText !== '') { $where .= " AND (st.ticket_no LIKE :q OR st.subject LIKE :q OR st.description LIKE :q)"; $params[':q'] = "%$searchText%"; }
 
 // ดึง Tickets
 $sqlTickets = "SELECT st.*,
@@ -15,34 +94,14 @@ $sqlTickets = "SELECT st.*,
         FROM service_tickets st
         LEFT JOIN users u ON st.job_owner = u.user_id
         LEFT JOIN users r ON st.reporter = r.user_id
-        LEFT JOIN projects p ON st.project_id = p.project_id
-        WHERE 1=1";
-
-// กรองตาม Role
-if ($role === 'Executive') {
-    // Executive เห็นทั้งหมด
-} elseif ($role === 'Sale Supervisor') {
-    if ($team_id) {
-        $sqlTickets .= " AND st.job_owner IN (SELECT user_id FROM users WHERE team_id = :team_id)";
-    }
-} else {
-    $sqlTickets .= " AND st.job_owner = :user_id";
-}
-
-$sqlTickets .= " ORDER BY st.created_at DESC LIMIT 100";
+        LEFT JOIN projects p ON st.project_id = p.project_id" . $where . " ORDER BY st.created_at DESC LIMIT 100";
 
 $stmtTickets = $condb->prepare($sqlTickets);
-
-if ($role === 'Sale Supervisor' && $team_id) {
-    $stmtTickets->bindValue(':team_id', $team_id);
-} elseif ($role !== 'Executive') {
-    $stmtTickets->bindValue(':user_id', $user_id);
-}
-
+foreach ($params as $k=>$v) { $stmtTickets->bindValue($k, $v); }
 $stmtTickets->execute();
 $tickets = $stmtTickets->fetchAll(PDO::FETCH_ASSOC);
 
-// ดึง Metrics
+// ดึง Metrics ตามตัวกรองเดียวกัน
 $sqlMetrics = "SELECT
     COUNT(*) as total_tickets,
     SUM(CASE WHEN status = 'New' THEN 1 ELSE 0 END) as status_new,
@@ -52,9 +111,10 @@ $sqlMetrics = "SELECT
     SUM(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) as status_closed,
     SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as status_cancelled,
     SUM(CASE WHEN sla_status = 'Overdue' THEN 1 ELSE 0 END) as sla_overdue
-    FROM service_tickets";
-
-$stmtMetrics = $condb->query($sqlMetrics);
+    FROM service_tickets st" . $where;
+$stmtMetrics = $condb->prepare($sqlMetrics);
+foreach ($params as $k=>$v) { $stmtMetrics->bindValue($k, $v); }
+$stmtMetrics->execute();
 $metricsData = $stmtMetrics->fetch(PDO::FETCH_ASSOC);
 
 // แปลง Metrics จาก API เป็นรูปแบบที่ใช้แสดงผล
@@ -402,11 +462,11 @@ if (!function_exists('summarizeSubject')) {
                                                 </div>
                                             </div>
                                             <div class="card-body">
-                                                <form action="#" method="POST">
+                                                <form action="" method="GET">
                                                     <div class="row">
                                                         <div class="col-sm-3">
                                                             <div class="form-group ">
-                                                                <input type="text" class="form-control " id="searchservice" name="searchservice" value="" placeholder="ค้นหา...">
+                                                                <input type="text" class="form-control " id="searchservice" name="searchservice" value="<?php echo htmlspecialchars($searchText); ?>" placeholder="ค้นหา...">
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-3">
@@ -423,9 +483,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>Category Type</label>
                                                                 <select class="custom-select select2" name="categorytype">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($categoryTypeOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterType === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -433,10 +493,12 @@ if (!function_exists('summarizeSubject')) {
                                                             <div class="form-group">
                                                                 <label>Job Owner</label>
                                                                 <select class="custom-select select2" name="jobowner">
-                                                                    <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <option value="">ทั้งหมด</option>
+                                                                    <?php foreach ($jobOwnerOptions as $u): ?>
+                                                                        <option value="<?php echo htmlspecialchars($u['user_id']); ?>" <?php echo (!empty($filterJobOwner) && $filterJobOwner == $u['user_id'] ? 'selected' : ''); ?>>
+                                                                            <?php echo htmlspecialchars($u['full_name']); ?>
+                                                                        </option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -445,9 +507,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>SLA</label>
                                                                 <select class="custom-select select2" name="sla">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($slaOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterSla !== '' && $filterSla == $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -456,9 +518,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>Priority</label>
                                                                 <select class="custom-select select2" name="priority">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($priorityOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterPriority === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -467,9 +529,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>Source</label>
                                                                 <select class="custom-select select2" name="source">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($sourceOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterSource === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -478,9 +540,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>Urgency</label>
                                                                 <select class="custom-select select2" name="urgency">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($urgencyOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterUrgency === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -489,9 +551,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>Impact</label>
                                                                 <select class="custom-select select2" name="impact">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($impactOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterImpact === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -500,9 +562,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>Status</label>
                                                                 <select class="custom-select select2" name="status">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($statusOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterStatus === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -511,9 +573,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>Service Category</label>
                                                                 <select class="custom-select select2" name="servicecategory">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($serviceCatOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterServiceCat === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -522,9 +584,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>Category</label>
                                                                 <select class="custom-select select2" name="category">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($categoryOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterCategory === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -533,9 +595,9 @@ if (!function_exists('summarizeSubject')) {
                                                                 <label>Sub-Category</label>
                                                                 <select class="custom-select select2" name="subcategory">
                                                                     <option value="">เลือก</option>
-
-                                                                    <option value=""></option>
-
+                                                                    <?php foreach ($subCategoryOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterSubCat === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
                                                                 </select>
                                                             </div>
                                                         </div>

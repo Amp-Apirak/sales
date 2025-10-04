@@ -118,10 +118,13 @@ try {
             )";
 
             $stmt = $condb->prepare($sql);
+            // Public URL path for download
+            $publicPath = BASE_URL . 'uploads/service_tickets/' . $ticket_id . '/' . $newFileName;
+
             $stmt->execute([
                 ':ticket_id' => $ticket_id,
                 ':file_name' => $fileName,
-                ':file_path' => $uploadPath,
+                ':file_path' => $publicPath,
                 ':file_size' => $fileSize,
                 ':file_type' => $fileExtension,
                 ':mime_type' => $mimeType,
@@ -132,7 +135,7 @@ try {
                 'original_name' => $fileName,
                 'saved_name' => $newFileName,
                 'size' => $fileSize,
-                'path' => $uploadPath
+                'path' => $publicPath
             ];
         } else {
             $errors[] = "ไฟล์ $fileName: ไม่สามารถย้ายไฟล์ไปยังโฟลเดอร์ปลายทางได้";
