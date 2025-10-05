@@ -869,7 +869,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="info-item mb-3">
-                                                    <span class="info-label text-primary">
+                                                    <span class="info-label text-dark">
                                                         <i class="fas fa-file-alt mr-1"></i>ชื่อโครงการ:
                                                     </span>
                                                     <span class="info-value font-weight-bold">
@@ -877,7 +877,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                     </span>
                                                 </div>
                                                 <div class="info-item mb-3">
-                                                    <span class="info-label text-primary">
+                                                    <span class="info-label text-dark">
                                                         <i class="fas fa-box mr-1"></i>ผลิตภัณฑ์:
                                                     </span>
                                                     <span class="info-value">
@@ -887,7 +887,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="info-item mb-3">
-                                                    <span class="info-label text-primary">
+                                                    <span class="info-label text-dark">
                                                         <i class="fas fa-calendar-check mr-1"></i>วันที่เริ่ม:
                                                     </span>
                                                     <span class="info-value">
@@ -902,7 +902,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                     </span>
                                                 </div>
                                                 <div class="info-item mb-3">
-                                                    <span class="info-label text-primary">
+                                                    <span class="info-label text-dark">
                                                         <i class="fas fa-calendar-times mr-1"></i>วันที่สิ้นสุด:
                                                     </span>
                                                     <span class="info-value">

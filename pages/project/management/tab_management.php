@@ -18,7 +18,7 @@
                     </div>
                     <div class="form-group">
                         <label>รายละเอียด</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
                     </div>
                     <div class="form-group">
                         <label>ผู้รับผิดชอบ</label>
@@ -36,14 +36,14 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>วันที่เริ่ม</label>
-                                <input type="date" class="form-control" id="start_date" name="start_date">
+                                <label>วันเวลาเริ่ม</label>
+                                <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>วันที่สิ้นสุด</label>
-                                <input type="date" class="form-control" id="end_date" name="end_date"
+                                <label>วันเวลาสิ้นสุด</label>
+                                <input type="datetime-local" class="form-control" id="end_date" name="end_date" required
                                     <?php if ($role === 'Seller' || $role === 'Engineer'): ?>
                                         readonly
                                         style="background-color: #e9ecef; cursor: not-allowed;"
@@ -56,7 +56,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>สถานะ</label>
-                                <select class="form-control" id="status" name="status">
+                                <select class="form-control" id="status" name="status" required>
                                     <option value="Pending">รอดำเนินการ</option>
                                     <option value="In Progress">กำลังดำเนินการ</option>
                                     <option value="Completed">เสร็จสิ้น</option>
@@ -67,13 +67,13 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>ความคืบหน้า (%)</label>
-                                <input type="number" class="form-control" id="progress" name="progress" min="0" max="100" value="0">
+                                <input type="number" class="form-control" id="progress" name="progress" min="0" max="100" value="0" required>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>ระดับความสำคัญ</label>
-                        <select class="form-control" id="priority" name="priority">
+                        <select class="form-control" id="priority" name="priority" required>
                             <option value="Low">ต่ำ</option>
                             <option value="Medium">ปานกลาง</option>
                             <option value="High">สูง</option>
@@ -107,6 +107,12 @@
             // ลบ event handlers ทั้งหมด
             $('#taskModal').off('shown.bs.modal.select2init shown.bs.modal.select2edit');
         });
+
+        $('#taskModal').on('change', '#status', function () {
+            handleStatusProgressControl($(this));
+        });
+
+        handleStatusProgressControl($('#taskModal #status'));
     });
 
     // ฟังก์ชันสำหรับ initialize Select2
@@ -139,6 +145,46 @@
         });
     }
 
+    function getCurrentLocalDateTime() {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        return now.toISOString().slice(0, 16);
+    }
+
+    function formatDateTimeLocal(value) {
+        if (!value || value === '0000-00-00' || value === '0000-00-00 00:00:00') {
+            return '';
+        }
+        if (value.includes('T')) {
+            return value.slice(0, 16);
+        }
+        if (value.includes(' ')) {
+            return value.replace(' ', 'T').slice(0, 16);
+        }
+        return value + 'T00:00';
+    }
+
+    function handleStatusProgressControl(statusElement) {
+        const $status = statusElement && statusElement.length ? statusElement : $('#taskModal #status');
+        if (!$status.length) {
+            return;
+        }
+
+        const $modal = $status.closest('#taskModal');
+        const $progressInput = $modal.find('#progress');
+        const status = ($status.val() || '').trim();
+
+        if (status === 'Pending' || status === 'Cancelled') {
+            $progressInput.val(0).prop('readonly', true);
+        } else if (status === 'In Progress') {
+            $progressInput.prop('readonly', false);
+        } else if (status === 'Completed') {
+            $progressInput.val(100).prop('readonly', true);
+        } else {
+            $progressInput.prop('readonly', false);
+        }
+    }
+
     function loadTasks() {
         $.ajax({
             url: 'management/get_tasks.php',
@@ -157,6 +203,12 @@
         $('#task_id').val('');
         $('#parent_task_id').val(parentTaskId);
         $('#taskModalTitle').text(parentTaskId ? 'เพิ่ม Sub Task' : 'เพิ่มงานใหม่');
+        const now = getCurrentLocalDateTime();
+        $('#start_date').val(now);
+        $('#end_date').val(now);
+        $('#status').val('Pending');
+        $('#progress').val(0);
+        handleStatusProgressControl($('#taskModal #status'));
         $('#taskModal').modal('show');
     }
 
@@ -183,23 +235,98 @@
         // เพิ่ม project_id
         formDataObj.project_id = '<?php echo $project_id; ?>';
 
-        // ส่งข้อมูลไปบันทึก
+        const requiredFields = [
+            { key: 'task_name', label: 'ชื่องาน' },
+            { key: 'description', label: 'รายละเอียด' },
+            { key: 'start_date', label: 'วันเวลาเริ่ม' },
+            { key: 'end_date', label: 'วันเวลาสิ้นสุด' },
+            { key: 'status', label: 'สถานะ' },
+            { key: 'priority', label: 'ระดับความสำคัญ' }
+        ];
+
+        const missingField = requiredFields.find(field => !formDataObj[field.key] || String(formDataObj[field.key]).trim() === '');
+        if (missingField) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ครบถ้วน',
+                text: `กรุณากรอก${missingField.label}`
+            });
+            return;
+        }
+
+        const startDate = new Date(formDataObj.start_date);
+        const endDate = new Date(formDataObj.end_date);
+
+        if (isNaN(startDate.getTime())) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'รูปแบบวันเวลาเริ่มไม่ถูกต้อง'
+            });
+            return;
+        }
+
+        if (isNaN(endDate.getTime())) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'รูปแบบวันเวลาสิ้นสุดไม่ถูกต้อง'
+            });
+            return;
+        }
+
+        if (endDate < startDate) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'วันเวลาสิ้นสุดต้องไม่น้อยกว่าวันเวลาเริ่ม'
+            });
+            return;
+        }
+
+        const status = formDataObj.status;
+        let progressValue = parseFloat(formDataObj.progress ?? 0);
+
+        if (isNaN(progressValue)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'กรุณากรอกค่าความคืบหน้าที่เป็นตัวเลข'
+            });
+            return;
+        }
+
+        if (progressValue < 0 || progressValue > 100) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'ค่าความคืบหน้าต้องอยู่ระหว่าง 0 - 100'
+            });
+            return;
+        }
+
+        if (status === 'Pending' || status === 'Cancelled') {
+            progressValue = 0;
+        } else if (status === 'Completed') {
+            progressValue = 100;
+        }
+
+        formDataObj.progress = progressValue;
+        $('#taskModal #progress').val(progressValue);
+
         $.ajax({
             url: 'management/save_task.php',
             type: 'POST',
             data: formDataObj,
             success: function(response) {
                 try {
-                    // ตรวจสอบว่า response เป็น JSON string
                     if (typeof response === 'string') {
                         response = JSON.parse(response);
                     }
 
                     if (response.status === 'success') {
-                        // ปิด modal
                         $('#taskModal').modal('hide');
 
-                        // แสดงข้อความสำเร็จsave_task.php
                         Swal.fire({
                             icon: 'success',
                             title: 'สำเร็จ',
@@ -207,7 +334,6 @@
                             timer: 1500,
                             showConfirmButton: false
                         }).then(() => {
-                            // โหลดข้อมูล tasks ใหม่
                             loadTasks();
                         });
                     } else {
@@ -314,10 +440,17 @@
                         $('#parent_task_id').val(task.parent_task_id);
                         $('#task_name').val(task.task_name);
                         $('#description').val(task.description);
-                        $('#start_date').val(task.start_date);
-                        $('#end_date').val(task.end_date);
+                        $('#start_date').val(formatDateTimeLocal(task.start_date));
+                        $('#end_date').val(formatDateTimeLocal(task.end_date));
                         $('#status').val(task.status);
-                        $('#progress').val(task.progress);
+
+                        if (task.status === 'Completed') {
+                            $('#progress').val(100);
+                        } else if (task.status === 'Pending' || task.status === 'Cancelled') {
+                            $('#progress').val(0);
+                        } else {
+                            $('#progress').val(task.progress);
+                        }
                         $('#priority').val(task.priority);
 
                         // เปลี่ยนชื่อปุ่มและหัวข้อ Modal
@@ -325,6 +458,8 @@
 
                         // แสดง Modal
                         $('#taskModal').modal('show');
+
+                        handleStatusProgressControl($('#taskModal #status'));
 
                         // ลบ event handler เก่าก่อน
                         $('#taskModal').off('shown.bs.modal.select2edit');
@@ -334,7 +469,7 @@
                             setTimeout(function() {
                                 initializeSelect2();
                                 // กำหนดค่าให้ select2 multiple หลังจาก initialize แล้ว
-                                $('#assigned_users').val(task.assigned_users).trigger('change');
+                                $('#assigned_users').val(task.assigned_users || []).trigger('change');
                             }, 100);
                         });
 
@@ -379,6 +514,12 @@
         // กำหนดค่าเริ่มต้น
         $('#task_id').val(''); // เคลียร์ task_id เพื่อระบุว่าเป็นการเพิ่มใหม่
         $('#parent_task_id').val(parentTaskId);
+        const now = getCurrentLocalDateTime();
+        $('#start_date').val(now);
+        $('#end_date').val(now);
+        $('#status').val('Pending');
+        $('#progress').val(0);
+        handleStatusProgressControl($('#taskModal #status'));
 
         // กำหนดชื่อปุ่มและหัวข้อ Modal
         $('#taskModalTitle').text(parentTaskId ? 'เพิ่ม Sub Task' : 'เพิ่มงานใหม่');

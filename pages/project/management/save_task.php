@@ -59,6 +59,28 @@ function updateParentTaskProgress($condb, $task_id)
     }
 }
 
+function normalizeDateInput(?string $value): ?string
+{
+    if ($value === null) {
+        return null;
+    }
+
+    $trimmed = trim($value);
+    if ($trimmed === '') {
+        return null;
+    }
+
+    $dateTimeFormats = ['Y-m-d\TH:i', 'Y-m-d H:i', 'Y-m-d'];
+    foreach ($dateTimeFormats as $format) {
+        $date = DateTime::createFromFormat($format, $trimmed);
+        if ($date instanceof DateTime) {
+            return $date->format('Y-m-d');
+        }
+    }
+
+    return null;
+}
+
 // ตรวจสอบว่าเป็น POST request
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -70,13 +92,61 @@ try {
     // เริ่ม Transaction
     $condb->beginTransaction();
 
-    // รับค่าจากฟอร์ม
-    $input = $_POST;
-
-    // ตรวจสอบข้อมูลที่จำเป็น
-    if (empty($input['project_id']) || empty($input['task_name'])) {
-        throw new Exception('กรุณากรอกข้อมูลที่จำเป็น');
+    // รับค่าจากฟอร์มและ trim
+    $input = [];
+    foreach ($_POST as $key => $value) {
+        $input[$key] = is_string($value) ? trim($value) : $value;
     }
+
+    $requiredFields = [
+        'project_id' => 'รหัสโครงการ',
+        'task_name' => 'ชื่องาน',
+        'description' => 'รายละเอียด',
+        'start_date' => 'วันเวลาเริ่ม',
+        'end_date' => 'วันเวลาสิ้นสุด',
+        'status' => 'สถานะ',
+        'priority' => 'ระดับความสำคัญ'
+    ];
+
+    foreach ($requiredFields as $field => $label) {
+        if (!isset($input[$field]) || $input[$field] === '') {
+            throw new Exception("กรุณากรอก{$label}");
+        }
+    }
+
+    $normalizedStartDate = normalizeDateInput($input['start_date']);
+    $normalizedEndDate = normalizeDateInput($input['end_date']);
+
+    if (!$normalizedStartDate) {
+        throw new Exception('รูปแบบวันเวลาเริ่มไม่ถูกต้อง');
+    }
+
+    if (!$normalizedEndDate) {
+        throw new Exception('รูปแบบวันเวลาสิ้นสุดไม่ถูกต้อง');
+    }
+
+    $startDateObj = new DateTime($normalizedStartDate);
+    $endDateObj = new DateTime($normalizedEndDate);
+    if ($endDateObj < $startDateObj) {
+        throw new Exception('วันเวลาสิ้นสุดต้องไม่น้อยกว่าวันเวลาเริ่ม');
+    }
+
+    $status = $input['status'];
+    $progressValue = isset($input['progress']) ? floatval($input['progress']) : 0;
+    if ($progressValue < 0) {
+        $progressValue = 0;
+    }
+    if ($progressValue > 100) {
+        $progressValue = 100;
+    }
+
+    if ($status === 'Pending' || $status === 'Cancelled') {
+        $progressValue = 0;
+    } elseif ($status === 'Completed') {
+        $progressValue = 100;
+    }
+
+    $progressValue = round($progressValue, 2);
 
     // สร้าง task_id ใหม่ถ้าเป็นการเพิ่มใหม่
     $isNewTask = empty($input['task_id']);
@@ -136,10 +206,10 @@ try {
             ':parent_task_id' => !empty($input['parent_task_id']) ? $input['parent_task_id'] : null,
             ':task_name' => $input['task_name'],
             ':description' => $input['description'] ?? null,
-            ':start_date' => $input['start_date'] ?? null,
-            ':end_date' => $input['end_date'] ?? null,
-            ':status' => $input['status'] ?? 'Pending',
-            ':progress' => $input['progress'] ?? 0,
+            ':start_date' => $normalizedStartDate,
+            ':end_date' => $normalizedEndDate,
+            ':status' => $status,
+            ':progress' => $progressValue,
             ':priority' => $input['priority'] ?? 'Medium',
             ':created_by' => $_SESSION['user_id'],
             ':task_order' => $taskOrder
@@ -158,8 +228,20 @@ try {
         if ($userRole === 'Seller' || $userRole === 'Engineer') {
             $end_date = $currentTask['end_date']; // ใช้ค่าเดิม
         } else {
-            // Executive และ Sale Supervisor สามารถแก้ไขได้
-            $end_date = $input['end_date'] ?? null;
+            $end_date = $normalizedEndDate;
+        }
+
+        $start_date = $normalizedStartDate;
+
+        if ($status === 'Completed') {
+            $end_date = $end_date ?: $normalizedEndDate;
+        }
+
+        // ถ้าผู้ใช้ไม่มีสิทธิ์แก้ end_date และไม่มีค่าปัจจุบัน ให้ใช้วันที่เริ่ม
+        if (($userRole === 'Seller' || $userRole === 'Engineer') && empty($end_date)) {
+            $end_date = $currentTask['end_date'] ?: $normalizedEndDate;
+        } else {
+            $end_date = $end_date ?: $normalizedEndDate;
         }
 
         // SQL สำหรับอัพเดทข้อมูล
@@ -180,10 +262,10 @@ try {
             ':task_id' => $taskId,
             ':task_name' => $input['task_name'],
             ':description' => $input['description'] ?? null,
-            ':start_date' => $input['start_date'] ?? null,
+            ':start_date' => $start_date,
             ':end_date' => $end_date, // ใช้ค่าที่ตรวจสอบสิทธิ์แล้ว
-            ':status' => $input['status'] ?? 'Pending',
-            ':progress' => $input['progress'] ?? 0,
+            ':status' => $status,
+            ':progress' => $progressValue,
             ':priority' => $input['priority'] ?? 'Medium',
             ':updated_by' => $_SESSION['user_id']
         ]);
@@ -196,7 +278,7 @@ try {
         $stmt->execute([$taskId]);
 
         // เพิ่มผู้รับผิดชอบใหม่
-        if (!empty($input['assigned_users'])) {
+        if (!empty($input['assigned_users']) && is_array($input['assigned_users'])) {
             $stmt = $condb->prepare("
                 INSERT INTO project_task_assignments (
                     assignment_id,
