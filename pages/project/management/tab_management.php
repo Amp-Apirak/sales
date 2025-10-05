@@ -94,6 +94,9 @@
 
 <!-- เพิ่ม JavaScript -->
 <script>
+    const PROJECT_ID = <?php echo json_encode($project_id); ?>;
+    const PROJECT_NAME = <?php echo json_encode($project['project_name'] ?? 'Project Tasks'); ?>;
+
     $(document).ready(function() {
         loadTasks();
         // ไม่เรียก initializeSelect2() ที่นี่เพราะจะเรียกใน modal แทน
@@ -190,12 +193,79 @@
             url: 'management/get_tasks.php',
             type: 'GET',
             data: {
-                project_id: '<?php echo $project_id; ?>'
+                project_id: PROJECT_ID
             },
             success: function(response) {
                 $('#task-container').html(response);
             }
         });
+    }
+
+    function exportTasks(format) {
+        if (!format) {
+            return;
+        }
+
+        const normalizedFormat = String(format).toLowerCase();
+
+        if (normalizedFormat === 'pdf') {
+            const taskContainer = document.querySelector('#task-container');
+            if (!taskContainer || !taskContainer.textContent.trim()) {
+                alert('ไม่มีข้อมูลงานให้ดาวน์โหลด');
+                return;
+            }
+
+            const exportWrapper = document.createElement('div');
+            exportWrapper.style.fontFamily = '"Sarabun", "Noto Sans Thai", sans-serif';
+            exportWrapper.style.padding = '16px';
+
+            const heading = document.createElement('h2');
+            heading.textContent = `รายการงาน - ${PROJECT_NAME}`;
+            heading.style.textAlign = 'center';
+            heading.style.marginBottom = '12px';
+            exportWrapper.appendChild(heading);
+
+            const clonedTasks = taskContainer.cloneNode(true);
+            exportWrapper.appendChild(clonedTasks);
+
+            html2pdf().set({
+                margin: 10,
+                filename: buildTaskExportFilename('pdf'),
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                }
+            }).from(exportWrapper).save();
+
+            return;
+        }
+
+        const exportUrl = `management/export_tasks.php?project_id=${encodeURIComponent(PROJECT_ID)}&format=${encodeURIComponent(normalizedFormat)}`;
+        window.location.href = exportUrl;
+    }
+
+    function buildTaskExportFilename(extension) {
+        const rawName = (PROJECT_NAME || 'project_tasks').toString();
+        const supportsNormalize = typeof rawName.normalize === 'function';
+        const baseName = supportsNormalize ? rawName.normalize('NFD') : rawName;
+        const normalizedName = baseName
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^0-9A-Za-zก-๙ _-]/g, '')
+            .trim()
+            .replace(/\s+/g, '_');
+
+        const base = normalizedName || 'project_tasks';
+        const timestamp = new Date()
+            .toISOString()
+            .replace(/[-:T]/g, '')
+            .slice(0, 14);
+
+        return `${base}_${timestamp}.${extension}`;
     }
 
     function showAddTaskModal(parentTaskId = null) {

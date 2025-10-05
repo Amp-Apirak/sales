@@ -928,6 +928,17 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                             การจัดการงาน
                                         </h3>
                                         <div class="card-tools ml-auto">
+                                            <div class="btn-group mr-2" role="group" aria-label="Export tasks">
+                                                <button type="button" class="btn btn-outline-success btn-sm" onclick="exportTasks('excel')" title="ดาวน์โหลดเป็น Excel" style="border-color: #28a745; color: #28a745;">
+                                                    <i class="fas fa-file-excel"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info btn-sm" onclick="exportTasks('csv')" title="ดาวน์โหลดเป็น CSV" style="border-color: #17a2b8; color: #17a2b8;">
+                                                    <i class="fas fa-file-csv"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportTasks('pdf')" title="บันทึกเป็น PDF" style="border-color: #dc3545; color: #dc3545;">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </button>
+                                            </div>
                                             <button type="button" class="btn btn-outline-secondary btn-sm mr-1" onclick="expandAllTasks()" title="ขยายทั้งหมด" style="border-color: #dee2e6;">
                                                 <i class="fas fa-expand-arrows-alt" style="color: #6c757d;"></i>
                                             </button>
