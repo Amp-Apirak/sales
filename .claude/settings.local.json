@@ -5,7 +5,11 @@
       "Bash(grep:*)",
       "Bash(sed:*)",
       "Bash(php:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Read(//mnt/c/Users/**)",
+      "Read(//tmp/**)",
+      "Read(//mnt/c/xampp/mysql/bin/**)",
+      "Read(//mnt/c/xampp/**)"
     ],
     "deny": [],
     "ask": []

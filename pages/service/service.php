@@ -6,11 +6,58 @@ include '../../include/Add_session.php';
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'] ?? null;
+$sessionTeamIds = $_SESSION['team_ids'] ?? [];
+$accessibleTeamIds = [];
+if (is_array($sessionTeamIds)) {
+    foreach ($sessionTeamIds as $tid) {
+        if (!empty($tid) && $tid !== 'ALL') {
+            $accessibleTeamIds[] = $tid;
+        }
+    }
+}
+if (!empty($team_id) && $team_id !== 'ALL') {
+    $accessibleTeamIds[] = $team_id;
+}
+$accessibleTeamIds = array_values(array_unique($accessibleTeamIds));
+
+function buildVisibilityFilter(string $role, array $accessibleTeamIds, string $userId): array
+{
+    if ($role === 'Executive') {
+        return ['clause' => '1=1', 'params' => []];
+    }
+
+    $clauses = [];
+    $params = [];
+
+    if (!empty($accessibleTeamIds)) {
+        $teamPlaceholders = [];
+        foreach ($accessibleTeamIds as $idx => $tid) {
+            $placeholder = ':vis_team_' . $idx;
+            $teamPlaceholders[] = $placeholder;
+            $params[$placeholder] = $tid;
+        }
+        $clauses[] = 'st.job_owner IN (SELECT ut_scope.user_id FROM user_teams ut_scope WHERE ut_scope.team_id IN (' . implode(',', $teamPlaceholders) . '))';
+    }
+
+    $clauses[] = 'st.job_owner = :vis_self';
+    $params[':vis_self'] = $userId;
+
+    $clauses[] = 'st.ticket_id IN (SELECT watcher.ticket_id FROM service_ticket_watchers watcher WHERE watcher.user_id = :vis_watcher)';
+    $params[':vis_watcher'] = $userId;
+
+    $clauses[] = 'st.reporter = :vis_reporter';
+    $params[':vis_reporter'] = $userId;
+
+    return [
+        'clause' => '(' . implode(' OR ', array_unique($clauses)) . ')',
+        'params' => $params,
+    ];
+}
 
 // รับค่าตัวกรอง (GET) และกำหนดค่าเริ่มต้น
 $searchText       = $_GET['searchservice']   ?? '';
 $filterType       = $_GET['categorytype']    ?? '';
-$filterJobOwner   = $_GET['jobowner']        ?? $user_id; // ค่าเริ่มต้นเป็นผู้ใช้ปัจจุบัน (ทุกบทบาท)
+$filterJobOwner   = array_key_exists('jobowner', $_GET) ? ($_GET['jobowner'] ?? '') : $user_id;
 $filterSla        = $_GET['sla']             ?? '';
 $filterPriority   = $_GET['priority']        ?? '';
 $filterSource     = $_GET['source']          ?? '';
@@ -23,46 +70,58 @@ $filterSubCat     = $_GET['subcategory']     ?? '';
 
 // โหลดตัวเลือกสำหรับ dropdown
 // Job Owner: Executive เห็นทั้งหมด, Supervisor เห็นเฉพาะทีม, อื่นๆ เห็นเฉพาะตนเอง
-$jobOwnerSql = "SELECT user_id, CONCAT(first_name,' ',last_name) AS full_name FROM users";
-if ($role === 'Sale Supervisor' && $team_id) {
-    $jobOwnerSql .= " WHERE team_id = :team_id";
-} elseif ($role !== 'Executive') {
-    $jobOwnerSql .= " WHERE user_id = :self_id";
-}
-$jobOwnerSql .= " ORDER BY full_name";
+$visibility = buildVisibilityFilter($role, $accessibleTeamIds, $user_id);
+
+$jobOwnerSql = "SELECT DISTINCT st.job_owner AS user_id, CONCAT(u.first_name,' ',u.last_name) AS full_name
+                FROM service_tickets st
+                LEFT JOIN users u ON st.job_owner = u.user_id
+                WHERE " . $visibility['clause'] . "
+                AND st.job_owner IS NOT NULL
+                ORDER BY full_name";
 $stmtJO = $condb->prepare($jobOwnerSql);
-if ($role === 'Sale Supervisor' && $team_id) { $stmtJO->bindValue(':team_id', $team_id); }
-if ($role !== 'Executive' && $role !== 'Sale Supervisor') { $stmtJO->bindValue(':self_id', $user_id); }
+foreach ($visibility['params'] as $key => $value) {
+    $stmtJO->bindValue($key, $value);
+}
 $stmtJO->execute();
 $jobOwnerOptions = $stmtJO->fetchAll(PDO::FETCH_ASSOC);
 
-function distinctOptions(PDO $db, $col) {
-    $sql = "SELECT DISTINCT $col AS v FROM service_tickets WHERE $col IS NOT NULL AND $col <> '' ORDER BY v";
-    $st  = $db->query($sql);
-    return $st ? $st->fetchAll(PDO::FETCH_COLUMN) : [];
+if (!empty($filterJobOwner) && !in_array($filterJobOwner, array_column($jobOwnerOptions, 'user_id'), true)) {
+    $stmtUser = $condb->prepare("SELECT user_id, CONCAT(first_name,' ',last_name) AS full_name FROM users WHERE user_id = :uid");
+    $stmtUser->execute([':uid' => $filterJobOwner]);
+    if ($extraUser = $stmtUser->fetch(PDO::FETCH_ASSOC)) {
+        $jobOwnerOptions[] = $extraUser;
+    }
+}
+usort($jobOwnerOptions, static function ($a, $b) {
+    return strcmp($a['full_name'] ?? '', $b['full_name'] ?? '');
+});
+
+function distinctOptions(PDO $db, string $col, string $visibilityClause, array $visibilityParams)
+{
+    $sql = "SELECT DISTINCT $col AS v FROM service_tickets st WHERE " . $visibilityClause . " AND $col IS NOT NULL AND $col <> '' ORDER BY v";
+    $stmt = $db->prepare($sql);
+    foreach ($visibilityParams as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
-$categoryTypeOptions = distinctOptions($condb, 'ticket_type');
-$slaOptions          = distinctOptions($condb, 'sla_target');
-$priorityOptions     = distinctOptions($condb, 'priority');
-$sourceOptions       = distinctOptions($condb, 'source');
-$urgencyOptions      = distinctOptions($condb, 'urgency');
-$impactOptions       = distinctOptions($condb, 'impact');
-$statusOptions       = distinctOptions($condb, 'status');
-$serviceCatOptions   = distinctOptions($condb, 'service_category');
-$categoryOptions     = distinctOptions($condb, 'category');
-$subCategoryOptions  = distinctOptions($condb, 'sub_category');
+$categoryTypeOptions = distinctOptions($condb, 'ticket_type', $visibility['clause'], $visibility['params']);
+$slaOptions          = distinctOptions($condb, 'sla_target', $visibility['clause'], $visibility['params']);
+$priorityOptions     = distinctOptions($condb, 'priority', $visibility['clause'], $visibility['params']);
+$sourceOptions       = distinctOptions($condb, 'source', $visibility['clause'], $visibility['params']);
+$urgencyOptions      = distinctOptions($condb, 'urgency', $visibility['clause'], $visibility['params']);
+$impactOptions       = distinctOptions($condb, 'impact', $visibility['clause'], $visibility['params']);
+$statusOptions       = distinctOptions($condb, 'status', $visibility['clause'], $visibility['params']);
+$serviceCatOptions   = distinctOptions($condb, 'service_category', $visibility['clause'], $visibility['params']);
+$categoryOptions     = distinctOptions($condb, 'category', $visibility['clause'], $visibility['params']);
+$subCategoryOptions  = distinctOptions($condb, 'sub_category', $visibility['clause'], $visibility['params']);
 
 // สร้าง WHERE/Params ใช้ซ้ำได้ ทั้งรายการและ Metrics
-$where = " WHERE 1=1";
-$params = [];
+$where = ' WHERE ' . $visibility['clause'];
+$params = $visibility['params'];
 
-// กรองตาม Role พื้นฐาน
-if ($role === 'Sale Supervisor') {
-    if ($team_id) { $where .= " AND st.job_owner IN (SELECT user_id FROM users WHERE team_id = :team_id)"; $params[':team_id']=$team_id; }
-} elseif ($role !== 'Executive') {
-    $where .= " AND st.job_owner = :user_id"; $params[':user_id']=$user_id;
-}
 // กรองตาม Job Owner จากตัวเลือก (หากมี)
 if (!empty($filterJobOwner)) { $where .= " AND st.job_owner = :job_owner"; $params[':job_owner'] = $filterJobOwner; }
 
@@ -90,7 +149,11 @@ if ($searchText !== '') { $where .= " AND (st.ticket_no LIKE :q OR st.subject LI
 $sqlTickets = "SELECT st.*,
         CONCAT(u.first_name, ' ', u.last_name) as job_owner_name,
         CONCAT(r.first_name, ' ', r.last_name) as reporter_name,
-        p.project_name
+        p.project_name,
+        (SELECT GROUP_CONCAT(CONCAT(wu.first_name, ' ', wu.last_name) ORDER BY wu.first_name SEPARATOR ', ')
+            FROM service_ticket_watchers w
+            JOIN users wu ON w.user_id = wu.user_id
+            WHERE w.ticket_id = st.ticket_id) AS watcher_names
         FROM service_tickets st
         LEFT JOIN users u ON st.job_owner = u.user_id
         LEFT JOIN users r ON st.reporter = r.user_id
@@ -382,6 +445,20 @@ if (!function_exists('summarizeSubject')) {
                 width: 520px !important;
                 max-width: 520px;
             }
+
+            /* Project Column */
+            .project-cell {
+                max-width: 300px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .watcher-cell {
+                max-width: 260px;
+                white-space: normal;
+                word-break: break-word;
+            }
         </style>
 
         <!-- Navbar -->
@@ -633,18 +710,19 @@ if (!function_exists('summarizeSubject')) {
                                             <tr class="text-center align-middle">
                                                 <th class="text-nowrap table-header-tooltip" title="เลข Ticket">No.</th>
                                                 <th class="text-nowrap table-header-tooltip" title="ประเภทงาน (Incident / Service / Change)">Type</th>
+                                                <th class="text-nowrap table-header-tooltip" title="สถานะปัจจุบันของ Ticket">Status</th>
+                                                <th class="text-nowrap table-header-tooltip" title="โครงการที่เกี่ยวข้อง">Project</th>
+                                                <th class="text-nowrap table-header-tooltip subject-col" title="หัวข้อของ Ticket">Subject</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ผู้รับผิดชอบงาน">Job Owner</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ผู้แจ้งงาน">Reporter</th>
+                                                <th class="text-nowrap table-header-tooltip" title="รายชื่อผู้ติดตาม Ticket">Watchers</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ระยะเวลาตาม SLA">SAL</th>
                                                 <th class="text-nowrap table-header-tooltip" title="หมวดหมู่บริการหลัก">Service Category</th>
                                                 <th class="text-nowrap table-header-tooltip" title="หมวดหมู่รอง">Category</th>
                                                 <th class="text-nowrap table-header-tooltip" title="หมวดหมู่ย่อย">Sub-Category</th>
-                                                <th class="text-nowrap table-header-tooltip" title="โครงการที่เกี่ยวข้อง">Project</th>
-                                                <th class="text-nowrap table-header-tooltip subject-col" title="หัวข้อของ Ticket">Subject</th>
-                                                <th class="text-nowrap table-header-tooltip" title="สถานะปัจจุบันของ Ticket">Status</th>
-                                                <th class="text-nowrap table-header-tooltip" title="ผู้รับผิดชอบงาน">Job Owner</th>
-                                                <th class="text-nowrap table-header-tooltip" title="ช่องทางที่สร้าง Ticket">Source</th>
-                                                <th class="text-nowrap table-header-tooltip" title="ระดับความสำคัญ">Priority</th>
-                                                <th class="text-nowrap table-header-tooltip" title="ระดับความเร่งด่วน">Urgency</th>
                                                 <th class="text-nowrap table-header-tooltip" title="ผลกระทบของเหตุการณ์">Impact</th>
-                                                <th class="text-nowrap table-header-tooltip" title="ระยะเวลาตาม SLA">SLA</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ระดับความสำคัญ">Priority</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ช่องทางที่สร้าง Ticket">Source</th>
                                                 <th class="text-nowrap table-header-tooltip" title="วันที่สร้าง Ticket">Create Date</th>
                                                 <th class="text-nowrap table-header-tooltip" title="จัดการ Ticket (แก้ไข/ลบ/Assign)">Action</th>
                                             </tr>
@@ -652,7 +730,7 @@ if (!function_exists('summarizeSubject')) {
                                         <tbody>
                                             <?php if (empty($tickets)): ?>
                                                 <tr>
-                                                    <td colspan="16" class="text-center">ไม่พบข้อมูล Ticket</td>
+                                                    <td colspan="17" class="text-center">ไม่พบข้อมูล Ticket</td>
                                                 </tr>
                                             <?php else: ?>
                                                 <?php foreach ($tickets as $ticket): ?>
@@ -670,31 +748,61 @@ if (!function_exists('summarizeSubject')) {
                                                                 $slaDisplay = round($ticket['sla_target'] / 24, 1) . ' วัน';
                                                             }
                                                         }
+
+                                                        // จัดการชื่อ Project ให้แสดงแค่ 150 ตัวอักษร
+                                                        $projectName = $ticket['project_name'] ?? '-';
+                                                        $projectDisplay = $projectName;
+                                                        $projectFull = $projectName;
+                                                        if (mb_strlen($projectName, 'UTF-8') > 150) {
+                                                            $projectDisplay = mb_substr($projectName, 0, 150, 'UTF-8') . '...';
+                                                            $projectFull = $projectName;
+
+
+
+                                                        }
+
+                                                        // ตัดข้อความ Watchers ที่ยาวเกิน 150 ตัวอักษรให้แสดง ... และเก็บฉบับเต็มไว้เป็น tooltip
+                                                        $watcherNames = $ticket['watcher_names'] ?? '-';
+                                                        $watchersDisplay = $watcherNames;
+                                                        $watchersFull = $watcherNames;
+                                                        if (mb_strlen($watcherNames, 'UTF-8') > 150) {
+                                                            $watchersDisplay = mb_substr($watcherNames, 0, 150, 'UTF-8') . '...';
+                                                            $watchersFull = $watcherNames;
+                                                        }
+
                                                     ?>
                                                     <tr>
-                                                        <td class="text-nowrap text-center font-weight-bold">
+                                                        <td class="text-nowrap text-center">
                                                             <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="text-primary">
                                                                 <?php echo htmlspecialchars($ticket['ticket_no']); ?>
                                                             </a>
                                                         </td>
+
+
+
                                                         <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $typeConfig['class']; ?>"><?php echo htmlspecialchars($typeConfig['label']); ?></span></td>
+                                                        <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $statusConfig['class']; ?>"><?php echo htmlspecialchars($ticket['status']); ?></span></td>
+                                                        <td class="project-cell" data-toggle="tooltip" data-placement="top" data-html="true" title="<?php echo htmlspecialchars($projectFull, ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <?php echo htmlspecialchars($projectDisplay); ?>
+                                                        </td>
+                                                        <td class="subject-cell" data-toggle="tooltip" data-placement="top" title="<?php echo $subjectFull; ?>"><?php echo $subjectDisplay; ?></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['job_owner_name'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['reporter_name'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap watcher-cell" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($watchersFull, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($watchersDisplay, ENT_QUOTES, 'UTF-8'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo $slaDisplay; ?></td>
                                                         <td class="text-nowrap"><?php echo htmlspecialchars($ticket['service_category'] ?? '-'); ?></td>
                                                         <td class="text-nowrap"><?php echo htmlspecialchars($ticket['category'] ?? '-'); ?></td>
                                                         <td class="text-nowrap"><?php echo htmlspecialchars($ticket['sub_category'] ?? '-'); ?></td>
-                                                        <td class="text-nowrap" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($ticket['project_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ticket['project_name'] ?? '-'); ?></td>
-                                                        <td class="subject-cell" data-toggle="tooltip" data-placement="top" title="<?php echo $subjectFull; ?>"><?php echo $subjectDisplay; ?></td>
-                                                        <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $statusConfig['class']; ?>"><?php echo htmlspecialchars($ticket['status']); ?></span></td>
-                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['job_owner_name'] ?? '-'); ?></td>
-                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['source'] ?? '-'); ?></td>
-                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['priority']); ?></td>
-                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['urgency'] ?? '-'); ?></td>
                                                         <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['impact'] ?? '-'); ?></td>
-                                                        <td class="text-nowrap text-center"><?php echo $slaDisplay; ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['priority'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['source'] ?? '-'); ?></td>
                                                         <td class="text-nowrap text-center"><?php echo date('Y-m-d H:i', strtotime($ticket['created_at'])); ?></td>
                                                         <td class="text-nowrap text-center">
                                                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                                                 <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
+                                                                <?php if ($ticket['job_owner'] === $user_id): ?>
                                                                 <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -705,18 +813,19 @@ if (!function_exists('summarizeSubject')) {
                                             <tr class="text-center align-middle">
                                                 <th>No.</th>
                                                 <th>Type</th>
+                                                <th>Status</th>
+                                                <th>Project</th>
+                                                <th>Subject</th>
+                                                <th>Job Owner</th>
+                                                <th>Reporter</th>
+                                                <th>Watchers</th>
+                                                <th>SAL</th>
                                                 <th>Service Category</th>
                                                 <th>Category</th>
                                                 <th>Sub-Category</th>
-                                                <th>Project</th>
-                                                <th>Subject</th>
-                                                <th>Status</th>
-                                                <th>Job Owner</th>
-                                                <th>Source</th>
-                                                <th>Priority</th>
-                                                <th>Urgency</th>
                                                 <th>Impact</th>
-                                                <th>SLA</th>
+                                                <th>Priority</th>
+                                                <th>Source</th>
                                                 <th>Create Date</th>
                                                 <th>Action</th>
                                             </tr>
@@ -760,7 +869,7 @@ if (!function_exists('summarizeSubject')) {
                 "order": [[0, "desc"]],
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
                 "columnDefs": [
-                    { "targets": 6, "width": 520 }
+                    { "targets": 4, "width": 520 }
                 ],
                 "language": {
                     "lengthMenu": "แสดง _MENU_ รายการต่อหน้า",
@@ -782,8 +891,8 @@ if (!function_exists('summarizeSubject')) {
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
                     '<"row"<"col-sm-12"tr>>' +
                     '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-                "stateSave": true,
-                "stateDuration": 60 * 60 * 24,
+                "stateSave": false,  // ปิด state save เพื่อให้ reload ข้อมูลทุกครั้ง
+                "stateDuration": 0,
                 "stateSaveCallback": function (settings, data) {
                     localStorage.setItem(stateKey, JSON.stringify(data));
                 },

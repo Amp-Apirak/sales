@@ -69,6 +69,19 @@ if (!empty($timelineLogs)) {
 $currentUserId = $_SESSION['user_id'] ?? null;
 $currentTeamId = $_SESSION['team_id'] ?? null;
 $currentUserName = trim(($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '')) ?: 'ผู้ใช้ระบบ';
+
+// เตรียมรายการ team_id ที่ผู้ใช้สังกัดเพื่อใช้กรอง Project
+$accessibleTeamIds = [];
+$sessionTeamIds = $_SESSION['team_ids'] ?? [];
+if (is_array($sessionTeamIds)) {
+    $accessibleTeamIds = array_filter($sessionTeamIds, static function ($teamId) {
+        return !empty($teamId) && $teamId !== 'ALL';
+    });
+}
+if (!empty($currentTeamId) && $currentTeamId !== 'ALL') {
+    $accessibleTeamIds[] = $currentTeamId;
+}
+$accessibleTeamIds = array_values(array_unique($accessibleTeamIds));
 $currentDateTime = date('Y-m-d\TH:i');
 $defaultTicketType = 'Incident';
 $defaultStatus = 'New';
@@ -99,9 +112,39 @@ try {
     $stmtSubCatList = $condb->query("SELECT DISTINCT sub_category FROM category WHERE sub_category IS NOT NULL AND sub_category <> '' ORDER BY sub_category");
     $subCategoriesList = $stmtSubCatList->fetchAll();
 
-    // รายชื่อโครงการที่เปิดอยู่
-    $stmtProjects = $condb->query("SELECT project_id, project_name FROM projects ORDER BY project_name ASC");
-    $projects = $stmtProjects->fetchAll();
+    // รายชื่อโครงการที่อยู่ในทีมผู้ใช้ หรือถูกแชร์ให้เข้าถึง
+    $projectSql = "SELECT DISTINCT p.project_id, p.project_name
+                   FROM projects p
+                   LEFT JOIN user_teams ut ON p.seller = ut.user_id
+                   WHERE (
+                        p.seller = :current_user_id
+                        OR p.created_by = :current_user_id
+                        OR EXISTS (
+                            SELECT 1 FROM project_members pm
+                            WHERE pm.project_id = p.project_id
+                            AND pm.user_id = :current_user_id
+                        )";
+
+    $projectParams = [
+        ':current_user_id' => $currentUserId,
+    ];
+
+    if (!empty($accessibleTeamIds)) {
+        $teamPlaceholders = [];
+        foreach ($accessibleTeamIds as $idx => $teamId) {
+            $placeholder = ':team_' . $idx;
+            $teamPlaceholders[] = $placeholder;
+            $projectParams[$placeholder] = $teamId;
+        }
+        $projectSql .= ' OR ut.team_id IN (' . implode(',', $teamPlaceholders) . ')';
+    }
+
+    $projectSql .= ')
+                   ORDER BY p.project_name ASC';
+
+    $stmtProjects = $condb->prepare($projectSql);
+    $stmtProjects->execute($projectParams);
+    $projects = $stmtProjects->fetchAll(PDO::FETCH_ASSOC);
 
 
     // รายการ Impact ที่ Active จาก Settings
