@@ -2,6 +2,9 @@
 // เริ่มต้น session
 session_start();
 
+// Set UTF-8 encoding for all pages
+header('Content-Type: text/html; charset=utf-8');
+
 // เชื่อมต่อฐานข้อมูล
 require_once __DIR__ . '/../config/condb.php';
 

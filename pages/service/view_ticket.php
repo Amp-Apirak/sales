@@ -74,8 +74,8 @@ try {
         $hasAccess = true;
     }
 
-    // อนุญาตแก้ไขเฉพาะ Job Owner เท่านั้น
-    if ($isJobOwner) {
+    // อนุญาตแก้ไขสำหรับ Job Owner หรือ Executive
+    if ($isJobOwner || $role === 'Executive') {
         $canEdit = true;
     }
 

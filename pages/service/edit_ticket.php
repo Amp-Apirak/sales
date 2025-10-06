@@ -1008,23 +1008,52 @@ $menu = 'service';
             // initial load for attachments
             loadAttachments();
 
-            $('#editTicketForm').on('submit', function(e) {
-                e.preventDefault();
+            function uploadPendingAttachments() {
+                const deferred = $.Deferred();
+                const files = $fileInput[0].files;
 
-                // แสดง Loading
-                Swal.fire({
-                    title: 'กำลังบันทึก...',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
+                if (!files || files.length === 0) {
+                    deferred.resolve();
+                    return deferred.promise();
+                }
+
+                const fd = new FormData();
+                fd.append('csrf_token', csrfToken);
+                fd.append('ticket_id', ticketId);
+                for (let i = 0; i < files.length; i++) {
+                    fd.append('attachments[]', files[i]);
+                }
+
+                $.ajax({
+                    url: 'api/upload_attachment.php',
+                    type: 'POST',
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json'
+                }).done(function(resp) {
+                    if (resp && resp.success) {
+                        $fileInput.val('');
+                        $sel.text('');
+                        loadAttachments();
+                        deferred.resolve();
+                    } else {
+                        deferred.reject((resp && resp.message) || 'ไม่สามารถอัปโหลดไฟล์ได้');
                     }
-
-
+                }).fail(function(xhr) {
+                    let message = 'ไม่สามารถอัปโหลดไฟล์ได้';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        message = xhr.responseText;
+                    }
+                    deferred.reject(message);
                 });
 
-                // ส่งข้อมูลไปยัง API
-                const formData = new FormData(this);
+                return deferred.promise();
+            }
 
+            function submitTicketUpdate(formData) {
                 $.ajax({
                     url: 'api/update_ticket.php',
                     type: 'POST',
@@ -1040,7 +1069,7 @@ $menu = 'service';
                                 text: response.message,
                                 confirmButtonText: 'ดู Ticket',
                                 showCancelButton: true,
-                                cancelButtonText: 'กลับหน้ารายการ',
+                                cancelButtonText: 'กลับไปหน้ารายการ',
                                 customClass: {
                                     confirmButton: 'btn btn-success btn-sm mr-2',
                                     cancelButton: 'btn btn-secondary btn-sm'
@@ -1056,18 +1085,18 @@ $menu = 'service';
                         } else {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'เกิดข้อผิดพลาด',
-                                text: response.message
+                                title: 'บันทึกไม่สำเร็จ',
+                                text: response.message || 'ไม่สามารถบันทึก Ticket ได้'
                             });
                         }
                     },
                     error: function(xhr, status, error) {
-                        let errorMessage = 'เกิดข้อผิดพลาดในการบันทึก';
+                        let errorMessage = 'ไม่สามารถบันทึกข้อมูลได้';
 
                         try {
                             const response = JSON.parse(xhr.responseText);
                             errorMessage = response.message || errorMessage;
-                        } catch(e) {
+                        } catch (e) {
                             errorMessage = xhr.responseText || errorMessage;
                         }
 
@@ -1079,6 +1108,33 @@ $menu = 'service';
                         });
                     }
                 });
+            }
+
+            $('#editTicketForm').on('submit', function(e) {
+                e.preventDefault();
+
+                Swal.fire({
+                    title: 'กำลังบันทึก...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const formData = new FormData(this);
+
+                uploadPendingAttachments()
+                    .done(function() {
+                        submitTicketUpdate(formData);
+                    })
+                    .fail(function(message) {
+                        Swal.close();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'อัปโหลดไฟล์ไม่สำเร็จ',
+                            text: message || 'กรุณาลองใหม่อีกครั้ง'
+                        });
+                    });
             });
         });
     </script>

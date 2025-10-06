@@ -13,12 +13,15 @@ $username = getEnvVar('DB_USERNAME', 'root');
 $password = getEnvVar('DB_PASSWORD', '1234');
 
 try {
-    // สร้างการเชื่อมต่อด้วย PDO
-    $condb = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    
+    // สร้างการเชื่อมต่อด้วย PDO with UTF-8 support for emoji
+    $condb = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+
     // ตั้งค่า PDO ให้โยน Exception ในกรณีที่เกิดข้อผิดพลาด
     $condb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $condb->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+    // Set utf8mb4 for emoji support
+    $condb->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
 } catch (PDOException $e) {
     // ถ้ามีข้อผิดพลาด จะโยนข้อความแสดงข้อผิดพลาดออกมา
     echo "การเชื่อมต่อฐานข้อมูลล้มเหลว: " . $e->getMessage();

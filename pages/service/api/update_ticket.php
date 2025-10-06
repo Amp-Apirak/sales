@@ -70,17 +70,68 @@ try {
 
     // ตรวจสอบและเพิ่มฟิลด์ที่ต้องการอัพเดต
     $allowedFields = [
-        'subject', 'description', 'status', 'priority', 'urgency', 'impact',
-        'service_category', 'category', 'sub_category',
-        'job_owner', 'reporter', 'source', 'channel',
-        'start_at', 'due_at'
+        'ticket_type',
+        'project_id',
+        'subject',
+        'description',
+        'status',
+        'priority',
+        'urgency',
+        'impact',
+        'service_category',
+        'category',
+        'sub_category',
+        'job_owner',
+        'reporter',
+        'source',
+        'channel',
+        'sla_status',
+        'start_at',
+        'due_at'
     ];
 
+    $validTicketTypes = ['Incident', 'Service', 'Change'];
+    $validSlaStatuses = ['Within SLA', 'Near SLA', 'Overdue'];
+
     foreach ($allowedFields as $field) {
-        if (isset($_POST[$field])) {
-            $updateFields[] = "$field = :$field";
-            $params[":$field"] = $_POST[$field];
+        if (!array_key_exists($field, $_POST)) {
+            continue;
         }
+
+        $value = $_POST[$field];
+        if (is_string($value)) {
+            $value = trim($value);
+        }
+
+        if ($field === 'ticket_type') {
+            if ($value === '' || !in_array($value, $validTicketTypes, true)) {
+                throw new Exception('Ticket Type ไม่ถูกต้อง');
+            }
+        }
+
+        if ($field === 'sla_status' && $value !== '' && !in_array($value, $validSlaStatuses, true)) {
+            throw new Exception('SLA Status ไม่ถูกต้อง');
+        }
+
+        if ($field === 'project_id' && $value === '') {
+            $value = null;
+        }
+
+        if (in_array($field, ['service_category', 'category', 'sub_category', 'source'], true) && $value === '') {
+            $value = null;
+        }
+
+        if (in_array($field, ['start_at', 'due_at'], true)) {
+            if ($value === '') {
+                $value = null;
+            } else {
+                $timestamp = strtotime($value);
+                $value = $timestamp ? date('Y-m-d H:i:s', $timestamp) : null;
+            }
+        }
+
+        $updateFields[] = "$field = :$field";
+        $params[":$field"] = $value;
     }
 
 
@@ -115,15 +166,17 @@ try {
     }
 
     // อัพเดต Watchers
-    if (isset($_POST['watchers'])) {
-        // ลบ Watchers เดิมทั้งหมด
+    if (array_key_exists('watchers', $_POST)) {
+        $watchers = $_POST['watchers'];
+        if (!is_array($watchers)) {
+            $watchers = ($watchers === '' || $watchers === null) ? [] : [$watchers];
+        }
+
         $sqlDeleteWatchers = "DELETE FROM service_ticket_watchers WHERE ticket_id = :ticket_id";
         $stmtDeleteWatchers = $condb->prepare($sqlDeleteWatchers);
         $stmtDeleteWatchers->execute([':ticket_id' => $ticket_id]);
 
-        // เพิ่ม Watchers ใหม่
-        $watchers = $_POST['watchers'];
-        if (!empty($watchers) && is_array($watchers)) {
+        if (!empty($watchers)) {
             $sqlWatcher = "INSERT INTO service_ticket_watchers (watcher_id, ticket_id, user_id, added_by)
                            VALUES (UUID(), :ticket_id, :user_id, :added_by)";
             $stmtWatcher = $condb->prepare($sqlWatcher);
@@ -210,7 +263,9 @@ try {
     $actorName = $userData['full_name'] ?? 'Unknown';
 
     // สร้าง detail สำหรับ Timeline (เฉพาะฟิลด์ที่เปลี่ยนจริง)
-    $fieldLabels = [
+        $fieldLabels = [
+        'ticket_type' => 'Ticket Type',
+        'project_id' => 'Project',
         'subject' => 'หัวข้อ / Subject',
         'description' => 'รายละเอียด',
         'status' => 'สถานะ',
@@ -224,8 +279,9 @@ try {
         'reporter' => 'ผู้แจ้ง',
         'source' => 'Ticket Source',
         'channel' => 'Channel',
-        'start_at' => 'กำหนดเริ่มดำเนินการ',
-        'due_at' => 'กำหนดแล้วเสร็จ'
+        'sla_status' => 'SLA Status',
+        'start_at' => 'วันเริ่มดำเนินการ',
+        'due_at' => 'วันครบกำหนด'
     ];
 
     $normalize = function($v, $field) {
@@ -246,14 +302,32 @@ try {
         return $r['n'] ?? $id;
     };
 
-    $pretty = function($v, $field) use ($userNameById) {
+    $projectNameById = function($id) use ($condb) {
+        if (!$id) {
+            return '-';
+        }
+        static $cache = [];
+        if (isset($cache[$id])) {
+            return $cache[$id];
+        }
+        $stmt = $condb->prepare("SELECT project_name FROM projects WHERE project_id = :id");
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $cache[$id] = $row['project_name'] ?? $id;
+        return $cache[$id];
+    };
+
+    $pretty = function($v, $field) use ($userNameById, $projectNameById) {
         if ($v === null) return '-';
-        if (in_array($field, ['start_at','due_at'])) {
+        if (in_array($field, ['start_at','due_at'], true)) {
             $ts = strtotime($v);
             return $ts ? date('d/m/Y H:i', $ts) : '-';
         }
-        if (in_array($field, ['job_owner','reporter'])) {
+        if (in_array($field, ['job_owner','reporter'], true)) {
             return $userNameById($v);
+        }
+        if ($field === 'project_id') {
+            return $projectNameById($v);
         }
         return (string)$v;
     };

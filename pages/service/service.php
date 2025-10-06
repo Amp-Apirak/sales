@@ -800,7 +800,7 @@ if (!function_exists('summarizeSubject')) {
                                                         <td class="text-nowrap text-center">
                                                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                                                 <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
-                                                                <?php if ($ticket['job_owner'] === $user_id): ?>
+                                                                <?php if ($role === 'Executive' || $ticket['job_owner'] === $user_id): ?>
                                                                 <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
                                                                 <?php endif; ?>
                                                             </div>

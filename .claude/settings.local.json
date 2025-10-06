@@ -9,7 +9,10 @@
       "Read(//mnt/c/Users/**)",
       "Read(//tmp/**)",
       "Read(//mnt/c/xampp/mysql/bin/**)",
-      "Read(//mnt/c/xampp/**)"
+      "Read(//mnt/c/xampp/**)",
+      "Bash(chmod:*)",
+      "Bash(cat:*)",
+      "Bash(./mysql.exe:*)"
     ],
     "deny": [],
     "ask": []

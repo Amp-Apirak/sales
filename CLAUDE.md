@@ -281,6 +281,34 @@ BASE_URL=http://localhost/sales/
 - `mentioned_user_id` (CHAR(36) FK→users)
 - `created_at`
 
+**`project_discussions`** - Project discussion board
+- `discussion_id` (CHAR(36) PK)
+- `project_id` (CHAR(36) FK→projects)
+- `user_id` (CHAR(36) FK→users)
+- `message_text` (TEXT) - Discussion message content
+- `is_edited` (TINYINT(1)) - Message edited flag
+- `is_deleted` (TINYINT(1)) - Soft delete flag
+- `created_at`, `updated_at` (TIMESTAMP)
+- INDEX: `idx_project_time` on (project_id, created_at DESC)
+
+**`project_discussion_attachments`** - Discussion file attachments
+- `attachment_id` (CHAR(36) PK)
+- `discussion_id` (CHAR(36) FK→project_discussions)
+- `project_id` (CHAR(36) FK→projects)
+- `file_name`, `file_path` (VARCHAR)
+- `file_size` (BIGINT), `file_type`, `file_extension` (VARCHAR)
+- `uploaded_by` (CHAR(36) FK→users)
+- `uploaded_at` (TIMESTAMP)
+- INDEX: `idx_discussion` on (discussion_id)
+
+**`project_discussion_mentions`** - User mentions in discussions
+- `mention_id` (CHAR(36) PK)
+- `discussion_id` (CHAR(36) FK→project_discussions)
+- `mentioned_user_id` (CHAR(36) FK→users)
+- `created_at` (TIMESTAMP)
+- INDEX: `idx_user` on (mentioned_user_id)
+- INDEX: `idx_discussion_user` on (discussion_id, mentioned_user_id)
+
 ### Service Ticketing System
 
 **`service_tickets`** - IT service ticket system
@@ -669,6 +697,47 @@ session_destroy();
      - Secure download with access control
      - Multiple files per comment
 
+9. **Project Discussion Board ([discussion/](pages/project/discussion/)):**
+   - **Chat-like Interface ([index.php](pages/project/discussion/index.php)):**
+     - Real-time conversation board for project team
+     - Text messages with timestamps
+     - User avatars and names
+     - Auto-refresh every 15 seconds
+     - Manual refresh button
+     - Scroll to bottom on new messages
+
+   - **File Attachments:**
+     - Multiple file upload (up to 5 files per message)
+     - All file types supported (images, documents, archives)
+     - File size limit: 10MB per file
+     - Supported formats: JPG, PNG, GIF, PDF, Word, Excel, PowerPoint, ZIP, RAR, TXT, CSV
+     - File preview with icons
+     - Secure download with access control
+
+   - **Message Management:**
+     - Edit own messages (shows "แก้ไขแล้ว" badge)
+     - Delete own messages (soft delete)
+     - Executive can edit/delete any message
+     - Message history preserved
+
+   - **AJAX Endpoints:**
+     - `get_discussions.php` - Fetch and render discussions
+     - `post_discussion.php` - Post new message with files
+     - `edit_discussion.php` - Edit message text
+     - `delete_discussion.php` - Soft delete message
+     - `download_attachment.php` - Secure file download
+
+   - **Access Control:**
+     - Only project members and sellers can access
+     - Executive has full access to all discussions
+     - Sale Supervisor can access team project discussions
+     - File downloads validate project access before serving
+
+   - **Database Tables:**
+     - `project_discussions` - Message storage
+     - `project_discussion_attachments` - File attachments
+     - `project_discussion_mentions` - @mentions (future feature)
+
 **Financial Calculations:**
 ```php
 // Sales
@@ -1024,6 +1093,14 @@ $potential = ($gross_profit / $sale_no_vat) * 100
 │   │   │   ├── download_attachment.php   # Download task file
 │   │   │   └── README_TASK_COMMENTS.md   # Task system docs
 │   │   │
+│   │   ├── discussion/             # Project discussion board
+│   │   │   ├── index.php           # Discussion UI (main view)
+│   │   │   ├── get_discussions.php # AJAX: Fetch discussions
+│   │   │   ├── post_discussion.php # Post new message (POST)
+│   │   │   ├── edit_discussion.php # Edit message (POST)
+│   │   │   ├── delete_discussion.php # Soft delete message (POST)
+│   │   │   └── download_attachment.php # Download discussion file
+│   │   │
 │   │   └── report/                 # Project reports
 │   │       └── sale_price.php      # Sales price report
 │   │
@@ -1099,6 +1176,7 @@ $potential = ($gross_profit / $sale_no_vat) * 100
 │   ├── project_documents/          # Project files
 │   ├── project_images/             # Project photos
 │   ├── task_attachments/           # Task files
+│   ├── discussion_attachments/     # Discussion board files
 │   └── ticket_attachments/         # Service ticket files
 │
 ├── AdminLTE/                       # AdminLTE theme
@@ -1195,6 +1273,26 @@ $potential = ($gross_profit / $sale_no_vat) * 100
 
 - `POST /pages/project/save_customer_ajax.php`
   - Quick-add customer from project form
+
+**Discussion APIs:**
+- `GET /pages/project/discussion/get_discussions.php?project_id={id}`
+  - Returns: Rendered HTML of discussion messages with attachments
+
+- `POST /pages/project/discussion/post_discussion.php`
+  - Post new discussion message with optional file attachments
+  - Params: project_id, message_text, attachments[] (up to 5 files, 10MB each)
+
+- `POST /pages/project/discussion/edit_discussion.php`
+  - Edit discussion message text
+  - Params: discussion_id, message_text
+  - Sets is_edited flag
+
+- `POST /pages/project/discussion/delete_discussion.php`
+  - Soft delete discussion (is_deleted = 1)
+  - Params: discussion_id
+
+- `GET /pages/project/discussion/download_attachment.php?id={attachment_id}`
+  - Secure file download with project access validation
 
 ### Common Response Format
 Most AJAX endpoints return JSON:

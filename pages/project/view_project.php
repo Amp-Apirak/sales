@@ -332,6 +332,10 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                             <li class="nav-item"><a class="nav-link" href="#images" data-toggle="tab" data-tab="images">รูปภาพ</a></li>
                         <?php endif; ?>
 
+                        <?php if ($hasFullAccess || $hasHalfAccess): ?>
+                            <li class="nav-item"><a class="nav-link" href="#discussion" data-toggle="tab" data-tab="discussion"><i class="fas fa-comments"></i> กระดานสนทนา</a></li>
+                        <?php endif; ?>
+
                     </ul
                         </div>
                     <div class="card-body">
@@ -961,7 +965,14 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                 </div>
                             </div>
 
-                            <!-- แถบที่ 7 จัดการสมาชิก -->
+                            <!-- แถบที่ 7 กระดานสนทนา -->
+                            <?php if ($hasFullAccess || $hasHalfAccess): ?>
+                            <div class="tab-pane" id="discussion">
+                                <?php include('discussion/index.php'); ?>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- แถบที่ 8 จัดการสมาชิก -->
                             <div class="tab-pane" id="members">
                                 <!-- ตารางแสดงสมาชิกในโครงการ -->
                                 <div class="card member-card">
