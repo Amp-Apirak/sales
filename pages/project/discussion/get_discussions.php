@@ -46,6 +46,54 @@ if (!$access_check) {
     exit;
 }
 
+// Timezone used when formatting discussion timestamps
+$timezone = new DateTimeZone('Asia/Bangkok');
+
+// Helper: format time ago strings with Bangkok timezone and guard against future timestamps
+function formatDiscussionTime(string $datetime, DateTimeZone $timezone): string
+{
+    if (empty($datetime)) {
+        return '';
+    }
+
+    try {
+        $createdAt = new DateTimeImmutable($datetime, $timezone);
+    } catch (Exception $e) {
+        $timestamp = strtotime($datetime);
+        if ($timestamp === false) {
+            return '';
+        }
+
+        $createdAt = (new DateTimeImmutable('@' . $timestamp))->setTimezone($timezone);
+    }
+
+    $now = new DateTimeImmutable('now', $timezone);
+
+    if ($createdAt > $now) {
+        return $createdAt->format('d/m/Y H:i');
+    }
+
+    $diff = $now->diff($createdAt);
+
+    if ($diff->days >= 7) {
+        return $createdAt->format('d/m/Y H:i');
+    }
+
+    if ($diff->days >= 1) {
+        return $diff->days . ' วันที่แล้ว';
+    }
+
+    if ($diff->h >= 1) {
+        return $diff->h . ' ชั่วโมงที่แล้ว';
+    }
+
+    if ($diff->i >= 1) {
+        return $diff->i . ' นาทีที่แล้ว';
+    }
+
+    return 'เมื่อสักครู่';
+}
+
 // Fetch all discussions with user info
 $stmt = $condb->prepare("
     SELECT
@@ -90,27 +138,9 @@ foreach ($discussions as $disc) {
         ? BASE_URL . 'uploads/profile_images/' . $disc['profile_image']
         : BASE_URL . 'assets/img/default-avatar.jpg';
 
-    // Time display with proper timezone
-    date_default_timezone_set('Asia/Bangkok');
-
-    $created_time = strtotime($disc['created_at']);
-    $current_time = time();
-    $time_diff = $current_time - $created_time;
-
-    if ($time_diff < 60) {
-        $time_str = 'เมื่อสักครู่';
-    } elseif ($time_diff < 3600) {
-        $minutes = floor($time_diff / 60);
-        $time_str = $minutes . ' นาทีที่แล้ว';
-    } elseif ($time_diff < 86400) {
-        $hours = floor($time_diff / 3600);
-        $time_str = $hours . ' ชั่วโมงที่แล้ว';
-    } elseif ($time_diff < 604800) { // น้อยกว่า 7 วัน
-        $days = floor($time_diff / 86400);
-        $time_str = $days . ' วันที่แล้ว';
-    } else {
-        // แสดงวันที่เต็ม สำหรับข้อความเก่ากว่า 7 วัน
-        $time_str = date('d/m/Y H:i', $created_time);
+    $time_str = formatDiscussionTime($disc['created_at'], $timezone);
+    if ($time_str === '') {
+        $time_str = date('d/m/Y H:i', strtotime($disc['created_at']));
     }
 
     echo '<div class="discussion-item mb-3" data-discussion-id="' . $disc['discussion_id'] . '">';
