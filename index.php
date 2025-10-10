@@ -149,10 +149,10 @@ function getTeamFilterCondition($can_view_team, $table_alias = 'p', $user_field 
             return " AND {$table_alias}.{$user_field} IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
         }
     } else {
-        // Show specific team only
-        $placeholder = ':current_team_' . rand();
+        // Show specific team only - แก้ไข: ใช้ placeholder แบบถูกต้อง
+        $placeholder = ':current_team_' . uniqid();
         $params[$placeholder] = $current_team_id;
-        return " AND {$table_alias}.{$user_field} IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = $placeholder)";
+        return " AND {$table_alias}.{$user_field} IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = {$placeholder})";
     }
 
     return '';
@@ -367,15 +367,15 @@ $project_status_params = [
     ':end_date' => $filter_date_range[1]
 ];
 if ($filter_user_id) {
-    $project_status_query .= "AND p.created_by = :user_id ";
+    $project_status_query .= "AND p.seller = :user_id ";
     $project_status_params[':user_id'] = $filter_user_id;
 } elseif ($filter_team_id && $can_view_all) {
-    $project_status_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
+    $project_status_query .= "AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
     $project_status_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $project_status_query .= getTeamFilterCondition($can_view_team, 'p', 'created_by', $project_status_params);
+    $project_status_query .= getTeamFilterCondition($can_view_team, 'p', 'seller', $project_status_params);
 } elseif ($can_view_own) {
-    $project_status_query .= "AND p.created_by = :user_id ";
+    $project_status_query .= "AND p.seller = :user_id ";
     $project_status_params[':user_id'] = $user_id;
 }
 $project_status_query .= "GROUP BY status";
@@ -391,15 +391,15 @@ $top_products_params = [
     ':end_date' => $filter_date_range[1]
 ];
 if ($filter_user_id) {
-    $top_products_query .= "AND pr.created_by = :user_id ";
+    $top_products_query .= "AND pr.seller = :user_id ";
     $top_products_params[':user_id'] = $filter_user_id;
 } elseif ($filter_team_id && $can_view_all) {
-    $top_products_query .= "AND pr.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
+    $top_products_query .= "AND pr.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
     $top_products_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $top_products_query .= getTeamFilterCondition($can_view_team, 'pr', 'created_by', $top_products_params);
+    $top_products_query .= getTeamFilterCondition($can_view_team, 'pr', 'seller', $top_products_params);
 } elseif ($can_view_own) {
-    $top_products_query .= "AND pr.created_by = :user_id ";
+    $top_products_query .= "AND pr.seller = :user_id ";
     $top_products_params[':user_id'] = $user_id;
 }
 $top_products_query .= "GROUP BY p.product_id ORDER BY count DESC LIMIT 10";
@@ -415,15 +415,15 @@ $yearly_sales_params = [
     ':end_date' => $filter_date_range[1]
 ];
 if ($filter_user_id) {
-    $yearly_sales_query .= "AND p.created_by = :user_id ";
+    $yearly_sales_query .= "AND p.seller = :user_id ";
     $yearly_sales_params[':user_id'] = $filter_user_id;
 } elseif ($filter_team_id && $can_view_all) {
-    $yearly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
+    $yearly_sales_query .= "AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
     $yearly_sales_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $yearly_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'created_by', $yearly_sales_params);
+    $yearly_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'seller', $yearly_sales_params);
 } elseif ($can_view_own) {
-    $yearly_sales_query .= "AND p.created_by = :user_id ";
+    $yearly_sales_query .= "AND p.seller = :user_id ";
     $yearly_sales_params[':user_id'] = $user_id;
 }
 $yearly_sales_query .= "GROUP BY YEAR(sales_date) ORDER BY year";
@@ -463,15 +463,15 @@ $monthly_sales_params = [
     ':end_date' => $filter_date_range[1]
 ];
 if ($filter_user_id) {
-    $monthly_sales_query .= "AND p.created_by = :user_id ";
+    $monthly_sales_query .= "AND p.seller = :user_id ";
     $monthly_sales_params[':user_id'] = $filter_user_id;
 } elseif ($filter_team_id && $can_view_all) {
-    $monthly_sales_query .= "AND p.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
+    $monthly_sales_query .= "AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id) ";
     $monthly_sales_params[':team_id'] = $filter_team_id;
 } elseif ($can_view_team) {
-    $monthly_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'created_by', $monthly_sales_params);
+    $monthly_sales_query .= getTeamFilterCondition($can_view_team, 'p', 'seller', $monthly_sales_params);
 } elseif ($can_view_own) {
-    $monthly_sales_query .= "AND p.created_by = :user_id ";
+    $monthly_sales_query .= "AND p.seller = :user_id ";
     $monthly_sales_params[':user_id'] = $user_id;
 }
 $monthly_sales_query .= "GROUP BY DATE_FORMAT(sales_date, '%Y-%m') ORDER BY month";
@@ -532,7 +532,7 @@ function countProjectsByStatus($condb, $status_list, $role, $team_id, $user_id, 
     // ใช้ quote เพื่อป้องกัน SQL Injection ในสถานะ
     $status_in_clause = implode(',', array_map(fn($s) => $condb->quote($s), $status_list));
     $query = "SELECT COUNT(*) as count FROM projects p WHERE p.status IN ($status_in_clause)";
-    
+
     $params = [];
 
     // เพิ่มเงื่อนไขการกรองตามช่วงวันที่
@@ -551,8 +551,8 @@ function countProjectsByStatus($condb, $status_list, $role, $team_id, $user_id, 
         // Executive กรองตามทีม
         $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
         $params[':team_id'] = $filter_team_id;
-    } elseif ($role === 'Sale Supervisor') {
-        // Supervisor ดูได้ทุกทีมที่ตัวเองสังกัด หรือเฉพาะทีมที่เลือก
+    } elseif ($role === 'Sale Supervisor' || $role === 'Account Management') {
+        // Supervisor/Account Management ดูได้ทุกทีมที่ตัวเองสังกัด หรือเฉพาะทีมที่เลือก
         $current_team_id = $_SESSION['team_id'] ?? 'ALL';
         if ($current_team_id === 'ALL') {
             // Show all teams user belongs to
@@ -560,7 +560,7 @@ function countProjectsByStatus($condb, $status_list, $role, $team_id, $user_id, 
             if (!empty($team_ids)) {
                 $team_placeholders = [];
                 foreach ($team_ids as $key => $id) {
-                    $placeholder = ':cps_team_' . $key;
+                    $placeholder = ':cps_team_' . $key . '_' . uniqid();
                     $team_placeholders[] = $placeholder;
                     $params[$placeholder] = $id;
                 }
@@ -572,9 +572,10 @@ function countProjectsByStatus($condb, $status_list, $role, $team_id, $user_id, 
                 $params[':user_id'] = $user_id;
             }
         } else {
-            // Show specific team only
-            $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_cps)";
-            $params[':current_team_cps'] = $current_team_id;
+            // Show specific team only - แก้ไข: ใช้ placeholder แบบถูกต้อง
+            $placeholder = ':current_team_cps_' . uniqid();
+            $params[$placeholder] = $current_team_id;
+            $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = {$placeholder})";
         }
     } elseif ($role === 'Seller' || $role === 'Engineer') {
         // Seller/Engineer ดูได้แค่ของตัวเอง
@@ -672,8 +673,8 @@ function getWinProjectSummary($condb, $role, $team_id, $user_id, $filter_team_id
     if ($filter_team_id && $role === 'Executive') {
         $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
         $params[':team_id'] = $filter_team_id;
-    } elseif ($role === 'Sale Supervisor') {
-        // Supervisor ดูได้ทุกทีมที่ตัวเองสังกัด หรือเฉพาะทีมที่เลือก
+    } elseif ($role === 'Sale Supervisor' || $role === 'Account Management') {
+        // Supervisor/Account Management ดูได้ทุกทีมที่ตัวเองสังกัด หรือเฉพาะทีมที่เลือก
         $current_team_id = $_SESSION['team_id'] ?? 'ALL';
         if ($current_team_id === 'ALL') {
             // Show all teams user belongs to
@@ -681,7 +682,7 @@ function getWinProjectSummary($condb, $role, $team_id, $user_id, $filter_team_id
             if (!empty($team_ids)) {
                 $team_placeholders = [];
                 foreach ($team_ids as $key => $id) {
-                    $placeholder = ':team_id_' . $key;
+                    $placeholder = ':team_id_' . $key . '_' . uniqid();
                     $team_placeholders[] = $placeholder;
                     $params[$placeholder] = $id;
                 }
@@ -689,9 +690,10 @@ function getWinProjectSummary($condb, $role, $team_id, $user_id, $filter_team_id
                 $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
             }
         } else {
-            // Show specific team only
-            $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_ws)";
-            $params[':current_team_ws'] = $current_team_id;
+            // Show specific team only - แก้ไข: ใช้ placeholder แบบถูกต้อง
+            $placeholder = ':current_team_ws_' . uniqid();
+            $params[$placeholder] = $current_team_id;
+            $query .= " AND p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = {$placeholder})";
         }
     } elseif ($role === 'Seller') {
         $query .= " AND p.seller = :user_id";
