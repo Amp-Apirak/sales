@@ -143,9 +143,9 @@ function validateUsername($username) {
         return ['valid' => false, 'message' => 'Username ยาวเกินไป (สูงสุด 50 ตัวอักษร)'];
     }
 
-    // ตรวจสอบรูปแบบ (อนุญาตเฉพาะ a-z, A-Z, 0-9, _, -)
-    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $username)) {
-        return ['valid' => false, 'message' => 'Username ประกอบด้วย a-z, A-Z, 0-9, _, - เท่านั้น'];
+    // ตรวจสอบรูปแบบ (อนุญาต a-z, A-Z, 0-9, _, -, ., @)
+    if (!preg_match('/^[a-zA-Z0-9._@-]+$/', $username)) {
+        return ['valid' => false, 'message' => 'Username ประกอบด้วย a-z, A-Z, 0-9, . _ @ - เท่านั้น'];
     }
 
     return ['valid' => true, 'value' => $username];
@@ -217,8 +217,15 @@ function checkRateLimit($identifier, $maxAttempts = 5, $timeWindow = 600) {
 
     if (!empty($entry['block_expires']) && $entry['block_expires'] > $now) {
         $retryAfter = $entry['block_expires'] - $now;
-        $minutes = ceil($retryAfter / 60);
-        $message = 'พยายามเกินจำนวนที่กำหนด กรุณาลองใหม่อีกครั้งใน ' . $minutes . ' นาที';
+
+        // แสดงข้อความตามระยะเวลาที่เหลือ
+        if ($retryAfter < 60) {
+            $message = 'พยายามเกินจำนวนที่กำหนด กรุณาลองใหม่อีกครั้งใน ' . $retryAfter . ' วินาที';
+        } else {
+            $minutes = ceil($retryAfter / 60);
+            $message = 'พยายามเกินจำนวนที่กำหนด กรุณาลองใหม่อีกครั้งใน ' . $minutes . ' นาที';
+        }
+
         return [
             'allowed' => false,
             'message' => $message,
@@ -246,22 +253,27 @@ function checkRateLimit($identifier, $maxAttempts = 5, $timeWindow = 600) {
     $attemptCount = count($entry['attempts']);
 
     if ($attemptCount >= $maxAttempts) {
-        $entry['block_level'] = min($entry['block_level'] + 1, 6);
-        $penalties = [60, 180, 300, 420, 540, 900];
+        $entry['block_level'] = min($entry['block_level'] + 1, 4);
+        $penalties = [15, 30, 45, 60]; // 15 วิ, 30 วิ, 45 วิ, 1 นาที
         $penaltyIndex = max(0, min($entry['block_level'] - 1, count($penalties) - 1));
         $penaltyDuration = $penalties[$penaltyIndex];
         $entry['block_expires'] = $now + $penaltyDuration;
         $entry['attempts'] = [];
 
-        $minutes = ceil($penaltyDuration / 60);
-        $message = 'พยายามเกินจำนวนที่กำหนด กรุณาลองใหม่อีกครั้งใน ' . $minutes . ' นาที';
+        // แสดงข้อความตามระยะเวลา
+        if ($penaltyDuration < 60) {
+            $message = 'พยายามเกินจำนวนที่กำหนด กรุณาลองใหม่อีกครั้งใน ' . $penaltyDuration . ' วินาที';
+        } else {
+            $minutes = ceil($penaltyDuration / 60);
+            $message = 'พยายามเกินจำนวนที่กำหนด กรุณาลองใหม่อีกครั้งใน ' . $minutes . ' นาที';
+        }
 
         return [
             'allowed' => false,
             'message' => $message,
             'retry_after' => $penaltyDuration,
             'details' => sprintf(
-                'ระบบพบบทความแก้ไข %d ครั้งภายใน %d นาที (จำกัด %d ครั้ง)',
+                'ระบบพบความพยายามล็อกอิน %d ครั้งภายใน %d นาที (จำกัด %d ครั้ง)',
                 $attemptCount,
                 ceil($timeWindow / 60),
                 $maxAttempts
