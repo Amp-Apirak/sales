@@ -13,7 +13,12 @@
       "Bash(chmod:*)",
       "Bash(cat:*)",
       "Bash(./mysql.exe:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(while read file)",
+      "Bash(do if ! grep -q \"Account Management\" \"$file\")",
+      "Bash(then echo \"❌ MISSING: $file\" else echo \"✅ OK: $file\" fi done)",
+      "Bash(for file in add_project.php delete_payment.php delete_project.php edit_project.php save_customer_ajax.php save_payment.php)",
+      "Bash(do echo \"=== Checking: $file ===\" grep -n \"in_array.*role.*Executive\" \"$file\")"
     ],
     "deny": [],
     "ask": []

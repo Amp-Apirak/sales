@@ -871,50 +871,56 @@ try {
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
-                            <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_members); ?>">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="icon-circle bg-success">
-                                            <i class="fas fa-user-friends"></i>
+                            <a href="<?php echo BASE_URL; ?>pages/account/account.php" style="text-decoration: none; color: inherit;">
+                                <div class="card card-statistic card-hover" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_members); ?>">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="icon-circle bg-success">
+                                                <i class="fas fa-user-friends"></i>
+                                            </div>
+                                            <h6 class="card-title text-muted mb-0 ml-3"><?php echo $member_label; ?></h6>
                                         </div>
-                                        <h6 class="card-title text-muted mb-0 ml-3"><?php echo $member_label; ?></h6>
+                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($total_team_members); ?>
+                                        </h2>
+                                        <p class="mb-0 text-muted"><span class="text-success mr-2"><i
+                                                    class="fa fa-arrow-up"></i> 5.27%</span> จากเดือนที่แล้ว</p>
                                     </div>
-                                    <h2 class="font-weight-bold mb-1"><?php echo number_format($total_team_members); ?>
-                                    </h2>
-                                    <p class="mb-0 text-muted"><span class="text-success mr-2"><i
-                                                class="fa fa-arrow-up"></i> 5.27%</span> จากเดือนที่แล้ว</p>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                         <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
-                            <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_total_projects); ?>">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="icon-circle bg-danger">
-                                            <i class="fas fa-project-diagram"></i>
+                            <a href="<?php echo BASE_URL; ?>pages/project/project.php" style="text-decoration: none; color: inherit;">
+                                <div class="card card-statistic card-hover" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_total_projects); ?>">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="icon-circle bg-danger">
+                                                <i class="fas fa-project-diagram"></i>
+                                            </div>
+                                            <h6 class="card-title text-muted mb-0 ml-3">จำนวนโครงการทั้งหมด</h6>
                                         </div>
-                                        <h6 class="card-title text-muted mb-0 ml-3">จำนวนโครงการทั้งหมด</h6>
+                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($total_projects); ?></h2>
+                                        <p class="mb-0 text-muted"><span class="text-danger mr-2"><i
+                                                    class="fa fa-arrow-down"></i> 1.08%</span> จากเดือนที่แล้ว</p>
                                     </div>
-                                    <h2 class="font-weight-bold mb-1"><?php echo number_format($total_projects); ?></h2>
-                                    <p class="mb-0 text-muted"><span class="text-danger mr-2"><i
-                                                class="fa fa-arrow-down"></i> 1.08%</span> จากเดือนที่แล้ว</p>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                         <div class="col-lg-3 col-md-6 col-sm-12 mb-2">
-                            <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_total_products); ?>">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="icon-circle bg-warning">
-                                            <i class="fas fa-box"></i>
+                            <a href="<?php echo BASE_URL; ?>pages/setting/product/product.php" style="text-decoration: none; color: inherit;">
+                                <div class="card card-statistic card-hover" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_total_products); ?>">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="icon-circle bg-warning">
+                                                <i class="fas fa-box"></i>
+                                            </div>
+                                            <h6 class="card-title text-muted mb-0 ml-3">จำนวนสินค้าที่ขายทั้งหมด</h6>
                                         </div>
-                                        <h6 class="card-title text-muted mb-0 ml-3">จำนวนสินค้าที่ขายทั้งหมด</h6>
+                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($total_products); ?></h2>
+                                        <p class="mb-0 text-muted"><span class="text-success mr-2"><i
+                                                    class="fa fa-arrow-up"></i> 2.37%</span> จากเดือนที่แล้ว</p>
                                     </div>
-                                    <h2 class="font-weight-bold mb-1"><?php echo number_format($total_products); ?></h2>
-                                    <p class="mb-0 text-muted"><span class="text-success mr-2"><i
-                                                class="fa fa-arrow-up"></i> 2.37%</span> จากเดือนที่แล้ว</p>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                     </div>
 
@@ -923,72 +929,80 @@ try {
                         <div class="row">
                             <!-- การ์ดแสดงจำนวนโครงการสถานะชนะ (Win) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_win_projects); ?>">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="icon-circle bg-success">
-                                                <i class="fas fa-trophy"></i>
+                                <a href="<?php echo BASE_URL; ?>pages/project/project.php?status=<?php echo urlencode('ชนะ (Win)'); ?>#" style="text-decoration: none; color: inherit;">
+                                    <div class="card card-statistic card-hover" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_win_projects); ?>">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="icon-circle bg-success">
+                                                    <i class="fas fa-trophy"></i>
+                                                </div>
+                                                <h6 class="card-title text-muted mb-0 ml-3">โครงการที่ชนะ (WIN)</h6>
                                             </div>
-                                            <h6 class="card-title text-muted mb-0 ml-3">โครงการที่ชนะ (WIN)</h6>
+                                            <h2 class="font-weight-bold mb-1"><?php echo number_format($win_projects); ?></h2>
+                                            <p class="mb-0 text-muted"><span class="text-success mr-2"><i
+                                                        class="fa fa-arrow-up"></i> 2.5%</span> จากเดือนที่แล้ว</p>
                                         </div>
-                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($win_projects); ?></h2>
-                                        <p class="mb-0 text-muted"><span class="text-success mr-2"><i
-                                                    class="fa fa-arrow-up"></i> 2.5%</span> จากเดือนที่แล้ว</p>
                                     </div>
-                                </div>
+                                </a>
                             </div>
 
                             <!-- การ์ดแสดงจำนวนโครงการที่กำลังดำเนินการ -->
                             <div class="col-lg-3 col-6">
-                                <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_ongoing_projects); ?>">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="icon-circle bg-warning">
-                                                <i class="fas fa-hourglass-half"></i>
+                                <a href="<?php echo BASE_URL; ?>pages/project/project.php?status=ongoing" style="text-decoration: none; color: inherit;">
+                                    <div class="card card-statistic card-hover" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_ongoing_projects); ?>">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="icon-circle bg-warning">
+                                                    <i class="fas fa-hourglass-half"></i>
+                                                </div>
+                                                <h6 class="card-title text-muted mb-0 ml-3">โครงการกำลังดำเนินการ</h6>
                                             </div>
-                                            <h6 class="card-title text-muted mb-0 ml-3">โครงการกำลังดำเนินการ</h6>
+                                            <h2 class="font-weight-bold mb-1"><?php echo number_format($ongoing_projects); ?>
+                                            </h2>
+                                            <p class="mb-0 text-muted"><span class="text-warning mr-2"><i
+                                                        class="fa fa-arrow-right"></i> 1.2%</span> จากเดือนที่แล้ว</p>
                                         </div>
-                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($ongoing_projects); ?>
-                                        </h2>
-                                        <p class="mb-0 text-muted"><span class="text-warning mr-2"><i
-                                                    class="fa fa-arrow-right"></i> 1.2%</span> จากเดือนที่แล้ว</p>
                                     </div>
-                                </div>
+                                </a>
                             </div>
 
                             <!-- การ์ดแสดงจำนวนโครงการสถานะแพ้ (Loss) -->
                             <div class="col-lg-3 col-6">
-                                <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_loss_projects); ?>">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="icon-circle bg-danger">
-                                                <i class="fas fa-times"></i>
+                                <a href="<?php echo BASE_URL; ?>pages/project/project.php?status=<?php echo urlencode('แพ้ (Loss)'); ?>" style="text-decoration: none; color: inherit;">
+                                    <div class="card card-statistic card-hover" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_loss_projects); ?>">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="icon-circle bg-danger">
+                                                    <i class="fas fa-times"></i>
+                                                </div>
+                                                <h6 class="card-title text-muted mb-0 ml-3">โครงการที่แพ้</h6>
                                             </div>
-                                            <h6 class="card-title text-muted mb-0 ml-3">โครงการที่แพ้</h6>
+                                            <h2 class="font-weight-bold mb-1"><?php echo number_format($loss_projects); ?></h2>
+                                            <p class="mb-0 text-muted"><span class="text-danger mr-2"><i
+                                                        class="fa fa-arrow-down"></i> 0.8%</span> จากเดือนที่แล้ว</p>
                                         </div>
-                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($loss_projects); ?></h2>
-                                        <p class="mb-0 text-muted"><span class="text-danger mr-2"><i
-                                                    class="fa fa-arrow-down"></i> 0.8%</span> จากเดือนที่แล้ว</p>
                                     </div>
-                                </div>
+                                </a>
                             </div>
 
                             <!-- การ์ดแสดงจำนวนโครงการทั้งหมด -->
                             <div class="col-lg-3 col-6">
-                                <div class="card card-statistic" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_canceled_projects); ?>">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="icon-circle bg-info">
-                                                <i class="fas fa-project-diagram"></i>
+                                <a href="<?php echo BASE_URL; ?>pages/project/project.php?status=<?php echo urlencode('ยกเลิก (Cancled)'); ?>" style="text-decoration: none; color: inherit;">
+                                    <div class="card card-statistic card-hover" data-toggle="tooltip" data-placement="top" title="<?php echo escapeOutput($tooltip_canceled_projects); ?>">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="icon-circle bg-info">
+                                                    <i class="fas fa-project-diagram"></i>
+                                                </div>
+                                                <h6 class="card-title text-muted mb-0 ml-3">โครงการที่ยกเลิก</h6>
                                             </div>
-                                            <h6 class="card-title text-muted mb-0 ml-3">โครงการที่ยกเลิก</h6>
+                                            <h2 class="font-weight-bold mb-1"><?php echo number_format($canceled_projects); ?>
+                                            </h2>
+                                            <p class="mb-0 text-muted"><span class="text-info mr-2"><i
+                                                        class="fa fa-arrow-up"></i> 3.0%</span> จากเดือนที่แล้ว</p>
                                         </div>
-                                        <h2 class="font-weight-bold mb-1"><?php echo number_format($canceled_projects); ?>
-                                        </h2>
-                                        <p class="mb-0 text-muted"><span class="text-info mr-2"><i
-                                                    class="fa fa-arrow-up"></i> 3.0%</span> จากเดือนที่แล้ว</p>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                         </div>
                     <?php endif; ?>

@@ -35,14 +35,24 @@ function clean_input($data)
     return $data;
 }
 
-// --- 1. รับและทำความสะอาด Input จากฟอร์ม ---
-$search_service = trim($_POST['searchservice'] ?? '');
-$search_product = trim($_POST['product'] ?? '');
-$search_status = trim($_POST['status'] ?? '');
-$search_creator = trim($_POST['creator'] ?? '');
-$search_customer = trim($_POST['customer'] ?? '');
-$search_year = filter_var($_POST['year'] ?? '', FILTER_VALIDATE_INT);
-$search_team = trim($_POST['team'] ?? '');
+// --- 1. รับและทำความสะอาด Input จากฟอร์ม และ URL Parameters ---
+$search_service = trim($_POST['searchservice'] ?? $_GET['searchservice'] ?? '');
+$search_product = trim($_POST['product'] ?? $_GET['product'] ?? '');
+
+// รับค่า status จาก URL parameter ก่อน (จาก Dashboard) แล้วค่อยเช็ค POST
+$status_from_url = trim($_GET['status'] ?? '');
+if ($status_from_url === 'ongoing') {
+    // แปลง 'ongoing' เป็นอาร์เรย์ของสถานะที่กำลังดำเนินการ
+    $search_status = ''; // จะใช้ตรรกะพิเศษในการ query
+    $ongoing_statuses = ['นำเสนอโครงการ (Presentations)', 'ใบเสนอราคา (Quotation)', 'ยื่นประมูล (Bidding)', 'รอการพิจารณา (On Hold)'];
+} else {
+    $search_status = trim($_POST['status'] ?? $status_from_url);
+}
+
+$search_creator = trim($_POST['creator'] ?? $_GET['creator'] ?? '');
+$search_customer = trim($_POST['customer'] ?? $_GET['customer'] ?? '');
+$search_year = filter_var($_POST['year'] ?? $_GET['year'] ?? '', FILTER_VALIDATE_INT);
+$search_team = trim($_POST['team'] ?? $_GET['team'] ?? '');
 
 
 // --- 2. สร้างเงื่อนไขพื้นฐาน (WHERE clause) สำหรับ Dropdowns ---
@@ -244,9 +254,19 @@ if (!empty($search_product)) {
     $main_where_conditions[] = "p.product_id = :search_product";
     $main_params[':search_product'] = $search_product;
 }
+// เพิ่มเงื่อนไขสำหรับ status
 if (!empty($search_status)) {
     $main_where_conditions[] = "p.status = :search_status";
     $main_params[':search_status'] = $search_status;
+} elseif (isset($ongoing_statuses) && !empty($ongoing_statuses)) {
+    // กรณีเลือก "ongoing" จาก Dashboard - แสดงหลายสถานะ
+    $status_placeholders = [];
+    foreach ($ongoing_statuses as $idx => $status) {
+        $placeholder = ':ongoing_status_' . $idx;
+        $status_placeholders[] = $placeholder;
+        $main_params[$placeholder] = $status;
+    }
+    $main_where_conditions[] = "p.status IN (" . implode(',', $status_placeholders) . ")";
 }
 if (!empty($search_creator)) {
     $main_where_conditions[] = "p.seller = :search_creator";
@@ -798,6 +818,13 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                                                                 <label>สถานะโครงการ</label>
                                                                 <select class="custom-select select2" name="status">
                                                                     <option value="">เลือก</option>
+                                                                    <?php
+                                                                    // เพิ่มตัวเลือก "กำลังดำเนินการ" สำหรับกรณีที่คลิกจาก Dashboard
+                                                                    $is_ongoing = (isset($ongoing_statuses) && !empty($ongoing_statuses));
+                                                                    if ($is_ongoing) {
+                                                                        echo '<option value="ongoing" selected>โครงการกำลังดำเนินการ (ทั้งหมด)</option>';
+                                                                    }
+                                                                    ?>
                                                                     <?php foreach ($statuses as $status) { ?>
                                                                         <option value="<?php echo htmlspecialchars($status['status']); ?>" <?php echo ($search_status == $status['status']) ? 'selected' : ''; ?>>
                                                                             <?php echo htmlspecialchars($status['status']); ?>

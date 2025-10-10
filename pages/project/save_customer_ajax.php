@@ -10,7 +10,7 @@ $user_id = $_SESSION['user_id'] ?? 0;
 
 
 // ตรวจสอบสิทธิ์การเข้าถึง
-if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
+if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor', 'Seller'])) {
     header("Location: unauthorized.php");
     exit();
 }

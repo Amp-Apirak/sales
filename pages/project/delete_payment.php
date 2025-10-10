@@ -9,7 +9,7 @@ header('Content-Type: application/json');
 ob_clean();
 
 // จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
-if (!in_array($_SESSION['role'] ?? '', ['Executive', 'Sale Supervisor', 'Seller'])) {
+if (!in_array($_SESSION['role'] ?? '', ['Executive', 'Account Management', 'Sale Supervisor', 'Seller'])) {
     echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์เข้าถึง'], JSON_UNESCAPED_UNICODE);
     exit;
 }

@@ -91,6 +91,21 @@
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
 
+    /* เพิ่ม hover effect สำหรับการ์ดที่มี link */
+    .card-hover {
+        cursor: pointer;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ป้องกันการเปลี่ยนสีของลิงก์ */
+    a .card-statistic {
+        color: inherit;
+    }
+
     .card-statistic .card-body {
         padding: 1.5rem;
     }
