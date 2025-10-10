@@ -31,6 +31,10 @@ switch ($role) {
     case 'Executive':
         $can_view_all = true;
         break;
+    case 'Account Management':
+        $can_view_team = true;
+        $filter_team_id = $team_id;
+        break;
     case 'Sale Supervisor':
         $can_view_team = true;
         $filter_team_id = $team_id;
@@ -89,10 +93,10 @@ if ($can_view_all) {
     $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // ดึงผู้ใช้ทั้งหมดที่สามารถเป็นเจ้าของโครงการได้
-    $user_query = "SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as full_name, t.team_name 
-                   FROM users u 
+    $user_query = "SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as full_name, t.team_name
+                   FROM users u
                    LEFT JOIN teams t ON (SELECT team_id FROM user_teams ut WHERE ut.user_id = u.user_id AND ut.is_primary = 1 LIMIT 1) = t.team_id
-                   WHERE u.role IN ('Seller', 'Sale Supervisor', 'Executive')
+                   WHERE u.role IN ('Seller', 'Sale Supervisor', 'Account Management', 'Executive')
                    ORDER BY t.team_name, u.first_name";
     $stmt = $condb->prepare($user_query);
     $stmt->execute();
@@ -109,10 +113,10 @@ if ($can_view_all) {
         $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // ดึงสมาชิกในทีมทั้งหมดที่ตัวเองสังกัด
-        $user_query = "SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as full_name 
-                       FROM users u 
+        $user_query = "SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as full_name
+                       FROM users u
                        JOIN user_teams ut ON u.user_id = ut.user_id
-                       WHERE ut.team_id IN ($placeholders) AND u.role IN ('Seller', 'Sale Supervisor', 'Executive')
+                       WHERE ut.team_id IN ($placeholders) AND u.role IN ('Seller', 'Sale Supervisor', 'Account Management', 'Executive')
                        GROUP BY u.user_id
                        ORDER BY u.first_name";
         $stmt = $condb->prepare($user_query);

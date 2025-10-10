@@ -6,13 +6,14 @@ include '../../config/validation.php';
 // ตรวจสอบสิทธิ์การเข้าถึง
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'];
+$team_ids = $_SESSION['team_ids'] ?? [];
 $created_by = $_SESSION['user_id'];
 
 // ตรวจสอบสิทธิ์การเข้าถึงหน้านี้
-// if (!in_array($role, ['Executive', 'Sale Supervisor'])) {
-//     header("Location: unauthorized.php");
-//     exit();
-// }
+if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor', 'Seller', 'Engineer'])) {
+    header("Location: unauthorized.php");
+    exit();
+}
 
 // สร้าง CSRF Token
 $csrf_token = generateCSRFToken();
@@ -43,7 +44,29 @@ if (isset($_GET['user_id'])) {
     }
 
     // ตรวจสอบสิทธิ์ในการแก้ไขข้อมูล
-    if ($role === 'Sale Supervisor') {
+    if ($role === 'Executive') {
+        // Executive สามารถแก้ไขได้ทุกบัญชี ไม่ต้องมีการตรวจสอบเพิ่มเติม
+    } elseif ($role === 'Account Management') {
+        if ($user['user_id'] === $_SESSION['user_id']) {
+            // Account Management สามารถแก้ไขบัญชีของตัวเองได้
+        } elseif ($user['role'] === 'Executive') {
+            // Account Management ไม่สามารถแก้ไขบัญชีของ Executive ได้
+            $error_message = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลของ Executive";
+        } else {
+            // ตรวจสอบว่าผู้ใช้ที่จะแก้ไขอยู่ในทีมที่ Account Management สังกัดหรือไม่
+            $user_in_same_team = false;
+            foreach ($team_ids as $acc_team_id) {
+                if (in_array($acc_team_id, $user_teams)) {
+                    $user_in_same_team = true;
+                    break;
+                }
+            }
+
+            if (!$user_in_same_team) {
+                $error_message = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลของผู้ใช้ที่ไม่ได้อยู่ในทีมของคุณ";
+            }
+        }
+    } elseif ($role === 'Sale Supervisor') {
         if ($user['user_id'] === $_SESSION['user_id']) {
             // Sale Supervisor สามารถแก้ไขบัญชีของตัวเองได้
         } elseif ($user['role'] === 'Sale Supervisor' || $user['role'] === 'Executive') {
@@ -53,8 +76,6 @@ if (isset($_GET['user_id'])) {
             // Sale Supervisor ไม่สามารถแก้ไขบัญชี Seller ที่ไม่ได้อยู่ในทีมของตัวเอง
             $error_message = "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลของ Seller ที่ไม่ได้อยู่ในทีมของคุณ";
         }
-    } elseif ($role === 'Executive') {
-        // Executive สามารถแก้ไขได้ทุกบัญชี ไม่ต้องมีการตรวจสอบเพิ่มเติม
     } elseif ($role === 'Seller' || $role === 'Engineer') {
         if ($user['user_id'] !== $_SESSION['user_id']) {
             // Seller และ Engineer สามารถแก้ไขได้เฉพาะบัญชีของตัวเองเท่านั้น
@@ -91,7 +112,21 @@ if (isset($_GET['user_id'])) {
 }
 
 // ดึงข้อมูลทีมจากฐานข้อมูล
-if ($role === 'Sale Supervisor') {
+if ($role === 'Executive') {
+    // Executive จะเห็นทุกทีม
+    $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams");
+    $stmt_teams->execute();
+} elseif ($role === 'Account Management') {
+    // Account Management จะเห็นทีมที่ตัวเองสังกัด รวมกับทีมที่ผู้ใช้ที่กำลังแก้ไขสังกัดอยู่
+    $all_team_ids = array_unique(array_merge($team_ids, $user_teams));
+    if (!empty($all_team_ids)) {
+        $team_placeholders = str_repeat('?,', count($all_team_ids) - 1) . '?';
+        $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams WHERE team_id IN ($team_placeholders)");
+        $stmt_teams->execute($all_team_ids);
+    } else {
+        $teams = [];
+    }
+} elseif ($role === 'Sale Supervisor') {
     // Sale Supervisor จะเห็นทีมทั้งหมดที่ผู้ใช้ที่กำลังแก้ไขสังกัดอยู่ รวมกับทีมของตัวเอง
     if (!empty($user_teams)) {
         $team_placeholders = str_repeat('?,', count($user_teams) - 1) . '?';
@@ -104,11 +139,13 @@ if ($role === 'Sale Supervisor') {
         $stmt_teams->execute();
     }
 } else {
-    // Executive จะเห็นทุกทีม
-    $stmt_teams = $condb->prepare("SELECT team_id, team_name FROM teams");
-    $stmt_teams->execute();
+    // Role อื่นๆ ไม่เห็นทีมใดๆ
+    $teams = [];
 }
-$teams = $stmt_teams->fetchAll(PDO::FETCH_ASSOC);
+
+if (isset($stmt_teams)) {
+    $teams = $stmt_teams->fetchAll(PDO::FETCH_ASSOC);
+}
 
 $error_messages = [];
 $rateLimitError = null;
@@ -459,9 +496,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                         <div class="form-group">
                                             <label for="role">บทบาท<span class="text-danger">*</span></label>
-                                            <select class="form-control select2" id="role" name="role" required <?php echo ($role === 'Sale Supervisor') ? 'disabled' : ''; ?>>
+                                            <select class="form-control select2" id="role" name="role" required <?php echo (in_array($role, ['Sale Supervisor', 'Seller', 'Engineer'])) ? 'disabled' : ''; ?>>
                                                 <?php if ($role === 'Executive'): ?>
                                                     <option value="Executive" <?php echo ($user['role'] == 'Executive') ? 'selected' : ''; ?>>Executive</option>
+                                                    <option value="Account Management" <?php echo ($user['role'] == 'Account Management') ? 'selected' : ''; ?>>Account Management</option>
+                                                    <option value="Sale Supervisor" <?php echo ($user['role'] == 'Sale Supervisor') ? 'selected' : ''; ?>>Sale Supervisor</option>
+                                                    <option value="Seller" <?php echo ($user['role'] == 'Seller') ? 'selected' : ''; ?>>Seller</option>
+                                                    <option value="Engineer" <?php echo ($user['role'] == 'Engineer') ? 'selected' : ''; ?>>Engineer</option>
+                                                <?php elseif ($role === 'Account Management'): ?>
                                                     <option value="Sale Supervisor" <?php echo ($user['role'] == 'Sale Supervisor') ? 'selected' : ''; ?>>Sale Supervisor</option>
                                                     <option value="Seller" <?php echo ($user['role'] == 'Seller') ? 'selected' : ''; ?>>Seller</option>
                                                     <option value="Engineer" <?php echo ($user['role'] == 'Engineer') ? 'selected' : ''; ?>>Engineer</option>
@@ -474,8 +516,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                                 <?php endif; ?>
                                             </select>
-                                            <?php if ($role === 'Sale Supervisor'): ?>
-                                                <input type="hidden" name="role" value="Seller">
+                                            <?php if (in_array($role, ['Sale Supervisor', 'Seller', 'Engineer'])): ?>
+                                                <input type="hidden" name="role" value="<?php echo htmlspecialchars($user['role']); ?>">
                                             <?php endif; ?>
                                         </div>
 

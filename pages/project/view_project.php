@@ -102,6 +102,19 @@ try {
             case 'Executive':
                 $hasAccess = true;
                 break;
+            case 'Account Management':
+                // Account Management เข้าถึงได้ถ้าโครงการอยู่ในทีมที่ตัวเองสังกัด
+                $userTeamIds = $_SESSION['team_ids'] ?? [];
+                $projectSellerTeamId = $project['seller_team_id'] ?? ($project['creator_team_id'] ?? null);
+
+                if ($user_team_id === 'ALL') {
+                    $belongsToTeam = $projectSellerTeamId && in_array($projectSellerTeamId, $userTeamIds, true);
+                } else {
+                    $belongsToTeam = $projectSellerTeamId && $projectSellerTeamId == $user_team_id;
+                }
+
+                $hasAccess = ($belongsToTeam || $project['has_access']);
+                break;
             case 'Sale Supervisor':
                 $userTeamIds = $_SESSION['team_ids'] ?? [];
                 $projectSellerTeamId = $project['seller_team_id'] ?? ($project['creator_team_id'] ?? null);
@@ -182,7 +195,23 @@ if ($role === 'Executive') {
     $hasAccessToFinancialInfo = true;
     $hasFullAccess = true;
 }
-// เงื่อนไข 2: Sale Supervisor และอยู่ในทีมเดียวกับผู้สร้าง
+// เงื่อนไข 2: Account Management และอยู่ในทีมเดียวกับผู้ขาย
+elseif ($role === 'Account Management') {
+    $userTeamIds = $_SESSION['team_ids'] ?? [];
+    $projectSellerTeamId = $project['seller_team_id'] ?? ($project['creator_team_id'] ?? null);
+
+    if ($user_team_id === 'ALL') {
+        $belongsToTeam = $projectSellerTeamId && in_array($projectSellerTeamId, $userTeamIds, true);
+    } else {
+        $belongsToTeam = $projectSellerTeamId && $projectSellerTeamId == $user_team_id;
+    }
+
+    if ($belongsToTeam) {
+        $hasAccessToFinancialInfo = true;
+        $hasFullAccess = true;
+    }
+}
+// เงื่อนไข 3: Sale Supervisor และอยู่ในทีมเดียวกับผู้สร้าง
 elseif ($role === 'Sale Supervisor') {
     $userTeamIds = $_SESSION['team_ids'] ?? [];
     $projectSellerTeamId = $project['seller_team_id'] ?? ($project['creator_team_id'] ?? null);
@@ -198,7 +227,7 @@ elseif ($role === 'Sale Supervisor') {
         $hasFullAccess = true;
     }
 }
-// เงื่อนไข 3: ผู้สร้างโครงการ
+// เงื่อนไข 4: ผู้สร้างโครงการ
 elseif ($project['created_by'] == $user_id) {
     $hasAccessToFinancialInfo = true;
     $hasFullAccess = true;

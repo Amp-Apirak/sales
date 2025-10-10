@@ -134,7 +134,7 @@ try {
     if (!empty($rowW['c']) && (int)$rowW['c'] > 0) { $isWatcher = true; }
 
     $inSupervisorTeam = false;
-    if ($role === 'Sale Supervisor') {
+    if ($role === 'Sale Supervisor' || $role === 'Account Management') {
         $ut = $condb->prepare("SELECT team_id FROM user_teams WHERE user_id = ?");
         $ut->execute([$user_id]);
         $teams = $ut->fetchAll(PDO::FETCH_COLUMN);
@@ -149,7 +149,7 @@ try {
         }
     }
 
-    $canComment = ($isJobOwner || $isReporter || $isWatcher || $role === 'Executive' || ($role === 'Sale Supervisor' && $inSupervisorTeam));
+    $canComment = ($isJobOwner || $isReporter || $isWatcher || $role === 'Executive' || $role === 'Account Management' || (($role === 'Sale Supervisor' || $role === 'Account Management') && $inSupervisorTeam));
     if (!$canComment) {
         throw new Exception('	
 
@@ -178,7 +178,7 @@ try {
     if (!empty($rowW['c']) && (int)$rowW['c'] > 0) { $isWatcher = true; }
 
     $inSupervisorTeam = false;
-    if ($role === 'Sale Supervisor') {
+    if ($role === 'Sale Supervisor' || $role === 'Account Management') {
         $ut = $condb->prepare("SELECT team_id FROM user_teams WHERE user_id = ?");
         $ut->execute([$user_id]);
         $teams = $ut->fetchAll(PDO::FETCH_COLUMN);
@@ -193,7 +193,7 @@ try {
         }
     }
 
-    $canComment = ($isJobOwner || $isReporter || $isWatcher || $role === 'Executive' || ($role === 'Sale Supervisor' && $inSupervisorTeam));
+    $canComment = ($isJobOwner || $isReporter || $isWatcher || $role === 'Executive' || $role === 'Account Management' || (($role === 'Sale Supervisor' || $role === 'Account Management') && $inSupervisorTeam));
     if (!$canComment) {
         throw new Exception('คุณไม่มีสิทธิ์แสดงความคิดเห็นใน Ticket นี้');
     }

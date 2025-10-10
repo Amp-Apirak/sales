@@ -149,19 +149,27 @@ $sql = "SELECT DISTINCT c.company, c.address, c.office_phone, c.extension
         WHERE c.company IS NOT NULL";
 
 // เพิ่มเงื่อนไขตาม Role
-if ($role == 'Sale Supervisor') {
-    // Sale Supervisor เห็นเฉพาะลูกค้าในทีมของตัวเอง
-    $sql .= " AND u.team_id = :team_id";
+if ($role == 'Executive') {
+    // Executive เห็นทั้งหมด
     $stmt = $condb->prepare($sql);
-    $stmt->bindParam(':team_id', $team_id);
+} elseif ($role == 'Account Management' || $role == 'Sale Supervisor') {
+    // Account Management และ Sale Supervisor เห็นเฉพาะลูกค้าในทีมของตัวเอง
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if ($team_id === 'ALL' && !empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $sql .= " AND c.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
+        $stmt = $condb->prepare($sql);
+        $stmt->execute($team_ids);
+    } else {
+        $sql .= " AND c.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :team_id)";
+        $stmt = $condb->prepare($sql);
+        $stmt->bindParam(':team_id', $team_id);
+    }
 } elseif ($role == 'Seller') {
     // Seller เห็นเฉพาะลูกค้าที่ตัวเองสร้าง
     $sql .= " AND c.created_by = :user_id";
     $stmt = $condb->prepare($sql);
     $stmt->bindParam(':user_id', $_SESSION['user_id']);
-} elseif ($role == 'Executive') {
-    // Executive เห็นทั้งหมด
-    $stmt = $condb->prepare($sql);
 } else {
     // Role อื่นๆ เห็นเฉพาะที่ตัวเองสร้าง
     $sql .= " AND c.created_by = :user_id";

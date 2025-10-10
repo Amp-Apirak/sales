@@ -2382,7 +2382,7 @@ CREATE TABLE `users` (
   `last_name` varchar(255) NOT NULL COMMENT 'นามสกุลผู้ใช้',
   `username` varchar(255) NOT NULL COMMENT 'ชื่อผู้ใช้สำหรับล็อกอิน',
   `email` varchar(255) NOT NULL COMMENT 'อีเมล',
-  `role` enum('Executive','Sale Supervisor','Seller','Engineer') NOT NULL COMMENT 'บทบาท (เช่น Executive, Sale Supervisor)',
+  `role` enum('Executive','Account Management','Sale Supervisor','Seller','Engineer') NOT NULL COMMENT 'บทบาท (เช่น Executive, Account Management, Sale Supervisor)',
   `position` varchar(255) NOT NULL COMMENT 'ตำแหน่งงาน',
   `phone` varchar(20) DEFAULT NULL COMMENT 'เบอร์โทรศัพท์',
   `password` varchar(255) NOT NULL COMMENT 'รหัสผ่าน',

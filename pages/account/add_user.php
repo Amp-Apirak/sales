@@ -6,9 +6,16 @@ session_start();
 include('../../config/condb.php');
 include('../../config/validation.php'); // นำเข้าฟังก์ชัน validation
 
+// ตรวจสอบสิทธิ์การเข้าถึงหน้า
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Executive', 'Account Management', 'Sale Supervisor'])) {
+    header("Location: ../../index.php");
+    exit();
+}
+
 // ตรวจสอบสิทธิ์ผู้ใช้
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
+$team_ids = $_SESSION['team_ids'] ?? [];  // ดึง team_ids ของผู้ใช้จาก session (สำหรับ Account Management)
 $created_by = $_SESSION['user_id']; // ดึง user_id ของผู้สร้างจาก session
 
 // สร้าง CSRF Token
@@ -106,8 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // ตรวจสอบสิทธิ์ Sale Supervisor: สามารถเลือกทีมและบทบาทเฉพาะทีมของตัวเอง และไม่สามารถสร้าง Executive ได้
-    if ($role === 'Sale Supervisor') {
+    // ตรวจสอบสิทธิ์ตาม role
+    if ($role === 'Account Management') {
+        // Account Management ไม่สามารถสร้าง Executive ได้
         if ($role_new === 'Executive') {
             echo "<script>
                     alert('คุณไม่มีสิทธิ์สร้างผู้ใช้งานที่มีบทบาทเป็น Executive');
@@ -116,6 +124,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Account Management สามารถสร้างผู้ใช้ได้เฉพาะในทีมที่ตัวเองสังกัด
+        if (!in_array($team_id_new, $team_ids)) {
+            echo "<script>
+                    alert('คุณสามารถสร้างผู้ใช้งานได้เฉพาะทีมที่คุณสังกัดเท่านั้น');
+                    window.location.href = 'add_user.php';
+                  </script>";
+            exit;
+        }
+    } elseif ($role === 'Sale Supervisor') {
+        // Sale Supervisor ไม่สามารถสร้าง Executive ได้
+        if ($role_new === 'Executive') {
+            echo "<script>
+                    alert('คุณไม่มีสิทธิ์สร้างผู้ใช้งานที่มีบทบาทเป็น Executive');
+                    window.location.href = 'add_user.php';
+                  </script>";
+            exit;
+        }
+
+        // Sale Supervisor สามารถสร้างผู้ใช้ได้เฉพาะทีมของตัวเอง
         if ($team_id_new != $team_id) {
             echo "<script>
                     alert('คุณสามารถสร้างผู้ใช้งานได้เฉพาะทีมของคุณเท่านั้น');
@@ -225,15 +252,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ดึงข้อมูลทีมจากฐานข้อมูลเพื่อนำมาแสดงใน dropdown
-if ($role === 'Sale Supervisor') {
+if ($role === 'Executive') {
+    // Executive เห็นทีมทั้งหมด
+    $sql_teams = "SELECT team_id, team_name FROM teams";
+    $query_teams = $condb->query($sql_teams)->fetchAll();
+} elseif ($role === 'Account Management') {
+    // Account Management เห็นเฉพาะทีมที่ตัวเองสังกัด
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id IN ($placeholders)";
+        $stmt_teams = $condb->prepare($sql_teams);
+        $stmt_teams->execute($team_ids);
+        $query_teams = $stmt_teams->fetchAll();
+    } else {
+        $query_teams = [];
+    }
+} else { // Sale Supervisor
+    // Sale Supervisor เห็นเฉพาะทีมของตัวเอง
     $sql_teams = "SELECT team_id, team_name FROM teams WHERE team_id = :team_id";
     $stmt_teams = $condb->prepare($sql_teams);
     $stmt_teams->bindParam(':team_id', $team_id);
     $stmt_teams->execute();
     $query_teams = $stmt_teams->fetchAll();
-} else {
-    $sql_teams = "SELECT team_id, team_name FROM teams";
-    $query_teams = $condb->query($sql_teams)->fetchAll();
 }
 
 ?>
@@ -318,10 +358,16 @@ if ($role === 'Sale Supervisor') {
                     <option value="">เลือกบทบาท</option>
                     <?php if ($role === 'Executive') { ?>
                         <option value="Executive">Executive</option>
+                        <option value="Account Management">Account Management</option>
                         <option value="Sale Supervisor">Sale Supervisor</option>
                         <option value="Seller">Seller</option>
                         <option value="Engineer">Engineer</option>
-                    <?php } else { ?>
+                    <?php } elseif ($role === 'Account Management') { ?>
+                        <option value="Account Management">Account Management</option>
+                        <option value="Sale Supervisor">Sale Supervisor</option>
+                        <option value="Seller">Seller</option>
+                        <option value="Engineer">Engineer</option>
+                    <?php } else { // Sale Supervisor ?>
                         <option value="Sale Supervisor">Sale Supervisor</option>
                         <option value="Seller">Seller</option>
                         <option value="Engineer">Engineer</option>

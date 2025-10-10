@@ -12,7 +12,8 @@
       "Read(//mnt/c/xampp/**)",
       "Bash(chmod:*)",
       "Bash(cat:*)",
-      "Bash(./mysql.exe:*)"
+      "Bash(./mysql.exe:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []

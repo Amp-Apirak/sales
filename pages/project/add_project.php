@@ -22,8 +22,8 @@ $user_id = $_SESSION['user_id'] ?? 0;
 // echo "</pre>";
 
 // ตรวจสอบสิทธิ์ในการเข้าถึงหน้านี้
-// หาก role ของผู้ใช้ไม่ใช่ Executive, Sale Supervisor หรือ Seller ให้ redirect ไปที่หน้าห้ามเข้าถึง
-if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
+// หาก role ของผู้ใช้ไม่ใช่ Executive, Account Management, Sale Supervisor หรือ Seller ให้ redirect ไปที่หน้าห้ามเข้าถึง
+if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor', 'Seller'])) {
     header("Location: unauthorized.php");
     exit();
 }
@@ -75,8 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     $customer_id = clean_input($_POST['customer_id']);
     // เพิ่มการรับค่า seller
     $seller = clean_input($_POST['seller'] ?? '');
-    // หาก Role ไม่ใช่ Executive ให้ seller = created_by (ตัวเอง)
-    if ($role !== 'Executive') {
+    // หาก Role ไม่ใช่ Executive หรือ Account Management ให้ seller = created_by (ตัวเอง)
+    if (!in_array($role, ['Executive', 'Account Management'])) {
         $seller = $created_by;
     }
 
@@ -242,11 +242,35 @@ switch ($role) {
         $stmt = $condb->prepare($customer_query);
         break;
 
+    case 'Account Management':
+        // Account Management เห็นลูกค้าทั้งหมดในทีมที่ตัวเองสังกัด
+        $user_teams = $_SESSION['user_teams'] ?? [];
+        $team_ids = array_column($user_teams, 'team_id');
+
+        if (!empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $customer_query = "SELECT DISTINCT c.* FROM customers c
+                              INNER JOIN users u ON c.created_by = u.user_id
+                              INNER JOIN user_teams ut ON u.user_id = ut.user_id AND ut.is_primary = 1
+                              WHERE ut.team_id IN ($placeholders)
+                              ORDER BY c.customer_name";
+            $stmt = $condb->prepare($customer_query);
+            // ไม่ execute ที่นี่ จะ execute ในส่วนล่าง
+        } else {
+            // หากไม่มีทีม ให้เห็นเฉพาะลูกค้าที่ตนเองสร้าง
+            $customer_query = "SELECT DISTINCT c.* FROM customers c
+                              WHERE c.created_by = ?
+                              ORDER BY c.customer_name";
+            $stmt = $condb->prepare($customer_query);
+            $stmt->bindParam(1, $user_id, PDO::PARAM_STR);
+        }
+        break;
+
     case 'Sale Supervisor':
         // Sale Supervisor เห็นเฉพาะลูกค้าของทีมตัวเอง
-        $customer_query = "SELECT DISTINCT c.* FROM customers c 
-                          INNER JOIN users u ON c.created_by = u.user_id 
-                          WHERE u.team_id = ? 
+        $customer_query = "SELECT DISTINCT c.* FROM customers c
+                          INNER JOIN users u ON c.created_by = u.user_id
+                          WHERE u.team_id = ?
                           ORDER BY c.customer_name";
         $stmt = $condb->prepare($customer_query);
         $stmt->bindParam(1, $team_id, PDO::PARAM_STR);
@@ -255,8 +279,8 @@ switch ($role) {
     case 'Seller':
     default:
         // Seller เห็นเฉพาะลูกค้าที่ตนเองสร้าง
-        $customer_query = "SELECT DISTINCT c.* FROM customers c 
-                          WHERE c.created_by = ? 
+        $customer_query = "SELECT DISTINCT c.* FROM customers c
+                          WHERE c.created_by = ?
                           ORDER BY c.customer_name";
         $stmt = $condb->prepare($customer_query);
         $stmt->bindParam(1, $user_id, PDO::PARAM_STR);
@@ -266,7 +290,18 @@ switch ($role) {
 // Execute query และดึงข้อมูลลูกค้า
 if ($stmt) {
     try {
-        $stmt->execute();
+        // สำหรับ Account Management ที่มี parameters
+        if ($role === 'Account Management') {
+            $user_teams = $_SESSION['user_teams'] ?? [];
+            $team_ids = array_column($user_teams, 'team_id');
+            if (!empty($team_ids)) {
+                $stmt->execute($team_ids);
+            } else {
+                $stmt->execute();
+            }
+        } else {
+            $stmt->execute();
+        }
         $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Debug: แสดงจำนวนลูกค้าที่พบ (ลบออกหลังจากแก้ไขเสร็จ)
@@ -360,12 +395,35 @@ if ($role === 'Executive') {
         FROM users u
         LEFT JOIN user_teams ut ON u.user_id = ut.user_id
         LEFT JOIN teams t ON ut.team_id = t.team_id
-        WHERE u.role IN ('Seller', 'Sale Supervisor')
+        WHERE u.role IN ('Seller', 'Sale Supervisor', 'Account Management')
         GROUP BY u.user_id, u.first_name, u.last_name, u.role
         ORDER BY team_name, u.first_name
     ");
     $stmt->execute();
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} elseif ($role === 'Account Management') {
+    // Account Management เห็นผู้ขายทั้งหมดในทีมที่ตัวเองสังกัด
+    $user_teams = $_SESSION['user_teams'] ?? [];
+    $team_ids = array_column($user_teams, 'team_id');
+
+    if (!empty($team_ids)) {
+        $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+        $sql = "
+            SELECT u.user_id, u.first_name, u.last_name, u.role,
+                   GROUP_CONCAT(DISTINCT t.team_name ORDER BY t.team_name SEPARATOR ', ') AS team_name
+            FROM users u
+            JOIN user_teams ut_filter ON u.user_id = ut_filter.user_id
+            LEFT JOIN user_teams ut ON u.user_id = ut.user_id
+            LEFT JOIN teams t ON ut.team_id = t.team_id
+            WHERE ut_filter.team_id IN ($placeholders)
+              AND u.role IN ('Seller', 'Sale Supervisor', 'Account Management')
+            GROUP BY u.user_id, u.first_name, u.last_name, u.role
+            ORDER BY team_name, u.first_name
+        ";
+        $stmt = $condb->prepare($sql);
+        $stmt->execute($team_ids);
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 } elseif ($role === 'Sale Supervisor') {
     $user_teams = $_SESSION['user_teams'] ?? [];
     $team_ids = array_column($user_teams, 'team_id');
@@ -553,7 +611,7 @@ if ($role === 'Executive') {
                                             </div>
 
                                             <div class="row">
-                                                <?php if ($role === 'Executive' || ($role === 'Sale Supervisor' && !empty($users))): ?>
+                                                <?php if ($role === 'Executive' || $role === 'Account Management' || ($role === 'Sale Supervisor' && !empty($users))): ?>
                                                     <div class="col-12 col-md-6">
                                                         <div class="form-group">
                                                             <label>ผู้ขาย/ผู้รับผิดชอบโครงการ <span class="text-danger">*</span></label>

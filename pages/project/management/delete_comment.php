@@ -39,8 +39,8 @@ try {
         exit;
     }
 
-    // เฉพาะเจ้าของหรือ Executive เท่านั้นที่ลบได้
-    if ($comment['user_id'] !== $user_id && $role !== 'Executive') {
+    // เฉพาะเจ้าของหรือ Executive และ Account Management เท่านั้นที่ลบได้
+    if ($comment['user_id'] !== $user_id && $role !== 'Executive' && $role !== 'Account Management') {
         echo json_encode(['status' => 'error', 'message' => 'คุณไม่มีสิทธิ์ลบความคิดเห็นนี้']);
         exit;
     }

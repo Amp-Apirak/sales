@@ -12,7 +12,7 @@ $team_id = $_SESSION['team_id'];  // team_id ของผู้ใช้จา�
 $created_by = $_SESSION['user_id'];  // user_id ของผู้สร้างจาก session
 
 // จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
-if (!in_array($role, ['Executive', 'Sale Supervisor', 'Seller'])) {
+if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor', 'Seller'])) {
     header("Location: unauthorized.php");
     exit();
 }
@@ -78,7 +78,8 @@ function isPhoneValid($phone)
 function canAddUser($currentUserRole, $newUserRole)
 {
     $roleHierarchy = [
-        'Executive' => ['Executive', 'Sale Supervisor', 'Seller', 'Engineer'],
+        'Executive' => ['Executive', 'Account Management', 'Sale Supervisor', 'Seller', 'Engineer'],
+        'Account Management' => ['Sale Supervisor', 'Seller', 'Engineer'],
         'Sale Supervisor' => ['Seller', 'Engineer'],
         'Seller' => [],
         'Engineer' => []
@@ -101,8 +102,8 @@ function logUserCreation($creator_id, $new_user_id, $new_user_role)
 }
 
 // ดึงข้อมูลทีมจากฐานข้อมูลตามบทบาทของผู้ใช้
-if ($role === 'Sale Supervisor') {
-    // Sale Supervisor: เคารพ Team Switcher จาก Navbar
+if ($role === 'Account Management' || $role === 'Sale Supervisor') {
+    // Account Management และ Sale Supervisor: เคารพ Team Switcher จาก Navbar
     $current_team_id = $_SESSION['team_id'] ?? 'ALL';
     if ($current_team_id === 'ALL') {
         // แสดงทุกทีมที่ผู้ใช้คนปัจจุบันสังกัดอยู่
@@ -122,7 +123,7 @@ if ($role === 'Sale Supervisor') {
         $stmt_teams->execute();
     }
 } else {
-    // Executive และผู้ที่มีสิทธิ์สูงกว่า: เห็นทุกทีมในระบบ (พฤติกรรมเดิม)
+    // Executive: เห็นทุกทีมในระบบ (พฤติกรรมเดิม)
     $sql_teams = "SELECT team_id, team_name FROM teams ORDER BY team_name";
     $stmt_teams = $condb->prepare($sql_teams);
     $stmt_teams->execute();
@@ -296,8 +297,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 }
 
 // ดึงข้อมูลทีมจากฐานข้อมูลตามบทบาทของผู้ใช้
-if ($role === 'Sale Supervisor') {
-    // Sale Supervisor: เคารพ Team Switcher จาก Navbar (ALL = ทีมทั้งหมดของผู้ใช้)
+if ($role === 'Account Management' || $role === 'Sale Supervisor') {
+    // Account Management และ Sale Supervisor: เคารพ Team Switcher จาก Navbar (ALL = ทีมทั้งหมดของผู้ใช้)
     $current_team_id = $_SESSION['team_id'] ?? 'ALL';
     if ($current_team_id === 'ALL') {
         $sql_teams = "SELECT t.team_id, t.team_name
@@ -580,6 +581,11 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <option value="">เลือกบทบาท</option>
                                                 <?php if ($role === 'Executive'): ?>
                                                     <option value="Executive">Executive</option>
+                                                    <option value="Account Management">Account Management</option>
+                                                    <option value="Sale Supervisor">Sale Supervisor</option>
+                                                    <option value="Seller">Seller</option>
+                                                    <option value="Engineer">Engineer</option>
+                                                <?php elseif ($role === 'Account Management'): ?>
                                                     <option value="Sale Supervisor">Sale Supervisor</option>
                                                     <option value="Seller">Seller</option>
                                                     <option value="Engineer">Engineer</option>

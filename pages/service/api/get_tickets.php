@@ -127,11 +127,29 @@ try {
     // กรองตาม Role
     if ($role === 'Executive') {
         // Executive เห็นทั้งหมด
+    } elseif ($role === 'Account Management') {
+        // Account Management เห็นของทีมที่ตนสังกัด
+        if ($team_id && $team_id !== 'ALL') {
+            $sql .= " AND job_owner IN (SELECT user_id FROM user_teams WHERE team_id = :team_id)";
+            $params[':team_id'] = $team_id;
+        } elseif (isset($_SESSION['team_ids']) && !empty($_SESSION['team_ids'])) {
+            $placeholders = implode(',', array_fill(0, count($_SESSION['team_ids']), '?'));
+            $sql .= " AND job_owner IN (SELECT user_id FROM user_teams WHERE team_id IN ($placeholders))";
+            foreach ($_SESSION['team_ids'] as $idx => $tid) {
+                $params[':team_' . $idx] = $tid;
+            }
+        }
     } elseif ($role === 'Sale Supervisor') {
         // Sale Supervisor เห็นของทีม
-        if ($team_id) {
-            $sql .= " AND job_owner IN (SELECT user_id FROM users WHERE team_id = :team_id)";
+        if ($team_id && $team_id !== 'ALL') {
+            $sql .= " AND job_owner IN (SELECT user_id FROM user_teams WHERE team_id = :team_id)";
             $params[':team_id'] = $team_id;
+        } elseif (isset($_SESSION['team_ids']) && !empty($_SESSION['team_ids'])) {
+            $placeholders = implode(',', array_fill(0, count($_SESSION['team_ids']), '?'));
+            $sql .= " AND job_owner IN (SELECT user_id FROM user_teams WHERE team_id IN ($placeholders))";
+            foreach ($_SESSION['team_ids'] as $idx => $tid) {
+                $params[':team_' . $idx] = $tid;
+            }
         }
     } else {
         // Seller, Engineer เห็นของตัวเอง
@@ -179,9 +197,28 @@ try {
     $sqlCount = "SELECT COUNT(*) as total FROM service_tickets WHERE 1=1";
     $countParams = [];
 
-    if ($role === 'Sale Supervisor' && $team_id) {
-        $sqlCount .= " AND job_owner IN (SELECT user_id FROM users WHERE team_id = :team_id)";
-        $countParams[':team_id'] = $team_id;
+    if ($role === 'Account Management') {
+        if ($team_id && $team_id !== 'ALL') {
+            $sqlCount .= " AND job_owner IN (SELECT user_id FROM user_teams WHERE team_id = :team_id)";
+            $countParams[':team_id'] = $team_id;
+        } elseif (isset($_SESSION['team_ids']) && !empty($_SESSION['team_ids'])) {
+            $placeholders = implode(',', array_fill(0, count($_SESSION['team_ids']), '?'));
+            $sqlCount .= " AND job_owner IN (SELECT user_id FROM user_teams WHERE team_id IN ($placeholders))";
+            foreach ($_SESSION['team_ids'] as $idx => $tid) {
+                $countParams[':team_' . $idx] = $tid;
+            }
+        }
+    } elseif ($role === 'Sale Supervisor') {
+        if ($team_id && $team_id !== 'ALL') {
+            $sqlCount .= " AND job_owner IN (SELECT user_id FROM user_teams WHERE team_id = :team_id)";
+            $countParams[':team_id'] = $team_id;
+        } elseif (isset($_SESSION['team_ids']) && !empty($_SESSION['team_ids'])) {
+            $placeholders = implode(',', array_fill(0, count($_SESSION['team_ids']), '?'));
+            $sqlCount .= " AND job_owner IN (SELECT user_id FROM user_teams WHERE team_id IN ($placeholders))";
+            foreach ($_SESSION['team_ids'] as $idx => $tid) {
+                $countParams[':team_' . $idx] = $tid;
+            }
+        }
     } elseif ($role !== 'Executive') {
         $sqlCount .= " AND job_owner = :user_id";
         $countParams[':user_id'] = $user_id;

@@ -73,7 +73,7 @@ try {
     ");
     $access_check->execute([$project_id, $user_id, $task_id, $user_id, $task_id, $user_id, $project_id, $user_id]);
 
-    $hasAccess = $access_check->fetch() || ($role === 'Executive');
+    $hasAccess = $access_check->fetch() || ($role === 'Executive') || ($role === 'Account Management');
 
     if (!$hasAccess) {
         $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงงานนี้";
@@ -85,8 +85,8 @@ try {
     // สามารถแก้ไขได้เฉพาะ: Executive, ผู้สร้าง, ผู้รับผิดชอบปัจจุบัน, Project Manager
     $canEditAssignee = false;
 
-    // Executive สามารถแก้ไขได้เสมอ
-    if ($role === 'Executive') {
+    // Executive และ Account Management สามารถแก้ไขได้เสมอ
+    if ($role === 'Executive' || $role === 'Account Management') {
         $canEditAssignee = true;
     }
 

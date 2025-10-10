@@ -33,7 +33,7 @@ try {
     }
 
     // Check permission
-    $can_edit = ($discussion['user_id'] === $user_id || $role === 'Executive');
+    $can_edit = ($discussion['user_id'] === $user_id || $role === 'Executive' || $role === 'Account Management');
 
     if (!$can_edit) {
         echo json_encode(['success' => false, 'message' => 'คุณไม่มีสิทธิ์แก้ไขข้อความนี้']);

@@ -54,12 +54,38 @@ try {
     }
 
     // ตรวจสอบสิทธิ์การเข้าถึง (เหมือนหน้า edit)
-    if ($role === 'Sale Supervisor') {
+    if ($role === 'Account Management') {
         if ($account['user_id'] === $currentUserId) {
             // สามารถดูของตัวเองได้
         } else {
-            if ($account['role'] === 'Executive') {
-                $errorMessage = 'คุณไม่มีสิทธิ์ดูข้อมูลของ Executive';
+            if ($account['role'] === 'Executive' || $account['role'] === 'Account Management') {
+                $errorMessage = 'คุณไม่มีสิทธิ์ดูข้อมูลของ Executive หรือ Account Management';
+            } else {
+                // ตรวจสอบทีมว่ามีทีมที่ตรงกันหรือไม่
+                $teamStmt = $condb->prepare('
+                    SELECT COUNT(*)
+                    FROM user_teams ut
+                    WHERE ut.user_id = :target_user_id
+                      AND ut.team_id IN (
+                          SELECT team_id FROM user_teams WHERE user_id = :current_user_id
+                      )
+                ');
+                $teamStmt->execute([
+                    ':target_user_id'   => $userId,
+                    ':current_user_id' => $currentUserId,
+                ]);
+
+                if ($teamStmt->fetchColumn() == 0) {
+                    $errorMessage = 'คุณไม่มีสิทธิ์ดูข้อมูลของผู้ใช้นอกทีม';
+                }
+            }
+        }
+    } elseif ($role === 'Sale Supervisor') {
+        if ($account['user_id'] === $currentUserId) {
+            // สามารถดูของตัวเองได้
+        } else {
+            if ($account['role'] === 'Executive' || $account['role'] === 'Account Management') {
+                $errorMessage = 'คุณไม่มีสิทธิ์ดูข้อมูลของ Executive หรือ Account Management';
             } elseif ($account['role'] === 'Sale Supervisor' && $account['user_id'] !== $currentUserId) {
                 $errorMessage = 'คุณไม่มีสิทธิ์ดูข้อมูลของ Sale Supervisor ท่านอื่น';
             } else {
@@ -109,9 +135,17 @@ try {
         if ($account['username'] !== 'Admin') {
             $canEditAccount = true;
         }
+    } elseif ($role === 'Account Management') {
+        if ($account['username'] !== 'Admin'
+            && $account['role'] !== 'Executive'
+            && $account['role'] !== 'Account Management'
+        ) {
+            $canEditAccount = true;
+        }
     } elseif ($role === 'Sale Supervisor') {
         if ($account['username'] !== 'Admin'
             && $account['role'] !== 'Executive'
+            && $account['role'] !== 'Account Management'
             && !($account['role'] === 'Sale Supervisor' && $account['user_id'] !== $currentUserId)
         ) {
             $canEditAccount = true;

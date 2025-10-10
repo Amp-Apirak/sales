@@ -24,14 +24,31 @@ try {
         $sql_check = "SELECT customer_id FROM customers WHERE customer_id = :customer_id";
         $stmt_check = $condb->prepare($sql_check);
         $stmt_check->bindParam(':customer_id', $customer_id);
-    // } elseif ($role == 'Sale Supervisor') {
-    //     // Sale Supervisor ลบได้เฉพาะลูกค้าในทีมเดียวกัน
-    //     $sql_check = "SELECT c.customer_id FROM customers c 
-    //                   INNER JOIN users u ON c.created_by = u.user_id
-    //                   WHERE c.customer_id = :customer_id AND u.team_id = :team_id";
-    //     $stmt_check = $condb->prepare($sql_check);
-    //     $stmt_check->bindParam(':customer_id', $customer_id);
-    //     $stmt_check->bindParam(':team_id', $team_id);
+    } elseif ($role == 'Account Management' || $role == 'Sale Supervisor') {
+        // Account Management และ Sale Supervisor ลบได้เฉพาะลูกค้าในทีมเดียวกัน
+        $team_ids = $_SESSION['team_ids'] ?? [];
+        if ($team_id === 'ALL' && !empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $sql_check = "SELECT c.customer_id FROM customers c
+                          INNER JOIN user_teams ut ON c.created_by = ut.user_id
+                          WHERE c.customer_id = ? AND ut.team_id IN ($placeholders)";
+            $stmt_check = $condb->prepare($sql_check);
+            $params = array_merge([$customer_id], $team_ids);
+            $stmt_check->execute($params);
+            $customer_exists = $stmt_check->fetch(PDO::FETCH_ASSOC);
+            if (!$customer_exists) {
+                echo json_encode(['status' => 'error', 'message' => 'ไม่พบลูกค้าที่ต้องการลบ หรือคุณไม่มีสิทธิ์ลบลูกค้านี้']);
+                exit;
+            }
+            goto skip_execute;
+        } else {
+            $sql_check = "SELECT c.customer_id FROM customers c
+                          INNER JOIN user_teams ut ON c.created_by = ut.user_id
+                          WHERE c.customer_id = :customer_id AND ut.team_id = :team_id";
+            $stmt_check = $condb->prepare($sql_check);
+            $stmt_check->bindParam(':customer_id', $customer_id);
+            $stmt_check->bindParam(':team_id', $team_id);
+        }
     } else {
         // Seller ลบได้เฉพาะลูกค้าที่ตนเองสร้าง
         $sql_check = "SELECT customer_id FROM customers WHERE customer_id = :customer_id AND created_by = :created_by";
@@ -43,6 +60,7 @@ try {
     $stmt_check->execute();
     $customer_exists = $stmt_check->fetch(PDO::FETCH_ASSOC);
 
+    skip_execute:
     if (!$customer_exists) {
         echo json_encode(['status' => 'error', 'message' => 'ไม่พบลูกค้าที่ต้องการลบ หรือคุณไม่มีสิทธิ์ลบลูกค้านี้']);
         exit;

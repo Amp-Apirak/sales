@@ -31,8 +31,8 @@ try {
         exit;
     }
 
-    // Check permission: Own message or Executive
-    $can_delete = ($discussion['user_id'] === $user_id || $role === 'Executive');
+    // Check permission: Own message or Executive or Account Management
+    $can_delete = ($discussion['user_id'] === $user_id || $role === 'Executive' || $role === 'Account Management');
 
     if (!$can_delete) {
         echo json_encode(['success' => false, 'message' => 'คุณไม่มีสิทธิ์ลบข้อความนี้']);

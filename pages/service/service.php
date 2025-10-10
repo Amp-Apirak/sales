@@ -22,7 +22,25 @@ $accessibleTeamIds = array_values(array_unique($accessibleTeamIds));
 
 function buildVisibilityFilter(string $role, array $accessibleTeamIds, string $userId): array
 {
-    if ($role === 'Executive') {
+    if ($role === 'Executive' || $role === 'Account Management') {
+        // Executive และ Account Management เห็นทั้งหมด (หรือตามทีม)
+        if ($role === 'Executive') {
+            return ['clause' => '1=1', 'params' => []];
+        }
+        // Account Management เห็นตามทีม
+        if (!empty($accessibleTeamIds)) {
+            $teamPlaceholders = [];
+            $params = [];
+            foreach ($accessibleTeamIds as $idx => $tid) {
+                $placeholder = ':vis_team_' . $idx;
+                $teamPlaceholders[] = $placeholder;
+                $params[$placeholder] = $tid;
+            }
+            return [
+                'clause' => 'st.job_owner IN (SELECT ut_scope.user_id FROM user_teams ut_scope WHERE ut_scope.team_id IN (' . implode(',', $teamPlaceholders) . '))',
+                'params' => $params
+            ];
+        }
         return ['clause' => '1=1', 'params' => []];
     }
 
@@ -800,7 +818,7 @@ if (!function_exists('summarizeSubject')) {
                                                         <td class="text-nowrap text-center">
                                                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                                                 <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
-                                                                <?php if ($role === 'Executive' || $ticket['job_owner'] === $user_id): ?>
+                                                                <?php if ($role === 'Executive' || $role === 'Account Management' || $ticket['job_owner'] === $user_id): ?>
                                                                 <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
                                                                 <?php endif; ?>
                                                             </div>

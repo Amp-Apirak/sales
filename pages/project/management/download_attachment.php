@@ -46,7 +46,7 @@ try {
     ");
     $access_check->execute([$project_id, $user_id, $file['task_id'], $user_id, $file['task_id'], $user_id]);
 
-    $hasAccess = $access_check->fetch() || ($role === 'Executive');
+    $hasAccess = $access_check->fetch() || ($role === 'Executive') || ($role === 'Account Management');
 
     if (!$hasAccess) {
         die('คุณไม่มีสิทธิ์เข้าถึงไฟล์นี้');

@@ -18,7 +18,7 @@ if (empty($project_id)) {
 
 // Check user access to project
 $access_check = false;
-if ($role === 'Executive') {
+if ($role === 'Executive' || $role === 'Account Management') {
     $access_check = true;
 } elseif ($role === 'Sale Supervisor') {
     $stmt = $condb->prepare("
@@ -122,7 +122,7 @@ if (empty($discussions)) {
 // Display discussions
 foreach ($discussions as $disc) {
     $is_own = ($disc['user_id'] === $user_id);
-    $can_edit = ($is_own || $role === 'Executive');
+    $can_edit = ($is_own || $role === 'Executive' || $role === 'Account Management');
 
     // Get attachments
     $stmt_attach = $condb->prepare("

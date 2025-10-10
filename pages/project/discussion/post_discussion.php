@@ -33,7 +33,7 @@ try {
 
     // Check user access to project
     $access_check = false;
-    if ($role === 'Executive') {
+    if ($role === 'Executive' || $role === 'Account Management') {
         $access_check = true;
     } elseif ($role === 'Sale Supervisor') {
         $stmt = $condb->prepare("

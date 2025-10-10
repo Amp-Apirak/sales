@@ -3,8 +3,8 @@
 include  '../../include/Add_session.php';
 
 // ตรวจสอบว่า User ได้ login แล้วหรือยัง และตรวจสอบ Role
-if (!isset($_SESSION['role']) || ($_SESSION['role'] != 'Executive' && $_SESSION['role'] != 'Sale Supervisor')) {
-    // ถ้า Role ไม่ใช่ Executive หรือ Sale Supervisor ให้ redirect ไปยังหน้าอื่น เช่น หน้า Dashboard
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Executive', 'Account Management', 'Sale Supervisor'])) {
+    // ถ้า Role ไม่ใช่ Executive, Account Management หรือ Sale Supervisor ให้ redirect ไปยังหน้าอื่น เช่น หน้า Dashboard
     header("Location: " . BASE_URL . "index.php"); // เปลี่ยนเส้นทางไปหน้า Dashboard
     exit(); // หยุดการทำงานของสคริปต์
 }
@@ -63,6 +63,29 @@ if ($role === 'Executive') {
     if (count($userTeams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
         $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id = :current_team_id)";
         $params[':current_team_id'] = $current_team_id;
+    }
+} elseif ($role === 'Account Management') {
+    // Account Management เห็นผู้ใช้ทั้งหมดในทีมที่ตัวเองสังกัด
+    $team_ids = $_SESSION['team_ids'] ?? [];
+    if ($current_team_id === 'ALL') {
+        // รวมทุกทีมที่ผู้ใช้สังกัด
+        if (!empty($team_ids)) {
+            $teamPlaceholders = [];
+            foreach ($team_ids as $idx => $tid) {
+                $ph = ":acc_mgmt_team_id_{$idx}";
+                $teamPlaceholders[] = $ph;
+                $params[$ph] = $tid;
+            }
+            $inClause = implode(',', $teamPlaceholders);
+            $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id IN ($inClause))";
+        } else {
+            // ไม่มีทีม => ไม่แสดงข้อมูล
+            $sql_users .= " AND 1=0";
+        }
+    } else {
+        // จำกัดเฉพาะทีมที่เลือกจาก Navbar
+        $sql_users .= " AND u.user_id IN (SELECT user_id FROM user_teams WHERE team_id = :acc_mgmt_current_team_id)";
+        $params[':acc_mgmt_current_team_id'] = $current_team_id;
     }
 } else { // Sale Supervisor
     $team_ids = $_SESSION['team_ids'] ?? [];
@@ -393,8 +416,13 @@ $query_users = $stmt->fetchAll();
                                                             $showEditButton = false; // ถ้า username เป็น Admin ให้ซ่อนปุ่ม
                                                         }
 
-                                                        // ตรวจสอบว่าเป็น Sale Supervisor หรือไม่
-                                                        if ($_SESSION['role'] === 'Sale Supervisor') {
+                                                        // ตรวจสอบตาม role ของผู้ใช้ที่ล็อกอิน
+                                                        if ($_SESSION['role'] === 'Account Management') {
+                                                            // Account Management ไม่สามารถแก้ไข Executive ได้
+                                                            if ($user['role'] === 'Executive') {
+                                                                $showEditButton = false;
+                                                            }
+                                                        } elseif ($_SESSION['role'] === 'Sale Supervisor') {
                                                             // ถ้า role ของผู้ใช้ที่ล็อกอินคือ Sale Supervisor และผู้ใช้ที่กำลังแสดงอยู่เป็น Executive หรือเป็น Sale Supervisor (ที่ไม่ใช่ตัวเอง)
                                                             if ($user['role'] === 'Executive' || ($user['role'] === 'Sale Supervisor' && $user['user_id'] !== $_SESSION['user_id'])) {
                                                                 $showEditButton = false;

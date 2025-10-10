@@ -54,6 +54,21 @@ if ($role === 'Executive') {
         $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = ?)";
         $dropdown_params[] = $current_team_id;
     }
+} elseif ($role === 'Account Management') {
+    // Account Management เห็นโครงการทั้งหมดในทีมที่ตัวเองสังกัด
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($placeholders))";
+            $dropdown_params = $team_ids;
+        } else {
+            $dropdown_where = "WHERE p.seller = ?";
+            $dropdown_params[] = $current_user_id;
+        }
+    } else {
+        $dropdown_where = "WHERE p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = ?)";
+        $dropdown_params[] = $current_team_id;
+    }
 } elseif ($role === 'Sale Supervisor') {
     if ($current_team_id === 'ALL') {
         if (!empty($team_ids)) {
@@ -83,10 +98,25 @@ $creators_sql = "SELECT DISTINCT u.user_id as seller_id, u.first_name, u.last_na
 $creator_params = [];
 if ($role === 'Executive') {
     if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
-        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id = ? AND u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
+        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id = ? AND u.role IN ('Seller', 'Sale Supervisor', 'Executive', 'Account Management')";
         $creator_params[] = $current_team_id;
     } else {
-        $creators_sql .= "WHERE u.role IN ('Seller', 'Sale Supervisor', 'Executive')";
+        $creators_sql .= "WHERE u.role IN ('Seller', 'Sale Supervisor', 'Executive', 'Account Management')";
+    }
+} elseif ($role === 'Account Management') {
+    // Account Management เห็นผู้ขายทั้งหมดในทีมที่ตัวเองสังกัด
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $placeholders = implode(',', array_fill(0, count($team_ids), '?'));
+            $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id IN ($placeholders) AND u.role IN ('Seller', 'Sale Supervisor', 'Account Management')";
+            $creator_params = $team_ids;
+        } else {
+            $creators_sql .= "WHERE u.user_id = ?";
+            $creator_params[] = $current_user_id;
+        }
+    } else {
+        $creators_sql .= "JOIN user_teams ut ON u.user_id = ut.user_id WHERE ut.team_id = ? AND u.role IN ('Seller', 'Sale Supervisor', 'Account Management')";
+        $creator_params[] = $current_team_id;
     }
 } elseif ($role === 'Sale Supervisor') {
     if ($current_team_id === 'ALL') {
@@ -135,6 +165,36 @@ if ($role === 'Executive') {
         $main_where_conditions[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :exec_team_id)";
         $main_params[':exec_team_id'] = $current_team_id;
     }
+} elseif ($role === 'Account Management') {
+    // Account Management เห็นโครงการทั้งหมดในทีมที่ตัวเองสังกัด
+    $visibilityClauses = [];
+
+    if ($current_team_id === 'ALL') {
+        if (!empty($team_ids)) {
+            $team_placeholders = [];
+            foreach ($team_ids as $key => $id) {
+                $p = ':acc_mgmt_team_' . $key;
+                $team_placeholders[] = $p;
+                $main_params[$p] = $id;
+            }
+            $in_clause = implode(',', $team_placeholders);
+            $visibilityClauses[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id IN ($in_clause))";
+        }
+    } else {
+        $visibilityClauses[] = "p.seller IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :acc_mgmt_current_team_id)";
+        $main_params[':acc_mgmt_current_team_id'] = $current_team_id;
+    }
+
+    // หากไม่มีทีมที่เข้าถึงได้ ให้ fallback เป็นโครงการที่ตัวเองเป็นผู้ขาย
+    if (empty($visibilityClauses)) {
+        $visibilityClauses[] = "p.seller = :acc_mgmt_current_user_id";
+        $main_params[':acc_mgmt_current_user_id'] = $current_user_id;
+    }
+
+    // เพิ่มเงื่อนไขโครงการที่ถูกแชร์ถึงผู้ใช้งาน
+    $visibilityClauses[] = $shared_condition;
+
+    $main_where_conditions[] = '(' . implode(' OR ', $visibilityClauses) . ')';
 } elseif ($role === 'Sale Supervisor') {
     $visibilityClauses = [];
 
@@ -885,6 +945,26 @@ $metrics = calculateProjectMetrics($projects, $search_params, $user_team_name, $
                                                                     $can_delete = false;
                                                                     $can_manage = false;
                                                                 } else {
+                                                                    $can_edit = true;
+                                                                    $can_delete = true;
+                                                                    $can_manage = true;
+                                                                }
+                                                                break;
+
+                                                            case 'Account Management':
+                                                                // Account Management มีสิทธิ์เต็มในทีมที่สังกัด
+                                                                if ($hasViewShareAccess) {
+                                                                    $can_edit = false;
+                                                                    $can_delete = false;
+                                                                    $can_manage = false;
+                                                                } elseif ($hasFullShareAccess) {
+                                                                    $can_edit = true;
+                                                                    $can_delete = true;
+                                                                    $can_manage = true;
+                                                                } elseif ($hasHalfShareAccess) {
+                                                                    $can_manage = true;
+                                                                } elseif ($isTeamProject || $isOwner) {
+                                                                    // สิทธิ์เต็มในโครงการของทีมที่สังกัด
                                                                     $can_edit = true;
                                                                     $can_delete = true;
                                                                     $can_manage = true;

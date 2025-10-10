@@ -27,7 +27,7 @@ if ($role === 'Executive') {
         $where_conditions[] = "c.created_by IN (SELECT ut.user_id FROM user_teams ut WHERE ut.team_id = :current_team_id)";
         $params[':current_team_id'] = $current_team_id;
     }
-} elseif ($role === 'Sale Supervisor') {
+} elseif ($role === 'Account Management' || $role === 'Sale Supervisor') {
     if ($current_team_id === 'ALL') {
         if (!empty($team_ids)) {
             $team_placeholders = [];

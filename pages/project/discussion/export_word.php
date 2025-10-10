@@ -15,7 +15,7 @@ if (empty($project_id)) {
 
 // Check access (same as get_discussions.php)
 $access_check = false;
-if ($role === 'Executive') {
+if ($role === 'Executive' || $role === 'Account Management') {
     $access_check = true;
 } elseif ($role === 'Sale Supervisor') {
     $stmt = $condb->prepare("
