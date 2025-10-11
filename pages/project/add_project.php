@@ -4,9 +4,24 @@ include '../../include/Add_session.php';
 
 // ดึงข้อมูลผู้ใช้จาก session เช่น role, team_id, user_id เป็นต้น
 $role = $_SESSION['role'] ?? '';
-$team_id = $_SESSION['team_id'] ?? 0;
+$team_id = $_SESSION['team_id'] ?? 'ALL';
+$current_team_id = $team_id; // Alias for consistency
 $created_by = $_SESSION['user_id'] ?? 0;
 $user_id = $_SESSION['user_id'] ?? 0;
+$user_teams = $_SESSION['user_teams'] ?? [];
+
+// กำหนด Default Team = ทีมหลักของผู้ใช้
+$default_team_id = '';
+foreach ($user_teams as $team) {
+    if (isset($team['is_primary']) && $team['is_primary'] == 1) {
+        $default_team_id = $team['team_id'];
+        break;
+    }
+}
+// ถ้าไม่มีทีมหลัก ใช้ทีมแรก
+if (empty($default_team_id) && !empty($user_teams)) {
+    $default_team_id = $user_teams[0]['team_id'];
+}
 
 // *** การ Debug เพื่อตรวจสอบข้อมูล Session (ลบออกหลังจากแก้ไขเสร็จ) ***
 // echo "<br>";
@@ -73,11 +88,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
     $contract_no = clean_input($_POST['con_number']);
     $product_id = clean_input($_POST['product_id']);
     $customer_id = clean_input($_POST['customer_id']);
-    // เพิ่มการรับค่า seller
+    // เพิ่มการรับค่า seller และ team_id
     $seller = clean_input($_POST['seller'] ?? '');
+    $project_team_id = clean_input($_POST['team_id'] ?? '');
+
     // หาก Role ไม่ใช่ Executive หรือ Account Management ให้ seller = created_by (ตัวเอง)
-    if (!in_array($role, ['Executive', 'Account Management'])) {
+    if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor'])) {
         $seller = $created_by;
+    }
+
+    // ถ้าไม่ได้เลือกทีม ให้ใช้ทีมหลักของผู้ขาย หรือ current team
+    if (empty($project_team_id)) {
+        if ($current_team_id !== 'ALL') {
+            $project_team_id = $current_team_id;
+        } else {
+            // ดึงทีมหลักของ seller
+            $stmt_team = $condb->prepare("SELECT team_id FROM user_teams WHERE user_id = :user_id AND is_primary = 1 LIMIT 1");
+            $stmt_team->execute([':user_id' => $seller]);
+            $primary_team = $stmt_team->fetch(PDO::FETCH_ASSOC);
+            if ($primary_team) {
+                $project_team_id = $primary_team['team_id'];
+            }
+        }
     }
 
     // แปลงค่าที่เกี่ยวกับตัวเลขและคำนวณเพื่อกรอง, ลบ comma ออก และแปลงเป็น float
@@ -133,13 +165,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
 
             // เตรียมคำสั่ง SQL สำหรับ Insert ข้อมูลโครงการลงในตาราง projects
             $sql = "INSERT INTO projects (
-                        project_id, project_name, start_date, end_date, status, contract_no, product_id, customer_id, 
+                        project_id, project_name, start_date, end_date, status, contract_no, product_id, customer_id,
                         sale_vat, sale_no_vat, cost_vat, cost_no_vat, gross_profit, potential, sales_date,
-                        es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at, seller
+                        es_sale_no_vat, es_cost_no_vat, es_gp_no_vat, remark, vat, created_by, created_at, seller, team_id
                     ) VALUES (
-                        :project_id, :project_name, :start_date, :end_date, :status, :contract_no, :product_id, :customer_id, 
+                        :project_id, :project_name, :start_date, :end_date, :status, :contract_no, :product_id, :customer_id,
                         :sale_vat, :sale_no_vat, :cost_vat, :cost_no_vat, :gross_profit, :potential, :sales_date,
-                        :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW(), :seller
+                        :es_sale_no_vat, :es_cost_no_vat, :es_gp_no_vat, :remark, :vat, :created_by, NOW(), :seller, :team_id
                     )";
 
             $stmt = $condb->prepare($sql);
@@ -165,7 +197,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_W
                 ':remark' => $remark,
                 ':vat' => $vat,
                 ':created_by' => $created_by,
-                ':seller' => $seller
+                ':seller' => $seller,
+                ':team_id' => $project_team_id
             ]);
 
             // หากมีรายการลูกค้าเพิ่มเติม ให้บันทึกลงตาราง project_customers
@@ -389,18 +422,9 @@ $companies = getCompanyData($condb, $role, $team_id, $user_id);
 // ส่วนสำหรับดึงรายชื่อผู้ขาย/ผู้รับผิดชอบโครงการ
 $users = [];
 if ($role === 'Executive') {
-    $stmt = $condb->prepare("
-        SELECT u.user_id, u.first_name, u.last_name, u.role,
-               GROUP_CONCAT(DISTINCT t.team_name ORDER BY t.team_name SEPARATOR ', ') AS team_name
-        FROM users u
-        LEFT JOIN user_teams ut ON u.user_id = ut.user_id
-        LEFT JOIN teams t ON ut.team_id = t.team_id
-        WHERE u.role IN ('Seller', 'Sale Supervisor', 'Account Management')
-        GROUP BY u.user_id, u.first_name, u.last_name, u.role
-        ORDER BY team_name, u.first_name
-    ");
-    $stmt->execute();
-    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Executive: ไม่โหลดผู้ขายตอนเริ่มต้น ให้โหลดผ่าน AJAX เมื่อเลือกทีม
+    // ทำให้ Dropdown ว่างไว้ก่อน
+    $users = [];
 } elseif ($role === 'Account Management') {
     // Account Management เห็นผู้ขายทั้งหมดในทีมที่ตัวเองสังกัด
     $user_teams = $_SESSION['user_teams'] ?? [];
@@ -610,42 +634,85 @@ if ($role === 'Executive') {
                                                 </div>
                                             </div>
 
+                                            <!-- Row 1: ทีม, ผู้ขาย, ผู้สร้าง -->
                                             <div class="row">
-                                                <?php if ($role === 'Executive' || $role === 'Account Management' || ($role === 'Sale Supervisor' && !empty($users))): ?>
-                                                    <div class="col-12 col-md-6">
+                                                <?php if ($role === 'Executive' || $role === 'Account Management' || $role === 'Sale Supervisor'): ?>
+                                                    <!-- Team Selector -->
+                                                    <div class="col-12 col-md-4">
+                                                        <div class="form-group">
+                                                            <label>ทีม <span class="text-danger">*</span></label>
+                                                            <select class="form-control select2" name="team_id" id="team_id" style="width: 100%;" required>
+                                                                <option value="">-- เลือกทีม --</option>
+                                                                <?php
+                                                                // Executive เห็นทุกทีม, อื่นๆ เห็นเฉพาะทีมที่สังกัด
+                                                                $teams_to_show = [];
+                                                                if ($role === 'Executive') {
+                                                                    // Query ทุกทีมในระบบ
+                                                                    $stmt = $condb->query("SELECT team_id, team_name FROM teams ORDER BY team_name");
+                                                                    $teams_to_show = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                                                } else {
+                                                                    // ใช้ทีมที่ผู้ใช้สังกัด
+                                                                    $teams_to_show = $user_teams;
+                                                                }
+
+                                                                foreach ($teams_to_show as $team):
+                                                                    // Default = ทีมหลักของผู้ใช้
+                                                                    $selected = ($team['team_id'] === $default_team_id) ? 'selected' : '';
+                                                                ?>
+                                                                    <option value="<?php echo htmlspecialchars($team['team_id']); ?>" <?php echo $selected; ?>>
+                                                                        <?php echo htmlspecialchars($team['team_name']); ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                            <small class="form-text text-muted">
+                                                                เลือกทีมที่จะรับผิดชอบโครงการนี้
+                                                            </small>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Seller Selector -->
+                                                    <div class="col-12 col-md-4">
                                                         <div class="form-group">
                                                             <label>ผู้ขาย/ผู้รับผิดชอบโครงการ <span class="text-danger">*</span></label>
                                                             <select class="form-control select2" name="seller" id="seller" style="width: 100%;" required>
-                                                                <option value="">-- เลือกผู้ขาย/ผู้รับผิดชอบโครงการ --</option>
-                                                                <?php foreach ($users as $user): ?>
-                                                                    <option value="<?php echo htmlspecialchars($user['user_id']); ?>" <?php echo ($user['user_id'] == $user_id && $role !== 'Executive') ? 'selected' : ''; ?>>
-                                                                        <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
-                                                                        (<?php echo htmlspecialchars($user['role']); ?>)
-                                                                        <?php if ($user['team_name']): ?>
-                                                                            - ทีม: <?php echo htmlspecialchars($user['team_name']); ?>
-                                                                        <?php endif; ?>
-                                                                    </option>
-                                                                <?php endforeach; ?>
+                                                                <option value="">-- กรุณาเลือกทีมก่อน --</option>
                                                             </select>
                                                             <small class="form-text text-muted">
                                                                 เลือกผู้ขายที่จะรับผิดชอบดูแลโครงการนี้
                                                             </small>
                                                         </div>
                                                     </div>
-                                                    <?php if ($role === 'Executive'): ?>
-                                                        <div class="col-12 col-md-6">
-                                                            <div class="form-group">
-                                                                <label>ผู้สร้างโครงการ</label>
-                                                                <input type="text" class="form-control"
-                                                                    value="<?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?>"
-                                                                    readonly style="background-color:#F8F8FF">
-                                                                <small class="form-text text-muted">คุณเป็นผู้สร้างโครงการนี้</small>
-                                                            </div>
+
+                                                    <!-- Creator (for Executive only) -->
+                                                    <div class="col-12 col-md-4">
+                                                        <div class="form-group">
+                                                            <label>ผู้สร้างโครงการ</label>
+                                                            <input type="text" class="form-control"
+                                                                value="<?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?>"
+                                                                readonly style="background-color:#F8F8FF">
+                                                            <small class="form-text text-muted">คุณเป็นผู้สร้างโครงการนี้</small>
                                                         </div>
-                                                    <?php endif; ?>
+                                                    </div>
                                                 <?php else: ?>
-                                                    <!-- สำหรับบทบาทอื่นๆ (เช่น Seller/Engineer หรือ Sale Supervisor ที่ไม่มีทีม) ใช้ตัวเองเป็นผู้ขาย -->
+                                                    <!-- สำหรับบทบาทอื่นๆ (Seller) ใช้ตัวเองเป็นผู้ขาย -->
                                                     <input type="hidden" name="seller" value="<?php echo $user_id; ?>">
+                                                    <input type="hidden" name="team_id" value="<?php echo $default_team_id; ?>">
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="form-group">
+                                                            <label>ทีม</label>
+                                                            <input type="text" class="form-control"
+                                                                value="<?php
+                                                                    foreach ($user_teams as $team) {
+                                                                        if ($team['team_id'] === $default_team_id) {
+                                                                            echo htmlspecialchars($team['team_name']);
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                ?>"
+                                                                readonly style="background-color:#F8F8FF">
+                                                            <small class="form-text text-muted">ทีมของคุณ</small>
+                                                        </div>
+                                                    </div>
                                                     <div class="col-12 col-md-6">
                                                         <div class="form-group">
                                                             <label>ผู้ขาย/ผู้รับผิดชอบโครงการ</label>
@@ -656,11 +723,14 @@ if ($role === 'Executive') {
                                                         </div>
                                                     </div>
                                                 <?php endif; ?>
+                                            </div>
 
-                                                <div class="col-12 col-md-6">
+                                            <!-- Row 2: ชื่อโครงการเต็ม Row -->
+                                            <div class="row">
+                                                <div class="col-12">
                                                     <div class="form-group">
                                                         <label>ชื่อโครงการ<span class="text-danger">*</span></label>
-                                                        <input type="text" name="project_name" class="form-control" placeholder="ชื่อโครงการ">
+                                                        <input type="text" name="project_name" class="form-control" placeholder="ชื่อโครงการ" required>
                                                     </div>
                                                 </div>
                                             </div>
@@ -872,6 +942,69 @@ if ($role === 'Executive') {
 
     <script>
         $(document).ready(function() {
+            // AJAX: Load sellers when team is selected
+            <?php if ($role === 'Executive' || $role === 'Account Management' || $role === 'Sale Supervisor'): ?>
+            $('#team_id').on('change', function() {
+                const teamId = $(this).val();
+                const $sellerSelect = $('#seller');
+
+                if (!teamId) {
+                    $sellerSelect.html('<option value="">-- เลือกทีมก่อน --</option>');
+                    $sellerSelect.trigger('change');
+                    return;
+                }
+
+                // Show loading
+                $sellerSelect.html('<option value="">กำลังโหลด...</option>');
+                $sellerSelect.prop('disabled', true);
+
+                // AJAX request
+                $.ajax({
+                    url: 'get_sellers_by_team.php',
+                    type: 'GET',
+                    data: { team_id: teamId },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success && response.sellers) {
+                            let options = '<option value="">-- เลือกผู้ขาย/ผู้รับผิดชอบโครงการ --</option>';
+                            const currentUserId = '<?php echo $user_id; ?>';
+
+                            response.sellers.forEach(function(seller) {
+                                const selected = (seller.user_id === currentUserId) ? 'selected' : '';
+                                options += `<option value="${seller.user_id}" ${selected}>
+                                    ${seller.first_name} ${seller.last_name} (${seller.role})
+                                </option>`;
+                            });
+
+                            $sellerSelect.html(options);
+                        } else {
+                            $sellerSelect.html('<option value="">-- ไม่พบผู้ขายในทีมนี้ --</option>');
+                        }
+                    },
+                    error: function() {
+                        $sellerSelect.html('<option value="">-- เกิดข้อผิดพลาด --</option>');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถโหลดรายชื่อผู้ขายได้'
+                        });
+                    },
+                    complete: function() {
+                        $sellerSelect.prop('disabled', false);
+                        $sellerSelect.trigger('change');
+                    }
+                });
+            });
+
+            // Trigger change on page load if team is pre-selected
+            <?php if (!empty($default_team_id)): ?>
+            // Auto-load sellers for default team on page load
+            setTimeout(function() {
+                $('#team_id').trigger('change');
+            }, 500); // รอให้ Select2 โหลดเสร็จก่อน
+            <?php endif; ?>
+            <?php endif; ?>
+
             // เมื่อคลิกปุ่ม เลือกรายชื่อลูกค้า เพิ่มคอลัมน์สำหรับเลือกข้อมูลลูกค้าเพิ่มเติม
             $('#add-customer-btn').click(function() {
                 const mainCustomer = $('select[name="customer_id"]').val();

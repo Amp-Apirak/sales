@@ -195,10 +195,13 @@ if ($role === 'Executive') {
         $main_params[':acc_mgmt_current_team_id'] = $current_team_id;
     }
 
-    // หากไม่มีทีมที่เข้าถึงได้ ให้ fallback เป็นโครงการที่ตัวเองเป็นผู้ขาย
-    if (empty($visibilityClauses)) {
+    // เพิ่มโครงการที่ตัวเองเป็นผู้สร้างไว้เสมอ
+    $visibilityClauses[] = "p.created_by = :acc_mgmt_current_user_id";
+    $main_params[':acc_mgmt_current_user_id'] = $current_user_id;
+
+    // หากไม่มีทีมที่เข้าถึงได้เลย ให้ fallback เป็นโครงการที่ตัวเองเป็นผู้ขาย
+    if (empty($team_placeholders ?? []) && $current_team_id === 'ALL' && empty($team_ids)) {
         $visibilityClauses[] = "p.seller = :acc_mgmt_current_user_id";
-        $main_params[':acc_mgmt_current_user_id'] = $current_user_id;
     }
 
     // เพิ่มเงื่อนไขโครงการที่ถูกแชร์ถึงผู้ใช้งาน
@@ -337,8 +340,7 @@ $sql_projects = "
     LEFT JOIN customers c ON p.customer_id = c.customer_id
     LEFT JOIN users creator ON p.created_by = creator.user_id
     LEFT JOIN users seller ON p.seller = seller.user_id
-    LEFT JOIN user_teams ut ON seller.user_id = ut.user_id AND ut.is_primary = 1
-    LEFT JOIN teams seller_team ON ut.team_id = seller_team.team_id
+    LEFT JOIN teams seller_team ON p.team_id = seller_team.team_id
     LEFT JOIN products pr ON p.product_id = pr.product_id
     LEFT JOIN project_members pm_user ON p.project_id = pm_user.project_id AND pm_user.user_id = :current_user_id_main
     $where_clause
