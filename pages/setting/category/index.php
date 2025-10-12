@@ -3,17 +3,18 @@ session_start();
 require_once __DIR__ . '/../../../config/condb.php';
 require_once __DIR__ . '/../../../config/validation.php';
 
-// Role check
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Executive') {
+// Check if user is logged in
+if (!isset($_SESSION['role'])) {
     header('Location: /sales/index.php');
     exit();
 }
+$role = $_SESSION['role'];
 
 $csrf_token = generateCSRFToken();
 $message = '';
 
-// Handle POST requests for Add, Edit, Delete
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle POST requests for Add, Edit, Delete (Only for Executives)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'Executive') {
     if (!validateCSRFToken($_POST['csrf_token'])) {
         die('CSRF token validation failed.');
     }
@@ -48,7 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'error:An error occurred: ' . $e->getMessage();
     }
     
-    // Redirect to avoid form resubmission
     header('Location: ' . $_SERVER['PHP_SELF'] . '?message=' . urlencode($message));
     exit();
 }
@@ -63,7 +63,6 @@ $categories = $condb->query("
 
 // Display feedback message
 if (isset($_GET['message'])) {
-    // Sanitize the message to prevent XSS
     $message_parts = explode(':', htmlspecialchars($_GET['message']), 2);
     $type = $message_parts[0];
     $text = $message_parts[1] ?? '';
@@ -71,7 +70,6 @@ if (isset($_GET['message'])) {
     $alert_icon = $type === 'success' ? 'fa-check' : 'fa-ban';
     $alert_title = $type === 'success' ? 'Success!' : 'Error!';
 }
-
 
 ?>
 <!DOCTYPE html>
@@ -82,6 +80,12 @@ if (isset($_GET['message'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Service Category Management</title>
     <?php include '../../../include/header.php'; ?>
+    <style>
+        .search-highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body class="sidebar-mini layout-fixed">
 <div class="wrapper">
@@ -118,6 +122,7 @@ if (isset($_GET['message'])) {
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Category List</h3>
+                        <?php if ($role === 'Executive'): ?>
                         <div class="card-tools">
                             <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#addCategoryModal">
                                 <i class="fas fa-plus"></i> Add New Category
@@ -126,6 +131,7 @@ if (isset($_GET['message'])) {
                                 <i class="fas fa-file-import"></i> Import Data
                             </button>
                         </div>
+                        <?php endif; ?>
                     </div>
                     <div class="card-body">
                         <table id="categoryTable" class="table table-bordered table-striped">
@@ -137,7 +143,7 @@ if (isset($_GET['message'])) {
                                     <th>Sub Category</th>
                                     <th>Created By</th>
                                     <th>Created At</th>
-                                    <th>Actions</th>
+                                    <?php if ($role === 'Executive'): ?><th>Actions</th><?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
@@ -149,6 +155,7 @@ if (isset($_GET['message'])) {
                                     <td><?= htmlspecialchars($cat['sub_category'] ?? '-') ?></td>
                                     <td><?= htmlspecialchars($cat['first_name'] . ' ' . $cat['last_name']) ?></td>
                                     <td><?= date('d/m/Y H:i', strtotime($cat['created_at'])) ?></td>
+                                    <?php if ($role === 'Executive'): ?>
                                     <td>
                                         <button class="btn btn-info btn-sm edit-btn" 
                                                 data-id="<?= htmlspecialchars($cat['id']) ?>" 
@@ -162,6 +169,7 @@ if (isset($_GET['message'])) {
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </td>
+                                    <?php endif; ?>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -175,6 +183,7 @@ if (isset($_GET['message'])) {
     <?php include '../../../include/footer.php'; ?>
 </div>
 
+<?php if ($role === 'Executive'): ?>
 <!-- Add Category Modal -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
@@ -295,23 +304,115 @@ if (isset($_GET['message'])) {
     </div>
 </div>
 
-
 <!-- Hidden Delete Form -->
 <form id="delete-form" action="index.php" method="POST" style="display: none;">
     <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
     <input type="hidden" name="action" value="delete">
     <input type="hidden" name="delete_id" id="delete_id">
 </form>
+<?php endif; ?>
 
 <script>
 $(function () {
-    $("#categoryTable").DataTable({
+    var table = $("#categoryTable").DataTable({
         "responsive": true, 
         "lengthChange": false, 
         "autoWidth": false,
+        "pageLength": 20,
         "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
     }).buttons().container().appendTo('#categoryTable_wrapper .col-md-6:eq(0)');
 
+    // --- Search Highlighting ---
+    var raf = window.requestAnimationFrame || function(cb) { return setTimeout(cb, 0); };
+
+    function escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function resetCell($cell) {
+        var original = $cell.data('original-text');
+        if (original === undefined) {
+            $cell.data('original-text', $cell.html());
+            return;
+        }
+        $cell.html(original);
+    }
+
+    function highlightCell($cell, regex) {
+        var original = $cell.data('original-text');
+        if (original === undefined) {
+            original = $cell.html();
+            $cell.data('original-text', original);
+        }
+        var highlighted = original.replace(regex, '<mark class="search-highlight">$1</mark>');
+        $cell.html(highlighted);
+    }
+
+    function applySearchHighlight() {
+        var body = table.table().body();
+        if (!body) {
+            return;
+        }
+
+        var allTerms = [];
+        var globalSearch = table.search().trim();
+        if (globalSearch) {
+            allTerms = allTerms.concat(globalSearch.split(/\s+/));
+        }
+
+        table.columns().every(function() {
+            var columnSearch = this.search().trim();
+            if (columnSearch) {
+                allTerms = allTerms.concat(columnSearch.split(/\s+/));
+            }
+        });
+
+        var terms = Array.from(new Set(allTerms.filter(Boolean)));
+        console.debug('Highlight terms:', terms);
+
+        var $cells = $(body).find('td');
+        $cells.each(function() {
+            resetCell($(this));
+        });
+
+        if (!terms.length) {
+            return;
+        }
+
+        var pattern = terms.map(escapeRegExp).join('|');
+        if (!pattern) {
+            return;
+        }
+        var regex = new RegExp('(' + pattern + ')', 'gi');
+
+        var $visibleCells = $(table.rows({ search: 'applied' }).nodes()).find('td');
+        console.debug('Cells to highlight:', $visibleCells.length);
+
+        $visibleCells.each(function() {
+            highlightCell($(this), regex);
+        });
+        console.debug('Highlight done');
+    }
+
+    function scheduleHighlight() {
+        raf(function() {
+            applySearchHighlight();
+        });
+    }
+
+    table.on('draw.dt', scheduleHighlight);
+    table.on('responsive-display.dt', scheduleHighlight);
+    table.on('column-visibility.dt', scheduleHighlight);
+    table.on('column-reorder.dt', scheduleHighlight);
+    table.on('search.dt', scheduleHighlight);
+
+    $('#categoryTable_filter input').on('keyup change', scheduleHighlight);
+
+    // Highlight immediately in caseมีการตั้งค่า search ไว้จาก state ก่อนหน้า
+    scheduleHighlight();
+    // --- End Search Highlighting ---
+
+    <?php if ($role === 'Executive'): ?>
     // Edit button handler
     $('.edit-btn').on('click', function() {
         var id = $(this).data('id');
@@ -349,9 +450,9 @@ $(function () {
         let fileName = $(this).val().split('\\').pop();
         $(this).next('.custom-file-label').html(fileName);
     });
+    <?php endif; ?>
 });
 </script>
 
-</body>
 </body>
 </html>

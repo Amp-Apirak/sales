@@ -541,9 +541,8 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                     </li>
                 <?php endif; ?>
 
+                <li class="nav-header text-primary">Service Setting</li>
                 <?php if ($role === 'Executive'): ?>
-                    <li class="nav-header text-primary">Service Setting</li>
-
                     <li class="nav-item">
                         <a href="<?php echo BASE_URL; ?>pages/setting/service/sal_setting.php" class="nav-link <?php if ($menu == "sla_setting") {
                                                                                                                     echo "active";
@@ -552,15 +551,15 @@ $profile_image = $_SESSION['profile_image']; // ดึง profile_image ขอ�
                             <p>SLA Settings</p>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a href="<?php echo BASE_URL; ?>pages/setting/category/index.php" class="nav-link <?php if ($menu == "service_category") {
-                                                                                                                    echo "active";
-                                                                                                                } ?>" data-no-reset-team="true">
-                            <i class="nav-icon fas fa-copy"></i>
-                            <p>Service Category</p>
-                        </a>
-                    </li>
                 <?php endif; ?>
+                <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>pages/setting/category/index.php" class="nav-link <?php if ($menu == "service_category") {
+                                                                                                                echo "active";
+                                                                                                            } ?>" data-no-reset-team="true">
+                        <i class="nav-icon fas fa-copy"></i>
+                        <p>Service Category</p>
+                    </a>
+                </li>
 
 
 
