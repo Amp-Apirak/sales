@@ -63,11 +63,15 @@ $categories = $condb->query("
 
 // Display feedback message
 if (isset($_GET['message'])) {
-    list($type, $text) = explode(':', $_GET['message'], 2);
+    // Sanitize the message to prevent XSS
+    $message_parts = explode(':', htmlspecialchars($_GET['message']), 2);
+    $type = $message_parts[0];
+    $text = $message_parts[1] ?? '';
     $alert_class = $type === 'success' ? 'alert-success' : 'alert-danger';
     $alert_icon = $type === 'success' ? 'fa-check' : 'fa-ban';
     $alert_title = $type === 'success' ? 'Success!' : 'Error!';
 }
+
 
 ?>
 <!DOCTYPE html>
@@ -104,7 +108,7 @@ if (isset($_GET['message'])) {
             <div class="container-fluid">
                 <?php if (isset($alert_class)): ?>
                 <div class="alert <?= $alert_class ?> alert-dismissible fade show" role="alert">
-                    <strong><?= $alert_title ?></strong> <?= htmlspecialchars(urldecode($text)) ?>
+                    <strong><?= $alert_title ?></strong> <?= $text ?>
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -117,6 +121,9 @@ if (isset($_GET['message'])) {
                         <div class="card-tools">
                             <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#addCategoryModal">
                                 <i class="fas fa-plus"></i> Add New Category
+                            </button>
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#importModal">
+                                <i class="fas fa-file-import"></i> Import Data
                             </button>
                         </div>
                     </div>
@@ -241,6 +248,54 @@ if (isset($_GET['message'])) {
     </div>
 </div>
 
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="importModalLabel"><i class="fas fa-file-import mr-2"></i>Import Categories</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <form action="import_categories.php" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+                    <div class="import-steps mb-4">
+                        <div class="d-flex justify-content-between">
+                            <div class="step text-center">
+                                <a href="templates/category_import_template.csv" class="text-decoration-none step-link" download>
+                                    <div class="step-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;"><i class="fas fa-download"></i></div>
+                                    <div class="step-text"><small>Step 1</small><br>Download Template</div>
+                                </a>
+                            </div>
+                            <div class="step-line flex-grow-1 bg-light my-auto mx-2" style="height: 2px;"></div>
+                            <div class="step text-center">
+                                <div class="step-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;"><i class="fas fa-file-excel"></i></div>
+                                <div class="step-text"><small>Step 2</small><br>Fill Data</div>
+                            </div>
+                            <div class="step-line flex-grow-1 bg-light my-auto mx-2" style="height: 2px;"></div>
+                            <div class="step text-center">
+                                <div class="step-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;"><i class="fas fa-upload"></i></div>
+                                <div class="step-text"><small>Step 3</small><br>Upload File</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="upload-section p-4 bg-light rounded border-dashed">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="importFile" name="file" accept=".csv" required>
+                            <label class="custom-file-label" for="importFile">Choose file...</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times mr-1"></i> Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-file-import mr-1"></i> Import Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 <!-- Hidden Delete Form -->
 <form id="delete-form" action="index.php" method="POST" style="display: none;">
     <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
@@ -288,8 +343,15 @@ $(function () {
             }
         })
     });
+
+    // Show filename in custom file input
+    $('.custom-file-input').on('change', function() {
+        let fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').html(fileName);
+    });
 });
 </script>
 
+</body>
 </body>
 </html>
