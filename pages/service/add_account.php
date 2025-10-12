@@ -97,20 +97,18 @@ try {
     $stmt = $condb->query("SELECT user_id, CONCAT(first_name, ' ', last_name) AS full_name, role FROM users ORDER BY first_name ASC");
     $owners = $stmt->fetchAll();
 
-    // หมวดหมู่บริการ (service_category)
-    $stmtCategory = $condb->query("SELECT DISTINCT service_category FROM category ORDER BY service_category");
-    $serviceCategories = $stmtCategory->fetchAll();
+    // Fetch all category data for dependent dropdowns
+    $stmt = $condb->query("SELECT service_category, category, sub_category FROM category ORDER BY service_category, category, sub_category");
+    $all_categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // ทีมที่ให้บริการ
-    $stmtTeam = $condb->query("SELECT team_id, team_name FROM teams ORDER BY team_name ASC");
-    $supportTeams = $stmtTeam->fetchAll();
+    // Prepare data for JavaScript
+    $category_data_for_js = [];
+    foreach ($all_categories as $row) {
+        $category_data_for_js[$row['service_category']][$row['category']][] = $row['sub_category'];
+    }
 
-    // หมวดหมู่หลัก / ย่อย
-    $stmtCatList = $condb->query("SELECT DISTINCT category FROM category WHERE category IS NOT NULL AND category <> '' ORDER BY category");
-    $categoriesList = $stmtCatList->fetchAll();
-
-    $stmtSubCatList = $condb->query("SELECT DISTINCT sub_category FROM category WHERE sub_category IS NOT NULL AND sub_category <> '' ORDER BY sub_category");
-    $subCategoriesList = $stmtSubCatList->fetchAll();
+    // Get unique top-level service categories
+    $serviceCategories = array_keys($category_data_for_js);
 
     // รายชื่อโครงการที่อยู่ในทีมผู้ใช้ หรือถูกแชร์ให้เข้าถึง
     $projectSql = "SELECT DISTINCT p.project_id, p.project_name
@@ -582,9 +580,9 @@ $menu = 'service';
                                                 <div class="form-group">
                                                     <label>Service Category<span class="text-danger">*</span></label>
                                                     <select name="service_category" id="service_category" class="form-control select2" required>
-                                                        <option value="">เลือก</option>
-                                                        <?php foreach ($serviceCategories as $category): ?>
-                                                            <option value="<?php echo escapeOutput($category['service_category']); ?>"><?php echo escapeOutput($category['service_category']); ?></option>
+                                                        <option value="">-- Select Service Category --</option>
+                                                        <?php foreach ($serviceCategories as $sc): ?>
+                                                            <option value="<?php echo escapeOutput($sc); ?>"><?php echo escapeOutput($sc); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -592,22 +590,16 @@ $menu = 'service';
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
                                                     <label>Category<span class="text-danger">*</span></label>
-                                                    <select name="category" id="category" class="form-control select2" required>
-                                                        <option value="">เลือก</option>
-                                                        <?php foreach ($categoriesList as $cat): ?>
-                                                            <option value="<?php echo escapeOutput($cat['category']); ?>"><?php echo escapeOutput($cat['category']); ?></option>
-                                                        <?php endforeach; ?>
+                                                    <select name="category" id="category" class="form-control select2" required disabled>
+                                                        <option value="">-- Select Category --</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
                                                 <div class="form-group">
-                                                    <label>Sub Category<span class="text-danger">*</span></label>
-                                                    <select name="sub_category" id="sub_category" class="form-control select2" required>
-                                                        <option value="">เลือก</option>
-                                                        <?php foreach ($subCategoriesList as $subCat): ?>
-                                                            <option value="<?php echo escapeOutput($subCat['sub_category']); ?>"><?php echo escapeOutput($subCat['sub_category']); ?></option>
-                                                        <?php endforeach; ?>
+                                                    <label>Sub Category</label>
+                                                    <select name="sub_category" id="sub_category" class="form-control select2" disabled>
+                                                        <option value="">-- Select Sub Category --</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -1167,6 +1159,53 @@ $menu = 'service';
                         });
                     }
                 });
+            });
+
+            // === Dependent Category Dropdowns ===
+            const categoryData = <?php echo json_encode($category_data_for_js); ?>;
+            const $serviceCategory = $('#service_category');
+            const $category = $('#category');
+            const $subCategory = $('#sub_category');
+
+            $serviceCategory.on('change', function() {
+                const selectedService = $(this).val();
+                $category.empty().append('<option value="">-- Select Category --</option>').prop('disabled', true);
+                $subCategory.empty().append('<option value="">-- Select Sub Category --</option>').prop('disabled', true);
+
+                if (selectedService && categoryData[selectedService]) {
+                    const categories = Object.keys(categoryData[selectedService]);
+                    $.each(categories, function(i, category) {
+                        $category.append($('<option>', {
+                            value: category,
+                            text: category
+                        }));
+                    });
+                    $category.prop('disabled', false);
+                }
+                $category.trigger('change');
+                $subCategory.trigger('change');
+            });
+
+            $category.on('change', function() {
+                const selectedService = $serviceCategory.val();
+                const selectedCategory = $(this).val();
+                $subCategory.empty().append('<option value="">-- Select Sub Category --</option>').prop('disabled', true);
+
+                if (selectedService && selectedCategory && categoryData[selectedService][selectedCategory]) {
+                    const subCategories = categoryData[selectedService][selectedCategory];
+                    if (subCategories.length > 0 && subCategories[0] !== null) {
+                         $.each(subCategories, function(i, subCategory) {
+                            if(subCategory) { // Ensure not null
+                                $subCategory.append($('<option>', {
+                                    value: subCategory,
+                                    text: subCategory
+                                }));
+                            }
+                        });
+                        $subCategory.prop('disabled', false);
+                    }
+                }
+                 $subCategory.trigger('change');
             });
 
             $('#btnDraft').on('click', function() {
