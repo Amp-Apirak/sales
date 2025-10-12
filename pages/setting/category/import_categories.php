@@ -29,7 +29,8 @@ $allowed_mime_types = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
 $file_mime_type = mime_content_type($file['tmp_name']);
 
 if (!in_array($file_mime_type, $allowed_mime_types)) {
-    header('Location: index.php?message=' . urlencode('error:Invalid file type. Please upload a CSV file.'));
+    $error_message = 'error:Invalid file type. Detected: ' . htmlspecialchars($file_mime_type) . '. Please upload a valid CSV file.';
+    header('Location: index.php?message=' . urlencode($error_message));
     exit();
 }
 
