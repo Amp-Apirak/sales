@@ -1,0 +1,24 @@
+service_category,category,sub_category
+Offsite Work,Installation/Deployment,Go-live support (on-site)
+Offsite Work,Maintenance,Preventive maintenance (scheduled)
+Offsite Work,Maintenance,Corrective maintenance (break-fix)
+Offsite Work,Survey,Pre-sale/technical site survey
+Offsite Work,Emergency,Urgent incident on-site (P1)
+Offsite Work,VIP Support,Executive/VIP on-site assistance
+Offsite Work,Standby,On-call standby on customer site
+Offsite Work,Handover,On-site handover / acceptance (SAT)
+Offsite Work,Logistics,Travel arrangement / hotel / allowance
+Offsite Work,Safety,Toolbox meeting / Work permit / PPE check
+Offsite Work,Documentation,Field service report / sign-off
+Offsite Work,Expense,Per diem / mileage claim
+Training,End-User Training,Application usage (basic/advance)
+Training,Administrator Training,System admin / operations
+Training,DevOps Training,CI/CD & Git workflow
+Training,Security Awareness,Phishing drill / policy
+Training,Onboarding,New hire IT orientation
+Training,Train-the-Trainer,Enable internal champions
+Training,Curriculum,Course design / outline / schedule
+Training,Lab,Hands-on lab / environment setup
+Training,Assessment,Pre-test / post-test / quiz
+Training,Certificate,Certificate issuance / record
+Training,Feedback,Course evaluation / improvement
