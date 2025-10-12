@@ -3,7 +3,7 @@ session_start();
 require_once __DIR__ . '/../../../config/condb.php';
 require_once __DIR__ . '/../../../config/validation.php';
 
-// 1. Security Checks
+// 1. Security and Initial Checks
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php?message=' . urlencode('error:Invalid request method.'));
     exit();
@@ -20,12 +20,32 @@ if (!isset($_POST['csrf_token']) || !validateCSRFToken($_POST['csrf_token'])) {
 }
 
 if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-    header('Location: index.php?message=' . urlencode('error:File upload error.'));
+    $upload_errors = [
+        UPLOAD_ERR_INI_SIZE   => "The uploaded file exceeds the upload_max_filesize directive in php.ini.",
+        UPLOAD_ERR_FORM_SIZE  => "The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form.",
+        UPLOAD_ERR_PARTIAL    => "The uploaded file was only partially uploaded.",
+        UPLOAD_ERR_NO_FILE    => "No file was uploaded.",
+        UPLOAD_ERR_NO_TMP_DIR => "Missing a temporary folder.",
+        UPLOAD_ERR_CANT_WRITE => "Failed to write file to disk.",
+        UPLOAD_ERR_EXTENSION  => "A PHP extension stopped the file upload.",
+    ];
+    $error_message = $upload_errors[$_FILES['file']['error']] ?? "Unknown file upload error.";
+    header('Location: index.php?message=' . urlencode('error:' . $error_message));
     exit();
 }
 
+// 2. MIME Type and File Validation
 $file = $_FILES['file'];
-$allowed_mime_types = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
+$allowed_mime_types = [
+    'text/csv',
+    'application/vnd.ms-excel',
+    'text/plain',
+    'application/csv',
+    'text/x-csv',
+    'application/x-csv',
+    'text/comma-separated-values',
+    'application/octet-stream' // Generic fallback for different system configurations
+];
 $file_mime_type = mime_content_type($file['tmp_name']);
 
 if (!in_array($file_mime_type, $allowed_mime_types)) {
@@ -34,17 +54,18 @@ if (!in_array($file_mime_type, $allowed_mime_types)) {
     exit();
 }
 
-// 2. Process CSV File
+// 3. Process CSV File with UTF-8 support
+setlocale(LC_ALL, 'en_US.UTF-8'); // Set locale for proper UTF-8 handling
+
 $handle = fopen($file['tmp_name'], 'r');
 if ($handle === FALSE) {
-    header('Location: index.php?message=' . urlencode('error:Could not open the file.'));
+    header('Location: index.php?message=' . urlencode('error:Could not open the uploaded file.'));
     exit();
 }
 
 $inserted_count = 0;
 $skipped_count = 0;
 $error_count = 0;
-$row_number = 0;
 
 // Skip header row
 fgetcsv($handle, 1000, ",");
@@ -56,15 +77,15 @@ try {
     $insert_stmt = $condb->prepare("INSERT INTO category (id, service_category, category, sub_category, created_by) VALUES (UUID(), ?, ?, ?, ?)");
 
     while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-        $row_number++;
-        if (count($data) < 2) { // Must have at least service_category and category
+        if (count($data) < 2) {
             $error_count++;
             continue;
         }
 
-        $service_category = trim($data[0]);
-        $category = trim($data[1]);
-        $sub_category = isset($data[2]) && trim($data[2]) !== '' ? trim($data[2]) : null;
+        // Convert each field to UTF-8
+        $service_category = mb_convert_encoding(trim($data[0]), 'UTF-8', 'auto');
+        $category = mb_convert_encoding(trim($data[1]), 'UTF-8', 'auto');
+        $sub_category = isset($data[2]) && trim($data[2]) !== '' ? mb_convert_encoding(trim($data[2]), 'UTF-8', 'auto') : null;
 
         if (empty($service_category) || empty($category)) {
             $error_count++;
@@ -93,7 +114,7 @@ try {
 
 fclose($handle);
 
-// 3. Redirect with Feedback
+// 4. Redirect with Feedback
 header('Location: index.php?message=' . urlencode($message));
 exit();
 ?>
