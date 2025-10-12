@@ -46,7 +46,7 @@ $query_supervisor = $condb->query($sql_supervisor);
 
 // สร้าง SQL Query โดยพิจารณาจากการค้นหา
 $sql_employees = "SELECT e.id, e.first_name_th, e.last_name_th, e.first_name_en, e.last_name_en, 
-                  e.nickname_th, e.nickname_en, e.position, t.team_name, 
+                  e.nickname_th, e.nickname_en, e.position, t.team_name, e.profile_image,
                   u.first_name as supervisor_first_name, u.last_name as supervisor_last_name,
                   e.phone, e.personal_email, e.company_email, e.created_at
                   FROM employees e
@@ -75,7 +75,7 @@ $stmt = $condb->prepare($sql_employees);
 
 // ทำการ bind ค่าต่างๆ
 if (!empty($search)) {
-    $search_param = "%$search%";
+    $search_param = "%" . $search . "%";
     $stmt->bindParam(':search', $search_param);
 }
 if (!empty($search_team)) {
@@ -120,6 +120,14 @@ $query_employees = $stmt->fetchAll();
             font-weight: 600;
             font-size: 18px;
             color: #FF5733;
+        }
+
+        .account-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #dee2e6;
         }
     </style>
 </head>
@@ -268,7 +276,20 @@ $query_employees = $stmt->fetchAll();
                                         <tbody>
                                             <?php foreach ($query_employees as $employee) { ?>
                                                 <tr class="employee-row" style="cursor: pointer;" onclick="window.location.href='view_employees.php?id=<?php echo urlencode(encryptUserId($employee['id'])); ?>';" data-employee-id="<?php echo urlencode(encryptUserId($employee['id'])); ?>">
-                                                    <td class="text-nowrap "><?php echo htmlspecialchars($employee['first_name_th'] . ' ' . $employee['last_name_th']); ?></td>
+                                                    <td class="text-nowrap">
+                                                        <?php
+                                                        $profileImage = BASE_URL . 'assets/img/pitt.png'; // Default image
+                                                        if (!empty($employee['profile_image'])) {
+                                                            $imagePath = __DIR__ . '/../../../uploads/employee_images/' . $employee['profile_image'];
+                                                            if (file_exists($imagePath)) {
+                                                                $profileImage = BASE_URL . 'uploads/employee_images/' . htmlspecialchars($employee['profile_image']);
+                                                            }
+                                                        }
+                                                        ?>
+                                                        <img src="<?php echo $profileImage; ?>" alt="Profile" class="account-avatar mr-2"
+                                                             onerror="this.src='<?php echo BASE_URL; ?>assets/img/pitt.png';">
+                                                        <?php echo htmlspecialchars($employee['first_name_th'] . ' ' . $employee['last_name_th']); ?>
+                                                    </td>
                                                     <td class="text-nowrap "><?php echo htmlspecialchars($employee['first_name_en'] . ' ' . $employee['last_name_en']); ?></td>
                                                     <td class="text-nowrap text-center"><?php echo htmlspecialchars($employee['nickname_th']); ?></td>
                                                     <td class="text-nowrap text-center"><?php echo !empty($employee['nickname_en']) ? htmlspecialchars($employee['nickname_en']) : 'ไม่ระบุข้อมูล'; ?></td>
