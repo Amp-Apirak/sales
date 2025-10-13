@@ -297,6 +297,19 @@ $typeStyles = [
     'Change'   => ['class' => 'badge badge-pill badge-change', 'label' => 'Change'],
 ];
 
+$slaStatusStyles = [
+    'Overdue'      => ['class' => 'badge badge-pill badge-sla-overdue', 'label' => 'Overdue'],
+    'At Risk'      => ['class' => 'badge badge-pill badge-sla-warning', 'label' => 'At Risk'],
+    'Warning'      => ['class' => 'badge badge-pill badge-sla-warning', 'label' => 'Warning'],
+    'Approaching'  => ['class' => 'badge badge-pill badge-sla-warning', 'label' => 'Approaching'],
+    'Within SLA'   => ['class' => 'badge badge-pill badge-sla-ontrack', 'label' => 'Within SLA'],
+    'On Track'     => ['class' => 'badge badge-pill badge-sla-ontrack', 'label' => 'On Track'],
+    'Met'          => ['class' => 'badge badge-pill badge-sla-ontrack', 'label' => 'Met'],
+    'Completed'    => ['class' => 'badge badge-pill badge-sla-ontrack', 'label' => 'Completed'],
+    'None'         => ['class' => 'badge badge-pill badge-sla-default', 'label' => 'N/A'],
+    ''             => ['class' => 'badge badge-pill badge-sla-default', 'label' => 'N/A'],
+];
+
 $statusStyles = [
     'Draft'                 => ['class' => 'badge badge-pill badge-status-default'],
     'New'                   => ['class' => 'badge badge-pill badge-status-assigned'],
@@ -399,6 +412,31 @@ if (!function_exists('summarizeSubject')) {
                 background: rgba(40, 167, 69, 0.15);
                 color: #28a745;
                 border: 1px solid rgba(40, 167, 69, 0.25);
+            }
+
+            /* SLA Status Badges */
+            .badge-sla-ontrack {
+                background: rgba(40, 167, 69, 0.15);
+                color: #1e7e34;
+                border: 1px solid rgba(40, 167, 69, 0.3);
+            }
+
+            .badge-sla-warning {
+                background: rgba(255, 193, 7, 0.15);
+                color: #d39e00;
+                border: 1px solid rgba(255, 193, 7, 0.3);
+            }
+
+            .badge-sla-overdue {
+                background: rgba(220, 53, 69, 0.15);
+                color: #bd2130;
+                border: 1px solid rgba(220, 53, 69, 0.3);
+            }
+
+            .badge-sla-default {
+                background: rgba(108, 117, 125, 0.15);
+                color: #495057;
+                border: 1px solid rgba(108, 117, 125, 0.25);
             }
 
             /* Status Badge Colors - ITIL/ITSM Standard */
@@ -798,6 +836,7 @@ if (!function_exists('summarizeSubject')) {
                                             <tr class="text-center align-middle">
                                                 <th class="text-nowrap table-header-tooltip" title="เลข Ticket">No.</th>
                                                 <th class="text-nowrap table-header-tooltip" title="ประเภทงาน (Incident / Service / Change)">Type</th>
+                                                <th class="text-nowrap table-header-tooltip" title="สถานะ SLA">SLA Status</th>
                                                 <th class="text-nowrap table-header-tooltip" title="สถานะปัจจุบันของ Ticket">Status</th>
                                                 <th class="text-nowrap table-header-tooltip" title="โครงการที่เกี่ยวข้อง">Project</th>
                                                 <th class="text-nowrap table-header-tooltip subject-col" title="หัวข้อของ Ticket">Subject</th>
@@ -818,12 +857,20 @@ if (!function_exists('summarizeSubject')) {
                                         <tbody>
                                             <?php if (empty($tickets)): ?>
                                                 <tr>
-                                                    <td colspan="17" class="text-center">ไม่พบข้อมูล Ticket</td>
+                                                    <td colspan="18" class="text-center">ไม่พบข้อมูล Ticket</td>
                                                 </tr>
                                             <?php else: ?>
                                                 <?php foreach ($tickets as $ticket): ?>
                                                     <?php
                                                         $typeConfig = $typeStyles[$ticket['ticket_type']] ?? ['class' => 'badge badge-pill badge-secondary', 'label' => htmlspecialchars($ticket['ticket_type'])];
+                                                        $slaStatusRaw = $ticket['sla_status'] ?? '';
+                                                        if (is_string($slaStatusRaw)) {
+                                                            $slaStatusRaw = trim($slaStatusRaw);
+                                                        }
+                                                        $slaStatusKey = $slaStatusRaw === null ? '' : $slaStatusRaw;
+                                                        $slaStatusConfig = $slaStatusStyles[$slaStatusKey] ?? null;
+                                                        $slaBadgeClass = $slaStatusConfig['class'] ?? 'badge badge-pill badge-sla-default';
+                                                        $slaBadgeLabel = $slaStatusConfig['label'] ?? ($slaStatusKey === '' ? 'N/A' : $slaStatusKey);
                                                         $statusConfig = $statusStyles[$ticket['status']] ?? ['class' => 'badge badge-pill badge-status-default'];
                                                         [$subjectDisplay, $subjectFull] = summarizeSubject($ticket['subject']);
 
@@ -869,6 +916,11 @@ if (!function_exists('summarizeSubject')) {
 
 
                                                         <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $typeConfig['class']; ?>"><?php echo htmlspecialchars($typeConfig['label']); ?></span></td>
+                                                        <td class="text-nowrap text-center align-middle">
+                                                            <span class="badge badge-pill px-3 py-2 <?php echo htmlspecialchars($slaBadgeClass, ENT_QUOTES, 'UTF-8'); ?>">
+                                                                <?php echo htmlspecialchars($slaBadgeLabel, ENT_QUOTES, 'UTF-8'); ?>
+                                                            </span>
+                                                        </td>
                                                         <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $statusConfig['class']; ?>"><?php echo htmlspecialchars($ticket['status']); ?></span></td>
                                                         <td class="project-cell" data-toggle="tooltip" data-placement="top" data-html="true" title="<?php echo htmlspecialchars($projectFull, ENT_QUOTES, 'UTF-8'); ?>">
                                                             <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="text-reset">
@@ -916,6 +968,7 @@ if (!function_exists('summarizeSubject')) {
                                             <tr class="text-center align-middle">
                                                 <th>No.</th>
                                                 <th>Type</th>
+                                                <th>SLA Status</th>
                                                 <th>Status</th>
                                                 <th>Project</th>
                                                 <th>Subject</th>
@@ -972,7 +1025,7 @@ if (!function_exists('summarizeSubject')) {
                 "order": [[0, "desc"]],
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
                 "columnDefs": [
-                    { "targets": 4, "width": 520 }
+                    { "targets": 5, "width": 520 }
                 ],
                 "language": {
                     "lengthMenu": "แสดง _MENU_ รายการต่อหน้า",
