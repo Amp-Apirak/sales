@@ -1,4 +1,11 @@
 <?php
+// สลับไปมุมมอง classic (ตารางเดิม) หากมี query view=classic
+if (isset($_GET['view']) && $_GET['view'] === 'classic') {
+    include __DIR__ . '/service2.php';
+    return;
+}
+?>
+<?php
 // เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
 
@@ -404,16 +411,69 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
             }
 
             #serviceTickets {
-                table-layout: auto;
                 width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                table-layout: auto;
             }
 
-            #serviceTickets th {
+            #serviceTickets thead th {
+                background-color: #f8f9fa;
+                border-bottom: 1px solid #dee2e6;
+                border-top: 1px solid #dee2e6;
                 vertical-align: middle;
+                text-align: center;
             }
 
-            #serviceTickets td {
+            #serviceTickets thead th,
+            #serviceTickets tbody td {
+                border-right: 1px solid #dee2e6;
+            }
+
+            #serviceTickets thead th:first-child,
+            #serviceTickets tbody td:first-child {
+                border-left: 1px solid #dee2e6;
+            }
+
+            #serviceTickets tbody tr:last-child td {
+                border-bottom: 1px solid #dee2e6;
+            }
+
+            #serviceTickets th.ticket-summary-col,
+            #serviceTickets td.ticket-summary {
+                width: 45%;
+            }
+
+            #serviceTickets th.ticket-details-col,
+            #serviceTickets td.ticket-details {
+                width: 35%;
+            }
+
+            #serviceTickets th.ticket-actions-col,
+            #serviceTickets td.ticket-actions {
+                width: 20%;
+            }
+
+            #serviceTickets tbody td {
                 vertical-align: top;
+                padding: 1rem;
+                background-color: #ffffff;
+            }
+
+            #serviceTickets tbody tr:nth-child(odd) td {
+                background-color: #fdfdfd;
+            }
+
+            #serviceTickets tbody tr:nth-child(even) td {
+                background-color: #f8fafc;
+            }
+
+            #serviceTickets tbody tr:hover td {
+                background-color: #eef2f7;
+            }
+
+            #serviceTickets td.ticket-actions {
+                padding: 0;
             }
 
             .badge-incident {
@@ -680,6 +740,7 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
 
             .ticket-details {
                 min-width: 420px;
+                width: 100%;
             }
 
             .ticket-details .details-grid {
@@ -768,18 +829,25 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
             }
 
             .ticket-actions {
-                min-width: 220px;
-                width: 220px;
+                min-width: 260px;
+                width: 260px;
+                padding: 0;
+            }
+
+            .ticket-actions-inner {
                 display: flex;
                 flex-direction: column;
                 gap: 0.75rem;
+                height: 100%;
+                padding: 1rem;
+                border-left: 1px solid #edf2f7;
             }
 
-            .ticket-actions .detail-item {
+            .ticket-actions-inner .detail-item {
                 gap: 0.3rem;
             }
 
-            .ticket-actions .sla-badge .badge {
+            .ticket-actions-inner .sla-badge .badge {
                 font-size: 0.75rem;
                 padding: 0.35rem 0.6rem;
             }
@@ -817,6 +885,77 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
 
             .ticket-actions .action-buttons .btn-group {
                 width: 100%;
+            }
+
+            @media (max-width: 1200px) {
+                #serviceTickets {
+                    table-layout: auto;
+                }
+
+                #serviceTickets th.ticket-summary-col,
+                #serviceTickets td.ticket-summary,
+                #serviceTickets th.ticket-details-col,
+                #serviceTickets td.ticket-details,
+                #serviceTickets th.ticket-actions-col,
+                #serviceTickets td.ticket-actions {
+                    width: auto;
+                }
+
+                .ticket-actions {
+                    min-width: 220px;
+                    width: 220px;
+                }
+            }
+
+            @media (max-width: 992px) {
+                #serviceTickets,
+                #serviceTickets thead,
+                #serviceTickets tbody,
+                #serviceTickets tr,
+                #serviceTickets th,
+                #serviceTickets td,
+                #serviceTickets tfoot {
+                    display: block;
+                    width: 100%;
+                }
+
+                #serviceTickets thead,
+                #serviceTickets tfoot {
+                    display: none;
+                }
+
+                #serviceTickets tbody tr {
+                    margin-bottom: 1.5rem;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 0.85rem;
+                    overflow: hidden;
+                    background-color: #ffffff;
+                    box-shadow: 0 10px 25px rgba(148, 163, 184, 0.2);
+                }
+
+                #serviceTickets td {
+                    border: none;
+                    border-top: 1px solid #eef2f7;
+                    padding: 0.9rem 1.1rem;
+                }
+
+                #serviceTickets td.ticket-summary {
+                    border-top: none;
+                    padding-bottom: 1.1rem;
+                }
+
+                .ticket-summary,
+                .ticket-details,
+                .ticket-actions {
+                    width: 100% !important;
+                    min-width: 100% !important;
+                }
+
+                .ticket-actions-inner {
+                    border-left: none;
+                    border-top: 1px solid #e2e8f0;
+                    border-radius: 0 0 0.85rem 0.85rem;
+                }
             }
         </style>
 
@@ -1072,15 +1211,28 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                 </div>
                                 <!-- /.card-header -->
                                 <div class="card-body">
+                                    <div class="mb-3 d-flex flex-wrap align-items-center" style="gap:0.5rem;">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnExportCopy">Copy</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnExportCSV">CSV</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnExportExcel">Excel</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnExportPDF">PDF</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnExportPrint">Print</button>
+                                    </div>
                                     <table id="serviceTickets" class="table table-bordered table-striped table-hover">
-                                        <thead class="bg-light">
+                                        <colgroup>
+                                            <col style="width:45%">
+                                            <col style="width:35%">
+                                            <col style="width:20%">
+                                        </colgroup>
+<thead class="bg-light">
                                             <tr class="text-center align-middle">
-                                                <th class="text-nowrap table-header-tooltip" title="รายละเอียด Ticket โดยรวม">Ticket</th>
-                                                <th class="text-nowrap table-header-tooltip" title="ข้อมูลประกอบเพิ่มเติมของ Ticket">รายละเอียด</th>
-                                                <th class="text-nowrap table-header-tooltip" title="สถานะ SLA และการดำเนินการ">SLA &amp; Action</th>
+                                                <th class="text-nowrap table-header-tooltip ticket-summary-col" title="รายละเอียด Ticket โดยรวม">Ticket</th>
+                                                <th class="text-nowrap table-header-tooltip ticket-details-col" title="ข้อมูลประกอบเพิ่มเติมของ Ticket">รายละเอียด</th>
+                                                <th class="text-nowrap table-header-tooltip ticket-actions-col text-center" title="สถานะ SLA และการดำเนินการ">SLA &amp; Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            <?php $exportRows = []; ?>
                                             <?php if (empty($tickets)): ?>
                                                 <tr>
                                                     <td colspan="3" class="text-center">ไม่พบข้อมูล Ticket</td>
@@ -1099,6 +1251,10 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                         $slaBadgeLabel = $slaStatusConfig['label'] ?? ($slaStatusKey === '' ? 'N/A' : $slaStatusKey);
                                                         $statusConfig = $statusStyles[$ticket['status']] ?? ['class' => 'badge badge-pill badge-status-default'];
                                                         [$subjectDisplay, $subjectFull] = summarizeSubject($ticket['subject']);
+
+                                                        $jobOwnerName = $ticket['job_owner_name'] ?? '-';
+                                                        $reporterName = $ticket['reporter_name'] ?? '-';
+                                                        $creatorName = $ticket['creator_name'] ?? '-';
 
                                                         // คำนวณ SLA
                                                         $slaDisplay = '-';
@@ -1130,50 +1286,74 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
 
                                                         // ตัดข้อความ Watchers ที่ยาวเกิน 150 ตัวอักษรให้แสดง ... และเก็บฉบับเต็มไว้เป็น tooltip
                                                         $watcherNames = $ticket['watcher_names'] ?? '-';
+                                                        $watchersFull = $watcherNames;
                                                         $watchersDisplay = $watcherNames;
-                                                        $watchersFull = $watcherNames;
-                                                        if (mb_strlen($watcherNames, 'UTF-8') > 150) {
-                                                            $watchersDisplay = mb_substr($watcherNames, 0, 150, 'UTF-8') . '...';
-                                                        $watchersFull = $watcherNames;
-                                                    }
+                                                        if ($watchersDisplay !== '-' && mb_strlen($watchersDisplay, 'UTF-8') > 150) {
+                                                            $watchersDisplay = mb_substr($watchersDisplay, 0, 150, 'UTF-8') . '...';
+                                                        }
 
-                                                    $createdDisplay = date('Y-m-d H:i', strtotime($ticket['created_at']));
-                                                    $createdShort = date('d M Y', strtotime($ticket['created_at']));
+                                                        $createdDisplay = date('Y-m-d H:i', strtotime($ticket['created_at']));
+                                                        $createdShort = date('d M Y', strtotime($ticket['created_at']));
 
-                                                    $attachmentCount = (int)($ticket['attachment_count'] ?? 0);
-                                                    $attachmentPreviews = [];
-                                                    if (!empty($ticket['attachment_list'])) {
-                                                        $rawAttachments = explode('||', $ticket['attachment_list']);
-                                                        foreach ($rawAttachments as $rawAttachment) {
-                                                            if ($rawAttachment === '') {
-                                                                continue;
-                                                            }
-                                                            $pieces = explode('::', $rawAttachment);
-                                                            $fileName = $pieces[1] ?? '';
-                                                            $filePath = $pieces[2] ?? '';
-                                                            $mimeType = $pieces[3] ?? '';
-                                                            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                                                            $isImage = false;
-                                                            if ($mimeType !== '') {
-                                                                $isImage = (strpos($mimeType, 'image/') === 0);
-                                                            }
-                                                            if (!$isImage && $ext !== '') {
-                                                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'], true);
-                                                            }
-                                                            if ($filePath !== '') {
-                                                                $attachmentPreviews[] = [
-                                                                    'name' => $fileName,
-                                                                    'path' => $filePath,
-                                                                    'ext'  => $ext,
-                                                                    'is_image' => $isImage,
-                                                                ];
-                                                                if (count($attachmentPreviews) >= 3) {
-                                                                    break;
+                                                        $attachmentCount = (int)($ticket['attachment_count'] ?? 0);
+                                                        $attachmentRecords = [];
+                                                        if (!empty($ticket['attachment_list'])) {
+                                                            $rawAttachments = explode('||', $ticket['attachment_list']);
+                                                            foreach ($rawAttachments as $rawAttachment) {
+                                                                if ($rawAttachment === '') {
+                                                                    continue;
+                                                                }
+                                                                $pieces = explode('::', $rawAttachment);
+                                                                $fileName = $pieces[1] ?? '';
+                                                                $filePath = $pieces[2] ?? '';
+                                                                $mimeType = $pieces[3] ?? '';
+                                                                $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                                                                $isImage = false;
+                                                                if ($mimeType !== '') {
+                                                                    $isImage = (strpos($mimeType, 'image/') === 0);
+                                                                }
+                                                                if (!$isImage && $ext !== '') {
+                                                                    $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'], true);
+                                                                }
+                                                                if ($filePath !== '') {
+                                                                    $attachmentRecords[] = [
+                                                                        'name' => $fileName,
+                                                                        'path' => $filePath,
+                                                                        'ext'  => $ext,
+                                                                        'is_image' => $isImage,
+                                                                    ];
                                                                 }
                                                             }
                                                         }
-                                                    }
-
+                                                        $attachmentPreviews = array_slice($attachmentRecords, 0, 3);
+                                                        $attachmentNames = [];
+                                                        foreach ($attachmentRecords as $record) {
+                                                            if (!empty($record['name'])) {
+                                                                $attachmentNames[] = $record['name'];
+                                                            }
+                                                        }
+                                                        $attachmentsExportValue = implode(', ', $attachmentNames);
+                                                        $exportRows[] = [
+                                                            'ticket_no' => $ticket['ticket_no'] ?? '',
+                                                            'type' => $ticket['ticket_type'] ?? '',
+                                                            'status' => $ticket['status'] ?? '',
+                                                            'sla_status' => $slaStatusKey === '' ? '' : $slaStatusKey,
+                                                            'project' => ($projectName === '-' ? '' : $projectName),
+                                                            'subject' => $ticket['subject'] ?? '',
+                                                            'job_owner' => ($jobOwnerName === '-' ? '' : $jobOwnerName),
+                                                            'reporter' => ($reporterName === '-' ? '' : $reporterName),
+                                                            'created_by' => ($creatorName === '-' ? '' : $creatorName),
+                                                            'watchers' => ($watchersFull === '-' ? '' : $watchersFull),
+                                                            'sla_target' => $ticket['sla_target'] !== null ? (string)$ticket['sla_target'] : '',
+                                                            'service_category' => $ticket['service_category'] ?? '',
+                                                            'category' => $ticket['category'] ?? '',
+                                                            'sub_category' => $ticket['sub_category'] ?? '',
+                                                            'impact' => $ticket['impact'] ?? '',
+                                                            'priority' => $ticket['priority'] ?? '',
+                                                            'source' => $ticket['source'] ?? '',
+                                                            'created_at' => $createdDisplay,
+                                                            'attachments' => $attachmentsExportValue,
+                                                        ];
                                                 ?>
                                                     <tr>
                                                         <td class="ticket-summary">
@@ -1228,9 +1408,8 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Job Owner</span>
                                                                     <?php
-                                                                        $jobOwnerName = $ticket['job_owner_name'] ?? '-';
                                                                         $jobOwnerInitials = '-';
-                                                                        if (!empty($jobOwnerName) && $jobOwnerName !== '-') {
+                                                                        if ($jobOwnerName !== '-' && $jobOwnerName !== '') {
                                                                             $parts = preg_split('/\s+/', trim($jobOwnerName));
                                                                             $initials = '';
                                                                             foreach ($parts as $part) {
@@ -1254,9 +1433,8 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Reporter</span>
                                                                     <?php
-                                                                        $reporterName = $ticket['reporter_name'] ?? '-';
                                                                         $reporterInitials = '-';
-                                                                        if (!empty($reporterName) && $reporterName !== '-') {
+                                                                        if ($reporterName !== '-' && $reporterName !== '') {
                                                                             $partsReporter = preg_split('/\s+/', trim($reporterName));
                                                                             $initialsReporter = '';
                                                                             foreach ($partsReporter as $part) {
@@ -1280,9 +1458,8 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Created By</span>
                                                                     <?php
-                                                                        $creatorName = $ticket['creator_name'] ?? '-';
                                                                         $creatorInitials = '-';
-                                                                        if (!empty($creatorName) && $creatorName !== '-') {
+                                                                        if ($creatorName !== '-' && $creatorName !== '') {
                                                                             $partsCreator = preg_split('/\s+/', trim($creatorName));
                                                                             $initialsCreator = '';
                                                                             foreach ($partsCreator as $part) {
@@ -1328,37 +1505,39 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                             </div>
                                                         </td>
                                                         <td class="ticket-actions">
-                                                            <div class="detail-item">
-                                                                <span class="detail-label">SLA Target</span>
-                                                                <span class="detail-value"><?php echo $slaDisplay; ?></span>
-                                                            </div>
-                                                            <div class="detail-item sla-badge">
-                                                                <span class="detail-label">SLA Status</span>
-                                                                <span class="detail-value">
-                                                                    <span class="badge badge-pill <?php echo htmlspecialchars($slaBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($slaBadgeLabel, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                                </span>
-                                                            </div>
-                                                            <div class="metric-chips">
-                                                                <span class="metric-chip impact"><i class="fas fa-bullseye"></i><?php echo htmlspecialchars($ticket['impact'] ?? '-'); ?></span>
-                                                                <span class="metric-chip priority"><i class="fas fa-exclamation-circle"></i><?php echo htmlspecialchars($ticket['priority'] ?? '-'); ?></span>
-                                                            </div>
-                                                            <div class="detail-item">
-                                                                <span class="detail-label">Created</span>
-                                                                <span class="detail-value"><?php echo htmlspecialchars($createdDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                            </div>
-                                                            <div class="action-buttons">
-                                                                <?php
-                                                                // สิทธิ์แก้ไข: Executive, Account Management, Sale Supervisor หรือ Job Owner
-                                                                $canEdit = ($role === 'Executive' ||
-                                                                           $role === 'Account Management' ||
-                                                                           $role === 'Sale Supervisor' ||
-                                                                           $ticket['job_owner'] === $user_id);
-                                                                ?>
-                                                                <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                                                    <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
-                                                                    <?php if ($canEdit): ?>
-                                                                    <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
-                                                                    <?php endif; ?>
+                                                            <div class="ticket-actions-inner">
+                                                                <div class="detail-item">
+                                                                    <span class="detail-label">SLA Target</span>
+                                                                    <span class="detail-value"><?php echo $slaDisplay; ?></span>
+                                                                </div>
+                                                                <div class="detail-item sla-badge">
+                                                                    <span class="detail-label">SLA Status</span>
+                                                                    <span class="detail-value">
+                                                                        <span class="badge badge-pill <?php echo htmlspecialchars($slaBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($slaBadgeLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                                    </span>
+                                                                </div>
+                                                                <div class="metric-chips">
+                                                                    <span class="metric-chip impact"><i class="fas fa-bullseye"></i><?php echo htmlspecialchars($ticket['impact'] ?? '-'); ?></span>
+                                                                    <span class="metric-chip priority"><i class="fas fa-exclamation-circle"></i><?php echo htmlspecialchars($ticket['priority'] ?? '-'); ?></span>
+                                                                </div>
+                                                                <div class="detail-item">
+                                                                    <span class="detail-label">Created</span>
+                                                                    <span class="detail-value"><?php echo htmlspecialchars($createdDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                                </div>
+                                                                <div class="action-buttons">
+                                                                    <?php
+                                                                    // สิทธิ์แก้ไข: Executive, Account Management, Sale Supervisor หรือ Job Owner
+                                                                    $canEdit = ($role === 'Executive' ||
+                                                                               $role === 'Account Management' ||
+                                                                               $role === 'Sale Supervisor' ||
+                                                                               $ticket['job_owner'] === $user_id);
+                                                                    ?>
+                                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                                                        <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
+                                                                        <?php if ($canEdit): ?>
+                                                                        <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
+                                                                        <?php endif; ?>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -1368,12 +1547,37 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                         </tbody>
                                         <tfoot class="bg-light">
                                             <tr class="text-center align-middle">
-                                                <th>Ticket</th>
-                                                <th>รายละเอียด</th>
-                                                <th>SLA &amp; Action</th>
+                                                <th class="ticket-summary-col">Ticket</th>
+                                                <th class="ticket-details-col">รายละเอียด</th>
+                                                <th class="ticket-actions-col">SLA &amp; Action</th>
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    <script>
+                                        window.serviceTicketExportHeaders = <?php echo json_encode([
+                                            'Ticket No',
+                                            'Type',
+                                            'Status',
+                                            'SLA Status',
+                                            'Project',
+                                            'Subject',
+                                            'Job Owner',
+                                            'Reporter',
+                                            'Created By',
+                                            'Watchers',
+                                            'SLA Target',
+                                            'Service Category',
+                                            'Category',
+                                            'Sub Category',
+                                            'Impact',
+                                            'Priority',
+                                            'Source',
+                                            'Created At',
+                                            'Attachments'
+                                        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+                                        window.serviceTicketExportRows = <?php echo json_encode($exportRows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+                                    </script>
+
                                 </div>
                                 <!-- /.card-body -->
                             </div>
@@ -1396,6 +1600,9 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
             $('[data-toggle="tooltip"]').tooltip();
 
             var stateKey = 'DataTables_serviceTickets';
+            var headers = window.serviceTicketExportHeaders || [];
+            var rowsData = window.serviceTicketExportRows || [];
+            var fieldOrder = ['ticket_no','type','status','sla_status','project','subject','job_owner','reporter','created_by','watchers','sla_target','service_category','category','sub_category','impact','priority','source','created_at','attachments'];
 
             var table = $('#serviceTickets').DataTable({
                 "responsive": false,
@@ -1410,7 +1617,6 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                     [10, 20, 30, 50, 100, "ทั้งหมด"]
                 ],
                 "order": [[0, "desc"]],
-                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
                 "columnDefs": [
                     { "targets": [1, 2], "orderable": false }
                 ],
@@ -1434,7 +1640,7 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                 "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
                     '<"row"<"col-sm-12"tr>>' +
                     '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-                "stateSave": false,  // ปิด state save เพื่อให้ reload ข้อมูลทุกครั้ง
+                "stateSave": false,
                 "stateDuration": 0,
                 "stateSaveCallback": function (settings, data) {
                     localStorage.setItem(stateKey, JSON.stringify(data));
@@ -1453,8 +1659,140 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                 }
             });
 
-            table.buttons().container().appendTo('#serviceTickets_wrapper .col-md-6:eq(0)');
-            table.columns.adjust();
+            function getVisibleRows() {
+                if (!rowsData.length) {
+                    return [];
+                }
+                var indexes = table.rows({ search: 'applied', order: 'applied' }).indexes().toArray();
+                if (!indexes.length) {
+                    return rowsData;
+                }
+                return indexes.map(function (idx) {
+                    return rowsData[idx] || null;
+                }).filter(Boolean);
+            }
+
+            function buildMatrix() {
+                var rows = getVisibleRows();
+                return rows.map(function (row) {
+                    return fieldOrder.map(function (field) {
+                        var value = row[field];
+                        return value === null || value === undefined ? '' : String(value);
+                    });
+                });
+            }
+
+            function showInfo(message) {
+                var text = message || 'ไม่มีข้อมูลให้ส่งออก';
+                if (typeof Swal !== 'undefined' && Swal.fire) {
+                    Swal.fire({ icon: 'info', title: 'แจ้งเตือน', text: text, confirmButtonText: 'ตกลง' });
+                } else {
+                    alert(text);
+                }
+            }
+
+            function ensureData(message) {
+                if (!headers.length || !rowsData.length) {
+                    showInfo(message);
+                    return false;
+                }
+                return true;
+            }
+
+            function buildHtmlTable(matrix) {
+                var html = '<table border="1" cellspacing="0" cellpadding="4"><thead><tr>' + headers.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>';
+                matrix.forEach(function (row) {
+                    html += '<tr>' + row.map(function (cell) { return '<td>' + cell + '</td>'; }).join('') + '</tr>';
+                });
+                html += '</tbody></table>';
+                return html;
+            }
+
+            function downloadBlob(filename, blob) {
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(function () {
+                    URL.revokeObjectURL(link.href);
+                    document.body.removeChild(link);
+                }, 0);
+            }
+
+            $('#btnExportCopy').on('click', function () {
+                if (!ensureData('ไม่มีข้อมูลให้คัดลอก')) { return; }
+                var matrix = buildMatrix();
+                var lines = [headers.join('\\t')];
+                matrix.forEach(function (row) { lines.push(row.join('\\t')); });
+                var textToCopy = lines.join('\\n');
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(textToCopy).then(function () {
+                        showInfo('คัดลอกข้อมูลแล้ว');
+                    });
+                } else {
+                    var textarea = document.createElement('textarea');
+                    textarea.value = textToCopy;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        showInfo('คัดลอกข้อมูลแล้ว');
+                    } catch (err) {
+                        showInfo('ไม่สามารถคัดลอกข้อมูลได้');
+                    }
+                    document.body.removeChild(textarea);
+                }
+            });
+
+            $('#btnExportCSV').on('click', function () {
+                if (!ensureData('ไม่มีข้อมูลสำหรับ CSV')) { return; }
+                var matrix = buildMatrix();
+                var csvLines = [headers.join(',')];
+                matrix.forEach(function (row) {
+                    csvLines.push(row.map(function (value) {
+                        var needsQuotes = /[\",\\n]/.test(value);
+                        var escaped = value.replace(/\"/g, '\"\"');
+                        return needsQuotes ? '\"' + escaped + '\"' : escaped;
+                    }).join(','));
+                });
+                downloadBlob('Service_Tickets.csv', new Blob(['\\ufeff' + csvLines.join('\\n')], { type: 'text/csv;charset=utf-8;' }));
+            });
+
+            $('#btnExportExcel').on('click', function () {
+                if (!ensureData('ไม่มีข้อมูลสำหรับ Excel')) { return; }
+                var matrix = buildMatrix();
+                var html = buildHtmlTable(matrix);
+                downloadBlob('Service_Tickets.xls', new Blob(['\\ufeff' + html], { type: 'application/vnd.ms-excel' }));
+            });
+
+            $('#btnExportPDF').on('click', function () {
+                if (!ensureData('ไม่มีข้อมูลสำหรับ PDF')) { return; }
+                var matrix = buildMatrix();
+                if (window.pdfMake && window.pdfMake.createPdf) {
+                    var body = [headers].concat(matrix);
+                    var docDefinition = {
+                        pageOrientation: 'landscape',
+                        content: [{ table: { headerRows: 1, widths: headers.map(function () { return '*'; }), body: body } }],
+                        defaultStyle: { fontSize: 8 }
+                    };
+                    window.pdfMake.createPdf(docDefinition).download('Service_Tickets.pdf');
+                } else {
+                    $('#btnExportPrint').trigger('click');
+                }
+            });
+
+            $('#btnExportPrint').on('click', function () {
+                if (!ensureData('ไม่มีข้อมูลสำหรับการพิมพ์')) { return; }
+                var matrix = buildMatrix();
+                var html = '<html><head><title>Service Tickets</title><meta charset=\"UTF-8\"><style>body{font-family:Arial,sans-serif;font-size:12px;color:#333;margin:20px;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #999;padding:6px;text-align:left;vertical-align:top;}th{background:#f0f0f0;}</style></head><body>' + buildHtmlTable(matrix) + '</body></html>';
+                var w = window.open('', '');
+                w.document.write(html);
+                w.document.close();
+                w.focus();
+                setTimeout(function () { w.print(); }, 400);
+            });
+
             $(window).on('resize', function () {
                 table.columns.adjust();
             });

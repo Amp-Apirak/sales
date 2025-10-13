@@ -1,8 +1,21 @@
 <?php
+// สลับไปมุมมอง classic (ตารางเดิม) หากมี query view=classic
+if (isset($_GET['view']) && $_GET['view'] === 'classic') {
+    include __DIR__ . '/service2.php';
+    return;
+}
+?>
+<?php
 // เริ่ม session และเชื่อมต่อฐานข้อมูล
 include '../../include/Add_session.php';
 
 // ใช้ข้อมูลจริง + รองรับตัวกรองจากแบบฟอร์ม
+$viewMode = $_GET['view'] ?? 'modern';
+if ($viewMode === 'classic') {
+    include __DIR__ . '/service2.php';
+    exit;
+}
+
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'] ?? null;
@@ -348,6 +361,11 @@ if (!function_exists('summarizeSubject')) {
         return [htmlspecialchars($display, ENT_QUOTES, 'UTF-8'), htmlspecialchars($clean, ENT_QUOTES, 'UTF-8')];
     }
 }
+
+$baseQueryParams = $_GET;
+$modernViewQuery = http_build_query($baseQueryParams);
+$modernViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQuery : '');
+$classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : '');
 ?>
 
 
@@ -393,16 +411,69 @@ if (!function_exists('summarizeSubject')) {
             }
 
             #serviceTickets {
-                table-layout: auto;
                 width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                table-layout: auto;
             }
 
-            #serviceTickets th {
+            #serviceTickets thead th {
+                background-color: #f8f9fa;
+                border-bottom: 1px solid #dee2e6;
+                border-top: 1px solid #dee2e6;
                 vertical-align: middle;
+                text-align: center;
             }
 
-            #serviceTickets td {
+            #serviceTickets thead th,
+            #serviceTickets tbody td {
+                border-right: 1px solid #dee2e6;
+            }
+
+            #serviceTickets thead th:first-child,
+            #serviceTickets tbody td:first-child {
+                border-left: 1px solid #dee2e6;
+            }
+
+            #serviceTickets tbody tr:last-child td {
+                border-bottom: 1px solid #dee2e6;
+            }
+
+            #serviceTickets th.ticket-summary-col,
+            #serviceTickets td.ticket-summary {
+                width: 45%;
+            }
+
+            #serviceTickets th.ticket-details-col,
+            #serviceTickets td.ticket-details {
+                width: 35%;
+            }
+
+            #serviceTickets th.ticket-actions-col,
+            #serviceTickets td.ticket-actions {
+                width: 20%;
+            }
+
+            #serviceTickets tbody td {
                 vertical-align: top;
+                padding: 1rem;
+                background-color: #ffffff;
+            }
+
+            #serviceTickets tbody tr:nth-child(odd) td {
+                background-color: #fdfdfd;
+            }
+
+            #serviceTickets tbody tr:nth-child(even) td {
+                background-color: #f8fafc;
+            }
+
+            #serviceTickets tbody tr:hover td {
+                background-color: #eef2f7;
+            }
+
+            #serviceTickets td.ticket-actions {
+                padding: 0;
             }
 
             .badge-incident {
@@ -669,6 +740,7 @@ if (!function_exists('summarizeSubject')) {
 
             .ticket-details {
                 min-width: 420px;
+                width: 100%;
             }
 
             .ticket-details .details-grid {
@@ -757,18 +829,25 @@ if (!function_exists('summarizeSubject')) {
             }
 
             .ticket-actions {
-                min-width: 220px;
-                width: 220px;
+                min-width: 260px;
+                width: 260px;
+                padding: 0;
+            }
+
+            .ticket-actions-inner {
                 display: flex;
                 flex-direction: column;
                 gap: 0.75rem;
+                height: 100%;
+                padding: 1rem;
+                border-left: 1px solid #edf2f7;
             }
 
-            .ticket-actions .detail-item {
+            .ticket-actions-inner .detail-item {
                 gap: 0.3rem;
             }
 
-            .ticket-actions .sla-badge .badge {
+            .ticket-actions-inner .sla-badge .badge {
                 font-size: 0.75rem;
                 padding: 0.35rem 0.6rem;
             }
@@ -806,6 +885,77 @@ if (!function_exists('summarizeSubject')) {
 
             .ticket-actions .action-buttons .btn-group {
                 width: 100%;
+            }
+
+            @media (max-width: 1200px) {
+                #serviceTickets {
+                    table-layout: auto;
+                }
+
+                #serviceTickets th.ticket-summary-col,
+                #serviceTickets td.ticket-summary,
+                #serviceTickets th.ticket-details-col,
+                #serviceTickets td.ticket-details,
+                #serviceTickets th.ticket-actions-col,
+                #serviceTickets td.ticket-actions {
+                    width: auto;
+                }
+
+                .ticket-actions {
+                    min-width: 220px;
+                    width: 220px;
+                }
+            }
+
+            @media (max-width: 992px) {
+                #serviceTickets,
+                #serviceTickets thead,
+                #serviceTickets tbody,
+                #serviceTickets tr,
+                #serviceTickets th,
+                #serviceTickets td,
+                #serviceTickets tfoot {
+                    display: block;
+                    width: 100%;
+                }
+
+                #serviceTickets thead,
+                #serviceTickets tfoot {
+                    display: none;
+                }
+
+                #serviceTickets tbody tr {
+                    margin-bottom: 1.5rem;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 0.85rem;
+                    overflow: hidden;
+                    background-color: #ffffff;
+                    box-shadow: 0 10px 25px rgba(148, 163, 184, 0.2);
+                }
+
+                #serviceTickets td {
+                    border: none;
+                    border-top: 1px solid #eef2f7;
+                    padding: 0.9rem 1.1rem;
+                }
+
+                #serviceTickets td.ticket-summary {
+                    border-top: none;
+                    padding-bottom: 1.1rem;
+                }
+
+                .ticket-summary,
+                .ticket-details,
+                .ticket-actions {
+                    width: 100% !important;
+                    min-width: 100% !important;
+                }
+
+                .ticket-actions-inner {
+                    border-left: none;
+                    border-top: 1px solid #e2e8f0;
+                    border-radius: 0 0 0.85rem 0.85rem;
+                }
             }
         </style>
 
@@ -1047,21 +1197,35 @@ if (!function_exists('summarizeSubject')) {
                             <!-- Section ตารางแสดงผล -->
                             <div class="card">
                                 <div class="card-header">
-                                    <div class="container-fluid">
-                                        <h3 class="card-title">Service Ticket Overview</h3>
+                                    <div class="container-fluid d-flex align-items-center justify-content-between flex-wrap" style="gap:0.5rem;">
+                                        <h3 class="card-title mb-0">Service Ticket Overview</h3>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="<?php echo htmlspecialchars($modernViewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
+                                                <i class="fas fa-th-large mr-1"></i> มุมมองใหม่
+                                            </a>
+                                            <a href="<?php echo htmlspecialchars($classicViewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary">
+                                                <i class="fas fa-table mr-1"></i> มุมมองตาราง
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                                 <!-- /.card-header -->
                                 <div class="card-body">
                                     <table id="serviceTickets" class="table table-bordered table-striped table-hover">
-                                        <thead class="bg-light">
+                                        <colgroup>
+                                            <col style="width:45%">
+                                            <col style="width:35%">
+                                            <col style="width:20%">
+                                        </colgroup>
+<thead class="bg-light">
                                             <tr class="text-center align-middle">
-                                                <th class="text-nowrap table-header-tooltip" title="รายละเอียด Ticket โดยรวม">Ticket</th>
-                                                <th class="text-nowrap table-header-tooltip" title="ข้อมูลประกอบเพิ่มเติมของ Ticket">รายละเอียด</th>
-                                                <th class="text-nowrap table-header-tooltip" title="สถานะ SLA และการดำเนินการ">SLA &amp; Action</th>
+                                                <th class="text-nowrap table-header-tooltip ticket-summary-col" title="รายละเอียด Ticket โดยรวม">Ticket</th>
+                                                <th class="text-nowrap table-header-tooltip ticket-details-col" title="ข้อมูลประกอบเพิ่มเติมของ Ticket">รายละเอียด</th>
+                                                <th class="text-nowrap table-header-tooltip ticket-actions-col text-center" title="สถานะ SLA และการดำเนินการ">SLA &amp; Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            <?php $exportRows = []; ?>
                                             <?php if (empty($tickets)): ?>
                                                 <tr>
                                                     <td colspan="3" class="text-center">ไม่พบข้อมูล Ticket</td>
@@ -1080,6 +1244,10 @@ if (!function_exists('summarizeSubject')) {
                                                         $slaBadgeLabel = $slaStatusConfig['label'] ?? ($slaStatusKey === '' ? 'N/A' : $slaStatusKey);
                                                         $statusConfig = $statusStyles[$ticket['status']] ?? ['class' => 'badge badge-pill badge-status-default'];
                                                         [$subjectDisplay, $subjectFull] = summarizeSubject($ticket['subject']);
+
+                                                        $jobOwnerName = $ticket['job_owner_name'] ?? '-';
+                                                        $reporterName = $ticket['reporter_name'] ?? '-';
+                                                        $creatorName = $ticket['creator_name'] ?? '-';
 
                                                         // คำนวณ SLA
                                                         $slaDisplay = '-';
@@ -1111,50 +1279,74 @@ if (!function_exists('summarizeSubject')) {
 
                                                         // ตัดข้อความ Watchers ที่ยาวเกิน 150 ตัวอักษรให้แสดง ... และเก็บฉบับเต็มไว้เป็น tooltip
                                                         $watcherNames = $ticket['watcher_names'] ?? '-';
+                                                        $watchersFull = $watcherNames;
                                                         $watchersDisplay = $watcherNames;
-                                                        $watchersFull = $watcherNames;
-                                                        if (mb_strlen($watcherNames, 'UTF-8') > 150) {
-                                                            $watchersDisplay = mb_substr($watcherNames, 0, 150, 'UTF-8') . '...';
-                                                        $watchersFull = $watcherNames;
-                                                    }
+                                                        if ($watchersDisplay !== '-' && mb_strlen($watchersDisplay, 'UTF-8') > 150) {
+                                                            $watchersDisplay = mb_substr($watchersDisplay, 0, 150, 'UTF-8') . '...';
+                                                        }
 
-                                                    $createdDisplay = date('Y-m-d H:i', strtotime($ticket['created_at']));
-                                                    $createdShort = date('d M Y', strtotime($ticket['created_at']));
+                                                        $createdDisplay = date('Y-m-d H:i', strtotime($ticket['created_at']));
+                                                        $createdShort = date('d M Y', strtotime($ticket['created_at']));
 
-                                                    $attachmentCount = (int)($ticket['attachment_count'] ?? 0);
-                                                    $attachmentPreviews = [];
-                                                    if (!empty($ticket['attachment_list'])) {
-                                                        $rawAttachments = explode('||', $ticket['attachment_list']);
-                                                        foreach ($rawAttachments as $rawAttachment) {
-                                                            if ($rawAttachment === '') {
-                                                                continue;
-                                                            }
-                                                            $pieces = explode('::', $rawAttachment);
-                                                            $fileName = $pieces[1] ?? '';
-                                                            $filePath = $pieces[2] ?? '';
-                                                            $mimeType = $pieces[3] ?? '';
-                                                            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                                                            $isImage = false;
-                                                            if ($mimeType !== '') {
-                                                                $isImage = (strpos($mimeType, 'image/') === 0);
-                                                            }
-                                                            if (!$isImage && $ext !== '') {
-                                                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'], true);
-                                                            }
-                                                            if ($filePath !== '') {
-                                                                $attachmentPreviews[] = [
-                                                                    'name' => $fileName,
-                                                                    'path' => $filePath,
-                                                                    'ext'  => $ext,
-                                                                    'is_image' => $isImage,
-                                                                ];
-                                                                if (count($attachmentPreviews) >= 3) {
-                                                                    break;
+                                                        $attachmentCount = (int)($ticket['attachment_count'] ?? 0);
+                                                        $attachmentRecords = [];
+                                                        if (!empty($ticket['attachment_list'])) {
+                                                            $rawAttachments = explode('||', $ticket['attachment_list']);
+                                                            foreach ($rawAttachments as $rawAttachment) {
+                                                                if ($rawAttachment === '') {
+                                                                    continue;
+                                                                }
+                                                                $pieces = explode('::', $rawAttachment);
+                                                                $fileName = $pieces[1] ?? '';
+                                                                $filePath = $pieces[2] ?? '';
+                                                                $mimeType = $pieces[3] ?? '';
+                                                                $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                                                                $isImage = false;
+                                                                if ($mimeType !== '') {
+                                                                    $isImage = (strpos($mimeType, 'image/') === 0);
+                                                                }
+                                                                if (!$isImage && $ext !== '') {
+                                                                    $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'], true);
+                                                                }
+                                                                if ($filePath !== '') {
+                                                                    $attachmentRecords[] = [
+                                                                        'name' => $fileName,
+                                                                        'path' => $filePath,
+                                                                        'ext'  => $ext,
+                                                                        'is_image' => $isImage,
+                                                                    ];
                                                                 }
                                                             }
                                                         }
-                                                    }
-
+                                                        $attachmentPreviews = array_slice($attachmentRecords, 0, 3);
+                                                        $attachmentNames = [];
+                                                        foreach ($attachmentRecords as $record) {
+                                                            if (!empty($record['name'])) {
+                                                                $attachmentNames[] = $record['name'];
+                                                            }
+                                                        }
+                                                        $attachmentsExportValue = implode(', ', $attachmentNames);
+                                                        $exportRows[] = [
+                                                            'ticket_no' => $ticket['ticket_no'] ?? '',
+                                                            'type' => $ticket['ticket_type'] ?? '',
+                                                            'status' => $ticket['status'] ?? '',
+                                                            'sla_status' => $slaStatusKey === '' ? '' : $slaStatusKey,
+                                                            'project' => ($projectName === '-' ? '' : $projectName),
+                                                            'subject' => $ticket['subject'] ?? '',
+                                                            'job_owner' => ($jobOwnerName === '-' ? '' : $jobOwnerName),
+                                                            'reporter' => ($reporterName === '-' ? '' : $reporterName),
+                                                            'created_by' => ($creatorName === '-' ? '' : $creatorName),
+                                                            'watchers' => ($watchersFull === '-' ? '' : $watchersFull),
+                                                            'sla_target' => $ticket['sla_target'] !== null ? (string)$ticket['sla_target'] : '',
+                                                            'service_category' => $ticket['service_category'] ?? '',
+                                                            'category' => $ticket['category'] ?? '',
+                                                            'sub_category' => $ticket['sub_category'] ?? '',
+                                                            'impact' => $ticket['impact'] ?? '',
+                                                            'priority' => $ticket['priority'] ?? '',
+                                                            'source' => $ticket['source'] ?? '',
+                                                            'created_at' => $createdDisplay,
+                                                            'attachments' => $attachmentsExportValue,
+                                                        ];
                                                 ?>
                                                     <tr>
                                                         <td class="ticket-summary">
@@ -1209,9 +1401,8 @@ if (!function_exists('summarizeSubject')) {
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Job Owner</span>
                                                                     <?php
-                                                                        $jobOwnerName = $ticket['job_owner_name'] ?? '-';
                                                                         $jobOwnerInitials = '-';
-                                                                        if (!empty($jobOwnerName) && $jobOwnerName !== '-') {
+                                                                        if ($jobOwnerName !== '-' && $jobOwnerName !== '') {
                                                                             $parts = preg_split('/\s+/', trim($jobOwnerName));
                                                                             $initials = '';
                                                                             foreach ($parts as $part) {
@@ -1235,9 +1426,8 @@ if (!function_exists('summarizeSubject')) {
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Reporter</span>
                                                                     <?php
-                                                                        $reporterName = $ticket['reporter_name'] ?? '-';
                                                                         $reporterInitials = '-';
-                                                                        if (!empty($reporterName) && $reporterName !== '-') {
+                                                                        if ($reporterName !== '-' && $reporterName !== '') {
                                                                             $partsReporter = preg_split('/\s+/', trim($reporterName));
                                                                             $initialsReporter = '';
                                                                             foreach ($partsReporter as $part) {
@@ -1261,9 +1451,8 @@ if (!function_exists('summarizeSubject')) {
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Created By</span>
                                                                     <?php
-                                                                        $creatorName = $ticket['creator_name'] ?? '-';
                                                                         $creatorInitials = '-';
-                                                                        if (!empty($creatorName) && $creatorName !== '-') {
+                                                                        if ($creatorName !== '-' && $creatorName !== '') {
                                                                             $partsCreator = preg_split('/\s+/', trim($creatorName));
                                                                             $initialsCreator = '';
                                                                             foreach ($partsCreator as $part) {
@@ -1309,37 +1498,39 @@ if (!function_exists('summarizeSubject')) {
                                                             </div>
                                                         </td>
                                                         <td class="ticket-actions">
-                                                            <div class="detail-item">
-                                                                <span class="detail-label">SLA Target</span>
-                                                                <span class="detail-value"><?php echo $slaDisplay; ?></span>
-                                                            </div>
-                                                            <div class="detail-item sla-badge">
-                                                                <span class="detail-label">SLA Status</span>
-                                                                <span class="detail-value">
-                                                                    <span class="badge badge-pill <?php echo htmlspecialchars($slaBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($slaBadgeLabel, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                                </span>
-                                                            </div>
-                                                            <div class="metric-chips">
-                                                                <span class="metric-chip impact"><i class="fas fa-bullseye"></i><?php echo htmlspecialchars($ticket['impact'] ?? '-'); ?></span>
-                                                                <span class="metric-chip priority"><i class="fas fa-exclamation-circle"></i><?php echo htmlspecialchars($ticket['priority'] ?? '-'); ?></span>
-                                                            </div>
-                                                            <div class="detail-item">
-                                                                <span class="detail-label">Created</span>
-                                                                <span class="detail-value"><?php echo htmlspecialchars($createdDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                            </div>
-                                                            <div class="action-buttons">
-                                                                <?php
-                                                                // สิทธิ์แก้ไข: Executive, Account Management, Sale Supervisor หรือ Job Owner
-                                                                $canEdit = ($role === 'Executive' ||
-                                                                           $role === 'Account Management' ||
-                                                                           $role === 'Sale Supervisor' ||
-                                                                           $ticket['job_owner'] === $user_id);
-                                                                ?>
-                                                                <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                                                    <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
-                                                                    <?php if ($canEdit): ?>
-                                                                    <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
-                                                                    <?php endif; ?>
+                                                            <div class="ticket-actions-inner">
+                                                                <div class="detail-item">
+                                                                    <span class="detail-label">SLA Target</span>
+                                                                    <span class="detail-value"><?php echo $slaDisplay; ?></span>
+                                                                </div>
+                                                                <div class="detail-item sla-badge">
+                                                                    <span class="detail-label">SLA Status</span>
+                                                                    <span class="detail-value">
+                                                                        <span class="badge badge-pill <?php echo htmlspecialchars($slaBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($slaBadgeLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                                    </span>
+                                                                </div>
+                                                                <div class="metric-chips">
+                                                                    <span class="metric-chip impact"><i class="fas fa-bullseye"></i><?php echo htmlspecialchars($ticket['impact'] ?? '-'); ?></span>
+                                                                    <span class="metric-chip priority"><i class="fas fa-exclamation-circle"></i><?php echo htmlspecialchars($ticket['priority'] ?? '-'); ?></span>
+                                                                </div>
+                                                                <div class="detail-item">
+                                                                    <span class="detail-label">Created</span>
+                                                                    <span class="detail-value"><?php echo htmlspecialchars($createdDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                                </div>
+                                                                <div class="action-buttons">
+                                                                    <?php
+                                                                    // สิทธิ์แก้ไข: Executive, Account Management, Sale Supervisor หรือ Job Owner
+                                                                    $canEdit = ($role === 'Executive' ||
+                                                                               $role === 'Account Management' ||
+                                                                               $role === 'Sale Supervisor' ||
+                                                                               $ticket['job_owner'] === $user_id);
+                                                                    ?>
+                                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                                                        <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
+                                                                        <?php if ($canEdit): ?>
+                                                                        <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
+                                                                        <?php endif; ?>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -1349,9 +1540,9 @@ if (!function_exists('summarizeSubject')) {
                                         </tbody>
                                         <tfoot class="bg-light">
                                             <tr class="text-center align-middle">
-                                                <th>Ticket</th>
-                                                <th>รายละเอียด</th>
-                                                <th>SLA &amp; Action</th>
+                                                <th class="ticket-summary-col">Ticket</th>
+                                                <th class="ticket-details-col">รายละเอียด</th>
+                                                <th class="ticket-actions-col">SLA &amp; Action</th>
                                             </tr>
                                         </tfoot>
                                     </table>
