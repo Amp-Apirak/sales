@@ -816,7 +816,7 @@ $slaColors = [
 
             <div class="container-fluid">
                 <div class="row">
-                    <!-- Left Column -->
+                    <!-- Left Column: Ticket Info + Activity Log & Comments -->
                     <div class="col-lg-8">
                         <!-- Ticket Information -->
                         <div class="modern-card">
@@ -986,9 +986,90 @@ $slaColors = [
                         </div>
                         <?php endif; ?>
 
+                        <!-- Activity Log & Comments -->
+                        <div class="modern-card">
+                            <div class="card-header-modern">
+                                <h3>
+                                    <i class="fas fa-comments"></i> Activity Log & Comments
+                                    <span class="modern-badge badge-info" id="total-comments" style="margin-left: auto;">-</span>
+                                </h3>
+                            </div>
+                            <div class="card-body-modern">
+                                <div class="activity-feed" id="ticket-feed">
+                                    <div style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--gray-400);"></i>
+                                    </div>
+                                </div>
+
+                                <div class="comment-input-area">
+                                    <form id="ticketCommentForm" method="post" action="api/post_comment.php" enctype="multipart/form-data">
+                                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                                        <input type="hidden" name="ticket_id" value="<?php echo htmlspecialchars($ticket_id); ?>">
+
+                                        <textarea class="comment-textarea" id="comment_text" name="comment_text" placeholder="เขียนความคิดเห็นหรืออัปเดตงาน..." required></textarea>
+
+                                        <div id="file-preview-list" class="file-preview-list"></div>
+
+                                        <!-- Status Change and Job Owner Options -->
+                                        <?php if ($canEdit): ?>
+                                        <div class="row" style="margin-top: 0.75rem;">
+                                            <!-- Status Change -->
+                                            <div class="col-md-6">
+                                                <label style="display: block; font-weight: 600; color: var(--gray-700); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                                    <i class="fas fa-exchange-alt"></i> เปลี่ยนสถานะ
+                                                </label>
+                                                <select name="new_status" id="new_status" class="form-control" style="border: 2px solid var(--gray-200); border-radius: 8px; padding: 0.75rem; font-size: 0.875rem; background-color: #ffffff; color: #1f2937; height: 45px;">
+                                                    <option value="">-- ไม่เปลี่ยน --</option>
+                                                    <?php
+                                                    $statuses = ['New', 'On Process', 'Pending', 'Waiting for Approval', 'Scheduled', 'Containment', 'Resolved', 'Resolved Pending', 'Closed', 'Canceled'];
+                                                    foreach ($statuses as $status):
+                                                        $selected = ($status === $ticket['status']) ? 'selected' : '';
+                                                    ?>
+                                                        <option value="<?php echo htmlspecialchars($status); ?>" <?php echo $selected; ?>><?php echo htmlspecialchars($status); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+
+                                            <!-- Job Owner Change -->
+                                            <div class="col-md-6">
+                                                <label style="display: block; font-weight: 600; color: var(--gray-700); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                                    <i class="fas fa-user-tie"></i> เปลี่ยน Job Owner
+                                                </label>
+                                                <select name="new_job_owner" id="new_job_owner" class="form-control" style="border: 2px solid var(--gray-200); border-radius: 8px; padding: 0.75rem; font-size: 0.875rem; background-color: #ffffff; color: #1f2937; height: 45px;">
+                                                    <option value="">-- ไม่เปลี่ยน --</option>
+                                                    <?php
+                                                    // ดึงรายชื่อผู้ใช้ที่มีสิทธิ์เป็น Job Owner (ไม่รวม Seller)
+                                                    $userQuery = $condb->prepare("SELECT user_id, first_name, last_name, role FROM users WHERE role IN ('Executive', 'Sale Supervisor', 'Engineer', 'Account Management') ORDER BY first_name ASC");
+                                                    $userQuery->execute();
+                                                    $users = $userQuery->fetchAll(PDO::FETCH_ASSOC);
+                                                    foreach ($users as $user):
+                                                        $selected = ($user['user_id'] === $ticket['job_owner']) ? 'selected' : '';
+                                                    ?>
+                                                        <option value="<?php echo htmlspecialchars($user['user_id']); ?>" <?php echo $selected; ?>>
+                                                            <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name'] . ' (' . $user['role'] . ')'); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
+                                        <div class="comment-actions">
+                                            <label class="btn-attach mb-0">
+                                                <i class="fas fa-paperclip"></i> แนบไฟล์
+                                                <input type="file" id="ticket_files" name="attachments[]" multiple style="display:none" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt">
+                                            </label>
+                                            <button type="submit" class="btn-post-comment">
+                                                <i class="fas fa-paper-plane"></i>โพสต์ความคิดเห็น
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Right Column -->
+                    <!-- Right Column: Actions + Watchers + Attachments + Timeline -->
                     <div class="col-lg-4">
                         <!-- Actions -->
                         <div class="modern-card">
@@ -1078,97 +1159,8 @@ $slaColors = [
                                 <?php endif; ?>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Activity Log & Comments and Timeline Row -->
-                <div class="row">
-                    <!-- Left Column: Activity Log & Comments -->
-                    <div class="col-lg-8">
-                        <div class="modern-card">
-                            <div class="card-header-modern">
-                                <h3>
-                                    <i class="fas fa-comments"></i> Activity Log & Comments
-                                    <span class="modern-badge badge-info" id="total-comments" style="margin-left: auto;">-</span>
-                                </h3>
-                            </div>
-                            <div class="card-body-modern">
-                                <div class="activity-feed" id="ticket-feed">
-                                    <div style="text-align: center; padding: 2rem;">
-                                        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--gray-400);"></i>
-                                    </div>
-                                </div>
-
-                                <div class="comment-input-area">
-                                    <form id="ticketCommentForm" method="post" action="api/post_comment.php" enctype="multipart/form-data">
-                                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                                        <input type="hidden" name="ticket_id" value="<?php echo htmlspecialchars($ticket_id); ?>">
-
-                                        <textarea class="comment-textarea" id="comment_text" name="comment_text" placeholder="เขียนความคิดเห็นหรืออัปเดตงาน..." required></textarea>
-
-                                        <div id="file-preview-list" class="file-preview-list"></div>
-
-                                        <!-- Status Change and Job Owner Options -->
-                                        <?php if ($canEdit): ?>
-                                        <div class="row" style="margin-top: 0.75rem;">
-                                            <!-- Status Change -->
-                                            <div class="col-md-6">
-                                                <label style="display: block; font-weight: 600; color: var(--gray-700); font-size: 0.875rem; margin-bottom: 0.5rem;">
-                                                    <i class="fas fa-exchange-alt"></i> เปลี่ยนสถานะ
-                                                </label>
-                                                <select name="new_status" id="new_status" class="form-control" style="border: 2px solid var(--gray-200); border-radius: 8px; padding: 0.75rem; font-size: 0.875rem; background-color: #ffffff; color: #1f2937; height: 45px;">
-                                                    <option value="">-- ไม่เปลี่ยน --</option>
-                                                    <?php
-                                                    $statuses = ['New', 'On Process', 'Pending', 'Waiting for Approval', 'Scheduled', 'Containment', 'Resolved', 'Resolved Pending', 'Closed', 'Canceled'];
-                                                    foreach ($statuses as $status):
-                                                        $selected = ($status === $ticket['status']) ? 'selected' : '';
-                                                    ?>
-                                                        <option value="<?php echo htmlspecialchars($status); ?>" <?php echo $selected; ?>><?php echo htmlspecialchars($status); ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
-
-                                            <!-- Job Owner Change -->
-                                            <div class="col-md-6">
-                                                <label style="display: block; font-weight: 600; color: var(--gray-700); font-size: 0.875rem; margin-bottom: 0.5rem;">
-                                                    <i class="fas fa-user-tie"></i> เปลี่ยน Job Owner
-                                                </label>
-                                                <select name="new_job_owner" id="new_job_owner" class="form-control" style="border: 2px solid var(--gray-200); border-radius: 8px; padding: 0.75rem; font-size: 0.875rem; background-color: #ffffff; color: #1f2937; height: 45px;">
-                                                    <option value="">-- ไม่เปลี่ยน --</option>
-                                                    <?php
-                                                    // ดึงรายชื่อผู้ใช้ที่มีสิทธิ์เป็น Job Owner (ไม่รวม Seller)
-                                                    $userQuery = $condb->prepare("SELECT user_id, first_name, last_name, role FROM users WHERE role IN ('Executive', 'Sale Supervisor', 'Engineer', 'Account Management') ORDER BY first_name ASC");
-                                                    $userQuery->execute();
-                                                    $users = $userQuery->fetchAll(PDO::FETCH_ASSOC);
-                                                    foreach ($users as $user):
-                                                        $selected = ($user['user_id'] === $ticket['job_owner']) ? 'selected' : '';
-                                                    ?>
-                                                        <option value="<?php echo htmlspecialchars($user['user_id']); ?>" <?php echo $selected; ?>>
-                                                            <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name'] . ' (' . $user['role'] . ')'); ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <?php endif; ?>
-
-                                        <div class="comment-actions">
-                                            <label class="btn-attach mb-0">
-                                                <i class="fas fa-paperclip"></i> แนบไฟล์
-                                                <input type="file" id="ticket_files" name="attachments[]" multiple style="display:none" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt">
-                                            </label>
-                                            <button type="submit" class="btn-post-comment">
-                                                <i class="fas fa-paper-plane"></i>โพสต์ความคิดเห็น
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Timeline -->
-                    <div class="col-lg-4">
+                        <!-- Timeline -->
                         <div class="modern-card">
                             <div class="card-header-modern">
                                 <h3><i class="fas fa-history"></i> Timeline</h3>
