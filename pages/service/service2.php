@@ -348,12 +348,9 @@ if (!function_exists('summarizeSubject')) {
 }
 
 $baseQueryParams = $_GET;
-unset($baseQueryParams['view']);
 $modernViewQuery = http_build_query($baseQueryParams);
 $modernViewUrl = 'service.php' . ($modernViewQuery ? '?' . $modernViewQuery : '');
-$classicQueryParams = $baseQueryParams;
-$classicQueryParams['view'] = 'classic';
-$classicViewUrl = 'service.php?' . http_build_query($classicQueryParams);
+$classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQuery : '');
 ?>
 
 
