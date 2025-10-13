@@ -529,7 +529,7 @@ $slaColors = [
             border-radius: 8px;
             padding: 0.75rem;
             font-size: 0.875rem;
-            min-height: 100px;
+            min-height: 150px;
             resize: vertical;
             font-family: inherit;
         }
@@ -758,6 +758,29 @@ $slaColors = [
         .swal-image-full {
             max-height: 80vh;
             object-fit: contain;
+        }
+
+        /* Dropdown/Select Styling - High Contrast */
+        select.form-control,
+        .form-control {
+            background-color: #ffffff !important;
+            color: #111827 !important;
+            font-weight: 500 !important;
+        }
+
+        select.form-control option,
+        .form-control option {
+            background-color: #ffffff !important;
+            color: #111827 !important;
+            padding: 8px !important;
+        }
+
+        select.form-control:focus,
+        .form-control:focus {
+            background-color: #ffffff !important;
+            color: #111827 !important;
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
         }
     </style>
 </head>
@@ -1085,6 +1108,50 @@ $slaColors = [
 
                                         <div id="file-preview-list" class="file-preview-list"></div>
 
+                                        <!-- Status Change and Job Owner Options -->
+                                        <?php if ($canEdit): ?>
+                                        <div class="row" style="margin-top: 0.75rem;">
+                                            <!-- Status Change -->
+                                            <div class="col-md-6">
+                                                <label style="display: block; font-weight: 600; color: var(--gray-700); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                                    <i class="fas fa-exchange-alt"></i> เปลี่ยนสถานะ
+                                                </label>
+                                                <select name="new_status" id="new_status" class="form-control" style="border: 2px solid var(--gray-200); border-radius: 8px; padding: 0.75rem; font-size: 0.875rem; background-color: #ffffff; color: #1f2937; height: 45px;">
+                                                    <option value="">-- ไม่เปลี่ยน --</option>
+                                                    <?php
+                                                    $statuses = ['New', 'On Process', 'Pending', 'Waiting for Approval', 'Scheduled', 'Containment', 'Resolved', 'Resolved Pending', 'Closed', 'Canceled'];
+                                                    foreach ($statuses as $status):
+                                                        $selected = ($status === $ticket['status']) ? 'selected' : '';
+                                                    ?>
+                                                        <option value="<?php echo htmlspecialchars($status); ?>" <?php echo $selected; ?>><?php echo htmlspecialchars($status); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+
+                                            <!-- Job Owner Change -->
+                                            <div class="col-md-6">
+                                                <label style="display: block; font-weight: 600; color: var(--gray-700); font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                                    <i class="fas fa-user-tie"></i> เปลี่ยน Job Owner
+                                                </label>
+                                                <select name="new_job_owner" id="new_job_owner" class="form-control" style="border: 2px solid var(--gray-200); border-radius: 8px; padding: 0.75rem; font-size: 0.875rem; background-color: #ffffff; color: #1f2937; height: 45px;">
+                                                    <option value="">-- ไม่เปลี่ยน --</option>
+                                                    <?php
+                                                    // ดึงรายชื่อผู้ใช้ที่มีสิทธิ์เป็น Job Owner (ไม่รวม Seller)
+                                                    $userQuery = $condb->prepare("SELECT user_id, first_name, last_name, role FROM users WHERE role IN ('Executive', 'Sale Supervisor', 'Engineer', 'Account Management') ORDER BY first_name ASC");
+                                                    $userQuery->execute();
+                                                    $users = $userQuery->fetchAll(PDO::FETCH_ASSOC);
+                                                    foreach ($users as $user):
+                                                        $selected = ($user['user_id'] === $ticket['job_owner']) ? 'selected' : '';
+                                                    ?>
+                                                        <option value="<?php echo htmlspecialchars($user['user_id']); ?>" <?php echo $selected; ?>>
+                                                            <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name'] . ' (' . $user['role'] . ')'); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
                                         <div class="comment-actions">
                                             <label class="btn-attach mb-0">
                                                 <i class="fas fa-paperclip"></i> แนบไฟล์
@@ -1203,6 +1270,8 @@ $slaColors = [
 
         const ticketId = '<?php echo $ticket_id; ?>';
         const csrfToken = '<?php echo $_SESSION['csrf_token']; ?>';
+        const originalStatus = '<?php echo htmlspecialchars($ticket['status']); ?>';
+        const originalJobOwner = '<?php echo htmlspecialchars($ticket['job_owner']); ?>';
 
         $(document).ready(function(){
             loadTicketFeed();
@@ -1246,6 +1315,14 @@ $slaColors = [
             e.preventDefault();
             const fd = new FormData(this);
             const btn = $(this).find('button[type="submit"]');
+
+            // Check if status or job owner actually changed from original values
+            const selectedStatus = $('#new_status').val();
+            const selectedJobOwner = $('#new_job_owner').val();
+            const statusChanged = selectedStatus !== '' && selectedStatus !== originalStatus;
+            const jobOwnerChanged = selectedJobOwner !== '' && selectedJobOwner !== originalJobOwner;
+            const hasChanges = statusChanged || jobOwnerChanged;
+
             btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>กำลังโพสต์...');
 
             $.ajax({
@@ -1259,13 +1336,21 @@ $slaColors = [
                     if (res && res.status === 'success'){
                         $('#ticketCommentForm')[0].reset();
                         $('#file-preview-list').empty();
-                        loadTicketFeed();
+
                         Swal.fire({
                             icon:'success',
                             title:'สำเร็จ!',
-                            text:'โพสต์ความคิดเห็นแล้ว',
-                            timer:1500,
-                            showConfirmButton:false
+                            text: res.message || 'โพสต์ความคิดเห็นแล้ว',
+                            timer: hasChanges ? 2500 : 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            if (res.status_changed || res.job_owner_changed) {
+                                // Reload page to show updated status/owner
+                                location.reload();
+                            } else {
+                                // Just reload feed
+                                loadTicketFeed();
+                            }
                         });
                     } else {
                         Swal.fire({
@@ -1274,6 +1359,7 @@ $slaColors = [
                             text: (res && res.message) || 'ไม่สามารถโพสต์ได้',
                             confirmButtonColor: '#f56565'
                         });
+                        btn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i>โพสต์ความคิดเห็น');
                     }
                 },
                 error: function(){
@@ -1283,8 +1369,6 @@ $slaColors = [
                         text:'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้',
                         confirmButtonColor: '#f56565'
                     });
-                },
-                complete: function(){
                     btn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i>โพสต์ความคิดเห็น');
                 }
             });

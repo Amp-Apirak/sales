@@ -200,6 +200,125 @@ try {
 
     $condb->beginTransaction();
 
+    // Get current ticket info
+    $ticketQuery = $condb->prepare("SELECT status, job_owner FROM service_tickets WHERE ticket_id = ?");
+    $ticketQuery->execute([$ticket_id]);
+    $ticketInfo = $ticketQuery->fetch(PDO::FETCH_ASSOC);
+
+    if (!$ticketInfo) {
+        throw new Exception('ไม่พบข้อมูล Ticket');
+    }
+
+    // Check if status change is requested
+    $new_status = trim($_POST['new_status'] ?? '');
+    $statusChanged = false;
+    $old_status = $ticketInfo['status'];
+
+    // Only process if new_status is not empty AND different from current status
+    if (!empty($new_status) && $new_status !== $old_status) {
+        // Check if user has permission to change status
+        $canEdit = ($role === 'Executive' || $role === 'Account Management' || $role === 'Sale Supervisor' || $isJobOwner);
+
+        if ($canEdit) {
+            // Update ticket status
+            $updateStatus = $condb->prepare("UPDATE service_tickets SET status = ?, updated_at = NOW() WHERE ticket_id = ?");
+            $updateStatus->execute([$new_status, $ticket_id]);
+
+            // Log status change in history
+            $history_id = uuidv4();
+            $logStatus = $condb->prepare("INSERT INTO service_ticket_history (history_id, ticket_id, field_name, old_value, new_value, changed_by, changed_at)
+                                          VALUES (?, ?, 'status', ?, ?, ?, NOW())");
+            $logStatus->execute([$history_id, $ticket_id, $old_status, $new_status, $user_id]);
+
+            // Get user name for timeline
+            $userNameQuery = $condb->prepare("SELECT CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE user_id = ?");
+            $userNameQuery->execute([$user_id]);
+            $userName = $userNameQuery->fetchColumn() ?: 'System';
+
+            // Get next order for timeline
+            $orderQuery = $condb->prepare("SELECT COALESCE(MAX(`order`), 0) + 1 as next_order FROM service_ticket_timeline WHERE ticket_id = ?");
+            $orderQuery->execute([$ticket_id]);
+            $nextOrder = $orderQuery->fetchColumn();
+
+            // Add to timeline
+            $timeline_id = uuidv4();
+            $timelineInsert = $condb->prepare("INSERT INTO service_ticket_timeline (timeline_id, ticket_id, `order`, actor, action, detail, created_at)
+                                               VALUES (?, ?, ?, ?, ?, ?, NOW())");
+            $timelineInsert->execute([
+                $timeline_id,
+                $ticket_id,
+                $nextOrder,
+                $userName,
+                'เปลี่ยนสถานะ Ticket',
+                "จาก \"{$old_status}\" เป็น \"{$new_status}\""
+            ]);
+
+            $statusChanged = true;
+        }
+    }
+
+    // Check if Job Owner change is requested
+    $new_job_owner = trim($_POST['new_job_owner'] ?? '');
+    $jobOwnerChanged = false;
+    $old_job_owner = $ticketInfo['job_owner'];
+    $old_job_owner_name = '';
+    $new_job_owner_name = '';
+
+    // Only process if new_job_owner is not empty AND different from current job owner
+    if (!empty($new_job_owner) && $new_job_owner !== $old_job_owner) {
+        // Check if user has permission to change job owner
+        $canEdit = ($role === 'Executive' || $role === 'Account Management' || $role === 'Sale Supervisor' || $isJobOwner);
+
+        if ($canEdit) {
+            // Get old and new owner names
+            $ownerQuery = $condb->prepare("SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE user_id IN (?, ?)");
+            $ownerQuery->execute([$old_job_owner, $new_job_owner]);
+            $owners = $ownerQuery->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($owners as $owner) {
+                if ($owner['user_id'] === $old_job_owner) {
+                    $old_job_owner_name = $owner['full_name'];
+                } elseif ($owner['user_id'] === $new_job_owner) {
+                    $new_job_owner_name = $owner['full_name'];
+                }
+            }
+
+            // Update ticket job owner
+            $updateOwner = $condb->prepare("UPDATE service_tickets SET job_owner = ?, updated_at = NOW() WHERE ticket_id = ?");
+            $updateOwner->execute([$new_job_owner, $ticket_id]);
+
+            // Log job owner change in history
+            $history_id = uuidv4();
+            $logOwner = $condb->prepare("INSERT INTO service_ticket_history (history_id, ticket_id, field_name, old_value, new_value, changed_by, changed_at)
+                                         VALUES (?, ?, 'job_owner', ?, ?, ?, NOW())");
+            $logOwner->execute([$history_id, $ticket_id, $old_job_owner_name, $new_job_owner_name, $user_id]);
+
+            // Get user name for timeline (person who made the change)
+            $userNameQuery = $condb->prepare("SELECT CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE user_id = ?");
+            $userNameQuery->execute([$user_id]);
+            $userName = $userNameQuery->fetchColumn() ?: 'System';
+
+            // Get next order for timeline
+            $orderQuery = $condb->prepare("SELECT COALESCE(MAX(`order`), 0) + 1 as next_order FROM service_ticket_timeline WHERE ticket_id = ?");
+            $orderQuery->execute([$ticket_id]);
+            $nextOrder = $orderQuery->fetchColumn();
+
+            // Add to timeline
+            $timeline_id = uuidv4();
+            $timelineInsert = $condb->prepare("INSERT INTO service_ticket_timeline (timeline_id, ticket_id, `order`, actor, action, detail, created_at)
+                                               VALUES (?, ?, ?, ?, ?, ?, NOW())");
+            $timelineInsert->execute([
+                $timeline_id,
+                $ticket_id,
+                $nextOrder,
+                $userName,
+                'เปลี่ยน Job Owner',
+                "จาก \"{$old_job_owner_name}\" เป็น \"{$new_job_owner_name}\""
+            ]);
+
+            $jobOwnerChanged = true;
+        }
+    }
 
     // Insert comment
     $comment_id = uuidv4();
@@ -248,10 +367,27 @@ try {
 
     $condb->commit();
 
-    echo json_encode(['status'=>'success','message'=>'
+    // Build success message
+    $message = 'โพสต์ความคิดเห็นเรียบร้อยแล้ว';
+    if ($statusChanged) {
+        $message .= ' และเปลี่ยนสถานะจาก "' . $old_status . '" เป็น "' . $new_status . '"';
+    }
+    if ($jobOwnerChanged) {
+        $message .= ' และเปลี่ยน Job Owner จาก "' . $old_job_owner_name . '" เป็น "' . $new_job_owner_name . '"';
+    }
 
-
-','comment_id'=>$comment_id,'uploaded_files'=>$uploaded]);
+    echo json_encode([
+        'status' => 'success',
+        'message' => $message,
+        'comment_id' => $comment_id,
+        'uploaded_files' => $uploaded,
+        'status_changed' => $statusChanged,
+        'old_status' => $old_status,
+        'new_status' => $new_status,
+        'job_owner_changed' => $jobOwnerChanged,
+        'old_job_owner' => $old_job_owner_name,
+        'new_job_owner' => $new_job_owner_name
+    ]);
 } catch (Exception $e) {
     if ($condb && $condb->inTransaction()) $condb->rollBack();
     http_response_code(400);
