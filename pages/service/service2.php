@@ -3,12 +3,6 @@
 include '../../include/Add_session.php';
 
 // ใช้ข้อมูลจริง + รองรับตัวกรองจากแบบฟอร์ม
-$viewMode = $_GET['view'] ?? 'modern';
-if ($viewMode === 'classic') {
-    include __DIR__ . '/service2.php';
-    exit;
-}
-
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'] ?? null;
@@ -26,86 +20,88 @@ if (!empty($team_id) && $team_id !== 'ALL') {
 }
 $accessibleTeamIds = array_values(array_unique($accessibleTeamIds));
 
-function buildVisibilityFilter(string $role, array $accessibleTeamIds, string $userId): array
-{
-    if ($role === 'Executive') {
-        // Executive เห็นทั้งหมด
-        return ['clause' => '1=1', 'params' => []];
-    }
+if (!function_exists('buildVisibilityFilter')) {
+    function buildVisibilityFilter(string $role, array $accessibleTeamIds, string $userId): array
+    {
+        if ($role === 'Executive') {
+            // Executive เห็นทั้งหมด
+            return ['clause' => '1=1', 'params' => []];
+        }
 
-    if ($role === 'Account Management' || $role === 'Sale Supervisor') {
-        // Account Management และ Sale Supervisor เห็นตามทีม + ของตัวเอง
+        if ($role === 'Account Management' || $role === 'Sale Supervisor') {
+            // Account Management และ Sale Supervisor เห็นตามทีม + ของตัวเอง
+            $clauses = [];
+            $params = [];
+
+            // เห็น Ticket ที่ Job owner อยู่ในทีม
+            if (!empty($accessibleTeamIds)) {
+                $teamPlaceholders = [];
+                foreach ($accessibleTeamIds as $idx => $tid) {
+                    $placeholder = ':vis_team_sup_' . $idx;
+                    $teamPlaceholders[] = $placeholder;
+                    $params[$placeholder] = $tid;
+                }
+                $clauses[] = 'st.job_owner IN (SELECT ut_scope.user_id FROM user_teams ut_scope WHERE ut_scope.team_id IN (' . implode(',', $teamPlaceholders) . '))';
+            }
+
+            // เห็น Ticket ที่ตนเองเป็น Reporter
+            $clauses[] = 'st.reporter = :vis_sup_reporter';
+            $params[':vis_sup_reporter'] = $userId;
+
+            // เห็น Ticket ที่ตนเองเป็น Watcher
+            $clauses[] = 'st.ticket_id IN (SELECT watcher.ticket_id FROM service_ticket_watchers watcher WHERE watcher.user_id = :vis_sup_watcher)';
+            $params[':vis_sup_watcher'] = $userId;
+
+            // เห็น Ticket ที่ตนเองเป็นผู้สร้าง (Created by)
+            $clauses[] = 'st.created_by = :vis_sup_created';
+            $params[':vis_sup_created'] = $userId;
+
+            if (empty($clauses)) {
+                return ['clause' => '1=1', 'params' => []];
+            }
+
+            return [
+                'clause' => '(' . implode(' OR ', $clauses) . ')',
+                'params' => $params
+            ];
+        }
+
+        // สำหรับ Seller และ Engineer - เห็นเฉพาะของตนเอง
         $clauses = [];
         $params = [];
 
-        // เห็น Ticket ที่ Job owner อยู่ในทีม
+        // เพิ่มเงื่อนไขสำหรับทีม (ถ้ามี) - ใช้สำหรับกรณีที่เป็นสมาชิกทีม
         if (!empty($accessibleTeamIds)) {
             $teamPlaceholders = [];
             foreach ($accessibleTeamIds as $idx => $tid) {
-                $placeholder = ':vis_team_sup_' . $idx;
+                $placeholder = ':vis_team_' . $idx;
                 $teamPlaceholders[] = $placeholder;
                 $params[$placeholder] = $tid;
             }
             $clauses[] = 'st.job_owner IN (SELECT ut_scope.user_id FROM user_teams ut_scope WHERE ut_scope.team_id IN (' . implode(',', $teamPlaceholders) . '))';
         }
 
-        // เห็น Ticket ที่ตนเองเป็น Reporter
-        $clauses[] = 'st.reporter = :vis_sup_reporter';
-        $params[':vis_sup_reporter'] = $userId;
+        // เงื่อนไขที่ 1: ตนเองเป็น Job owner (ผู้รับผิดชอบ)
+        $clauses[] = 'st.job_owner = :vis_self';
+        $params[':vis_self'] = $userId;
 
-        // เห็น Ticket ที่ตนเองเป็น Watcher
-        $clauses[] = 'st.ticket_id IN (SELECT watcher.ticket_id FROM service_ticket_watchers watcher WHERE watcher.user_id = :vis_sup_watcher)';
-        $params[':vis_sup_watcher'] = $userId;
+        // เงื่อนไขที่ 2: ตนเองเป็น Watcher (ผู้ติดตาม)
+        $clauses[] = 'st.ticket_id IN (SELECT watcher.ticket_id FROM service_ticket_watchers watcher WHERE watcher.user_id = :vis_watcher)';
+        $params[':vis_watcher'] = $userId;
 
-        // เห็น Ticket ที่ตนเองเป็นผู้สร้าง (Created by)
-        $clauses[] = 'st.created_by = :vis_sup_created';
-        $params[':vis_sup_created'] = $userId;
+        // เงื่อนไขที่ 3: ตนเองเป็น Reporter (ผู้รายงาน)
+        $clauses[] = 'st.reporter = :vis_reporter';
+        $params[':vis_reporter'] = $userId;
 
-        if (empty($clauses)) {
-            return ['clause' => '1=1', 'params' => []];
-        }
+        // เงื่อนไขที่ 4: ตนเองเป็นผู้สร้าง (Created by) - ไม่ว่าจะมอบหมายให้ใครเป็น Job owner
+        $clauses[] = 'st.created_by = :vis_created_by';
+        $params[':vis_created_by'] = $userId;
 
         return [
-            'clause' => '(' . implode(' OR ', $clauses) . ')',
-            'params' => $params
+            'clause' => '(' . implode(' OR ', array_unique($clauses)) . ')',
+            'params' => $params,
         ];
     }
-
-    // สำหรับ Seller และ Engineer - เห็นเฉพาะของตนเอง
-    $clauses = [];
-    $params = [];
-
-    // เพิ่มเงื่อนไขสำหรับทีม (ถ้ามี) - ใช้สำหรับกรณีที่เป็นสมาชิกทีม
-    if (!empty($accessibleTeamIds)) {
-        $teamPlaceholders = [];
-        foreach ($accessibleTeamIds as $idx => $tid) {
-            $placeholder = ':vis_team_' . $idx;
-            $teamPlaceholders[] = $placeholder;
-            $params[$placeholder] = $tid;
-        }
-        $clauses[] = 'st.job_owner IN (SELECT ut_scope.user_id FROM user_teams ut_scope WHERE ut_scope.team_id IN (' . implode(',', $teamPlaceholders) . '))';
-    }
-
-    // เงื่อนไขที่ 1: ตนเองเป็น Job owner (ผู้รับผิดชอบ)
-    $clauses[] = 'st.job_owner = :vis_self';
-    $params[':vis_self'] = $userId;
-
-    // เงื่อนไขที่ 2: ตนเองเป็น Watcher (ผู้ติดตาม)
-    $clauses[] = 'st.ticket_id IN (SELECT watcher.ticket_id FROM service_ticket_watchers watcher WHERE watcher.user_id = :vis_watcher)';
-    $params[':vis_watcher'] = $userId;
-
-    // เงื่อนไขที่ 3: ตนเองเป็น Reporter (ผู้รายงาน)
-    $clauses[] = 'st.reporter = :vis_reporter';
-    $params[':vis_reporter'] = $userId;
-
-    // เงื่อนไขที่ 4: ตนเองเป็นผู้สร้าง (Created by) - ไม่ว่าจะมอบหมายให้ใครเป็น Job owner
-    $clauses[] = 'st.created_by = :vis_created_by';
-    $params[':vis_created_by'] = $userId;
-
-    return [
-        'clause' => '(' . implode(' OR ', array_unique($clauses)) . ')',
-        'params' => $params,
-    ];
 }
 
 // รับค่าตัวกรอง (GET) และกำหนดค่าเริ่มต้น
@@ -150,15 +146,17 @@ usort($jobOwnerOptions, static function ($a, $b) {
     return strcmp($a['full_name'] ?? '', $b['full_name'] ?? '');
 });
 
-function distinctOptions(PDO $db, string $col, string $visibilityClause, array $visibilityParams)
-{
-    $sql = "SELECT DISTINCT $col AS v FROM service_tickets st WHERE " . $visibilityClause . " AND $col IS NOT NULL AND $col <> '' ORDER BY v";
-    $stmt = $db->prepare($sql);
-    foreach ($visibilityParams as $key => $value) {
-        $stmt->bindValue($key, $value);
+if (!function_exists('distinctOptions')) {
+    function distinctOptions(PDO $db, string $col, string $visibilityClause, array $visibilityParams)
+    {
+        $sql = "SELECT DISTINCT $col AS v FROM service_tickets st WHERE " . $visibilityClause . " AND $col IS NOT NULL AND $col <> '' ORDER BY v";
+        $stmt = $db->prepare($sql);
+        foreach ($visibilityParams as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
 $categoryTypeOptions = distinctOptions($condb, 'ticket_type', $visibility['clause'], $visibility['params']);
@@ -203,12 +201,7 @@ if ($searchText !== '') { $where .= " AND (st.ticket_no LIKE :q OR st.subject LI
 $sqlTickets = "SELECT st.*,
         CONCAT(u.first_name, ' ', u.last_name) as job_owner_name,
         CONCAT(r.first_name, ' ', r.last_name) as reporter_name,
-        CONCAT(c.first_name, ' ', c.last_name) as creator_name,
         p.project_name,
-        (SELECT COUNT(*) FROM service_ticket_attachments att WHERE att.ticket_id = st.ticket_id) AS attachment_count,
-        (SELECT GROUP_CONCAT(CONCAT(att.attachment_id, '::', att.file_name, '::', att.file_path, '::', att.mime_type)
-                ORDER BY att.uploaded_at DESC SEPARATOR '||')
-         FROM service_ticket_attachments att WHERE att.ticket_id = st.ticket_id) AS attachment_list,
         (SELECT GROUP_CONCAT(CONCAT(wu.first_name, ' ', wu.last_name) ORDER BY wu.first_name SEPARATOR ', ')
             FROM service_ticket_watchers w
             JOIN users wu ON w.user_id = wu.user_id
@@ -216,7 +209,6 @@ $sqlTickets = "SELECT st.*,
         FROM service_tickets st
         LEFT JOIN users u ON st.job_owner = u.user_id
         LEFT JOIN users r ON st.reporter = r.user_id
-        LEFT JOIN users c ON st.created_by = c.user_id
         LEFT JOIN projects p ON st.project_id = p.project_id" . $where . " ORDER BY st.created_at DESC LIMIT 100";
 
 $stmtTickets = $condb->prepare($sqlTickets);
@@ -358,10 +350,10 @@ if (!function_exists('summarizeSubject')) {
 $baseQueryParams = $_GET;
 unset($baseQueryParams['view']);
 $modernViewQuery = http_build_query($baseQueryParams);
-$modernViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQuery : '');
+$modernViewUrl = 'service.php' . ($modernViewQuery ? '?' . $modernViewQuery : '');
 $classicQueryParams = $baseQueryParams;
 $classicQueryParams['view'] = 'classic';
-$classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryParams);
+$classicViewUrl = 'service.php?' . http_build_query($classicQueryParams);
 ?>
 
 
@@ -411,12 +403,9 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryPar
                 width: 100%;
             }
 
-            #serviceTickets th {
-                vertical-align: middle;
-            }
-
+            #serviceTickets th,
             #serviceTickets td {
-                vertical-align: top;
+                vertical-align: middle;
             }
 
             .badge-incident {
@@ -554,272 +543,59 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryPar
                 border: 1px solid rgba(232, 62, 140, 0.3);
             }
 
-            .ticket-summary {
-                min-width: 240px;
-            }
-
-            .ticket-summary .ticket-number a {
-                font-weight: 600;
-                font-size: 1.05rem;
-                color: #007bff;
-                text-decoration: none;
-            }
-
-            .ticket-summary .ticket-number a:hover {
-                text-decoration: underline;
-            }
-
-            .ticket-summary .subject-line {
-                margin-top: 0.4rem;
-            }
-
-            .ticket-summary .subject-link {
-                display: block;
-                font-weight: 600;
-                color: #212529;
-                text-decoration: none;
-                line-height: 1.35;
-                white-space: normal;
-            }
-
-            .ticket-summary .subject-link:hover {
-                text-decoration: underline;
-            }
-
-            .ticket-summary .badge-group {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.35rem;
-                margin-top: 0.6rem;
-            }
-
-            .ticket-summary .badge-group .badge {
-                font-size: 0.75rem;
-                padding: 0.35rem 0.6rem;
-            }
-
-            .ticket-summary .meta-row {
-                margin-top: 0.55rem;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.6rem;
-                font-size: 0.82rem;
-                color: #6c757d;
-            }
-
-            .ticket-summary .meta-row span {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.25rem;
-            }
-
-            .ticket-summary .meta-row i {
-                color: #adb5bd;
-                font-size: 0.85rem;
-            }
-
-            .ticket-summary .attachment-strip {
-                margin-top: 0.55rem;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.45rem;
-            }
-
-            .ticket-summary .attachment-item {
-                position: relative;
-                width: 48px;
-                height: 48px;
-                border-radius: 12px;
-                background: rgba(0, 0, 0, 0.04);
-                overflow: hidden;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                text-decoration: none;
-                transition: transform 0.15s ease, box-shadow 0.15s ease;
-            }
-
-            .ticket-summary .attachment-item img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-
-            .ticket-summary .attachment-item.file-icon {
-                font-size: 0.75rem;
-                font-weight: 600;
-                color: #495057;
-                background: rgba(13, 110, 253, 0.08);
-                border: 1px solid rgba(13, 110, 253, 0.12);
-            }
-
-            .ticket-summary .attachment-item .ext {
+            .subject-cell {
+                width: 520px;
+                max-width: 520px;
                 display: inline-block;
-                padding: 0.2rem 0.35rem;
-                border-radius: 6px;
-                background: rgba(13, 110, 253, 0.18);
-                color: #0d6efd;
-                font-weight: 700;
-                text-transform: uppercase;
-            }
-
-            .ticket-summary .attachment-item:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
-            }
-
-            .ticket-summary .attachment-count {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 48px;
-                height: 48px;
-                border-radius: 12px;
-                background: rgba(0, 0, 0, 0.07);
-                color: #495057;
-                font-weight: 600;
-                font-size: 0.85rem;
-            }
-
-            .ticket-details {
-                min-width: 420px;
-            }
-
-            .ticket-details .details-grid {
-                display: grid;
-                gap: 0.75rem;
-                grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            }
-
-            .detail-item {
-                display: flex;
-                flex-direction: column;
-                gap: 0.2rem;
-            }
-
-            .detail-item.full-width {
-                grid-column: 1 / -1;
-            }
-
-            .detail-label {
-                font-size: 0.72rem;
-                font-weight: 600;
-                color: #6c757d;
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-            }
-
-            .detail-value {
-                font-size: 0.94rem;
-                color: #212529;
-                white-space: normal;
-                word-break: break-word;
-            }
-
-            .detail-value .chip {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.35rem;
-                font-size: 0.82rem;
-                font-weight: 600;
-                padding: 0.35rem 0.6rem;
-                border-radius: 999px;
-                background: rgba(0, 123, 255, 0.12);
-                color: #0d6efd;
-                margin-right: 0.35rem;
-            }
-
-            .detail-value .chip .avatar {
-                width: 26px;
-                height: 26px;
-                border-radius: 50%;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.7rem;
-                font-weight: 700;
-                background: rgba(13, 110, 253, 0.18);
-                color: #0d6efd;
-            }
-
-            .detail-value .chip.reporter-chip {
-                background: rgba(52, 58, 64, 0.12);
-                color: #343a40;
-            }
-
-            .detail-value .chip.reporter-chip .avatar {
-                background: rgba(52, 58, 64, 0.18);
-                color: #343a40;
-            }
-
-            .detail-value .chip.creator-chip {
-                background: rgba(111, 66, 193, 0.12);
-                color: #6f42c1;
-            }
-
-            .detail-value .chip.creator-chip .avatar {
-                background: rgba(111, 66, 193, 0.18);
-                color: #6f42c1;
-            }
-
-            .detail-value.watcher-value {
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
+                white-space: nowrap;
                 overflow: hidden;
-                max-height: 3em;
+                text-overflow: ellipsis;
+                line-height: 1.4;
             }
 
-            .ticket-actions {
-                min-width: 220px;
-                width: 220px;
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
+            #serviceTickets th.subject-col {
+                width: 520px !important;
+                max-width: 520px;
             }
 
-            .ticket-actions .detail-item {
-                gap: 0.3rem;
+            /* Project Column */
+            .project-cell {
+                max-width: 300px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
-            .ticket-actions .sla-badge .badge {
-                font-size: 0.75rem;
-                padding: 0.35rem 0.6rem;
+            .project-cell a,
+            .subject-cell a {
+                display: block;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                color: inherit;
+                text-decoration: none;
             }
 
-            .metric-chips {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.4rem;
+            .project-cell a:hover,
+            .subject-cell a:hover {
+                text-decoration: underline;
             }
 
-            .metric-chip {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.3rem;
-                font-size: 0.78rem;
-                padding: 0.3rem 0.55rem;
-                border-radius: 999px;
-                background: rgba(108, 117, 125, 0.12);
-                color: #495057;
+            .watcher-cell {
+                width: 260px;
+                max-width: 260px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
-            .metric-chip i {
-                font-size: 0.85rem;
-            }
-
-            .metric-chip.impact {
-                background: rgba(40, 167, 69, 0.12);
-                color: #1e7e34;
-            }
-
-            .metric-chip.priority {
-                background: rgba(255, 193, 7, 0.15);
-                color: #d39e00;
-            }
-
-            .ticket-actions .action-buttons .btn-group {
+            .watcher-cell .watcher-text {
+                display: block;
                 width: 100%;
+                max-width: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
         </style>
 
@@ -1064,10 +840,10 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryPar
                                     <div class="container-fluid d-flex align-items-center justify-content-between flex-wrap" style="gap:0.5rem;">
                                         <h3 class="card-title mb-0">Service Ticket Overview</h3>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="<?php echo htmlspecialchars($modernViewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
+                                            <a href="<?php echo htmlspecialchars($modernViewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary">
                                                 <i class="fas fa-th-large mr-1"></i> มุมมองใหม่
                                             </a>
-                                            <a href="<?php echo htmlspecialchars($classicViewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary">
+                                            <a href="<?php echo htmlspecialchars($classicViewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
                                                 <i class="fas fa-table mr-1"></i> มุมมองตาราง
                                             </a>
                                         </div>
@@ -1078,15 +854,30 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryPar
                                     <table id="serviceTickets" class="table table-bordered table-striped table-hover">
                                         <thead class="bg-light">
                                             <tr class="text-center align-middle">
-                                                <th class="text-nowrap table-header-tooltip" title="รายละเอียด Ticket โดยรวม">Ticket</th>
-                                                <th class="text-nowrap table-header-tooltip" title="ข้อมูลประกอบเพิ่มเติมของ Ticket">รายละเอียด</th>
-                                                <th class="text-nowrap table-header-tooltip" title="สถานะ SLA และการดำเนินการ">SLA &amp; Action</th>
+                                                <th class="text-nowrap table-header-tooltip" title="เลข Ticket">No.</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ประเภทงาน (Incident / Service / Change)">Type</th>
+                                                <th class="text-nowrap table-header-tooltip" title="สถานะ SLA">SLA Status</th>
+                                                <th class="text-nowrap table-header-tooltip" title="สถานะปัจจุบันของ Ticket">Status</th>
+                                                <th class="text-nowrap table-header-tooltip" title="โครงการที่เกี่ยวข้อง">Project</th>
+                                                <th class="text-nowrap table-header-tooltip subject-col" title="หัวข้อของ Ticket">Subject</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ผู้รับผิดชอบงาน">Job Owner</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ผู้แจ้งงาน">Reporter</th>
+                                                <th class="text-nowrap table-header-tooltip" title="รายชื่อผู้ติดตาม Ticket">Watchers</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ระยะเวลาตาม SLA">SAL</th>
+                                                <th class="text-nowrap table-header-tooltip" title="หมวดหมู่บริการหลัก">Service Category</th>
+                                                <th class="text-nowrap table-header-tooltip" title="หมวดหมู่รอง">Category</th>
+                                                <th class="text-nowrap table-header-tooltip" title="หมวดหมู่ย่อย">Sub-Category</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ผลกระทบของเหตุการณ์">Impact</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ระดับความสำคัญ">Priority</th>
+                                                <th class="text-nowrap table-header-tooltip" title="ช่องทางที่สร้าง Ticket">Source</th>
+                                                <th class="text-nowrap table-header-tooltip" title="วันที่สร้าง Ticket">Create Date</th>
+                                                <th class="text-nowrap table-header-tooltip" title="จัดการ Ticket (แก้ไข/ลบ/Assign)">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <?php if (empty($tickets)): ?>
                                                 <tr>
-                                                    <td colspan="3" class="text-center">ไม่พบข้อมูล Ticket</td>
+                                                    <td colspan="18" class="text-center">ไม่พบข้อมูล Ticket</td>
                                                 </tr>
                                             <?php else: ?>
                                                 <?php foreach ($tickets as $ticket): ?>
@@ -1125,244 +916,68 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryPar
 
                                                         }
 
-                                                        $projectSummaryText = $projectName;
-                                                        if (mb_strlen($projectSummaryText, 'UTF-8') > 40) {
-                                                            $projectSummaryText = mb_substr($projectSummaryText, 0, 40, 'UTF-8') . '...';
-                                                        }
-                                                        $projectSummary = htmlspecialchars($projectSummaryText, ENT_QUOTES, 'UTF-8');
-
                                                         // ตัดข้อความ Watchers ที่ยาวเกิน 150 ตัวอักษรให้แสดง ... และเก็บฉบับเต็มไว้เป็น tooltip
                                                         $watcherNames = $ticket['watcher_names'] ?? '-';
                                                         $watchersDisplay = $watcherNames;
                                                         $watchersFull = $watcherNames;
                                                         if (mb_strlen($watcherNames, 'UTF-8') > 150) {
                                                             $watchersDisplay = mb_substr($watcherNames, 0, 150, 'UTF-8') . '...';
-                                                        $watchersFull = $watcherNames;
-                                                    }
-
-                                                    $createdDisplay = date('Y-m-d H:i', strtotime($ticket['created_at']));
-                                                    $createdShort = date('d M Y', strtotime($ticket['created_at']));
-
-                                                    $attachmentCount = (int)($ticket['attachment_count'] ?? 0);
-                                                    $attachmentPreviews = [];
-                                                    if (!empty($ticket['attachment_list'])) {
-                                                        $rawAttachments = explode('||', $ticket['attachment_list']);
-                                                        foreach ($rawAttachments as $rawAttachment) {
-                                                            if ($rawAttachment === '') {
-                                                                continue;
-                                                            }
-                                                            $pieces = explode('::', $rawAttachment);
-                                                            $fileName = $pieces[1] ?? '';
-                                                            $filePath = $pieces[2] ?? '';
-                                                            $mimeType = $pieces[3] ?? '';
-                                                            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                                                            $isImage = false;
-                                                            if ($mimeType !== '') {
-                                                                $isImage = (strpos($mimeType, 'image/') === 0);
-                                                            }
-                                                            if (!$isImage && $ext !== '') {
-                                                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'], true);
-                                                            }
-                                                            if ($filePath !== '') {
-                                                                $attachmentPreviews[] = [
-                                                                    'name' => $fileName,
-                                                                    'path' => $filePath,
-                                                                    'ext'  => $ext,
-                                                                    'is_image' => $isImage,
-                                                                ];
-                                                                if (count($attachmentPreviews) >= 3) {
-                                                                    break;
-                                                                }
-                                                            }
+                                                            $watchersFull = $watcherNames;
                                                         }
-                                                    }
 
-                                                ?>
+                                                    ?>
                                                     <tr>
-                                                        <td class="ticket-summary">
-                                                            <div class="ticket-number">
-                                                                <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>">
-                                                                    <?php echo htmlspecialchars($ticket['ticket_no']); ?>
-                                                                </a>
-                                                            </div>
-                                                            <div class="subject-line" data-toggle="tooltip" data-placement="top" title="<?php echo $subjectFull; ?>">
-                                                                <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="subject-link">
-                                                                    <?php echo $subjectDisplay; ?>
-                                                                </a>
-                                                            </div>
-                                                            <div class="badge-group">
-                                                                <span class="<?php echo htmlspecialchars($typeConfig['class'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($typeConfig['label']); ?></span>
-                                                                <span class="<?php echo htmlspecialchars($statusConfig['class'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ticket['status']); ?></span>
-                                                            </div>
-                                                            <div class="meta-row">
-                                                                <span><i class="fas fa-layer-group"></i><?php echo $projectSummary; ?></span>
-                                                                <span><i class="far fa-clock"></i><?php echo htmlspecialchars($createdShort, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                            </div>
-                                                            <?php if ($attachmentCount > 0): ?>
-                                                            <div class="attachment-strip">
-                                                                <?php foreach ($attachmentPreviews as $preview): ?>
-                                                                    <?php
-                                                                        $fileTitle = $preview['name'] !== '' ? $preview['name'] : 'ดาวน์โหลดไฟล์';
-                                                                        $filePathSafe = htmlspecialchars($preview['path'], ENT_QUOTES, 'UTF-8');
-                                                                        $fileTitleSafe = htmlspecialchars($fileTitle, ENT_QUOTES, 'UTF-8');
-                                                                    ?>
-                                                                    <a href="<?php echo $filePathSafe; ?>" class="attachment-item<?php echo $preview['is_image'] ? '' : ' file-icon'; ?>" data-toggle="tooltip" data-placement="top" title="<?php echo $fileTitleSafe; ?>" target="_blank" rel="noopener">
-                                                                        <?php if ($preview['is_image']): ?>
-                                                                            <img src="<?php echo $filePathSafe; ?>" alt="<?php echo $fileTitleSafe; ?>">
-                                                                        <?php else: ?>
-                                                                            <span class="ext"><?php echo htmlspecialchars($preview['ext'] ?: 'file', ENT_QUOTES, 'UTF-8'); ?></span>
-                                                                        <?php endif; ?>
-                                                                    </a>
-                                                                <?php endforeach; ?>
-                                                                <?php if ($attachmentCount > count($attachmentPreviews)): ?>
-                                                                    <span class="attachment-count">+<?php echo $attachmentCount - count($attachmentPreviews); ?></span>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                            <?php endif; ?>
+                                                        <td class="text-nowrap text-center">
+                                                            <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="text-primary">
+                                                                <?php echo htmlspecialchars($ticket['ticket_no']); ?>
+                                                            </a>
                                                         </td>
-                                                        <td class="ticket-details">
-                                                            <div class="details-grid">
-                                                                <div class="detail-item">
-                                                                    <span class="detail-label">Project</span>
-                                                                    <span class="detail-value" data-toggle="tooltip" data-placement="top" data-html="true" title="<?php echo htmlspecialchars($projectFull, ENT_QUOTES, 'UTF-8'); ?>">
-                                                                        <?php echo htmlspecialchars($projectDisplay); ?>
-                                                                    </span>
-                                                                </div>
-                                                                <div class="detail-item">
-                                                                    <span class="detail-label">Job Owner</span>
-                                                                    <?php
-                                                                        $jobOwnerName = $ticket['job_owner_name'] ?? '-';
-                                                                        $jobOwnerInitials = '-';
-                                                                        if (!empty($jobOwnerName) && $jobOwnerName !== '-') {
-                                                                            $parts = preg_split('/\s+/', trim($jobOwnerName));
-                                                                            $initials = '';
-                                                                            foreach ($parts as $part) {
-                                                                                if ($part !== '') {
-                                                                                    $initials .= mb_strtoupper(mb_substr($part, 0, 1, 'UTF-8'), 'UTF-8');
-                                                                                }
-                                                                                if (mb_strlen($initials, 'UTF-8') >= 2) {
-                                                                                    break;
-                                                                                }
-                                                                            }
-                                                                            $jobOwnerInitials = $initials ?: mb_strtoupper(mb_substr($jobOwnerName, 0, 2, 'UTF-8'), 'UTF-8');
-                                                                        }
-                                                                    ?>
-                                                                    <span class="detail-value">
-                                                                        <span class="chip">
-                                                                            <span class="avatar"><?php echo htmlspecialchars($jobOwnerInitials, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                                            <?php echo htmlspecialchars($jobOwnerName, ENT_QUOTES, 'UTF-8'); ?>
-                                                                        </span>
-                                                                    </span>
-                                                                </div>
-                                                                <div class="detail-item">
-                                                                    <span class="detail-label">Reporter</span>
-                                                                    <?php
-                                                                        $reporterName = $ticket['reporter_name'] ?? '-';
-                                                                        $reporterInitials = '-';
-                                                                        if (!empty($reporterName) && $reporterName !== '-') {
-                                                                            $partsReporter = preg_split('/\s+/', trim($reporterName));
-                                                                            $initialsReporter = '';
-                                                                            foreach ($partsReporter as $part) {
-                                                                                if ($part !== '') {
-                                                                                    $initialsReporter .= mb_strtoupper(mb_substr($part, 0, 1, 'UTF-8'), 'UTF-8');
-                                                                                }
-                                                                                if (mb_strlen($initialsReporter, 'UTF-8') >= 2) {
-                                                                                    break;
-                                                                                }
-                                                                            }
-                                                                            $reporterInitials = $initialsReporter ?: mb_strtoupper(mb_substr($reporterName, 0, 2, 'UTF-8'), 'UTF-8');
-                                                                        }
-                                                                    ?>
-                                                                    <span class="detail-value">
-                                                                        <span class="chip reporter-chip">
-                                                                            <span class="avatar"><?php echo htmlspecialchars($reporterInitials, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                                            <?php echo htmlspecialchars($reporterName, ENT_QUOTES, 'UTF-8'); ?>
-                                                                        </span>
-                                                                    </span>
-                                                                </div>
-                                                                <div class="detail-item">
-                                                                    <span class="detail-label">Created By</span>
-                                                                    <?php
-                                                                        $creatorName = $ticket['creator_name'] ?? '-';
-                                                                        $creatorInitials = '-';
-                                                                        if (!empty($creatorName) && $creatorName !== '-') {
-                                                                            $partsCreator = preg_split('/\s+/', trim($creatorName));
-                                                                            $initialsCreator = '';
-                                                                            foreach ($partsCreator as $part) {
-                                                                                if ($part !== '') {
-                                                                                    $initialsCreator .= mb_strtoupper(mb_substr($part, 0, 1, 'UTF-8'), 'UTF-8');
-                                                                                }
-                                                                                if (mb_strlen($initialsCreator, 'UTF-8') >= 2) {
-                                                                                    break;
-                                                                                }
-                                                                            }
-                                                                            $creatorInitials = $initialsCreator ?: mb_strtoupper(mb_substr($creatorName, 0, 2, 'UTF-8'), 'UTF-8');
-                                                                        }
-                                                                    ?>
-                                                                    <span class="detail-value">
-                                                                        <span class="chip creator-chip">
-                                                                            <span class="avatar"><?php echo htmlspecialchars($creatorInitials, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                                            <?php echo htmlspecialchars($creatorName, ENT_QUOTES, 'UTF-8'); ?>
-                                                                        </span>
-                                                                    </span>
-                                                                </div>
-                                                                <div class="detail-item full-width">
-                                                                    <span class="detail-label">Watchers</span>
-                                                                    <span class="detail-value watcher-value" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($watchersFull, ENT_QUOTES, 'UTF-8'); ?>">
-                                                                        <?php echo htmlspecialchars($watchersDisplay, ENT_QUOTES, 'UTF-8'); ?>
-                                                                    </span>
-                                                                </div>
-                                                                <div class="detail-item">
-                                                                    <span class="detail-label">Service Category</span>
-                                                                    <span class="detail-value"><?php echo htmlspecialchars($ticket['service_category'] ?? '-'); ?></span>
-                                                                </div>
-                                                                <div class="detail-item">
-                                                                    <span class="detail-label">Category</span>
-                                                                    <span class="detail-value"><?php echo htmlspecialchars($ticket['category'] ?? '-'); ?></span>
-                                                                </div>
-                                                                <div class="detail-item">
-                                                                    <span class="detail-label">Sub-Category</span>
-                                                                    <span class="detail-value"><?php echo htmlspecialchars($ticket['sub_category'] ?? '-'); ?></span>
-                                                                </div>
-                                                                <div class="detail-item">
-                                                                    <span class="detail-label">Source</span>
-                                                                    <span class="detail-value"><?php echo htmlspecialchars($ticket['source'] ?? '-'); ?></span>
-                                                                </div>
-                                                            </div>
+
+
+
+                                                        <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $typeConfig['class']; ?>"><?php echo htmlspecialchars($typeConfig['label']); ?></span></td>
+                                                        <td class="text-nowrap text-center align-middle">
+                                                            <span class="badge badge-pill px-3 py-2 <?php echo htmlspecialchars($slaBadgeClass, ENT_QUOTES, 'UTF-8'); ?>">
+                                                                <?php echo htmlspecialchars($slaBadgeLabel, ENT_QUOTES, 'UTF-8'); ?>
+                                                            </span>
                                                         </td>
-                                                        <td class="ticket-actions">
-                                                            <div class="detail-item">
-                                                                <span class="detail-label">SLA Target</span>
-                                                                <span class="detail-value"><?php echo $slaDisplay; ?></span>
-                                                            </div>
-                                                            <div class="detail-item sla-badge">
-                                                                <span class="detail-label">SLA Status</span>
-                                                                <span class="detail-value">
-                                                                    <span class="badge badge-pill <?php echo htmlspecialchars($slaBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($slaBadgeLabel, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                                </span>
-                                                            </div>
-                                                            <div class="metric-chips">
-                                                                <span class="metric-chip impact"><i class="fas fa-bullseye"></i><?php echo htmlspecialchars($ticket['impact'] ?? '-'); ?></span>
-                                                                <span class="metric-chip priority"><i class="fas fa-exclamation-circle"></i><?php echo htmlspecialchars($ticket['priority'] ?? '-'); ?></span>
-                                                            </div>
-                                                            <div class="detail-item">
-                                                                <span class="detail-label">Created</span>
-                                                                <span class="detail-value"><?php echo htmlspecialchars($createdDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
-                                                            </div>
-                                                            <div class="action-buttons">
+                                                        <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $statusConfig['class']; ?>"><?php echo htmlspecialchars($ticket['status']); ?></span></td>
+                                                        <td class="project-cell" data-toggle="tooltip" data-placement="top" data-html="true" title="<?php echo htmlspecialchars($projectFull, ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="text-reset">
+                                                                <?php echo htmlspecialchars($projectDisplay); ?>
+                                                            </a>
+                                                        </td>
+                                                        <td class="subject-cell" data-toggle="tooltip" data-placement="top" title="<?php echo $subjectFull; ?>">
+                                                            <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="text-reset">
+                                                                <?php echo $subjectDisplay; ?>
+                                                            </a>
+                                                        </td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['job_owner_name'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['reporter_name'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap watcher-cell" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($watchersFull, ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <span class="watcher-text"><?php echo htmlspecialchars($watchersDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                        </td>
+                                                        <td class="text-nowrap text-center"><?php echo $slaDisplay; ?></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['service_category'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['category'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['sub_category'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['impact'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['priority'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['source'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo date('Y-m-d H:i', strtotime($ticket['created_at'])); ?></td>
+                                                        <td class="text-nowrap text-center">
+                                                            <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                                                <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
                                                                 <?php
                                                                 // สิทธิ์แก้ไข: Executive, Account Management, Sale Supervisor หรือ Job Owner
                                                                 $canEdit = ($role === 'Executive' ||
                                                                            $role === 'Account Management' ||
                                                                            $role === 'Sale Supervisor' ||
                                                                            $ticket['job_owner'] === $user_id);
+                                                                if ($canEdit):
                                                                 ?>
-                                                                <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                                                    <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
-                                                                    <?php if ($canEdit): ?>
-                                                                    <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
-                                                                    <?php endif; ?>
-                                                                </div>
+                                                                <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -1371,9 +986,24 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryPar
                                         </tbody>
                                         <tfoot class="bg-light">
                                             <tr class="text-center align-middle">
-                                                <th>Ticket</th>
-                                                <th>รายละเอียด</th>
-                                                <th>SLA &amp; Action</th>
+                                                <th>No.</th>
+                                                <th>Type</th>
+                                                <th>SLA Status</th>
+                                                <th>Status</th>
+                                                <th>Project</th>
+                                                <th>Subject</th>
+                                                <th>Job Owner</th>
+                                                <th>Reporter</th>
+                                                <th>Watchers</th>
+                                                <th>SAL</th>
+                                                <th>Service Category</th>
+                                                <th>Category</th>
+                                                <th>Sub-Category</th>
+                                                <th>Impact</th>
+                                                <th>Priority</th>
+                                                <th>Source</th>
+                                                <th>Create Date</th>
+                                                <th>Action</th>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -1404,8 +1034,8 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryPar
                 "responsive": false,
                 "lengthChange": true,
                 "autoWidth": false,
-                "scrollX": false,
-                "scrollCollapse": false,
+                "scrollX": true,
+                "scrollCollapse": true,
                 "paging": true,
                 "pageLength": 20,
                 "lengthMenu": [
@@ -1415,7 +1045,7 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryPar
                 "order": [[0, "desc"]],
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
                 "columnDefs": [
-                    { "targets": [1, 2], "orderable": false }
+                    { "targets": 5, "width": 520 }
                 ],
                 "language": {
                     "lengthMenu": "แสดง _MENU_ รายการต่อหน้า",

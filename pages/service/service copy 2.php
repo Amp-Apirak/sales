@@ -3,12 +3,6 @@
 include '../../include/Add_session.php';
 
 // ใช้ข้อมูลจริง + รองรับตัวกรองจากแบบฟอร์ม
-$viewMode = $_GET['view'] ?? 'modern';
-if ($viewMode === 'classic') {
-    include __DIR__ . '/service2.php';
-    exit;
-}
-
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 $team_id = $_SESSION['team_id'] ?? null;
@@ -354,14 +348,6 @@ if (!function_exists('summarizeSubject')) {
         return [htmlspecialchars($display, ENT_QUOTES, 'UTF-8'), htmlspecialchars($clean, ENT_QUOTES, 'UTF-8')];
     }
 }
-
-$baseQueryParams = $_GET;
-unset($baseQueryParams['view']);
-$modernViewQuery = http_build_query($baseQueryParams);
-$modernViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQuery : '');
-$classicQueryParams = $baseQueryParams;
-$classicQueryParams['view'] = 'classic';
-$classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryParams);
 ?>
 
 
@@ -1061,16 +1047,8 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($classicQueryPar
                             <!-- Section ตารางแสดงผล -->
                             <div class="card">
                                 <div class="card-header">
-                                    <div class="container-fluid d-flex align-items-center justify-content-between flex-wrap" style="gap:0.5rem;">
-                                        <h3 class="card-title mb-0">Service Ticket Overview</h3>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="<?php echo htmlspecialchars($modernViewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
-                                                <i class="fas fa-th-large mr-1"></i> มุมมองใหม่
-                                            </a>
-                                            <a href="<?php echo htmlspecialchars($classicViewUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary">
-                                                <i class="fas fa-table mr-1"></i> มุมมองตาราง
-                                            </a>
-                                        </div>
+                                    <div class="container-fluid">
+                                        <h3 class="card-title">Service Ticket Overview</h3>
                                     </div>
                                 </div>
                                 <!-- /.card-header -->
