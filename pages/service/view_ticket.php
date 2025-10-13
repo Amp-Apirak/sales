@@ -38,12 +38,13 @@ try {
 
     // ตรวจสอบสิทธิ์การเข้าถึง Ticket/การแก้ไข
     $hasAccess = false;
-    $canEdit = false; // อนุญาตแก้ไขได้เฉพาะ Job Owner เท่านั้น
+    $canEdit = false;
 
-    // ตรวจสอบสถานะความเป็น Watcher/Reporter/Job Owner
+    // ตรวจสอบสถานะความเป็น Watcher/Reporter/Job Owner/Created by
     $isWatcher = false;
     $isReporter = ($ticket['reporter'] === $user_id);
     $isJobOwner = ($ticket['job_owner'] === $user_id);
+    $isCreatedBy = ($ticket['created_by'] === $user_id); // ⭐ เพิ่มการเช็คผู้สร้าง
 
     // เช็ค Watcher
     $stmtWatcherCheck = $condb->prepare("SELECT COUNT(*) as count FROM service_ticket_watchers WHERE ticket_id = :ticket_id AND user_id = :user_id");
@@ -53,9 +54,9 @@ try {
         $isWatcher = true;
     }
 
-    // ตรวจสอบว่าอยู่ทีมเดียวกับ Job Owner (สำหรับ Sale Supervisor ใช้เพื่อสิทธิ์ "ดู" เท่านั้น)
+    // ตรวจสอบว่าอยู่ทีมเดียวกับ Job Owner (สำหรับ Sale Supervisor/Account Management)
     $inSupervisorTeam = false;
-    if ($role === 'Sale Supervisor') {
+    if ($role === 'Sale Supervisor' || $role === 'Account Management') {
         $stmtUserTeams = $condb->prepare("SELECT team_id FROM user_teams WHERE user_id = :user_id");
         $stmtUserTeams->execute([':user_id' => $user_id]);
         $userTeams = $stmtUserTeams->fetchAll(PDO::FETCH_COLUMN);
@@ -69,13 +70,24 @@ try {
         }
     }
 
-    // กำหนดสิทธิ์เข้าดู
-    if ($isJobOwner || $isReporter || $isWatcher || $role === 'Executive' || ($role === 'Sale Supervisor' && $inSupervisorTeam)) {
+    // กำหนดสิทธิ์เข้าดู (ตาม role.txt: Job Owner, Reporter, Watcher, Created by)
+    if ($role === 'Executive') {
+        // Executive เห็นทั้งหมด
         $hasAccess = true;
+    } elseif ($role === 'Account Management' || $role === 'Sale Supervisor') {
+        // Account Management/Sale Supervisor เห็น: Job Owner ในทีม, Reporter, Watcher, Created by
+        if ($isJobOwner || $isReporter || $isWatcher || $isCreatedBy || $inSupervisorTeam) {
+            $hasAccess = true;
+        }
+    } else {
+        // Seller/Engineer เห็น: Job Owner (ตัวเอง), Reporter, Watcher, Created by
+        if ($isJobOwner || $isReporter || $isWatcher || $isCreatedBy) {
+            $hasAccess = true;
+        }
     }
 
-    // อนุญาตแก้ไขสำหรับ Job Owner หรือ Executive
-    if ($isJobOwner || $role === 'Executive') {
+    // อนุญาตแก้ไขสำหรับ Job Owner, Executive, Account Management, Sale Supervisor
+    if ($role === 'Executive' || $role === 'Account Management' || $role === 'Sale Supervisor' || $isJobOwner) {
         $canEdit = true;
     }
 
