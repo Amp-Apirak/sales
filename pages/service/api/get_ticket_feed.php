@@ -124,32 +124,61 @@ try {
         $stA->execute([$ticket_id, '%/'.$prefix.'%']);
         $files = $stA->fetchAll(PDO::FETCH_ASSOC);
         if ($files) {
-            echo '<div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #e5e7eb; display: flex; flex-wrap: wrap; gap: 0.5rem;">';
+            // Separate images and non-image files
+            $images = [];
+            $otherFiles = [];
             foreach ($files as $f) {
-                $ext = pathinfo($f['file_name'], PATHINFO_EXTENSION);
-                $icon = fileIconClass($ext);
-                $display = $f['file_name'];
-
-                // Icon color based on file type
-                $iconColors = [
-                    'fa-file-image' => '#f59e0b',
-                    'fa-file-pdf' => '#ef4444',
-                    'fa-file-word' => '#3b82f6',
-                    'fa-file-excel' => '#10b981',
-                    'fa-file-archive' => '#8b5cf6',
-                ];
-                $iconColor = $iconColors[$icon] ?? '#6b7280';
-
-                echo '<a href="'.esc($f['file_path']).'" target="_blank" style="text-decoration: none; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background=\'#f9fafb\'; this.style.borderColor=\'#d1d5db\';" onmouseout="this.style.background=\'white\'; this.style.borderColor=\'#e5e7eb\';">';
-                echo '  <div style="width: 32px; height: 32px; border-radius: 6px; background: '.$iconColor.'20; color: '.$iconColor.'; display: flex; align-items: center; justify-content: center;"><i class="fas '.$icon.'"></i></div>';
-                echo '  <div style="flex: 1; min-width: 0;">';
-                echo '    <div style="font-weight: 500; font-size: 0.8rem; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">'.esc($display).'</div>';
-                echo '    <div style="font-size: 0.7rem; color: #9ca3af;">'.esc(fmtSize($f['file_size'] ?? 0)).'</div>';
-                echo '  </div>';
-                echo '  <div style="color: '.$iconColor.';"><i class="fas fa-download" style="font-size: 0.875rem;"></i></div>';
-                echo '</a>';
+                $ext = strtolower(pathinfo($f['file_name'], PATHINFO_EXTENSION));
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'])) {
+                    $images[] = $f;
+                } else {
+                    $otherFiles[] = $f;
+                }
             }
-            echo '</div>';
+
+            // Display images inline
+            if ($images) {
+                echo '<div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #e5e7eb; display: flex; flex-wrap: wrap; gap: 0.75rem;">';
+                foreach ($images as $img) {
+                    echo '<div style="position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.3s; cursor: pointer;" onmouseover="this.style.transform=\'scale(1.05)\'; this.style.boxShadow=\'0 4px 16px rgba(0,0,0,0.15)\';" onmouseout="this.style.transform=\'scale(1)\'; this.style.boxShadow=\'0 2px 8px rgba(0,0,0,0.1)\';" onclick="openImageModal(\''.esc($img['file_path']).'\', \''.esc($img['file_name']).'\')">';
+                    echo '  <img src="'.esc($img['file_path']).'" alt="'.esc($img['file_name']).'" style="max-width: 200px; max-height: 200px; width: auto; height: auto; display: block; object-fit: cover;">';
+                    echo '  <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); padding: 0.5rem; color: white;">';
+                    echo '    <div style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">'.esc($img['file_name']).'</div>';
+                    echo '  </div>';
+                    echo '</div>';
+                }
+                echo '</div>';
+            }
+
+            // Display non-image files
+            if ($otherFiles) {
+                echo '<div style="margin-top: 0.75rem;'.($images ? '' : ' padding-top: 0.75rem; border-top: 1px dashed #e5e7eb;').' display: flex; flex-wrap: wrap; gap: 0.5rem;">';
+                foreach ($otherFiles as $f) {
+                    $ext = pathinfo($f['file_name'], PATHINFO_EXTENSION);
+                    $icon = fileIconClass($ext);
+                    $display = $f['file_name'];
+
+                    // Icon color based on file type
+                    $iconColors = [
+                        'fa-file-image' => '#f59e0b',
+                        'fa-file-pdf' => '#ef4444',
+                        'fa-file-word' => '#3b82f6',
+                        'fa-file-excel' => '#10b981',
+                        'fa-file-archive' => '#8b5cf6',
+                    ];
+                    $iconColor = $iconColors[$icon] ?? '#6b7280';
+
+                    echo '<a href="'.esc($f['file_path']).'" target="_blank" style="text-decoration: none; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background=\'#f9fafb\'; this.style.borderColor=\'#d1d5db\';" onmouseout="this.style.background=\'white\'; this.style.borderColor=\'#e5e7eb\';">';
+                    echo '  <div style="width: 32px; height: 32px; border-radius: 6px; background: '.$iconColor.'20; color: '.$iconColor.'; display: flex; align-items: center; justify-content: center;"><i class="fas '.$icon.'"></i></div>';
+                    echo '  <div style="flex: 1; min-width: 0;">';
+                    echo '    <div style="font-weight: 500; font-size: 0.8rem; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">'.esc($display).'</div>';
+                    echo '    <div style="font-size: 0.7rem; color: #9ca3af;">'.esc(fmtSize($f['file_size'] ?? 0)).'</div>';
+                    echo '  </div>';
+                    echo '  <div style="color: '.$iconColor.';"><i class="fas fa-download" style="font-size: 0.875rem;"></i></div>';
+                    echo '</a>';
+                }
+                echo '</div>';
+            }
         }
         echo '</div>';
     }

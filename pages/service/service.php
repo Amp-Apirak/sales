@@ -22,31 +22,54 @@ $accessibleTeamIds = array_values(array_unique($accessibleTeamIds));
 
 function buildVisibilityFilter(string $role, array $accessibleTeamIds, string $userId): array
 {
-    if ($role === 'Executive' || $role === 'Account Management') {
-        // Executive และ Account Management เห็นทั้งหมด (หรือตามทีม)
-        if ($role === 'Executive') {
-            return ['clause' => '1=1', 'params' => []];
-        }
-        // Account Management เห็นตามทีม
-        if (!empty($accessibleTeamIds)) {
-            $teamPlaceholders = [];
-            $params = [];
-            foreach ($accessibleTeamIds as $idx => $tid) {
-                $placeholder = ':vis_team_' . $idx;
-                $teamPlaceholders[] = $placeholder;
-                $params[$placeholder] = $tid;
-            }
-            return [
-                'clause' => 'st.job_owner IN (SELECT ut_scope.user_id FROM user_teams ut_scope WHERE ut_scope.team_id IN (' . implode(',', $teamPlaceholders) . '))',
-                'params' => $params
-            ];
-        }
+    if ($role === 'Executive') {
+        // Executive เห็นทั้งหมด
         return ['clause' => '1=1', 'params' => []];
     }
 
+    if ($role === 'Account Management' || $role === 'Sale Supervisor') {
+        // Account Management และ Sale Supervisor เห็นตามทีม + ของตัวเอง
+        $clauses = [];
+        $params = [];
+
+        // เห็น Ticket ที่ Job owner อยู่ในทีม
+        if (!empty($accessibleTeamIds)) {
+            $teamPlaceholders = [];
+            foreach ($accessibleTeamIds as $idx => $tid) {
+                $placeholder = ':vis_team_sup_' . $idx;
+                $teamPlaceholders[] = $placeholder;
+                $params[$placeholder] = $tid;
+            }
+            $clauses[] = 'st.job_owner IN (SELECT ut_scope.user_id FROM user_teams ut_scope WHERE ut_scope.team_id IN (' . implode(',', $teamPlaceholders) . '))';
+        }
+
+        // เห็น Ticket ที่ตนเองเป็น Reporter
+        $clauses[] = 'st.reporter = :vis_sup_reporter';
+        $params[':vis_sup_reporter'] = $userId;
+
+        // เห็น Ticket ที่ตนเองเป็น Watcher
+        $clauses[] = 'st.ticket_id IN (SELECT watcher.ticket_id FROM service_ticket_watchers watcher WHERE watcher.user_id = :vis_sup_watcher)';
+        $params[':vis_sup_watcher'] = $userId;
+
+        // เห็น Ticket ที่ตนเองเป็นผู้สร้าง (Created by)
+        $clauses[] = 'st.created_by = :vis_sup_created';
+        $params[':vis_sup_created'] = $userId;
+
+        if (empty($clauses)) {
+            return ['clause' => '1=1', 'params' => []];
+        }
+
+        return [
+            'clause' => '(' . implode(' OR ', $clauses) . ')',
+            'params' => $params
+        ];
+    }
+
+    // สำหรับ Seller และ Engineer - เห็นเฉพาะของตนเอง
     $clauses = [];
     $params = [];
 
+    // เพิ่มเงื่อนไขสำหรับทีม (ถ้ามี) - ใช้สำหรับกรณีที่เป็นสมาชิกทีม
     if (!empty($accessibleTeamIds)) {
         $teamPlaceholders = [];
         foreach ($accessibleTeamIds as $idx => $tid) {
@@ -57,14 +80,21 @@ function buildVisibilityFilter(string $role, array $accessibleTeamIds, string $u
         $clauses[] = 'st.job_owner IN (SELECT ut_scope.user_id FROM user_teams ut_scope WHERE ut_scope.team_id IN (' . implode(',', $teamPlaceholders) . '))';
     }
 
+    // เงื่อนไขที่ 1: ตนเองเป็น Job owner (ผู้รับผิดชอบ)
     $clauses[] = 'st.job_owner = :vis_self';
     $params[':vis_self'] = $userId;
 
+    // เงื่อนไขที่ 2: ตนเองเป็น Watcher (ผู้ติดตาม)
     $clauses[] = 'st.ticket_id IN (SELECT watcher.ticket_id FROM service_ticket_watchers watcher WHERE watcher.user_id = :vis_watcher)';
     $params[':vis_watcher'] = $userId;
 
+    // เงื่อนไขที่ 3: ตนเองเป็น Reporter (ผู้รายงาน)
     $clauses[] = 'st.reporter = :vis_reporter';
     $params[':vis_reporter'] = $userId;
+
+    // เงื่อนไขที่ 4: ตนเองเป็นผู้สร้าง (Created by) - ไม่ว่าจะมอบหมายให้ใครเป็น Job owner
+    $clauses[] = 'st.created_by = :vis_created_by';
+    $params[':vis_created_by'] = $userId;
 
     return [
         'clause' => '(' . implode(' OR ', array_unique($clauses)) . ')',
@@ -371,82 +401,96 @@ if (!function_exists('summarizeSubject')) {
                 border: 1px solid rgba(40, 167, 69, 0.25);
             }
 
-            .badge-status-process {
-                background: rgba(23, 162, 184, 0.18);
-                color: #138496;
-                border: 1px solid rgba(23, 162, 184, 0.25);
-            }
+            /* Status Badge Colors - ITIL/ITSM Standard */
 
-            .badge-status-pending {
-                background: rgba(255, 193, 7, 0.18);
-                color: #b8860b;
-                border: 1px solid rgba(255, 193, 7, 0.25);
-            }
-
-            .badge-status-waiting {
-                background: rgba(108, 117, 125, 0.18);
+            /* Draft - Gray (ฉบับร่าง) */
+            .badge-status-default {
+                background: rgba(108, 117, 125, 0.15);
                 color: #495057;
-                border: 1px solid rgba(108, 117, 125, 0.25);
+                border: 1px solid rgba(108, 117, 125, 0.3);
+            }
+
+            /* New/Assigned - Blue (งานใหม่/มอบหมายแล้ว) */
+            .badge-status-assigned {
+                background: rgba(0, 123, 255, 0.15);
+                color: #0056b3;
+                border: 1px solid rgba(0, 123, 255, 0.3);
+            }
+
+            /* On Process/In Progress - Cyan (กำลังดำเนินการ) */
+            .badge-status-process {
+                background: rgba(23, 162, 184, 0.15);
+                color: #117a8b;
+                border: 1px solid rgba(23, 162, 184, 0.3);
             }
 
             .badge-status-progress {
-                background: rgba(40, 167, 69, 0.18);
-                color: #1e7e34;
-                border: 1px solid rgba(40, 167, 69, 0.25);
+                background: rgba(23, 162, 184, 0.15);
+                color: #117a8b;
+                border: 1px solid rgba(23, 162, 184, 0.3);
             }
 
+            /* Pending/Waiting - Yellow (รอดำเนินการ) */
+            .badge-status-pending {
+                background: rgba(255, 193, 7, 0.15);
+                color: #d39e00;
+                border: 1px solid rgba(255, 193, 7, 0.3);
+            }
+
+            .badge-status-waiting {
+                background: rgba(255, 193, 7, 0.15);
+                color: #d39e00;
+                border: 1px solid rgba(255, 193, 7, 0.3);
+            }
+
+            /* Resolved - Green (แก้ไขเรียบร้อย) ⭐ เปลี่ยนใหม่ */
             .badge-status-resolved {
-                background: rgba(52, 58, 64, 0.18);
-                color: #343a40;
-                border: 1px solid rgba(52, 58, 64, 0.25);
+                background: rgba(40, 167, 69, 0.15);
+                color: #28a745;
+                border: 1px solid rgba(40, 167, 69, 0.3);
+                font-weight: 600;
             }
 
-            .badge-status-approved {
-                background: rgba(0, 123, 255, 0.18);
-                color: #0056b3;
-                border: 1px solid rgba(0, 123, 255, 0.25);
-            }
-
-            .badge-status-resolved-pending {
-                background: rgba(111, 66, 193, 0.18);
-                color: #6f42c1;
-                border: 1px solid rgba(111, 66, 193, 0.25);
-            }
-
-            .badge-status-scheduled {
-                background: rgba(255, 159, 67, 0.18);
-                color: #d35400;
-                border: 1px solid rgba(255, 159, 67, 0.25);
-            }
-
-            .badge-status-pending-approval {
-                background: rgba(232, 62, 140, 0.18);
-                color: #b21f66;
-                border: 1px solid rgba(232, 62, 140, 0.25);
-            }
-
-            .badge-status-cab-review {
-                background: rgba(255, 99, 132, 0.18);
-                color: #d12a5c;
-                border: 1px solid rgba(255, 99, 132, 0.25);
-            }
-
-            .badge-status-assigned {
-                background: rgba(54, 162, 235, 0.18);
-                color: #1d7bc9;
-                border: 1px solid rgba(54, 162, 235, 0.25);
-            }
-
+            /* Closed - Dark Green (ปิดงานแล้ว) */
             .badge-status-containment {
-                background: rgba(255, 87, 34, 0.18);
-                color: #c0392b;
-                border: 1px solid rgba(255, 87, 34, 0.25);
+                background: rgba(32, 134, 68, 0.15);
+                color: #1e7e34;
+                border: 1px solid rgba(32, 134, 68, 0.3);
             }
 
-            .badge-status-default {
-                background: rgba(108, 117, 125, 0.12);
-                color: #495057;
-                border: 1px solid rgba(108, 117, 125, 0.2);
+            /* Cancelled/CAB Review - Red (ยกเลิก) */
+            .badge-status-cab-review {
+                background: rgba(220, 53, 69, 0.15);
+                color: #bd2130;
+                border: 1px solid rgba(220, 53, 69, 0.3);
+            }
+
+            /* Approved - Blue (อนุมัติแล้ว) */
+            .badge-status-approved {
+                background: rgba(0, 123, 255, 0.15);
+                color: #0056b3;
+                border: 1px solid rgba(0, 123, 255, 0.3);
+            }
+
+            /* Resolved Pending - Purple (รอยืนยันการแก้ไข) */
+            .badge-status-resolved-pending {
+                background: rgba(111, 66, 193, 0.15);
+                color: #6f42c1;
+                border: 1px solid rgba(111, 66, 193, 0.3);
+            }
+
+            /* Scheduled - Orange (กำหนดการแล้ว) */
+            .badge-status-scheduled {
+                background: rgba(255, 159, 67, 0.15);
+                color: #e67e22;
+                border: 1px solid rgba(255, 159, 67, 0.3);
+            }
+
+            /* Pending Approval - Pink (รออนุมัติ) */
+            .badge-status-pending-approval {
+                background: rgba(232, 62, 140, 0.15);
+                color: #d63384;
+                border: 1px solid rgba(232, 62, 140, 0.3);
             }
 
             .subject-cell {
@@ -818,7 +862,14 @@ if (!function_exists('summarizeSubject')) {
                                                         <td class="text-nowrap text-center">
                                                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                                                 <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
-                                                                <?php if ($role === 'Executive' || $role === 'Account Management' || $ticket['job_owner'] === $user_id): ?>
+                                                                <?php
+                                                                // สิทธิ์แก้ไข: Executive, Account Management, Sale Supervisor หรือ Job Owner
+                                                                $canEdit = ($role === 'Executive' ||
+                                                                           $role === 'Account Management' ||
+                                                                           $role === 'Sale Supervisor' ||
+                                                                           $ticket['job_owner'] === $user_id);
+                                                                if ($canEdit):
+                                                                ?>
                                                                 <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
                                                                 <?php endif; ?>
                                                             </div>

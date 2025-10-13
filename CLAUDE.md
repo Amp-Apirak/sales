@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-Sales Management System - Project guidance for Claude Code (Updated: 2025-10-04)
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+Sales Management System - Project guidance for Claude Code (Updated: 2025-10-13)
 
 ---
 
@@ -26,10 +28,17 @@ cp .env.example .env  # Configure DB_*, SECRET_KEY, ENCRYPTION_IV, BASE_URL
 ```
 
 **Core Files:**
-- `config/condb.php` - DB connection, encryption
-- `config/validation.php` - Input validation/sanitization
-- `include/Add_session.php` - Session check (required on all pages)
-- `.env` - Environment config (NOT in repo)
+- `config/condb.php` - DB connection (PDO), encryption functions (encryptUserId/decryptUserId)
+- `config/validation.php` - Input validation/sanitization, rate limiting, CSRF protection
+- `config/env_loader.php` - Environment variable loader (loadEnv, getEnvVar)
+- `include/Add_session.php` - Session check (MUST be first include on protected pages)
+- `.env` - Environment config (SECRET_KEY, ENCRYPTION_IV, DB_*, BASE_URL) - NOT in repo
+
+**Session Architecture:**
+All protected pages follow a standard include pattern that establishes security and user context:
+1. `Add_session.php` - Validates session, redirects if not authenticated
+2. Sets global variables: `$role`, `$team_id`, `$user_id` from `$_SESSION`
+3. Establishes permission flags: `$can_view_all`, `$can_view_team`, `$can_view_own`, `$can_view_financial`
 
 ---
 
@@ -116,18 +125,24 @@ cp .env.example .env  # Configure DB_*, SECRET_KEY, ENCRYPTION_IV, BASE_URL
 ### Authentication & Session
 
 **Login Flow (login.php):**
-- Rate limiting: 5 attempts/15min, progressive blocking
-- Validation: username 3-50 chars, password 6+
+- Rate limiting: 5 attempts/15min, progressive blocking (15s → 30s → 45s → 60s)
+- Validation: username 3-50 chars (alphanumeric + ._@-), password 6+ chars
 - Password: `password_verify()` with bcrypt
-- Session init: Query user_teams → set team_id ('ALL' if >1 team)
+- Session init: Query user_teams → set team_id ('ALL' if >1 team, single team UUID if 1 team)
+- Multi-team support: Users can belong to multiple teams via `user_teams` junction table
 
 **Session Variables:**
 ```php
-$_SESSION['user_id']      // UUID
+$_SESSION['user_id']      // UUID (CHAR(36))
+$_SESSION['username']     // Username string
 $_SESSION['role']         // Executive|Sale Supervisor|Seller|Engineer
-$_SESSION['team_id']      // Active team UUID or 'ALL'
-$_SESSION['team_ids']     // Array of all team UUIDs
-$_SESSION['user_teams']   // Full team data
+$_SESSION['team_id']      // Active team UUID or 'ALL' (for multi-team users)
+$_SESSION['team_ids']     // Array of all team UUIDs user belongs to
+$_SESSION['user_teams']   // Full team data array (team_id, team_name, is_primary)
+$_SESSION['first_name']   // User first name
+$_SESSION['last_name']    // User last name
+$_SESSION['profile_image']// Profile image path
+$_SESSION['csrf_token']   // CSRF protection token (when generated)
 ```
 
 **Team Switching (switch_team.php):**
@@ -274,6 +289,44 @@ if ($role === 'Executive') {
 
 ---
 
+## Development Commands
+
+### Database Setup
+```bash
+# Import database schema
+mysql -u root -p sales_db < config/sales_db.sql
+
+# Or restore with custom credentials
+mysql -u your_username -p your_database < config/sales_db.sql
+```
+
+### Composer Dependencies
+```bash
+# Install dependencies (PHPSpreadsheet for Excel import/export)
+composer install
+
+# Update dependencies
+composer update
+```
+
+### Running in Development (XAMPP/LAMP)
+```bash
+# Ensure Apache and MySQL are running
+# Access via: http://localhost/sales/
+# Or via configured BASE_URL in .env
+```
+
+### Testing Database Connection
+```bash
+# Test MySQL connection
+mysql -u root -p -e "SELECT VERSION();"
+
+# Check if database exists
+mysql -u root -p -e "SHOW DATABASES LIKE 'sales_db';"
+```
+
+---
+
 ## Common Tasks
 
 ### New Page Template
@@ -296,6 +349,20 @@ include('../../include/Navbar.php');
 <!-- Content here -->
 
 <?php include('../../include/Footer.php'); ?>
+```
+
+### Generate UUID (for new records)
+
+```php
+// Standard UUID v4 generation
+function generateUUID() {
+    $data = random_bytes(16);
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // version 4
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // UUID variant
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+
+$new_id = generateUUID(); // Use for user_id, team_id, project_id, etc.
 ```
 
 ### Role-Based Query
@@ -363,6 +430,41 @@ Swal.fire({
 });
 ```
 
+### Select2 Dropdown Enhancement
+
+```javascript
+// Initialize Select2 for searchable dropdowns
+$('.select2').select2({
+    theme: 'bootstrap4',
+    placeholder: 'Select an option',
+    allowClear: true
+});
+```
+
+---
+
+## Frontend Libraries
+
+**AdminLTE 3** - Main admin template framework
+- Bootstrap 4 based
+- Located in `/AdminLTE/` directory
+- Custom theme modifications in `/assets/css/`
+
+**Key JavaScript Libraries:**
+- **jQuery 3.x** - DOM manipulation, AJAX
+- **DataTables** - Table enhancement with sorting, filtering, export (located in `/assets/plugins/datatables`)
+- **Select2** - Enhanced select boxes with search (located in `/assets/plugins/select2`)
+- **SweetAlert2** - Modern alert/modal dialogs
+- **Chart.js** - Dashboard charts and graphs
+- **Moment.js** - Date/time manipulation
+- **DateRangePicker** - Date range selection for filters
+- **Ekko Lightbox** - Image gallery lightbox
+
+**CSS Frameworks:**
+- **Bootstrap 4.6** - Grid, components, utilities
+- **Font Awesome 6** - Icon library
+- **Google Fonts** - Poppins font family
+
 ---
 
 ## File Structure (Simplified)
@@ -395,14 +497,43 @@ Swal.fire({
 
 ## Critical Notes
 
-### 🚨 Engineer Financial Data
+### 🚨 CRITICAL: Engineer Financial Data Restrictions
+Engineers must **NEVER** see or access financial data. This is enforced at multiple levels:
+
+**Backend Data Filtering:**
 ```php
-// ALWAYS check before showing financial fields
-$can_view_financial = ($role !== 'Engineer');
-if (!$can_view_financial) {
-    // Hide sale_no_vat, cost_no_vat, gross_profit, potential
+// At query level - exclude financial columns for Engineers
+if ($role === 'Engineer') {
+    $sql = "SELECT project_id, project_name, status, created_at
+            FROM projects"; // NO financial fields
+} else {
+    $sql = "SELECT project_id, project_name, status, created_at,
+            sale_no_vat, cost_no_vat, gross_profit, potential
+            FROM projects";
 }
 ```
+
+**Frontend Display Control:**
+```php
+// In index.php and all project pages
+$can_view_financial = ($role !== 'Engineer');
+
+// Hide UI elements
+<?php if ($can_view_financial): ?>
+    <div class="info-box">
+        <span>Sale: <?php echo number_format($sale_no_vat, 2); ?></span>
+    </div>
+<?php endif; ?>
+```
+
+**Protected Fields List:**
+- `sale_no_vat` - Sale amount without VAT
+- `sale_vat` - Sale amount with VAT
+- `cost_no_vat` - Cost amount without VAT
+- `gross_profit` - Calculated profit (sale - cost)
+- `potential` - Profit margin percentage
+- `project_costs.*` - All cost breakdown data
+- `project_payments.*` - Payment tracking data
 
 ### Team Filtering
 ```php
@@ -454,4 +585,61 @@ $team_id = $_SESSION['team_id']; // UUID or 'ALL'
 - **XSS** - Cross-Site Scripting
 - **PDO** - PHP Data Objects
 
-**Version:** 2.0 | **Updated:** 2025-10-04 | **DB:** 48 tables, 2979 lines
+---
+
+## Important Architecture Notes
+
+### Multi-file UUID Function Pattern
+The `generateUUID()` function is **not centralized** - it's duplicated across many files. When creating new records, either:
+1. Copy the function from an existing file (e.g., `pages/setting/team/add_team.php:46-52`)
+2. Or define it locally in your file
+
+```php
+function generateUUID() {
+    $data = random_bytes(16);
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+```
+
+### Database Character Set
+- Connection uses `utf8mb4` with `utf8mb4_unicode_ci` collation for full emoji support
+- Set via: `SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci` in `condb.php:24`
+
+### File Upload Limits
+- Default max: 5MB (5242880 bytes)
+- Configured per-endpoint via `validateUploadedFile($file, $types, $size)`
+- Discussion attachments: Max 5 files/message, 10MB each
+- MIME type validation enforced (not just extension checking)
+
+### AJAX Response Pattern
+All AJAX endpoints return consistent JSON structure:
+```php
+header('Content-Type: application/json');
+echo json_encode([
+    'success' => true|false,
+    'message' => 'User-friendly message',
+    'data' => [...], // Optional payload
+    'error' => '...' // Optional error details
+]);
+```
+
+### Validation Functions Available
+From `config/validation.php`:
+- `sanitizeInput($data)` - Strip whitespace, slashes
+- `escapeOutput($data)` - XSS protection via htmlspecialchars
+- `validateEmail($email)` - Format + length
+- `validatePhone($phone)` - 9-15 digits
+- `validatePassword($pass)` - 6-255 chars
+- `validateText($text, $min, $max, $name)` - General text
+- `validateNumber($num, $min, $max, $name)` - Numeric
+- `validateUsername($user)` - 3-50 chars, alphanumeric+._@-
+- `validateUploadedFile($file, $types, $size)` - Complete file validation
+- `checkRateLimit($id, $max, $window)` - Progressive rate limiting
+- `generateCSRFToken()` / `validateCSRFToken($token)` - CSRF protection
+- `sanitizeFilename($name)` - Safe filename (alphanumeric+._-, max 100 chars)
+
+---
+
+**Version:** 2.0 | **Updated:** 2025-10-13 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP

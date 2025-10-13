@@ -11,7 +11,7 @@ $team_id = $_SESSION['team_id'] ?? '';
 $ticket_id = $_GET['id'] ?? null;
 
 if (!$ticket_id) {
-    header('Location: index.php');
+    header('Location: service.php');
     exit;
 }
 
@@ -32,7 +32,7 @@ try {
     $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$ticket) {
-        header('Location: index.php?error=ticket_not_found');
+        header('Location: service.php?error=ticket_not_found');
         exit;
     }
 
@@ -81,7 +81,7 @@ try {
 
     // ถ้าไม่มีสิทธิ์เข้าถึงเลย ให้ redirect กลับ
     if (!$hasAccess) {
-        header('Location: index.php?error=access_denied');
+        header('Location: service.php?error=access_denied');
         exit;
     }
 
@@ -741,6 +741,12 @@ $slaColors = [
             margin-bottom: 0.5rem;
             opacity: 0.5;
         }
+
+        /* SweetAlert Image Modal Styling */
+        .swal-image-full {
+            max-height: 80vh;
+            object-fit: contain;
+        }
     </style>
 </head>
 
@@ -765,7 +771,7 @@ $slaColors = [
                         <nav aria-label="breadcrumb" class="mt-2">
                             <ol class="breadcrumb">
                                 <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>index.php">Home</a></li>
-                                <li class="breadcrumb-item"><a href="index.php">Service Tickets</a></li>
+                                <li class="breadcrumb-item"><a href="service.php">Service Tickets</a></li>
                                 <li class="breadcrumb-item active"><?php echo htmlspecialchars($ticket['ticket_no']); ?></li>
                             </ol>
                         </nav>
@@ -970,7 +976,7 @@ $slaColors = [
                                         <i class="fas fa-info-circle"></i> คุณเป็น Watcher - สามารถดูและคอมเมนต์ได้อย่างเดียว
                                     </div>
                                 <?php endif; ?>
-                                <a href="index.php" class="action-btn btn-secondary-modern">
+                                <a href="service.php" class="action-btn btn-secondary-modern">
                                     <i class="fas fa-arrow-left"></i> กลับรายการ
                                 </a>
                             </div>
@@ -1268,6 +1274,22 @@ $slaColors = [
                 }
             });
         });
+
+        // Image modal for click-to-expand functionality
+        function openImageModal(imagePath, imageName) {
+            Swal.fire({
+                imageUrl: imagePath,
+                imageAlt: imageName,
+                title: imageName,
+                width: '80%',
+                showConfirmButton: false,
+                showCloseButton: true,
+                customClass: {
+                    image: 'swal-image-full'
+                },
+                html: '<a href="' + imagePath + '" download="' + imageName + '" class="btn btn-primary mt-3"><i class="fas fa-download"></i> ดาวน์โหลด</a>'
+            });
+        }
     </script>
 </body>
 </html>
