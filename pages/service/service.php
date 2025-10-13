@@ -516,10 +516,36 @@ if (!function_exists('summarizeSubject')) {
                 text-overflow: ellipsis;
             }
 
+            .project-cell a,
+            .subject-cell a {
+                display: block;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                color: inherit;
+                text-decoration: none;
+            }
+
+            .project-cell a:hover,
+            .subject-cell a:hover {
+                text-decoration: underline;
+            }
+
             .watcher-cell {
+                width: 260px;
                 max-width: 260px;
-                white-space: normal;
-                word-break: break-word;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .watcher-cell .watcher-text {
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
         </style>
 
@@ -845,12 +871,20 @@ if (!function_exists('summarizeSubject')) {
                                                         <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $typeConfig['class']; ?>"><?php echo htmlspecialchars($typeConfig['label']); ?></span></td>
                                                         <td class="text-nowrap text-center align-middle"><span class="badge badge-pill px-3 py-2 <?php echo $statusConfig['class']; ?>"><?php echo htmlspecialchars($ticket['status']); ?></span></td>
                                                         <td class="project-cell" data-toggle="tooltip" data-placement="top" data-html="true" title="<?php echo htmlspecialchars($projectFull, ENT_QUOTES, 'UTF-8'); ?>">
-                                                            <?php echo htmlspecialchars($projectDisplay); ?>
+                                                            <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="text-reset">
+                                                                <?php echo htmlspecialchars($projectDisplay); ?>
+                                                            </a>
                                                         </td>
-                                                        <td class="subject-cell" data-toggle="tooltip" data-placement="top" title="<?php echo $subjectFull; ?>"><?php echo $subjectDisplay; ?></td>
+                                                        <td class="subject-cell" data-toggle="tooltip" data-placement="top" title="<?php echo $subjectFull; ?>">
+                                                            <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="text-reset">
+                                                                <?php echo $subjectDisplay; ?>
+                                                            </a>
+                                                        </td>
                                                         <td class="text-nowrap"><?php echo htmlspecialchars($ticket['job_owner_name'] ?? '-'); ?></td>
                                                         <td class="text-nowrap"><?php echo htmlspecialchars($ticket['reporter_name'] ?? '-'); ?></td>
-                                                        <td class="text-nowrap watcher-cell" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($watchersFull, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($watchersDisplay, ENT_QUOTES, 'UTF-8'); ?></td>
+                                                        <td class="text-nowrap watcher-cell" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($watchersFull, ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <span class="watcher-text"><?php echo htmlspecialchars($watchersDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                        </td>
                                                         <td class="text-nowrap text-center"><?php echo $slaDisplay; ?></td>
                                                         <td class="text-nowrap"><?php echo htmlspecialchars($ticket['service_category'] ?? '-'); ?></td>
                                                         <td class="text-nowrap"><?php echo htmlspecialchars($ticket['category'] ?? '-'); ?></td>
