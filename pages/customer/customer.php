@@ -94,9 +94,8 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    /* แก้ไข CSS ในส่วน <style>
-        ของไฟล์ customer.php */ <style>.project-list {
+    <style>
+        .project-list {
             max-height: 300px;
             overflow-y: auto;
         }
