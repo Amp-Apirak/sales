@@ -2,6 +2,10 @@
 session_start();
 include('../../../config/condb.php');
 
+// Get current user info from session
+$current_user_id = $_SESSION['user_id'] ?? '';
+$current_user_role = $_SESSION['role'] ?? '';
+
 // Basic helpers
 function timeAgo($datetime) {
     $ts = strtotime($datetime);
@@ -108,6 +112,14 @@ try {
         $gradientIndex = abs(crc32($c['created_by'] ?? '0')) % count($gradients);
         $gradient = $gradients[$gradientIndex];
 
+        // Check if user can delete this comment
+        $canDelete = false;
+        if ($current_user_role === 'Executive') {
+            $canDelete = true; // Executive can delete all comments
+        } elseif ($c['created_by'] === $current_user_id) {
+            $canDelete = true; // Owner can delete their own comment
+        }
+
         echo '<div class="activity-item">';
         echo '  <div class="activity-header">';
         echo '    <div class="user-avatar-small" style="background: '.$gradient.';">'.$ini.'</div>';
@@ -115,6 +127,9 @@ try {
         echo '      <div class="activity-user">'.esc($name).'</div>';
         echo '      <div class="activity-time"><i class="far fa-clock"></i> '.timeAgo($c['created_at']).'</div>';
         echo '    </div>';
+        if ($canDelete) {
+            echo '    <button class="btn-delete-comment" onclick="deleteComment(\''.esc($c['comment_id']).'\')" title="ลบความคิดเห็น" style="margin-left: auto; background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background=\'#fee2e2\';" onmouseout="this.style.background=\'none\';"><i class="fas fa-trash-alt"></i></button>';
+        }
         echo '  </div>';
         echo '  <div class="activity-content">'.nl2br(esc($c['comment'])).'</div>';
 

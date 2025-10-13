@@ -1055,50 +1055,13 @@ $slaColors = [
                                 <?php endif; ?>
                             </div>
                         </div>
-
-                        <!-- Timeline -->
-                        <div class="modern-card">
-                            <div class="card-header-modern">
-                                <h3><i class="fas fa-history"></i> Timeline</h3>
-                            </div>
-                            <div class="card-body-modern">
-                                <?php if (!empty($timeline)): ?>
-                                <div class="timeline">
-                                    <?php foreach ($timeline as $item): ?>
-                                    <div class="timeline-item">
-                                        <div class="timeline-badge"><?php echo $item['order']; ?></div>
-                                        <div class="timeline-card">
-                                            <div class="timeline-header">
-                                                <span class="timeline-actor"><?php echo htmlspecialchars($item['actor']); ?></span>
-                                                <span class="timeline-time"><?php echo date('d/m/Y H:i', strtotime($item['created_at'])); ?></span>
-                                            </div>
-                                            <div class="timeline-action"><?php echo htmlspecialchars($item['action']); ?></div>
-                                            <?php if ($item['detail']): ?>
-                                            <div class="timeline-detail"><?php echo htmlspecialchars($item['detail']); ?></div>
-                                            <?php endif; ?>
-                                            <?php if ($item['location']): ?>
-                                            <div class="timeline-location">
-                                                <i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($item['location']); ?>
-                                            </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <?php else: ?>
-                                <div class="empty-state">
-                                    <i class="fas fa-history"></i>
-                                    <p>ยังไม่มี Timeline</p>
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
-                <!-- Activity Log & Comments - Full Width -->
+                <!-- Activity Log & Comments and Timeline Row -->
                 <div class="row">
-                    <div class="col-12">
+                    <!-- Left Column: Activity Log & Comments -->
+                    <div class="col-lg-8">
                         <div class="modern-card">
                             <div class="card-header-modern">
                                 <h3>
@@ -1133,6 +1096,46 @@ $slaColors = [
                                         </div>
                                     </form>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Timeline -->
+                    <div class="col-lg-4">
+                        <div class="modern-card">
+                            <div class="card-header-modern">
+                                <h3><i class="fas fa-history"></i> Timeline</h3>
+                            </div>
+                            <div class="card-body-modern">
+                                <?php if (!empty($timeline)): ?>
+                                <div class="timeline">
+                                    <?php foreach ($timeline as $item): ?>
+                                    <div class="timeline-item">
+                                        <div class="timeline-badge"><?php echo $item['order']; ?></div>
+                                        <div class="timeline-card">
+                                            <div class="timeline-header">
+                                                <span class="timeline-actor"><?php echo htmlspecialchars($item['actor']); ?></span>
+                                                <span class="timeline-time"><?php echo date('d/m/Y H:i', strtotime($item['created_at'])); ?></span>
+                                            </div>
+                                            <div class="timeline-action"><?php echo htmlspecialchars($item['action']); ?></div>
+                                            <?php if ($item['detail']): ?>
+                                            <div class="timeline-detail"><?php echo htmlspecialchars($item['detail']); ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($item['location']): ?>
+                                            <div class="timeline-location">
+                                                <i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($item['location']); ?>
+                                            </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php else: ?>
+                                <div class="empty-state">
+                                    <i class="fas fa-history"></i>
+                                    <p>ยังไม่มี Timeline</p>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -1300,6 +1303,59 @@ $slaColors = [
                     image: 'swal-image-full'
                 },
                 html: '<a href="' + imagePath + '" download="' + imageName + '" class="btn btn-primary mt-3"><i class="fas fa-download"></i> ดาวน์โหลด</a>'
+            });
+        }
+
+        // Delete comment functionality
+        function deleteComment(commentId) {
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: 'คุณต้องการลบความคิดเห็นนี้ใช่หรือไม่?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ใช่, ลบเลย',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const formData = new FormData();
+                    formData.append('csrf_token', csrfToken);
+                    formData.append('comment_id', commentId);
+
+                    fetch('api/delete_comment.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'สำเร็จ!',
+                                text: 'ลบความคิดเห็นเรียบร้อยแล้ว',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                            loadTicketFeed(); // Reload feed to show updated comments
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: data.message,
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    });
+                }
             });
         }
     </script>
