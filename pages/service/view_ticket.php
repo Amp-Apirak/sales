@@ -1078,15 +1078,23 @@ $slaColors = [
                             </div>
                             <div class="card-body-modern">
                                 <?php if ($canEdit): ?>
-                                    <a href="edit_ticket.php?id=<?php echo urlencode($ticket_id); ?>" class="action-btn btn-primary-modern">
-                                        <i class="fas fa-edit"></i> แก้ไข Ticket
-                                    </a>
-                                    <button class="action-btn btn-success-modern" onclick="updateStatus('Resolved')">
-                                        <i class="fas fa-check"></i> Resolve Ticket
-                                    </button>
-                                    <button class="action-btn btn-dark-modern" onclick="updateStatus('Closed')">
-                                        <i class="fas fa-lock"></i> Close Ticket
-                                    </button>
+                                    <?php if ($ticket['status'] === 'Closed' || $ticket['status'] === 'Resolved' || $ticket['status'] === 'Resolved Pending'): ?>
+                                        <!-- Re-Open Button for Closed/Resolved Tickets -->
+                                        <button class="action-btn btn-primary-modern" onclick="reopenTicket()">
+                                            <i class="fas fa-redo"></i> Re-Open Ticket
+                                        </button>
+                                    <?php else: ?>
+                                        <!-- Normal Action Buttons -->
+                                        <a href="edit_ticket.php?id=<?php echo urlencode($ticket_id); ?>" class="action-btn btn-primary-modern">
+                                            <i class="fas fa-edit"></i> แก้ไข Ticket
+                                        </a>
+                                        <button class="action-btn btn-success-modern" onclick="updateStatus('Resolved')">
+                                            <i class="fas fa-check"></i> Resolve Ticket
+                                        </button>
+                                        <button class="action-btn btn-dark-modern" onclick="updateStatus('Closed')">
+                                            <i class="fas fa-lock"></i> Close Ticket
+                                        </button>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <div class="alert alert-info" style="margin: 0;">
                                         <i class="fas fa-info-circle"></i> คุณเป็น Watcher - สามารถดูและคอมเมนต์ได้อย่างเดียว
@@ -1260,6 +1268,60 @@ $slaColors = [
             });
         }
 
+        function reopenTicket() {
+            Swal.fire({
+                title: 'ยืนยันการ Re-Open Ticket?',
+                text: 'คุณต้องการเปิด Ticket นี้ใหม่และเปลี่ยนสถานะเป็น "On Process" ใช่หรือไม่?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'ใช่, Re-Open เลย',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#667eea',
+                cancelButtonColor: '#6b7280'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const formData = new FormData();
+                    formData.append('csrf_token', '<?php echo $_SESSION['csrf_token']; ?>');
+                    formData.append('ticket_id', '<?php echo $ticket_id; ?>');
+                    formData.append('status', 'On Process');
+                    formData.append('reopen', 'true'); // Flag to indicate this is a re-open action
+
+                    fetch('api/update_ticket.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'สำเร็จ!',
+                                text: 'Re-Open Ticket เรียบร้อยแล้ว',
+                                confirmButtonColor: '#48bb78'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: data.message,
+                                confirmButtonColor: '#f56565'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: error.message,
+                            confirmButtonColor: '#f56565'
+                        });
+                    });
+                }
+            });
+        }
+
         const ticketId = '<?php echo $ticket_id; ?>';
         const csrfToken = '<?php echo $_SESSION['csrf_token']; ?>';
         const originalStatus = '<?php echo htmlspecialchars($ticket['status']); ?>';
@@ -1340,8 +1402,9 @@ $slaColors = [
                                 // Reload page to show updated status/owner
                                 location.reload();
                             } else {
-                                // Just reload feed
+                                // Just reload feed and reset button
                                 loadTicketFeed();
+                                btn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i>โพสต์ความคิดเห็น');
                             }
                         });
                     } else {

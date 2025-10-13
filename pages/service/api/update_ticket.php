@@ -247,7 +247,6 @@ try {
         }
     }
 
-    // เพิ่ม Timeline Entry สำหรับการแก้ไข Ticket
     // ดึง order ล่าสุดจาก Timeline
     $sqlMaxOrder = "SELECT COALESCE(MAX(`order`), 0) as max_order FROM service_ticket_timeline WHERE ticket_id = :ticket_id";
     $stmtMaxOrder = $condb->prepare($sqlMaxOrder);
@@ -261,6 +260,33 @@ try {
     $stmtUser->execute([':user_id' => $_SESSION['user_id']]);
     $userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
     $actorName = $userData['full_name'] ?? 'Unknown';
+
+    // Check if this is a Re-Open action
+    $isReopen = isset($_POST['reopen']) && $_POST['reopen'] === 'true';
+
+    if ($isReopen) {
+        // Special handling for Re-Open action
+        $oldStatus = $existingTicket['status'];
+
+        // Insert Timeline Entry specifically for Re-Open
+        $sqlTimeline = "INSERT INTO service_ticket_timeline (
+            timeline_id, ticket_id, `order`, actor, action, detail, location, created_at
+        ) VALUES (
+            UUID(), :ticket_id, :order, :actor, :action, :detail, :location, NOW()
+        )";
+
+        $stmtTimeline = $condb->prepare($sqlTimeline);
+        $stmtTimeline->execute([
+            ':ticket_id' => $ticket_id,
+            ':order' => $nextOrder,
+            ':actor' => $actorName,
+            ':action' => 'Re-Open Ticket',
+            ':detail' => "Ticket ถูกเปิดใหม่จากสถานะ \"{$oldStatus}\" เป็น \"On Process\"",
+            ':location' => null
+        ]);
+    } else {
+        // Normal update - proceed with change detection
+        // เพิ่ม Timeline Entry สำหรับการแก้ไข Ticket
 
     // สร้าง detail สำหรับ Timeline (เฉพาะฟิลด์ที่เปลี่ยนจริง)
         $fieldLabels = [
@@ -342,26 +368,27 @@ try {
         $changes[] = $label . ': ' . $pretty($old, $field) . ' → ' . $pretty($new, $field);
     }
 
-    if (!empty($changes)) {
-        $detail = 'เปลี่ยนแปลง: ' . implode('; ', $changes);
+        if (!empty($changes)) {
+            $detail = 'เปลี่ยนแปลง: ' . implode('; ', $changes);
 
-        // Insert Timeline Entry เฉพาะเมื่อมีการเปลี่ยนแปลงจริง
-        $sqlTimeline = "INSERT INTO service_ticket_timeline (
-            timeline_id, ticket_id, `order`, actor, action, detail, location, created_at
-        ) VALUES (
-            UUID(), :ticket_id, :order, :actor, :action, :detail, :location, NOW()
-        )";
+            // Insert Timeline Entry เฉพาะเมื่อมีการเปลี่ยนแปลงจริง
+            $sqlTimeline = "INSERT INTO service_ticket_timeline (
+                timeline_id, ticket_id, `order`, actor, action, detail, location, created_at
+            ) VALUES (
+                UUID(), :ticket_id, :order, :actor, :action, :detail, :location, NOW()
+            )";
 
-        $stmtTimeline = $condb->prepare($sqlTimeline);
-        $stmtTimeline->execute([
-            ':ticket_id' => $ticket_id,
-            ':order' => $nextOrder,
-            ':actor' => $actorName,
-            ':action' => 'แก้ไข Ticket',
-            ':detail' => $detail,
-            ':location' => null
-        ]);
-    }
+            $stmtTimeline = $condb->prepare($sqlTimeline);
+            $stmtTimeline->execute([
+                ':ticket_id' => $ticket_id,
+                ':order' => $nextOrder,
+                ':actor' => $actorName,
+                ':action' => 'แก้ไข Ticket',
+                ':detail' => $detail,
+                ':location' => null
+            ]);
+        }
+    } // End of if ($isReopen) else block
 
     // Commit Transaction
     $condb->commit();
