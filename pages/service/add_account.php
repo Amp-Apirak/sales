@@ -1088,7 +1088,7 @@ $menu = 'service';
                                     if (result.isConfirmed && response.data.redirect) {
                                         window.location.href = response.data.redirect;
                                     } else {
-                                        window.location.href = 'index.php';
+                                        window.location.href = 'service.php';
                                     }
                                 });
                             }
