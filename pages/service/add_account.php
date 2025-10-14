@@ -666,7 +666,8 @@ $menu = 'service';
 
                                         <div class="form-group">
                                             <label>รายละเอียดงาน / Symptom</label>
-                                            <textarea name="description" id="description" rows="4" class="form-control" placeholder="ระบุรายละเอียด ปัญหา หรือความต้องการของผู้ใช้งาน" required></textarea>
+                                            <textarea name="description" id="description" rows="8" class="form-control" placeholder="ระบุรายละเอียด ปัญหา หรือความต้องการของผู้ใช้งาน" required style="min-height: 200px; resize: vertical;"></textarea>
+                                            <small class="text-muted">กด Enter เพื่อขึ้นบรรทัดใหม่</small>
                                         </div>
                                     </div>
                                 </div>

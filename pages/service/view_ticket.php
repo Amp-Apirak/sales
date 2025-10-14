@@ -295,7 +295,7 @@ $slaColors = [
         .activity-feed .activity-content,
         .activity-feed .text-truncate,
         .timeline-detail {
-            white-space: pre-wrap;         /* respect line breaks; allow wrapping */
+            white-space: normal;           /* allow text wrapping but remove pre formatting */
             word-break: break-word;        /* break long unbroken strings */
             overflow-wrap: anywhere;       /* as a fallback for various browsers */
         }
@@ -303,6 +303,13 @@ $slaColors = [
         /* Ensure description/value areas stay inside the card */
         .info-item .info-value {
             line-height: 1.6;
+        }
+
+        /* Fix line break rendering for nl2br() output - single line break only */
+        .info-value br {
+            display: block;
+            content: "";
+            margin: 0;
         }
 
 
