@@ -31,11 +31,7 @@ try {
     if (!$ticket_id) throw new Exception('ไม่พบ Ticket ID');
     if ($comment_text === '') throw new Exception('กรุณากรอกความคิดเห็น');
 
-    // ⭐ CRITICAL FIX: Ensure $user_id is properly set and not null
-    $user_id = $_SESSION['user_id'] ?? null;
-    if (empty($user_id)) {
-        throw new Exception('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
-    }
+    $user_id = $_SESSION['user_id'];
     $role = $_SESSION['role'] ?? '';
 
 /*
@@ -229,10 +225,6 @@ try {
             $updateStatus->execute([$new_status, $ticket_id]);
 
             // Log status change in history
-            // ⭐ FIX: Validate $user_id before INSERT to prevent NULL constraint violation
-            if (empty($user_id)) {
-                throw new Exception('ไม่สามารถบันทึกประวัติการเปลี่ยนแปลงได้ เนื่องจากไม่พบข้อมูลผู้ใช้');
-            }
             $history_id = uuidv4();
             $logStatus = $condb->prepare("INSERT INTO service_ticket_history (history_id, ticket_id, field_name, old_value, new_value, changed_by, changed_at)
                                           VALUES (?, ?, 'status', ?, ?, ?, NOW())");
@@ -296,10 +288,6 @@ try {
             $updateOwner->execute([$new_job_owner, $ticket_id]);
 
             // Log job owner change in history
-            // ⭐ FIX: Validate $user_id before INSERT to prevent NULL constraint violation
-            if (empty($user_id)) {
-                throw new Exception('ไม่สามารถบันทึกประวัติการเปลี่ยนแปลงได้ เนื่องจากไม่พบข้อมูลผู้ใช้');
-            }
             $history_id = uuidv4();
             $logOwner = $condb->prepare("INSERT INTO service_ticket_history (history_id, ticket_id, field_name, old_value, new_value, changed_by, changed_at)
                                          VALUES (?, ?, 'job_owner', ?, ?, ?, NOW())");
@@ -406,4 +394,3 @@ try {
     echo json_encode(['status'=>'error','message'=>$e->getMessage()]);
 }
 ?>
-
