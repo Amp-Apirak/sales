@@ -1001,6 +1001,11 @@ $slaColors = [
                                     </div>
                                 </div>
 
+                                <?php
+                                // ซ่อนส่วนคอมเมนต์เมื่อสถานะเป็น Resolved หรือ Closed
+                                $isTicketClosed = in_array($ticket['status'], ['Resolved', 'Closed']);
+                                if (!$isTicketClosed):
+                                ?>
                                 <div class="comment-input-area">
                                     <form id="ticketCommentForm" method="post" action="api/post_comment.php" enctype="multipart/form-data">
                                         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
@@ -1065,6 +1070,11 @@ $slaColors = [
                                         </div>
                                     </form>
                                 </div>
+                                <?php else: ?>
+                                <div class="alert alert-info" style="margin-top: 1rem; border-radius: 8px;">
+                                    <i class="fas fa-lock"></i> Ticket นี้ถูกปิดแล้ว หากต้องการแก้ไขหรือเพิ่มความคิดเห็น กรุณา Re-Open Ticket ก่อน
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
