@@ -656,15 +656,25 @@ $menu = 'service';
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>กำหนดเริ่มดำเนินการ (วันเวลา)</label>
-                                                    <input type="datetime-local" name="start_at" id="start_at" class="form-control" lang="th-TH" value="<?php echo escapeOutput($defaultStartAt); ?>" required>
-                                                    <small class="form-text text-muted" id="startAtHelper"><?php echo escapeOutput($defaultStartAtDisplay); ?></small>
+                                                    <div class="input-group date" id="start_at_picker" data-target-input="nearest">
+                                                        <input type="text" name="start_at" id="start_at" class="form-control datetimepicker-input" data-target="#start_at_picker" value="<?php echo escapeOutput($defaultStartAtDisplay); ?>" required/>
+                                                        <div class="input-group-append" data-target="#start_at_picker" data-toggle="datetimepicker">
+                                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                        </div>
+                                                    </div>
+                                                    <small class="form-text text-muted">รูปแบบ: วัน/เดือน/ปี ชั่วโมง:นาที (24 ชม.)</small>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>กำหนดแล้วเสร็จ (วันเวลา)</label>
-                                                    <input type="datetime-local" name="due_at" id="due_at" class="form-control" lang="th-TH" value="<?php echo escapeOutput($defaultDueAt); ?>" required>
-                                                    <small class="form-text text-muted" id="dueAtHelper"><?php echo escapeOutput($defaultDueAtDisplay); ?></small>
+                                                    <div class="input-group date" id="due_at_picker" data-target-input="nearest">
+                                                        <input type="text" name="due_at" id="due_at" class="form-control datetimepicker-input" data-target="#due_at_picker" value="<?php echo escapeOutput($defaultDueAtDisplay); ?>" required/>
+                                                        <div class="input-group-append" data-target="#due_at_picker" data-toggle="datetimepicker">
+                                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                        </div>
+                                                    </div>
+                                                    <small class="form-text text-muted">รูปแบบ: วัน/เดือน/ปี ชั่วโมง:นาที (24 ชม.)</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -838,60 +848,40 @@ $menu = 'service';
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(function() {
+            // Initialize Select2 Elements
             $('.select2').select2({
                 theme: 'bootstrap4',
                 width: '100%'
             });
 
-            const previewMap = {
-                type: '#preview-pill-type',
-                status: '#preview-pill-status',
-                priority: '#preview-pill-priority',
-                subject: '#preview-subject',
-                service_category: '#preview-service-category',
-                project: '#preview-project',
-                category: '#preview-category',
-                sub_category: '#preview-sub_category',
-                owner: '#preview-owner',
-                sla: '#preview-sla',
-                start_at: '#preview-start_at',
-                due_at: '#preview-due_at'
-            };
+            // Datetime picker initialization
+            moment.locale('th'); // Set moment.js locale to Thai
+            $('#start_at_picker, #due_at_picker').datetimepicker({
+                format: 'DD/MM/YYYY HH:mm',
+                locale: 'th',
+                sideBySide: true,
+                icons: {
+                    time: 'far fa-clock',
+                    date: 'far fa-calendar-alt',
+                    up: 'fas fa-arrow-up',
+                    down: 'fas fa-arrow-down',
+                    previous: 'fas fa-chevron-left',
+                    next: 'fas fa-chevron-right',
+                    today: 'far fa-calendar-check',
+                    clear: 'far fa-trash-alt',
+                    close: 'fas fa-times'
+                },
+                buttons: {
+                    showToday: true,
+                    showClear: true,
+                    showClose: true
+                }
+            });
 
             const $startAtInput = $('#start_at');
             const $dueAtInput = $('#due_at');
-            const $startAtHelper = $('#startAtHelper');
-            const $dueAtHelper = $('#dueAtHelper');
 
             const isInvalidNumber = value => (typeof Number.isNaN === 'function' ? Number.isNaN(value) : isNaN(value));
-
-            function formatDateDisplay24(value) {
-                if (!value) {
-                    return '-';
-                }
-                const date = new Date(value);
-                if (isInvalidNumber(date.getTime())) {
-                    return value;
-                }
-                const pad = n => String(n).padStart(2, '0');
-                return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-            }
-
-            function syncHelperText($input, $helper) {
-                if (!$helper.length) {
-                    return;
-                }
-                const formatted = formatDateDisplay24($input.val());
-                $helper.text(formatted);
-            }
-
-            function updateStartHelper() {
-                syncHelperText($startAtInput, $startAtHelper);
-            }
-
-            function updateDueHelper() {
-                syncHelperText($dueAtInput, $dueAtHelper);
-            }
 
             const $statusSelect = $('#status');
             const $caseGroup = $('#caseDescriptionGroup');
@@ -994,27 +984,17 @@ $menu = 'service';
             updateOnsiteTravelMode();
 
             // Compute Due = Start + SLA hours (editable by user; this just sets default)
-            function formatDateToLocalInput(d) {
-                const pad = n => String(n).padStart(2, '0');
-                return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-            }
-
             function recomputeDue() {
-                const startVal = $startAtInput.val();
+                const startVal = $('#start_at_picker').datetimepicker('date');
                 const slaH = parseInt($slaDisp.val(), 10);
-                if (!startVal || isInvalidNumber(slaH)) {
-                    $dueAtInput.val('');
-                    updateDueHelper();
+
+                if (!startVal || isNaN(slaH)) {
+                    $('#due_at_picker').datetimepicker('clear');
                     return;
                 }
-                const d = new Date(startVal);
-                if (isInvalidNumber(d.getTime())) {
-                    updateDueHelper();
-                    return;
-                }
-                d.setHours(d.getHours() + slaH);
-                $dueAtInput.val(formatDateToLocalInput(d));
-                updateDueHelper();
+
+                const newDue = moment(startVal).add(slaH, 'hours');
+                $('#due_at_picker').datetimepicker('date', newDue);
             }
 
 
@@ -1061,15 +1041,14 @@ $menu = 'service';
             $priority.on('change', refreshSLA);
             $urgency.on('change', refreshSLA);
             $impact.on('change', refreshSLA);
-            $startAtInput.on('change', function() {
-                updateStartHelper();
+
+            // When start date changes, re-calculate due date
+            $('#start_at_picker').on('change.datetimepicker', function (e) {
                 recomputeDue();
             });
+
             // initial compute
-            updateStartHelper();
-            updateDueHelper();
             refreshSLA();
-            recomputeDue();
 
             // === Attachments preview and click handler ===
             const $fileInput = $('#attachmentFiles');

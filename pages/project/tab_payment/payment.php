@@ -234,11 +234,22 @@
                                 <input type="text" class="form-control" id="paymentPercentage" step="0.01" placeholder="0.00">
                             </div>
                         </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="amountWithVat">
+                                    <i class="fas fa-coins"></i>
+                                    จำนวนเงินรวมภาษีมูลค่าเพิ่ม (บาท)
+                                </label>
+                                <input type="text" class="form-control" id="amountWithVat" placeholder="0.00">
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="amount">
                                     <i class="fas fa-coins"></i>
-                                    จำนวนเงิน (บาท)
+                                    จำนวนเงินไม่รวมภาษีมูลค่าเพิ่ม (บาท)
                                 </label>
                                 <input type="text" class="form-control" id="amount" placeholder="0.00">
                             </div>
@@ -374,23 +385,43 @@
             if (inputId === 'paymentPercentage') {
                 calculateAmountFromPercentage();
             } else if (inputId === 'amount') {
-                calculatePercentageFromAmount();
+                calculateFromAmountNoVat();
+            } else if (inputId === 'amountWithVat') {
+                calculateFromAmountWithVat();
             }
         });
     }
 
+    // อัตรา VAT (7%)
+    const VAT_RATE = 0.07;
+
     // ฟังก์ชันสำหรับคำนวณจำนวนเงินจากเปอร์เซ็นต์
     function calculateAmountFromPercentage() {
         const percentage = parseFloat($('#paymentPercentage').val().replace(/,/g, '')) || 0;
-        const amount = (percentage / 100) * totalSaleAmount;
-        $('#amount').val(formatNumber(amount.toFixed(2)));
+        const amountNoVat = (percentage / 100) * totalSaleAmount;
+        const amountWithVat = amountNoVat * (1 + VAT_RATE);
+
+        $('#amount').val(formatNumber(amountNoVat.toFixed(2)));
+        $('#amountWithVat').val(formatNumber(amountWithVat.toFixed(2)));
     }
 
+    // ฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์และ VAT จากจำนวนเงินไม่รวม VAT
+    function calculateFromAmountNoVat() {
+        const amountNoVat = parseFloat($('#amount').val().replace(/,/g, '')) || 0;
+        const percentage = (amountNoVat / totalSaleAmount) * 100;
+        const amountWithVat = amountNoVat * (1 + VAT_RATE);
 
-    // ฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์จากจำนวนเงิน
-    function calculatePercentageFromAmount() {
-        const amount = parseFloat($('#amount').val().replace(/,/g, '')) || 0;
-        const percentage = (amount / totalSaleAmount) * 100;
+        $('#paymentPercentage').val(percentage.toFixed(2));
+        $('#amountWithVat').val(formatNumber(amountWithVat.toFixed(2)));
+    }
+
+    // ฟังก์ชันสำหรับคำนวณเปอร์เซ็นต์และไม่รวม VAT จากจำนวนเงินรวม VAT
+    function calculateFromAmountWithVat() {
+        const amountWithVat = parseFloat($('#amountWithVat').val().replace(/,/g, '')) || 0;
+        const amountNoVat = amountWithVat / (1 + VAT_RATE);
+        const percentage = (amountNoVat / totalSaleAmount) * 100;
+
+        $('#amount').val(formatNumber(amountNoVat.toFixed(2)));
         $('#paymentPercentage').val(percentage.toFixed(2));
     }
 
@@ -494,10 +525,20 @@
             document.getElementById('paymentNumber').value = payment.payment_number;
             document.getElementById('paymentPercentage').value = formatNumber(payment.payment_percentage);
             document.getElementById('amount').value = formatNumber(payment.amount);
+
+            // คำนวณจำนวนเงินรวม VAT
+            const amountNoVat = parseFloat(payment.amount) || 0;
+            const amountWithVat = amountNoVat * (1 + VAT_RATE);
+            document.getElementById('amountWithVat').value = formatNumber(amountWithVat.toFixed(2));
+
             document.getElementById('dueDate').value = payment.due_date;
             document.getElementById('status').value = payment.status;
             document.getElementById('paymentDate').value = payment.payment_date || '';
             document.getElementById('amountPaid').value = formatNumber(payment.amount_paid);
+
+            // อัพเดตข้อความช่วยเหลือ
+            updateAmountPaid();
+
             $('#paymentModal').modal('show');
         }
     }
@@ -637,25 +678,27 @@
     document.addEventListener('DOMContentLoaded', function() {
         setupNumberInput('paymentPercentage');
         setupNumberInput('amount');
+        setupNumberInput('amountWithVat');
         document.getElementById('status').addEventListener('change', updateAmountPaid);
-        // ฟังก์ชันจัดการการป้อนข้อมูลเปอร์เซ็นต์
-        document.getElementById('paymentPercentage').addEventListener('input', calculateAmountFromPercentage);
-        // ฟังก์ชันจัดการการป้อนจำนวนเงิน  
-        document.getElementById('amount').addEventListener('input', calculatePercentageFromAmount);
     });
 
-    // Event Listeners
+    // Event Listeners สำหรับการคำนวณ 3-way
     $('#paymentPercentage').on('input', function() {
         calculateAmountFromPercentage();
-        updateAmountPaid(); // อัพเดตยอดรวมเมื่อเปลี่ยนเปอร์เซ็นต์
+        updateAmountPaid();
     });
 
     $('#amount').on('input', function() {
-        calculatePercentageFromAmount();
-        updateAmountPaid(); // อัพเดตยอดรวมเมื่อเปลี่ยนจำนวนเงิน
+        calculateFromAmountNoVat();
+        updateAmountPaid();
+    });
+
+    $('#amountWithVat').on('input', function() {
+        calculateFromAmountWithVat();
+        updateAmountPaid();
     });
 
     $('#status').on('change', function() {
-        updateAmountPaid(); // อัพเดตยอดรวมเมื่อเปลี่ยนสถานะ
+        updateAmountPaid();
     });
 </script>
