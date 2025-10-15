@@ -82,7 +82,11 @@ if (!empty($currentTeamId) && $currentTeamId !== 'ALL') {
     $accessibleTeamIds[] = $currentTeamId;
 }
 $accessibleTeamIds = array_values(array_unique($accessibleTeamIds));
-$currentDateTime = date('Y-m-d\TH:i');
+
+$timeZone = new DateTimeZone('Asia/Bangkok');
+$currentDateTimeObject = new DateTime('now', $timeZone);
+$currentDateTime = $currentDateTimeObject->format('Y-m-d\TH:i');
+$currentDateTimeDisplay = $currentDateTimeObject->format('d/m/Y H:i');
 $defaultTicketType = 'Incident';
 $defaultStatus = 'New';
 $defaultSource = 'Portal';
@@ -91,6 +95,11 @@ $defaultUrgency = 'Low';
 $defaultImpact = 'Department';
 $defaultSlaTarget = 24;
 $defaultStartAt = $currentDateTime;
+$defaultStartAtDisplay = $currentDateTimeDisplay;
+$defaultDueDateTimeObject = (clone $currentDateTimeObject);
+$defaultDueDateTimeObject->add(new DateInterval('PT' . (int)$defaultSlaTarget . 'H'));
+$defaultDueAt = $defaultDueDateTimeObject->format('Y-m-d\TH:i');
+$defaultDueAtDisplay = $defaultDueDateTimeObject->format('d/m/Y H:i');
 
 try {
     // รายชื่อเจ้าของงาน (ผู้ใช้งานระบบทั้งหมด)
@@ -459,7 +468,8 @@ $menu = 'service';
                                             <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label>วันเวลาที่สร้าง</label>
-                                                    <input type="datetime-local" name="created_at" class="form-control" value="<?php echo $currentDateTime; ?>" readonly>
+                                                    <input type="text" class="form-control" value="<?php echo escapeOutput($currentDateTimeDisplay); ?>" readonly>
+                                                    <input type="hidden" name="created_at" value="<?php echo escapeOutput($currentDateTime); ?>">
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
@@ -646,13 +656,15 @@ $menu = 'service';
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>กำหนดเริ่มดำเนินการ (วันเวลา)</label>
-                                                    <input type="datetime-local" name="start_at" id="start_at" class="form-control" value="<?php echo escapeOutput($defaultStartAt); ?>" required>
+                                                    <input type="datetime-local" name="start_at" id="start_at" class="form-control" lang="th-TH" value="<?php echo escapeOutput($defaultStartAt); ?>" required>
+                                                    <small class="form-text text-muted" id="startAtHelper"><?php echo escapeOutput($defaultStartAtDisplay); ?></small>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>กำหนดแล้วเสร็จ (วันเวลา)</label>
-                                                    <input type="datetime-local" name="due_at" id="due_at" class="form-control" required>
+                                                    <input type="datetime-local" name="due_at" id="due_at" class="form-control" lang="th-TH" value="<?php echo escapeOutput($defaultDueAt); ?>" required>
+                                                    <small class="form-text text-muted" id="dueAtHelper"><?php echo escapeOutput($defaultDueAtDisplay); ?></small>
                                                 </div>
                                             </div>
                                         </div>
@@ -846,6 +858,41 @@ $menu = 'service';
                 due_at: '#preview-due_at'
             };
 
+            const $startAtInput = $('#start_at');
+            const $dueAtInput = $('#due_at');
+            const $startAtHelper = $('#startAtHelper');
+            const $dueAtHelper = $('#dueAtHelper');
+
+            const isInvalidNumber = value => (typeof Number.isNaN === 'function' ? Number.isNaN(value) : isNaN(value));
+
+            function formatDateDisplay24(value) {
+                if (!value) {
+                    return '-';
+                }
+                const date = new Date(value);
+                if (isInvalidNumber(date.getTime())) {
+                    return value;
+                }
+                const pad = n => String(n).padStart(2, '0');
+                return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+            }
+
+            function syncHelperText($input, $helper) {
+                if (!$helper.length) {
+                    return;
+                }
+                const formatted = formatDateDisplay24($input.val());
+                $helper.text(formatted);
+            }
+
+            function updateStartHelper() {
+                syncHelperText($startAtInput, $startAtHelper);
+            }
+
+            function updateDueHelper() {
+                syncHelperText($dueAtInput, $dueAtHelper);
+            }
+
             const $statusSelect = $('#status');
             const $caseGroup = $('#caseDescriptionGroup');
             const $resolveGroup = $('#resolveActionGroup');
@@ -953,13 +1000,21 @@ $menu = 'service';
             }
 
             function recomputeDue() {
-                const startVal = $('#start_at').val();
+                const startVal = $startAtInput.val();
                 const slaH = parseInt($slaDisp.val(), 10);
-                if (!startVal || isNaN(slaH)) return;
+                if (!startVal || isInvalidNumber(slaH)) {
+                    $dueAtInput.val('');
+                    updateDueHelper();
+                    return;
+                }
                 const d = new Date(startVal);
-                if (isNaN(d.getTime())) return;
+                if (isInvalidNumber(d.getTime())) {
+                    updateDueHelper();
+                    return;
+                }
                 d.setHours(d.getHours() + slaH);
-                $('#due_at').val(formatDateToLocalInput(d));
+                $dueAtInput.val(formatDateToLocalInput(d));
+                updateDueHelper();
             }
 
 
@@ -1006,8 +1061,13 @@ $menu = 'service';
             $priority.on('change', refreshSLA);
             $urgency.on('change', refreshSLA);
             $impact.on('change', refreshSLA);
-            $('#start_at').on('change', recomputeDue);
+            $startAtInput.on('change', function() {
+                updateStartHelper();
+                recomputeDue();
+            });
             // initial compute
+            updateStartHelper();
+            updateDueHelper();
             refreshSLA();
             recomputeDue();
 

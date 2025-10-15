@@ -1308,6 +1308,22 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
 
                                                         $createdDisplay = date('Y-m-d H:i', strtotime($ticket['created_at']));
                                                         $createdShort = date('d M Y', strtotime($ticket['created_at']));
+                                                        $resolvedDisplay = '-';
+                                                        if (!empty($ticket['resolved_at']) && $ticket['resolved_at'] !== '0000-00-00 00:00:00') {
+                                                            $resolvedDisplay = date('Y-m-d H:i', strtotime($ticket['resolved_at']));
+                                                        }
+                                                        $closedDisplay = '-';
+                                                        if (!empty($ticket['closed_at']) && $ticket['closed_at'] !== '0000-00-00 00:00:00') {
+                                                            $closedDisplay = date('Y-m-d H:i', strtotime($ticket['closed_at']));
+                                                        }
+                                                        $statusRaw = is_string($ticket['status']) ? trim($ticket['status']) : '';
+                                                        $statusLower = mb_strtolower($statusRaw, 'UTF-8');
+                                                        $shouldShowResolved = (
+                                                            $statusLower === 'resolved' ||
+                                                            $statusLower === 'closed' ||
+                                                            mb_stripos($statusRaw, 'resolved', 0, 'UTF-8') !== false
+                                                        );
+                                                        $shouldShowClosed = ($statusLower === 'closed');
 
                                                         $attachmentCount = (int)($ticket['attachment_count'] ?? 0);
                                                         $attachmentRecords = [];
@@ -1538,6 +1554,18 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                                     <span class="detail-label">Created</span>
                                                                     <span class="detail-value"><?php echo htmlspecialchars($createdDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
                                                                 </div>
+                                                                <?php if ($shouldShowResolved): ?>
+                                                                <div class="detail-item">
+                                                                    <span class="detail-label">Resolved</span>
+                                                                    <span class="detail-value"><?php echo htmlspecialchars($resolvedDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                                </div>
+                                                                <?php endif; ?>
+                                                                <?php if ($shouldShowClosed): ?>
+                                                                <div class="detail-item">
+                                                                    <span class="detail-label">Closed</span>
+                                                                    <span class="detail-value"><?php echo htmlspecialchars($closedDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                                </div>
+                                                                <?php endif; ?>
                                                                 <div class="action-buttons">
                                                                     <?php
                                                                     // สิทธิ์แก้ไข: Executive, Account Management, Sale Supervisor หรือ Job Owner
