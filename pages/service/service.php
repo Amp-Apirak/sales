@@ -333,22 +333,22 @@ $slaStatusStyles = [
 ];
 
 $statusStyles = [
-    'Draft'                 => ['class' => 'badge badge-pill badge-status-default'],
-    'New'                   => ['class' => 'badge badge-pill badge-status-assigned'],
-    'On Process'            => ['class' => 'badge badge-pill badge-status-process'],
-    'Pending'               => ['class' => 'badge badge-pill badge-status-pending'],
-    'Waiting for Approval'  => ['class' => 'badge badge-pill badge-status-waiting'],
-    'In Progress'           => ['class' => 'badge badge-pill badge-status-progress'],
-    'Resolved'              => ['class' => 'badge badge-pill badge-status-resolved'],
-    'Closed'                => ['class' => 'badge badge-pill badge-status-containment'],
-    'Cancelled'             => ['class' => 'badge badge-pill badge-status-cab-review'],
-    'Approved'              => ['class' => 'badge badge-pill badge-status-approved'],
-    'Resolved Pending'      => ['class' => 'badge badge-pill badge-status-resolved-pending'],
-    'Scheduled'             => ['class' => 'badge badge-pill badge-status-scheduled'],
-    'Pending Approval'      => ['class' => 'badge badge-pill badge-status-pending-approval'],
-    'CAB Review'            => ['class' => 'badge badge-pill badge-status-cab-review'],
-    'Assigned'              => ['class' => 'badge badge-pill badge-status-assigned'],
-    'Containment'           => ['class' => 'badge badge-pill badge-status-containment'],
+    'Draft'                 => ['class' => 'badge badge-pill badge-status-default', 'icon' => 'fas fa-file-alt'],
+    'New'                   => ['class' => 'badge badge-pill badge-status-assigned', 'icon' => 'fas fa-bell'],
+    'On Process'            => ['class' => 'badge badge-pill badge-status-process', 'icon' => 'fas fa-hourglass-half'],
+    'Pending'               => ['class' => 'badge badge-pill badge-status-pending', 'icon' => 'fas fa-clock'],
+    'Waiting for Approval'  => ['class' => 'badge badge-pill badge-status-waiting', 'icon' => 'fas fa-user-clock'],
+    'In Progress'           => ['class' => 'badge badge-pill badge-status-progress', 'icon' => 'fas fa-spinner'],
+    'Resolved'              => ['class' => 'badge badge-pill badge-status-resolved', 'icon' => 'fas fa-check-circle'],
+    'Closed'                => ['class' => 'badge badge-pill badge-status-containment', 'icon' => 'fas fa-check-double'],
+    'Cancelled'             => ['class' => 'badge badge-pill badge-status-cab-review', 'icon' => 'fas fa-times-circle'],
+    'Approved'              => ['class' => 'badge badge-pill badge-status-approved', 'icon' => 'fas fa-thumbs-up'],
+    'Resolved Pending'      => ['class' => 'badge badge-pill badge-status-resolved-pending', 'icon' => 'fas fa-pause-circle'],
+    'Scheduled'             => ['class' => 'badge badge-pill badge-status-scheduled', 'icon' => 'fas fa-calendar-check'],
+    'Pending Approval'      => ['class' => 'badge badge-pill badge-status-pending-approval', 'icon' => 'fas fa-clipboard-check'],
+    'CAB Review'            => ['class' => 'badge badge-pill badge-status-cab-review', 'icon' => 'fas fa-users'],
+    'Assigned'              => ['class' => 'badge badge-pill badge-status-assigned', 'icon' => 'fas fa-user-tag'],
+    'Containment'           => ['class' => 'badge badge-pill badge-status-containment', 'icon' => 'fas fa-lock'],
 ];
 
 if (!function_exists('summarizeSubject')) {
@@ -522,100 +522,169 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                 border: 1px solid rgba(108, 117, 125, 0.25);
             }
 
-            /* Status Badge Colors - ITIL/ITSM Standard */
+            /* Status Badge Colors - ITIL/ITSM Standard (Enhanced) */
 
             /* Draft - Gray (ฉบับร่าง) */
             .badge-status-default {
-                background: rgba(108, 117, 125, 0.15);
-                color: #495057;
-                border: 1px solid rgba(108, 117, 125, 0.3);
+                background: linear-gradient(135deg, #6c757d 0%, #868e96 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 600;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
 
-            /* New/Assigned - Blue (งานใหม่/มอบหมายแล้ว) */
+            /* New/Assigned - Orange Red (งานใหม่/มอบหมายแล้ว) - สีร้อน */
             .badge-status-assigned {
-                background: rgba(0, 123, 255, 0.15);
-                color: #0056b3;
-                border: 1px solid rgba(0, 123, 255, 0.3);
+                background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(255, 107, 53, 0.3);
+                animation: pulse-orange 2s ease-in-out infinite;
             }
 
-            /* On Process/In Progress - Cyan (กำลังดำเนินการ) */
+            @keyframes pulse-orange {
+                0%, 100% { box-shadow: 0 3px 6px rgba(255, 107, 53, 0.3); }
+                50% { box-shadow: 0 3px 10px rgba(255, 107, 53, 0.5); }
+            }
+
+            /* On Process/In Progress - Amber (กำลังดำเนินการ) - สีร้อน */
             .badge-status-process {
-                background: rgba(23, 162, 184, 0.15);
-                color: #117a8b;
-                border: 1px solid rgba(23, 162, 184, 0.3);
+                background: linear-gradient(135deg, #f39c12 0%, #f5ab35 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(243, 156, 18, 0.3);
             }
 
             .badge-status-progress {
-                background: rgba(23, 162, 184, 0.15);
-                color: #117a8b;
-                border: 1px solid rgba(23, 162, 184, 0.3);
+                background: linear-gradient(135deg, #f39c12 0%, #f5ab35 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(243, 156, 18, 0.3);
             }
 
-            /* Pending/Waiting - Yellow (รอดำเนินการ) */
+            /* Pending/Waiting - Yellow Orange (รอดำเนินการ) - สีร้อน */
             .badge-status-pending {
-                background: rgba(255, 193, 7, 0.15);
-                color: #d39e00;
-                border: 1px solid rgba(255, 193, 7, 0.3);
+                background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%);
+                color: #000000;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(255, 193, 7, 0.3);
             }
 
             .badge-status-waiting {
-                background: rgba(255, 193, 7, 0.15);
-                color: #d39e00;
-                border: 1px solid rgba(255, 193, 7, 0.3);
+                background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%);
+                color: #000000;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(255, 193, 7, 0.3);
             }
 
-            /* Resolved - Green (แก้ไขเรียบร้อย) ⭐ เปลี่ยนใหม่ */
+            /* Resolved - Green (แก้ไขเรียบร้อย) - สีเย็น */
             .badge-status-resolved {
-                background: rgba(40, 167, 69, 0.15);
-                color: #28a745;
-                border: 1px solid rgba(40, 167, 69, 0.3);
-                font-weight: 600;
+                background: linear-gradient(135deg, #28a745 0%, #34ce57 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3);
             }
 
-            /* Closed - Dark Green (ปิดงานแล้ว) */
+            /* Closed - Dark Teal (ปิดงานแล้ว) - สีเย็นเข้ม */
             .badge-status-containment {
-                background: rgba(32, 134, 68, 0.15);
-                color: #1e7e34;
-                border: 1px solid rgba(32, 134, 68, 0.3);
+                background: linear-gradient(135deg, #17a2b8 0%, #20c9e0 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(23, 162, 184, 0.3);
             }
 
-            /* Cancelled/CAB Review - Red (ยกเลิก) */
+            /* Cancelled/CAB Review - Red (ยกเลิก) - สีร้อนเข้ม */
             .badge-status-cab-review {
-                background: rgba(220, 53, 69, 0.15);
-                color: #bd2130;
-                border: 1px solid rgba(220, 53, 69, 0.3);
+                background: linear-gradient(135deg, #dc3545 0%, #e4606d 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(220, 53, 69, 0.3);
             }
 
             /* Approved - Blue (อนุมัติแล้ว) */
             .badge-status-approved {
-                background: rgba(0, 123, 255, 0.15);
-                color: #0056b3;
-                border: 1px solid rgba(0, 123, 255, 0.3);
+                background: linear-gradient(135deg, #007bff 0%, #0d6efd 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(0, 123, 255, 0.3);
             }
 
             /* Resolved Pending - Purple (รอยืนยันการแก้ไข) */
             .badge-status-resolved-pending {
-                background: rgba(111, 66, 193, 0.15);
-                color: #6f42c1;
-                border: 1px solid rgba(111, 66, 193, 0.3);
+                background: linear-gradient(135deg, #6f42c1 0%, #8357d5 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(111, 66, 193, 0.3);
             }
 
-            /* Scheduled - Orange (กำหนดการแล้ว) */
+            /* Scheduled - Orange (กำหนดการแล้ว) - สีร้อน */
             .badge-status-scheduled {
-                background: rgba(255, 159, 67, 0.15);
-                color: #e67e22;
-                border: 1px solid rgba(255, 159, 67, 0.3);
+                background: linear-gradient(135deg, #fd7e14 0%, #ff922b 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(253, 126, 20, 0.3);
             }
 
-            /* Pending Approval - Pink (รออนุมัติ) */
+            /* Pending Approval - Pink (รออนุมัติ) - สีร้อน */
             .badge-status-pending-approval {
-                background: rgba(232, 62, 140, 0.15);
-                color: #d63384;
-                border: 1px solid rgba(232, 62, 140, 0.3);
+                background: linear-gradient(135deg, #e83e8c 0%, #ec5fa0 100%);
+                color: #ffffff;
+                border: none;
+                font-weight: 700;
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+                box-shadow: 0 3px 6px rgba(232, 62, 140, 0.3);
             }
 
             .ticket-summary {
                 min-width: 240px;
+            }
+
+            .ticket-header-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.5rem;
+                gap: 1rem;
+            }
+
+            .ticket-summary .ticket-number {
+                flex: 0 0 auto;
             }
 
             .ticket-summary .ticket-number a {
@@ -623,6 +692,22 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                 font-size: 1.05rem;
                 color: #007bff;
                 text-decoration: none;
+            }
+
+            .status-badge-container {
+                flex: 0 0 auto;
+                margin-left: auto;
+            }
+
+            .status-badge-container .badge {
+                white-space: nowrap;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+            }
+
+            .status-badge-container .badge i {
+                font-size: 0.85rem;
             }
 
             .ticket-summary .ticket-number a:hover {
@@ -1387,10 +1472,18 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                 ?>
                                                     <tr>
                                                         <td class="ticket-summary">
-                                                            <div class="ticket-number">
-                                                                <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>">
-                                                                    <?php echo htmlspecialchars($ticket['ticket_no']); ?>
-                                                                </a>
+                                                            <div class="ticket-header-row">
+                                                                <div class="ticket-number">
+                                                                    <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>">
+                                                                        <?php echo htmlspecialchars($ticket['ticket_no']); ?>
+                                                                    </a>
+                                                                </div>
+                                                                <div class="status-badge-container">
+                                                                    <span class="<?php echo htmlspecialchars($statusConfig['class'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                                        <i class="<?php echo htmlspecialchars($statusConfig['icon'] ?? 'fas fa-circle', ENT_QUOTES, 'UTF-8'); ?>"></i>
+                                                                        <?php echo htmlspecialchars($ticket['status']); ?>
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                             <div class="subject-line" data-toggle="tooltip" data-placement="top" title="<?php echo $subjectFull; ?>">
                                                                 <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="subject-link">
@@ -1399,7 +1492,6 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                             </div>
                                                             <div class="badge-group">
                                                                 <span class="<?php echo htmlspecialchars($typeConfig['class'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($typeConfig['label']); ?></span>
-                                                                <span class="<?php echo htmlspecialchars($statusConfig['class'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ticket['status']); ?></span>
                                                             </div>
                                                             <div class="meta-row">
                                                                 <span><i class="fas fa-layer-group"></i><?php echo $projectSummary; ?></span>
@@ -1573,10 +1665,16 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                                                $role === 'Account Management' ||
                                                                                $role === 'Sale Supervisor' ||
                                                                                $ticket['job_owner'] === $user_id);
+
+                                                                    // ตรวจสอบสถานะ - ซ่อนปุ่ม Edit เมื่อสถานะเป็น Resolved หรือ Closed
+                                                                    $ticketStatus = trim($ticket['status'] ?? '');
+                                                                    $isResolved = (strcasecmp($ticketStatus, 'Resolved') === 0);
+                                                                    $isClosed = (strcasecmp($ticketStatus, 'Closed') === 0);
+                                                                    $canShowEdit = $canEdit && !$isResolved && !$isClosed;
                                                                     ?>
                                                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                                                         <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-info" title="View"><i class="fas fa-eye"></i></a>
-                                                                        <?php if ($canEdit): ?>
+                                                                        <?php if ($canShowEdit): ?>
                                                                         <a href="edit_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>" class="btn btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
                                                                         <?php endif; ?>
                                                                     </div>
