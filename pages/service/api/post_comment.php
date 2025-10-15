@@ -31,7 +31,11 @@ try {
     if (!$ticket_id) throw new Exception('ไม่พบ Ticket ID');
     if ($comment_text === '') throw new Exception('กรุณากรอกความคิดเห็น');
 
-    $user_id = $_SESSION['user_id'];
+    $user_id_raw = $_SESSION['user_id'] ?? null;
+    $user_id = trim((string)$user_id_raw);
+    if ($user_id === '') {
+        throw new Exception('ไม่พบข้อมูลผู้ใช้งานสำหรับบันทึกประวัติ');
+    }
     $role = $_SESSION['role'] ?? '';
 
 /*
@@ -221,8 +225,8 @@ try {
 
         if ($canEdit) {
             // Update ticket status
-            $updateStatus = $condb->prepare("UPDATE service_tickets SET status = ?, updated_at = NOW() WHERE ticket_id = ?");
-            $updateStatus->execute([$new_status, $ticket_id]);
+            $updateStatus = $condb->prepare("UPDATE service_tickets SET status = ?, updated_at = NOW(), updated_by = ? WHERE ticket_id = ?");
+            $updateStatus->execute([$new_status, $user_id, $ticket_id]);
 
             // Log status change in history
             $history_id = uuidv4();
@@ -284,8 +288,8 @@ try {
             }
 
             // Update ticket job owner
-            $updateOwner = $condb->prepare("UPDATE service_tickets SET job_owner = ?, updated_at = NOW() WHERE ticket_id = ?");
-            $updateOwner->execute([$new_job_owner, $ticket_id]);
+            $updateOwner = $condb->prepare("UPDATE service_tickets SET job_owner = ?, updated_at = NOW(), updated_by = ? WHERE ticket_id = ?");
+            $updateOwner->execute([$new_job_owner, $user_id, $ticket_id]);
 
             // Log job owner change in history
             $history_id = uuidv4();
