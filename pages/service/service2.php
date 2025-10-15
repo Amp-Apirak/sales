@@ -117,6 +117,7 @@ $filterStatus     = $_GET['status']          ?? '';
 $filterServiceCat = $_GET['servicecategory'] ?? '';
 $filterCategory   = $_GET['category']        ?? '';
 $filterSubCat     = $_GET['subcategory']     ?? '';
+$filterChannel    = $_GET['channel']         ?? '';
 
 // โหลดตัวเลือกสำหรับ dropdown
 // Job Owner: Executive เห็นทั้งหมด, Supervisor เห็นเฉพาะทีม, อื่นๆ เห็นเฉพาะตนเอง
@@ -169,6 +170,7 @@ $statusOptions       = distinctOptions($condb, 'status', $visibility['clause'], 
 $serviceCatOptions   = distinctOptions($condb, 'service_category', $visibility['clause'], $visibility['params']);
 $categoryOptions     = distinctOptions($condb, 'category', $visibility['clause'], $visibility['params']);
 $subCategoryOptions  = distinctOptions($condb, 'sub_category', $visibility['clause'], $visibility['params']);
+$channelOptions      = distinctOptions($condb, 'channel', $visibility['clause'], $visibility['params']);
 
 // สร้าง WHERE/Params ใช้ซ้ำได้ ทั้งรายการและ Metrics
 $where = ' WHERE ' . $visibility['clause'];
@@ -189,6 +191,7 @@ $mapFilters = [
     'category'         => $filterCategory,
     'sub_category'     => $filterSubCat,
     'sla_target'       => $filterSla,
+    'channel'          => $filterChannel,
 ];
 foreach ($mapFilters as $col => $val) {
     if ($val !== '' && $val !== null) { $where .= " AND st.$col = :$col"; $params[":$col"] = $val; }
@@ -743,6 +746,17 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQu
                                                                     <option value="">เลือก</option>
                                                                     <?php foreach ($sourceOptions as $v): ?>
                                                                         <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterSource === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-2">
+                                                            <div class="form-group">
+                                                                <label>Channel</label>
+                                                                <select class="custom-select select2" name="channel">
+                                                                    <option value="">เลือก</option>
+                                                                    <?php foreach ($channelOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterChannel === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
                                                                     <?php endforeach; ?>
                                                                 </select>
                                                             </div>
