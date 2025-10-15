@@ -490,20 +490,24 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                                 <thead>
                                                                     <tr>
                                                                         <th>งวดที่</th>
-                                                                        <th>จำนวนเงิน</th>
+                                                                        <th>จำนวนเงิน (รวม VAT)</th>
                                                                         <th>คิดเป็นเปอร์เซนต์</th>
                                                                         <th>วันครบกำหนด</th>
                                                                         <th>สถานะ</th>
                                                                         <th>วันที่ชำระ</th>
-                                                                        <th>จำนวนเงินที่ชำระแล้ว</th>
+                                                                        <th>จำนวนเงินที่ชำระแล้ว (รวม VAT)</th>
                                                                         <th class="no-print">การดำเนินการ</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
-                                                                    <?php foreach ($payments as $payment): ?>
+                                                                    <?php foreach ($payments as $payment):
+                                                                        // คำนวณจำนวนเงินรวม VAT
+                                                                        $amountWithVat = $payment['amount'] * 1.07;
+                                                                        $amountPaidWithVat = $payment['amount_paid'] * 1.07;
+                                                                    ?>
                                                                         <tr>
                                                                             <td><?php echo htmlspecialchars($payment['payment_number']); ?></td>
-                                                                            <td><?php echo number_format($payment['amount'], 2); ?> บาท</td>
+                                                                            <td><?php echo number_format($amountWithVat, 2); ?> บาท</td>
                                                                             <td><?php echo htmlspecialchars($payment['payment_percentage']); ?></td>
                                                                             <td><?php echo htmlspecialchars($payment['due_date']); ?></td>
                                                                             <td>
@@ -512,7 +516,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                                                 </span>
                                                                             </td>
                                                                             <td><?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?></td>
-                                                                            <td><?php echo number_format($payment['amount_paid'], 2); ?> บาท</td>
+                                                                            <td><?php echo number_format($amountPaidWithVat, 2); ?> บาท</td>
                                                                             <td>
                                                                                 <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
                                                                                     <i class="fas fa-edit"></i>
@@ -528,18 +532,22 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                         </div>
 
                                                         <div class="card-view d-md-none">
-                                                            <?php foreach ($payments as $payment): ?>
+                                                            <?php foreach ($payments as $payment):
+                                                                // คำนวณจำนวนเงินรวม VAT
+                                                                $amountWithVat = $payment['amount'] * 1.07;
+                                                                $amountPaidWithVat = $payment['amount_paid'] * 1.07;
+                                                            ?>
                                                                 <div class="payment-card mb-3">
                                                                     <div class="card">
                                                                         <div class="card-body">
                                                                             <h5 class="card-title">งวดที่ <?php echo htmlspecialchars($payment['payment_number']); ?></h5>
                                                                             <p class="card-text">
-                                                                                <strong>จำนวนเงิน:</strong> <?php echo number_format($payment['amount'], 2); ?> บาท<br>
+                                                                                <strong>จำนวนเงิน (รวม VAT):</strong> <?php echo number_format($amountWithVat, 2); ?> บาท<br>
                                                                                 <strong>คิดเป็นเปอร์เซนต์:</strong> <?php echo htmlspecialchars($payment['payment_percentage']); ?><br>
                                                                                 <strong>วันครบกำหนด:</strong> <?php echo htmlspecialchars($payment['due_date']); ?><br>
                                                                                 <strong>สถานะ:</strong> <span class="<?php echo getStatusClass($payment['status']); ?>"><?php echo htmlspecialchars($payment['status']); ?></span><br>
                                                                                 <strong>วันที่ชำระ:</strong> <?php echo $payment['payment_date'] ? htmlspecialchars($payment['payment_date']) : '-'; ?><br>
-                                                                                <strong>จำนวนเงินที่ชำระแล้ว:</strong> <?php echo number_format($payment['amount_paid'], 2); ?> บาท
+                                                                                <strong>จำนวนเงินที่ชำระแล้ว (รวม VAT):</strong> <?php echo number_format($amountPaidWithVat, 2); ?> บาท
                                                                             </p>
                                                                             <div class="btn-group" role="group">
                                                                                 <button class="btn btn-sm btn-info mr-1" onclick="editPayment('<?php echo $payment['payment_id']; ?>')">
@@ -562,16 +570,17 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="row mt-2">
                                                             <div class="col-md-4">
                                                                 <div class="info-item">
-                                                                    <span class="info-label">ราคาขาย (ไม่รวมภาษี):</span>
-                                                                    <span class="info-value"><?php echo number_format($project['sale_no_vat'], 2); ?> บาท</span>
+                                                                    <span class="info-label">ราคาขาย (รวมภาษี):</span>
+                                                                    <span class="info-value"><?php echo number_format($project['sale_vat'], 2); ?> บาท</span>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-4">
                                                                 <div class="info-item">
-                                                                    <span class="info-label">จำนวนเงินรวมงวดชำระ :</span>
+                                                                    <span class="info-label">จำนวนเงินรวมงวดชำระ (รวม VAT):</span>
                                                                     <span class="info-value"><?php
                                                                                                 $total_scheduled_payments = array_sum(array_column($payments, 'amount'));
-                                                                                                echo number_format($total_scheduled_payments, 2);
+                                                                                                $total_scheduled_with_vat = $total_scheduled_payments * 1.07;
+                                                                                                echo number_format($total_scheduled_with_vat, 2);
                                                                                                 ?> บาท</span>
                                                                 </div>
                                                             </div>
@@ -598,7 +607,7 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                             </div>
                                                             <div class="col-md-4">
                                                                 <div class="info-item">
-                                                                    <span class="info-label text-success">จำนวนเงินที่ชำระแล้ว:</span>
+                                                                    <span class="info-label text-success">จำนวนเงินที่ชำระแล้ว (รวม VAT):</span>
                                                                     <span class="info-value text-success"><?php
                                                                                                             // คำนวณจำนวนงวดที่ชำระแล้วและจำนวนงวดทั้งหมด
                                                                                                             $paidInstallments = 0;
@@ -612,8 +621,9 @@ $users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
                                                                                                                 }
                                                                                                             }
 
-                                                                                                            // แสดงผลจำนวนเงินที่ชำระแล้วและจำนวนงวด
-                                                                                                            echo number_format($total_paid, 2);
+                                                                                                            // แสดงผลจำนวนเงินที่ชำระแล้วรวม VAT
+                                                                                                            $total_paid_with_vat = $total_paid * 1.07;
+                                                                                                            echo number_format($total_paid_with_vat, 2);
                                                                                                             ?> บาท (<?php echo $paidInstallments; ?>/<?php echo $totalInstallments; ?> งวด)
                                                                     </span>
                                                                 </div>

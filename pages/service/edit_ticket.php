@@ -894,14 +894,14 @@ $menu = 'service';
                 locale: 'th',
                 sideBySide: true,
                 icons: {
-                    time: 'far fa-clock',
-                    date: 'far fa-calendar-alt',
+                    time: 'fas fa-clock',
+                    date: 'fas fa-calendar',
                     up: 'fas fa-arrow-up',
                     down: 'fas fa-arrow-down',
                     previous: 'fas fa-chevron-left',
                     next: 'fas fa-chevron-right',
-                    today: 'far fa-calendar-check',
-                    clear: 'far fa-trash-alt',
+                    today: 'fas fa-calendar-check',
+                    clear: 'fas fa-trash-alt',
                     close: 'fas fa-times'
                 },
                 buttons: {
