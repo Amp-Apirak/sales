@@ -846,4 +846,15 @@ From `config/validation.php`:
 
 ---
 
-**Version:** 2.0.3 | **Updated:** 2025-10-16 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP
+### 2025-10-17: Service Ticket Activity Log Relative Time Fix
+**Issue:** เวลาใน Activity Log & Comments ค้างอยู่ที่ `เมื่อสักครู่` แม้เวลาจะผ่านไป เนื่องจากค่าจากฐานข้อมูลถูกตีความว่าเป็นอนาคต (timezone mismatch)
+
+**File Fixed:**
+1. **`pages/service/api/get_ticket_feed.php`**
+   - แก้ฟังก์ชัน `timeAgo()` ให้ใช้ `DateTimeImmutable` พร้อมตั้งค่า `Asia/Bangkok` และ fallback เป็นเวลาจริง (`d/m/Y H:i`) เมื่อตรวจพบว่าค่า `created_at` อยู่ในอนาคต เพื่อไม่ให้ผลลัพธ์ค้างเป็น `เมื่อสักครู่`
+
+**Impact:** เวลาแสดงแบบ relative จะอัปเดตถูกต้อง และถ้าเวลาที่ดึงมาอยู่ในอนาคตจะแสดงเวลาเต็มแทนการแปลเป็น “เมื่อสักครู่”
+
+---
+
+**Version:** 2.0.3 | **Updated:** 2025-10-17 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP

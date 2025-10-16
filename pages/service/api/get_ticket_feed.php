@@ -8,13 +8,47 @@ $current_user_role = $_SESSION['role'] ?? '';
 
 // Basic helpers
 function timeAgo($datetime) {
-    $ts = strtotime($datetime);
-    $diff = time() - $ts;
-    if ($diff < 60) return 'เมื่อสักครู่';
-    if ($diff < 3600) return floor($diff/60) . ' นาทีที่แล้ว';
-    if ($diff < 86400) return floor($diff/3600) . ' ชั่วโมงที่แล้ว';
-    if ($diff < 604800) return floor($diff/86400) . ' วันที่แล้ว';
-    return date('d/m/Y H:i', $ts);
+    if (!$datetime) {
+        return '-';
+    }
+
+    static $tz = null;
+    if ($tz === null) {
+        $tz = new DateTimeZone('Asia/Bangkok');
+    }
+
+    try {
+        $createdAt = new DateTimeImmutable($datetime, $tz);
+    } catch (Exception $e) {
+        $timestamp = strtotime($datetime);
+        if ($timestamp === false) {
+            return '-';
+        }
+        $createdAt = (new DateTimeImmutable('@' . $timestamp))->setTimezone($tz);
+    }
+
+    $now = new DateTimeImmutable('now', $tz);
+    $diff = $now->getTimestamp() - $createdAt->getTimestamp();
+
+    if ($diff < 0) {
+        // ถ้าเวลายังไม่มาถึง (เช่น timezone ไม่ตรง) ให้ fallback เป็นเวลาจริงแบบเต็ม
+        return $createdAt->format('d/m/Y H:i');
+    }
+
+    if ($diff < 60) {
+        return 'เมื่อสักครู่';
+    }
+    if ($diff < 3600) {
+        return floor($diff / 60) . ' นาทีที่แล้ว';
+    }
+    if ($diff < 86400) {
+        return floor($diff / 3600) . ' ชั่วโมงที่แล้ว';
+    }
+    if ($diff < 604800) {
+        return floor($diff / 86400) . ' วันที่แล้ว';
+    }
+
+    return $createdAt->format('d/m/Y H:i');
 }
 function esc($s){return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8');}
 function initials($full){
