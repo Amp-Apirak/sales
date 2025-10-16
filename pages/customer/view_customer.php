@@ -2,6 +2,12 @@
 //session_start and Config DB
 include '../../include/Add_session.php';
 
+// ดึงข้อมูลจาก session
+$role = $_SESSION['role'];
+$team_ids = $_SESSION['team_ids'] ?? [];
+$user_id = $_SESSION['user_id'];
+$current_team_id = $_SESSION['team_id'] ?? 'ALL';
+
 // ตรวจสอบว่ามีการส่ง id มาหรือไม่
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     // ถ้าไม่มี id ให้ redirect กลับไปหน้า customer.php
@@ -12,9 +18,15 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 // ถอดรหัส id
 $customer_id = decryptUserId($_GET['id']);
 
+if ($customer_id === false) {
+    $_SESSION['error'] = 'รหัสลูกค้าไม่ถูกต้อง';
+    header("Location: customer.php");
+    exit();
+}
+
 // ดึงข้อมูลลูกค้าจากฐานข้อมูล
 try {
-    $stmt = $condb->prepare("SELECT c.*, u.first_name, u.last_name 
+    $stmt = $condb->prepare("SELECT c.*, u.first_name, u.last_name
                              FROM customers c
                              LEFT JOIN users u ON c.created_by = u.user_id
                              WHERE c.customer_id = :id");
@@ -24,11 +36,65 @@ try {
 
     if (!$customer) {
         // ถ้าไม่พบข้อมูลลูกค้า ให้ redirect กลับไปหน้า customer.php
+        $_SESSION['error'] = 'ไม่พบข้อมูลลูกค้า';
         header("Location: customer.php");
         exit();
     }
+
+    // ตรวจสอบสิทธิ์การเข้าถึงตาม RBAC
+    $has_access = false;
+
+    if ($role === 'Executive') {
+        // Executive: ถ้ามี team switcher และเลือกทีมเฉพาะ ต้องตรวจสอบว่าผู้สร้างอยู่ในทีมนั้น
+        $user_teams = $_SESSION['user_teams'] ?? [];
+        if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
+            // ตรวจสอบว่าผู้สร้างลูกค้าอยู่ในทีมที่เลือกหรือไม่
+            $stmt_check = $condb->prepare("SELECT COUNT(*) FROM user_teams WHERE user_id = :creator_id AND team_id = :team_id");
+            $stmt_check->execute([
+                ':creator_id' => $customer['created_by'],
+                ':team_id' => $current_team_id
+            ]);
+            $has_access = ($stmt_check->fetchColumn() > 0);
+        } else {
+            // Executive เห็นทั้งหมด
+            $has_access = true;
+        }
+    } elseif ($role === 'Account Management' || $role === 'Sale Supervisor') {
+        // Account Management / Sale Supervisor: เห็นเฉพาะในทีมของตัวเอง
+        if ($current_team_id === 'ALL') {
+            // ตรวจสอบว่าผู้สร้างอยู่ในทีมใดทีมหนึ่งที่ตัวเองสังกัดหรือไม่
+            if (!empty($team_ids)) {
+                $placeholders = str_repeat('?,', count($team_ids) - 1) . '?';
+                $stmt_check = $condb->prepare("SELECT COUNT(*) FROM user_teams WHERE user_id = ? AND team_id IN ($placeholders)");
+                $params = array_merge([$customer['created_by']], $team_ids);
+                $stmt_check->execute($params);
+                $has_access = ($stmt_check->fetchColumn() > 0);
+            }
+        } else {
+            // ตรวจสอบว่าผู้สร้างอยู่ในทีมที่เลือกหรือไม่
+            $stmt_check = $condb->prepare("SELECT COUNT(*) FROM user_teams WHERE user_id = :creator_id AND team_id = :team_id");
+            $stmt_check->execute([
+                ':creator_id' => $customer['created_by'],
+                ':team_id' => $current_team_id
+            ]);
+            $has_access = ($stmt_check->fetchColumn() > 0);
+        }
+    } elseif ($role === 'Seller' || $role === 'Engineer') {
+        // Seller / Engineer: เห็นเฉพาะที่ตัวเองสร้าง
+        $has_access = ($customer['created_by'] === $user_id);
+    }
+
+    // ถ้าไม่มีสิทธิ์เข้าถึง
+    if (!$has_access) {
+        $_SESSION['error'] = 'คุณไม่มีสิทธิ์เข้าถึงข้อมูลลูกค้ารายนี้';
+        header("Location: customer.php");
+        exit();
+    }
+
 } catch (PDOException $e) {
-    echo "Error: " . $e->getMessage();
+    error_log("view_customer.php error: " . $e->getMessage());
+    $_SESSION['error'] = 'เกิดข้อผิดพลาดในการดึงข้อมูล';
+    header("Location: customer.php");
     exit();
 }
 

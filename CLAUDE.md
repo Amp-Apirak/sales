@@ -111,7 +111,7 @@ All protected pages follow a standard include pattern that establishes security 
 
 | Feature | Executive | Supervisor | Seller | Engineer |
 |---------|:---------:|:----------:|:------:|:--------:|
-| Account Management | ✅ Full | ⚠️ Team | ❌ | ❌ |
+| Account Management | ✅ Full | ⚠️ Team | ⚠️ Own | ❌ **BLOCKED** |
 | View Projects | ✅ All | ⚠️ Team | ⚠️ Own | ⚠️ Assigned |
 | **Financial Data** | ✅ All | ⚠️ Team | ⚠️ Own | ❌ **NONE** |
 | Customer Mgmt | ✅ All | ⚠️ Team | ⚠️ Own | ❌ |
@@ -246,7 +246,14 @@ decryptUserId($encrypted);
 
 **Page-level:**
 ```php
+// Example 1: Executive only
 if ($role !== 'Executive') {
+    header("Location: " . BASE_URL . "index.php");
+    exit();
+}
+
+// Example 2: Multiple roles (exclude specific roles)
+if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor', 'Seller'])) {
     header("Location: " . BASE_URL . "index.php");
     exit();
 }
@@ -571,6 +578,7 @@ $team_id = $_SESSION['team_id']; // UUID or 'ALL'
 - **Login fails:** Check rate limit, credentials, session cookies
 - **Team switcher hidden:** User needs >1 team in user_teams
 - **Engineer sees financial:** BUG! Check `$role !== 'Engineer'` condition
+- **Engineer accesses restricted pages:** Check role permission array in `!in_array($role, [...])` - Engineer must be EXCLUDED
 - **Upload fails:** Verify size (<5MB), type whitelist, permissions (755/644)
 - **DB connection:** Check .env, MySQL service, test with `mysql -u root -p`
 
@@ -642,4 +650,83 @@ From `config/validation.php`:
 
 ---
 
-**Version:** 2.0 | **Updated:** 2025-10-13 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP
+## Security Fix Log
+
+### 2025-10-16: RBAC Access Control Fix (Account & Customer Management)
+**Issue:** Users could bypass RBAC by accessing pages via direct URL with encrypted IDs
+
+**Account Management Files Fixed:**
+1. **`pages/account/edit_account.php`** (Line 13)
+   - **Problem:** Included 'Engineer' in allowed roles array
+   - **Fix:** Removed 'Engineer' from `!in_array($role, [...])` check
+   - **Before:** `['Executive', 'Account Management', 'Sale Supervisor', 'Seller', 'Engineer']`
+   - **After:** `['Executive', 'Account Management', 'Sale Supervisor', 'Seller']`
+
+2. **`pages/account/add_account.php`** (Line 15)
+   - **Problem:** Included 'Engineer' and 'Seller' in allowed roles
+   - **Fix:** Removed both 'Engineer' and 'Seller' (Sellers shouldn't create accounts)
+   - **Before:** `['Executive', 'Account Management', 'Sale Supervisor', 'Seller']`
+   - **After:** `['Executive', 'Account Management', 'Sale Supervisor']`
+
+3. **`pages/account/view_account.php`** (Line 111-119)
+   - **Problem:** Missing explicit Seller and Engineer role checks
+   - **Fix:** Added explicit checks for Seller (own data only) and Engineer (blocked)
+   - **Impact:** Seller can view own profile, Engineer completely blocked
+
+**Already Protected:**
+- `pages/account/account.php` - Line 6 blocks non-authorized roles
+
+**Customer Management Files Fixed:**
+4. **`pages/customer/view_customer.php`** (Line 1-99)
+   - **Problem:** NO access control - anyone logged in could view any customer
+   - **Fix:** Added complete RBAC validation matching `customer.php` logic
+   - **Impact:**
+     - Executive: View all (or filtered by team switcher)
+     - Account Mgmt/Supervisor: View team customers only
+     - Seller/Engineer: View own created customers only
+
+5. **`pages/customer/edit_customer.php`** (Line 20-108)
+   - **Problem:** NO access control - anyone could edit any customer
+   - **Fix:** Added complete RBAC validation before allowing edit
+   - **Impact:** Same access rules as view, prevents unauthorized modifications
+
+**RBAC Compliance:** ✅ All account management pages now properly enforce role restrictions
+
+**Testing Checklist:**
+```bash
+# Account Management - As Engineer role:
+1. Access account.php → Redirect to index.php
+2. Access add_account.php → Redirect to index.php
+3. Access edit_account.php?user_id=X → Redirect to index.php
+4. Access view_account.php?id=X → Error message + redirect to account.php
+
+# Account Management - As Seller role:
+1. Access account.php → Redirect to index.php
+2. Access add_account.php → Redirect to index.php
+3. Access edit_account.php?user_id=own → Can edit own profile
+4. Access edit_account.php?user_id=other → Error message + redirect
+5. Access view_account.php?id=own → Can view own profile
+6. Access view_account.php?id=other → Error message + redirect
+
+# Customer Management - As Engineer role:
+1. Access view_customer.php?id=own_customer → Can view
+2. Access view_customer.php?id=other_customer → Error + redirect to customer.php
+3. Access edit_customer.php?customer_id=own → Can edit
+4. Access edit_customer.php?customer_id=other → Error + redirect to customer.php
+
+# Customer Management - As Seller role:
+1. Access view_customer.php?id=own_customer → Can view
+2. Access view_customer.php?id=other_customer → Error + redirect to customer.php
+3. Access edit_customer.php?customer_id=own → Can edit
+4. Access edit_customer.php?customer_id=other → Error + redirect to customer.php
+
+# Customer Management - As Sale Supervisor:
+1. Access view_customer.php?id=team_customer → Can view
+2. Access view_customer.php?id=other_team_customer → Error + redirect
+3. Access edit_customer.php?customer_id=team → Can edit
+4. Access edit_customer.php?customer_id=other_team → Error + redirect
+```
+
+---
+
+**Version:** 2.0.1 | **Updated:** 2025-10-16 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP

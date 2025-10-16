@@ -9,9 +9,9 @@ $team_id = $_SESSION['team_id'];
 $team_ids = $_SESSION['team_ids'] ?? [];
 $created_by = $_SESSION['user_id'];
 
-// ตรวจสอบสิทธิ์การเข้าถึงหน้านี้
-if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor', 'Seller', 'Engineer'])) {
-    header("Location: unauthorized.php");
+// ตรวจสอบสิทธิ์การเข้าถึงหน้านี้ - Engineer ไม่มีสิทธิ์จัดการบัญชี
+if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor', 'Seller'])) {
+    header("Location: " . BASE_URL . "index.php");
     exit();
 }
 

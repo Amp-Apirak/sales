@@ -18,8 +18,11 @@ function clean_input($data)
 }
 
 $role = $_SESSION['role'];  // ดึง role ของผู้ใช้จาก session
+$team_ids = $_SESSION['team_ids'] ?? [];  // ดึง team_ids ของผู้ใช้จาก session
 $team_id = $_SESSION['team_id'];  // ดึง team_id ของผู้ใช้จาก session
+$user_id = $_SESSION['user_id']; // ดึง user_id ของผู้ใช้จาก session
 $updated_by = $_SESSION['user_id']; // ดึง user_id ของผู้แก้ไขจาก session
+$current_team_id = $_SESSION['team_id'] ?? 'ALL';
 
 // ตรวจสอบว่ามีการส่ง customer_id มาใน URL หรือไม่
 if (isset($_GET['customer_id'])) {
@@ -38,15 +41,69 @@ if (isset($_GET['customer_id'])) {
 
         // ตรวจสอบว่าพบข้อมูลลูกค้าหรือไม่
         if (!$customer) {
-            echo "ไม่พบข้อมูลลูกค้าที่ต้องการแก้ไข";
+            $_SESSION['error'] = 'ไม่พบข้อมูลลูกค้าที่ต้องการแก้ไข';
+            header("Location: customer.php");
             exit;
         }
+
+        // ตรวจสอบสิทธิ์การเข้าถึงตาม RBAC
+        $has_access = false;
+
+        if ($role === 'Executive') {
+            // Executive: ถ้ามี team switcher และเลือกทีมเฉพาะ ต้องตรวจสอบว่าผู้สร้างอยู่ในทีมนั้น
+            $user_teams = $_SESSION['user_teams'] ?? [];
+            if (count($user_teams) > 1 && !empty($current_team_id) && $current_team_id !== 'ALL') {
+                // ตรวจสอบว่าผู้สร้างลูกค้าอยู่ในทีมที่เลือกหรือไม่
+                $stmt_check = $condb->prepare("SELECT COUNT(*) FROM user_teams WHERE user_id = :creator_id AND team_id = :team_id");
+                $stmt_check->execute([
+                    ':creator_id' => $customer['created_by'],
+                    ':team_id' => $current_team_id
+                ]);
+                $has_access = ($stmt_check->fetchColumn() > 0);
+            } else {
+                // Executive เห็นทั้งหมด
+                $has_access = true;
+            }
+        } elseif ($role === 'Account Management' || $role === 'Sale Supervisor') {
+            // Account Management / Sale Supervisor: เห็นเฉพาะในทีมของตัวเอง
+            if ($current_team_id === 'ALL') {
+                // ตรวจสอบว่าผู้สร้างอยู่ในทีมใดทีมหนึ่งที่ตัวเองสังกัดหรือไม่
+                if (!empty($team_ids)) {
+                    $placeholders = str_repeat('?,', count($team_ids) - 1) . '?';
+                    $stmt_check = $condb->prepare("SELECT COUNT(*) FROM user_teams WHERE user_id = ? AND team_id IN ($placeholders)");
+                    $params = array_merge([$customer['created_by']], $team_ids);
+                    $stmt_check->execute($params);
+                    $has_access = ($stmt_check->fetchColumn() > 0);
+                }
+            } else {
+                // ตรวจสอบว่าผู้สร้างอยู่ในทีมที่เลือกหรือไม่
+                $stmt_check = $condb->prepare("SELECT COUNT(*) FROM user_teams WHERE user_id = :creator_id AND team_id = :team_id");
+                $stmt_check->execute([
+                    ':creator_id' => $customer['created_by'],
+                    ':team_id' => $current_team_id
+                ]);
+                $has_access = ($stmt_check->fetchColumn() > 0);
+            }
+        } elseif ($role === 'Seller' || $role === 'Engineer') {
+            // Seller / Engineer: เห็นเฉพาะที่ตัวเองสร้าง
+            $has_access = ($customer['created_by'] === $user_id);
+        }
+
+        // ถ้าไม่มีสิทธิ์เข้าถึง
+        if (!$has_access) {
+            $_SESSION['error'] = 'คุณไม่มีสิทธิ์แก้ไขข้อมูลลูกค้ารายนี้';
+            header("Location: customer.php");
+            exit;
+        }
+
     } else {
-        echo "รหัสลูกค้าไม่ถูกต้อง";
+        $_SESSION['error'] = 'รหัสลูกค้าไม่ถูกต้อง';
+        header("Location: customer.php");
         exit;
     }
 } else {
-    echo "ไม่มีการส่งรหัสลูกค้ามา";
+    $_SESSION['error'] = 'ไม่มีการส่งรหัสลูกค้ามา';
+    header("Location: customer.php");
     exit;
 }
 

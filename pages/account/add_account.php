@@ -11,9 +11,9 @@ $role = $_SESSION['role'];  // บทบาทของผู้ใช้จา�
 $team_id = $_SESSION['team_id'];  // team_id ของผู้ใช้จาก session
 $created_by = $_SESSION['user_id'];  // user_id ของผู้สร้างจาก session
 
-// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น
-if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor', 'Seller'])) {
-    header("Location: unauthorized.php");
+// จำกัดการเข้าถึงเฉพาะผู้ใช้ที่มีสิทธิ์เท่านั้น - Engineer ไม่มีสิทธิ์สร้างบัญชี
+if (!in_array($role, ['Executive', 'Account Management', 'Sale Supervisor'])) {
+    header("Location: " . BASE_URL . "index.php");
     exit();
 }
 

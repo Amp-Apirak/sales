@@ -108,7 +108,13 @@ try {
                 }
             }
         }
+    } elseif ($role === 'Seller') {
+        // Seller สามารถดูเฉพาะข้อมูลของตัวเองได้
+        if ($account['user_id'] !== $currentUserId) {
+            $errorMessage = 'คุณสามารถดูได้เฉพาะข้อมูลของตัวเองเท่านั้น';
+        }
     } elseif ($role !== 'Executive') {
+        // Engineer และ role อื่นๆ ไม่มีสิทธิ์เข้าถึง
         $errorMessage = 'คุณไม่มีสิทธิ์ในการดูข้อมูลนี้';
     }
 
