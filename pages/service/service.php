@@ -463,6 +463,17 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                 box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 12px 20px rgba(0, 0, 0, 0.2);
             }
 
+            .service-table-wrapper {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 0.5rem;
+            }
+
+            .service-table-wrapper table {
+                min-width: 720px;
+            }
+
             #serviceTickets {
                 width: 100%;
                 border-collapse: separate;
@@ -990,6 +1001,148 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                 padding: 0.35rem 0.6rem;
             }
 
+            @media (max-width: 1399.98px) {
+                .service-table-wrapper table {
+                    min-width: 0;
+                }
+
+                #serviceTickets colgroup col,
+                #serviceTickets th.ticket-summary-col,
+                #serviceTickets td.ticket-summary,
+                #serviceTickets th.ticket-details-col,
+                #serviceTickets td.ticket-details,
+                #serviceTickets th.ticket-actions-col,
+                #serviceTickets td.ticket-actions {
+                    width: auto;
+                }
+            }
+
+            @media (max-width: 991.98px) {
+                .service-table-wrapper {
+                    overflow: visible;
+                    padding-bottom: 0;
+                }
+
+                #serviceTickets {
+                    display: block;
+                    width: 100%;
+                    border-spacing: 0;
+                }
+
+                #serviceTickets colgroup {
+                    display: none;
+                }
+
+                #serviceTickets thead {
+                    border: 0;
+                    clip: rect(0 0 0 0);
+                    height: 1px;
+                    margin: -1px;
+                    overflow: hidden;
+                    padding: 0;
+                    position: absolute;
+                    width: 1px;
+                }
+
+                #serviceTickets tbody {
+                    display: block;
+                }
+
+                #serviceTickets tbody tr {
+                    display: block;
+                    border: 1px solid #dee2e6;
+                    border-radius: 16px;
+                    margin-bottom: 1.25rem;
+                    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+                    background-color: #ffffff;
+                }
+
+                #serviceTickets tbody tr:last-child {
+                    margin-bottom: 0;
+                }
+
+                #serviceTickets tbody td {
+                    display: block;
+                    width: 100% !important;
+                    padding: 1rem 1.25rem;
+                    border: 0;
+                    background-color: transparent;
+                }
+
+                #serviceTickets tbody td + td {
+                    border-top: 1px solid #e9ecef;
+                }
+
+                #serviceTickets tbody td::before {
+                    content: attr(data-title);
+                    display: block;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                    color: #6c757d;
+                    margin-bottom: 0.35rem;
+                }
+
+                #serviceTickets tbody tr:nth-child(odd) td,
+                #serviceTickets tbody tr:nth-child(even) td,
+                #serviceTickets tbody tr:hover td {
+                    background-color: transparent;
+                }
+
+                .ticket-summary,
+                .ticket-details,
+                .ticket-actions {
+                    min-width: 0;
+                    width: 100%;
+                }
+
+                .ticket-summary {
+                    padding-bottom: 0.25rem;
+                }
+
+                .ticket-header-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 0.6rem;
+                }
+
+                .status-badge-container {
+                    width: 100%;
+                    margin-left: 0;
+                }
+
+                .status-badge-container .badge {
+                    white-space: normal;
+                    line-height: 1.35;
+                    padding: 0.45rem 0.75rem;
+                }
+
+                #serviceTickets tbody td::before {
+                    margin-bottom: 0.5rem;
+                }
+
+                .ticket-details .details-grid {
+                    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                }
+
+                .ticket-actions {
+                    padding: 0;
+                    margin: 0.75rem 0.9rem 0.95rem;
+                    background-color: #eff4fb;
+                    border-radius: 1rem;
+                    box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.18);
+                }
+
+                .ticket-actions-inner {
+                    border-left: 0;
+                    padding: 1.35rem 1.4rem 1.45rem;
+                    gap: 1rem;
+                    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 245, 249, 1) 100%);
+                    border-radius: 1rem;
+                }
+            }
+
             .metric-chips {
                 display: flex;
                 flex-wrap: wrap;
@@ -1384,6 +1537,7 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                         <button type="button" class="btn btn-outline-secondary btn-sm" id="btnExportPDF">PDF</button>
                                         <button type="button" class="btn btn-outline-secondary btn-sm" id="btnExportPrint">Print</button>
                                     </div>
+                                    <div class="service-table-wrapper table-responsive">
                                     <table id="serviceTickets" class="table table-bordered table-striped table-hover">
                                         <colgroup>
                                             <col style="width:45%">
@@ -1538,7 +1692,7 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                         ];
                                                 ?>
                                                     <tr>
-                                                        <td class="ticket-summary">
+                                                        <td class="ticket-summary" data-title="Ticket">
                                                             <div class="ticket-header-row">
                                                                 <div class="ticket-number">
                                                                     <a href="view_ticket.php?id=<?php echo urlencode($ticket['ticket_id']); ?>">
@@ -1586,7 +1740,7 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                             </div>
                                                             <?php endif; ?>
                                                         </td>
-                                                        <td class="ticket-details">
+                                                        <td class="ticket-details" data-title="รายละเอียด">
                                                             <div class="details-grid">
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Project</span>
@@ -1693,7 +1847,7 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td class="ticket-actions">
+                                                        <td class="ticket-actions" data-title="SLA &amp; Action">
                                                             <div class="ticket-actions-inner">
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">SLA Target</span>
@@ -1760,6 +1914,7 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    </div>
                                     <script>
                                         window.serviceTicketExportHeaders = <?php echo json_encode([
                                             'Ticket No',

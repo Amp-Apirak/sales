@@ -874,4 +874,19 @@ From `config/validation.php`:
 
 ---
 
-**Version:** 2.0.3 | **Updated:** 2025-10-17 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP
+### 2025-10-18: Service Ticket Overview Responsive Layout
+**Issue:** ตาราง Service Ticket Overview เลยออกนอกกรอบเมื่อย่อหน้าจอ (mid / small viewport) ทำให้ใช้งานลำบากบนโน้ตบุ๊ก/แท็บเล็ต
+
+**File Updated:**
+1. **`pages/service/service.php`**
+   - ครอบตารางด้วย `.service-table-wrapper` เพื่อให้ Bootstrap/Custom CSS จัดการ overflow ได้เนียนตา และเปิดใช้ momentum scroll บนอุปกรณ์สัมผัส
+   - เพิ่ม `data-title` ให้ `<td>` แต่ละคอลัมน์ พร้อม media query ลดความกว้าง `colgroup` สำหรับหน้าจอ < 1400px
+   - สร้าง mobile card layout (≤ 992px): ซ่อน `<thead>`, ปรับ `<tr>` เป็นบล็อกโค้งมน, ลด padding, ตัดเส้นขอบซ้ำซ้อน และปรับ `ticket-actions` ให้เป็นพื้นหลังอ่อนอ่านง่าย
+   - ปรับ `details-grid` ในคอลัมน์รายละเอียด ให้จัดเป็น auto-fit grid ที่ยืดหยุ่นตามความกว้างหน้าจอเล็ก
+   - ปรับแต่ง breakpoint ≤ 992px เพิ่มเติม: คลาย `white-space` ของป้ายสถานะให้ห่อคำ, จัด header ticket เป็นคอลัมน์ และเพิ่ม margin/padding ใหม่ให้โซน `SLA & Action` มีกรอบมนพร้อมพื้นหลังอ่อน ไม่ชิดขอบ
+
+**Impact:** มุมมอง Service Ticket ยืดหยุ่นกับทุกขนาดหน้าจอ ตัดการ overflow และอ่านง่ายขึ้นบนมือถือ/แท็บเล็ต โดยยังคงการทำงานของ DataTables (ค้นหา/จัดหน้า) ครบถ้วน
+
+---
+
+**Version:** 2.0.3 | **Updated:** 2025-10-18 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP
