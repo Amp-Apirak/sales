@@ -857,4 +857,21 @@ From `config/validation.php`:
 
 ---
 
+### 2025-10-17: Service Management Metric Filter & Reset
+**Issue:** การ์ดสถานะบนหน้า Service Management ไม่ได้ผูกกับตารางผลลัพธ์ และไม่มีปุ่มรีเซ็ตตัวกรอง (ต้องการ default = Job Owner เป็นผู้ใช้ปัจจุบัน)
+
+**Files Updated:**
+1. **`pages/service/service.php`**
+   - เพิ่มตัวแปร `$filterSlaStatus` และ hidden input `sla_status` เพื่อให้การ์ด “Overdue SLA” กรองตาม `sla_status`
+   - กำหนดเมทริกการ์ดให้มี `data-filter` พร้อม CSS/JS รองรับการคลิกหรือกดคีย์บอร์ด แล้ว submit ฟอร์มด้วยสถานะที่เลือก (ยังคง Job Owner เดิม)
+   - ใส่ปุ่ม `รีเซ็ต` ในฟอร์มค้นหา เรียกใช้ JS เพื่อคืนค่าตัวกรองทั้งหมดเป็นค่าเริ่มต้น (Job Owner = ผู้ใช้งานระบบ, ฟิลด์อื่นว่าง)
+   - ไฮไลต์การ์ดที่ถูกเลือกอยู่ปัจจุบันเพื่อให้เห็นสถานะการกรองชัดเจน
+2. **`pages/service/service2.php`**
+   - เพิ่มตัวแปร/ฟิลด์ `sla_status` และ metadata ให้การ์ดในมุมมอง classic ทำงานเหมือนหน้า modern
+   - เพิ่มปุ่ม `รีเซ็ต` และสคริปต์บังคับให้ตัวกรองกลับค่า default พร้อมรองรับการคลิกการ์ดเพื่อกรองด้วยสถานะ/SLA
+
+**Impact:** ผู้ใช้คลิกการ์ดเพื่อกรองสถานะได้ทันที ตาราง Service Ticket Overview จะตามสถานะที่เลือก และสามารถรีเซ็ตกลับสู่มุมมองค่าเริ่มต้นได้รวดเร็ว
+
+---
+
 **Version:** 2.0.3 | **Updated:** 2025-10-17 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP

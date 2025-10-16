@@ -109,7 +109,6 @@ $searchText       = $_GET['searchservice']   ?? '';
 $filterType       = $_GET['categorytype']    ?? '';
 $filterJobOwner   = array_key_exists('jobowner', $_GET) ? ($_GET['jobowner'] ?? '') : $user_id;
 $filterSla        = $_GET['sla']             ?? '';
-$filterSlaStatus  = $_GET['sla_status']      ?? '';
 $filterPriority   = $_GET['priority']        ?? '';
 $filterSource     = $_GET['source']          ?? '';
 $filterUrgency    = $_GET['urgency']         ?? '';
@@ -192,28 +191,11 @@ $mapFilters = [
     'category'         => $filterCategory,
     'sub_category'     => $filterSubCat,
     'sla_target'       => $filterSla,
-    'sla_status'       => $filterSlaStatus,
     'channel'          => $filterChannel,
 ];
 foreach ($mapFilters as $col => $val) {
     if ($val !== '' && $val !== null) { $where .= " AND st.$col = :$col"; $params[":$col"] = $val; }
 }
-
-$defaultFilterValues = [
-    'categorytype'    => '',
-    'jobowner'        => $user_id,
-    'sla'             => '',
-    'priority'        => '',
-    'source'          => '',
-    'urgency'         => '',
-    'impact'          => '',
-    'status'          => '',
-    'servicecategory' => '',
-    'category'        => '',
-    'subcategory'     => '',
-    'channel'         => '',
-    'sla_status'      => ''
-];
 
 // ค้นหาข้อความ
 if ($searchText !== '') { $where .= " AND (st.ticket_no LIKE :q OR st.subject LIKE :q OR st.description LIKE :q)"; $params[':q'] = "%$searchText%"; }
@@ -260,72 +242,56 @@ $serviceMetrics = [
         'description' => 'จำนวนงานทั้งหมด',
         'value' => $metricsData['total_tickets'] ?? 0,
         'color' => 'bg-info',
-        'icon'  => 'fas fa-ticket-alt',
-        'filter_key' => 'all',
-        'filter_value' => ''
+        'icon'  => 'fas fa-ticket-alt'
     ],
     [
         'title' => 'New',
         'description' => 'งานใหม่',
         'value' => $metricsData['status_new'] ?? 0,
         'color' => 'bg-primary',
-        'icon'  => 'fas fa-plus-circle',
-        'filter_key' => 'status',
-        'filter_value' => 'New'
+        'icon'  => 'fas fa-plus-circle'
     ],
     [
         'title' => 'On Process',
         'description' => 'งานที่กำลังดำเนินการ',
         'value' => $metricsData['status_on_process'] ?? 0,
         'color' => 'bg-warning',
-        'icon'  => 'fas fa-tasks',
-        'filter_key' => 'status',
-        'filter_value' => 'On Process'
+        'icon'  => 'fas fa-tasks'
     ],
     [
         'title' => 'Pending',
         'description' => 'งานที่รอดำเนินการ',
         'value' => $metricsData['status_pending'] ?? 0,
         'color' => 'bg-secondary',
-        'icon'  => 'fas fa-hourglass-half',
-        'filter_key' => 'status',
-        'filter_value' => 'Pending'
+        'icon'  => 'fas fa-hourglass-half'
     ],
     [
         'title' => 'Resolved',
         'description' => 'งานที่แก้ไขแล้ว',
         'value' => $metricsData['status_resolved'] ?? 0,
         'color' => 'bg-success',
-        'icon'  => 'fas fa-check-circle',
-        'filter_key' => 'status',
-        'filter_value' => 'Resolved'
+        'icon'  => 'fas fa-check-circle'
     ],
     [
         'title' => 'Closed',
         'description' => 'งานที่ปิดแล้ว',
         'value' => $metricsData['status_closed'] ?? 0,
         'color' => 'bg-teal',
-        'icon'  => 'fas fa-lock',
-        'filter_key' => 'status',
-        'filter_value' => 'Closed'
+        'icon'  => 'fas fa-lock'
     ],
     [
         'title' => 'Cancelled',
         'description' => 'งานที่ยกเลิก',
         'value' => $metricsData['status_cancelled'] ?? 0,
         'color' => 'bg-danger',
-        'icon'  => 'fas fa-times-circle',
-        'filter_key' => 'status',
-        'filter_value' => 'Cancelled'
+        'icon'  => 'fas fa-times-circle'
     ],
     [
         'title' => 'Overdue SLA',
         'description' => 'งานที่เกิน SLA',
         'value' => $metricsData['sla_overdue'] ?? 0,
         'color' => 'bg-maroon',
-        'icon'  => 'fas fa-exclamation-triangle',
-        'filter_key' => 'sla_status',
-        'filter_value' => 'Overdue'
+        'icon'  => 'fas fa-exclamation-triangle'
     ],
 ];
 
@@ -430,22 +396,6 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQu
             .service-metrics-row .metric-card-col {
                 flex: 0 0 240px;
                 max-width: 240px;
-            }
-
-            .service-metrics-row .metric-card-col .small-box {
-                cursor: pointer;
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
-            }
-
-            .service-metrics-row .metric-card-col .small-box:hover,
-            .service-metrics-row .metric-card-col .small-box:focus {
-                transform: translateY(-2px);
-                box-shadow: 0 12px 20px rgba(0, 0, 0, 0.18);
-                outline: none;
-            }
-
-            .service-metrics-row .metric-card-col .small-box.metric-active {
-                box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 12px 20px rgba(0, 0, 0, 0.2);
             }
 
             #serviceTickets {
@@ -684,23 +634,8 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQu
                             <!-- Service Status Cards (Mockup) -->
                             <div class="row mb-3 service-metrics-row">
                                 <?php foreach ($serviceMetrics as $metric): ?>
-                                    <?php
-                                        $metricKey = $metric['filter_key'] ?? '';
-                                        $metricValue = $metric['filter_value'] ?? '';
-                                        $isActive = false;
-                                        if ($metricKey === 'status' && $filterStatus !== '' && $filterStatus === $metricValue) {
-                                            $isActive = true;
-                                        } elseif ($metricKey === 'sla_status' && $filterSlaStatus !== '' && $filterSlaStatus === $metricValue) {
-                                            $isActive = true;
-                                        } elseif ($metricKey === 'all' && $filterStatus === '' && $filterSlaStatus === '') {
-                                            $isActive = true;
-                                        }
-                                    ?>
                                     <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 d-flex metric-card-col">
-                                        <div class="small-box <?php echo htmlspecialchars($metric['color']); ?> flex-fill shadow-sm metric-card-trigger<?php echo $isActive ? ' metric-active' : ''; ?>"
-                                             role="button" tabindex="0"
-                                             data-filter-key="<?php echo htmlspecialchars($metricKey); ?>"
-                                             data-filter-value="<?php echo htmlspecialchars($metricValue); ?>">
+                                        <div class="small-box <?php echo htmlspecialchars($metric['color']); ?> flex-fill shadow-sm">
                                             <div class="inner">
                                                 <h3 class="mb-1" style="font-size: 2rem; line-height: 1.2;">
                                                     <?php echo number_format($metric['value']); ?>
@@ -742,8 +677,7 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQu
                                                 </div>
                                             </div>
                                             <div class="card-body">
-                                                <form action="" method="GET" id="serviceFilterForm">
-                                                    <input type="hidden" name="sla_status" id="slaStatusInput" value="<?php echo htmlspecialchars($filterSlaStatus); ?>">
+                                                <form action="" method="GET">
                                                     <div class="row">
                                                         <div class="col-sm-3">
                                                             <div class="form-group ">
@@ -751,9 +685,8 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQu
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-3">
-                                                            <div class="form-group d-flex align-items-end">
-                                                                <button type="submit" class="btn btn-primary mr-2" id="search" name="search">ค้นหา</button>
-                                                                <button type="button" class="btn btn-outline-secondary" id="resetFilters">รีเซ็ต</button>
+                                                            <div class="form-group ">
+                                                                <button type="submit" class="btn btn-primary" id="search" name="search">ค้นหา</button>
                                                             </div>
                                                         </div>
                                                         <div class="col-sm-5">
@@ -1105,76 +1038,6 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQu
     <script>
         $(function () {
             $('[data-toggle="tooltip"]').tooltip();
-
-            var $filterForm = $('#serviceFilterForm');
-            var defaultFilters = <?php echo json_encode($defaultFilterValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-            var $statusSelect = $filterForm.find('select[name="status"]');
-            var $slaStatusInput = $('#slaStatusInput');
-
-            function submitWithFilter(key, value) {
-                if (!$filterForm.length) {
-                    return;
-                }
-
-                if (key === 'status') {
-                    $slaStatusInput.val('');
-                    $statusSelect.val(value);
-                } else if (key === 'sla_status') {
-                    $slaStatusInput.val(value);
-                    $statusSelect.val('');
-                } else {
-                    $slaStatusInput.val('');
-                    $statusSelect.val('');
-                }
-
-                if ($statusSelect.length) {
-                    $statusSelect.trigger('change');
-                    if ($statusSelect.hasClass('select2')) {
-                        $statusSelect.trigger('change.select2');
-                    }
-                }
-
-                $filterForm.trigger('submit');
-            }
-
-            $('.metric-card-trigger').on('click', function () {
-                var key = $(this).data('filterKey') || 'all';
-                var value = $(this).data('filterValue') || '';
-                submitWithFilter(key, value);
-            }).on('keydown', function (evt) {
-                if (evt.key === 'Enter' || evt.key === ' ') {
-                    evt.preventDefault();
-                    $(this).trigger('click');
-                }
-            });
-
-            $('#resetFilters').on('click', function () {
-                if (!$filterForm.length) {
-                    return;
-                }
-
-                $('#searchservice').val('');
-
-                Object.keys(defaultFilters).forEach(function (name) {
-                    var value = defaultFilters[name];
-                    var $field = $filterForm.find('[name="' + name + '"]');
-                    if (!$field.length) {
-                        return;
-                    }
-
-                    if ($field.is('select')) {
-                        $field.val(value);
-                        $field.trigger('change');
-                        if ($field.hasClass('select2')) {
-                            $field.trigger('change.select2');
-                        }
-                    } else {
-                        $field.val(value);
-                    }
-                });
-
-                submitWithFilter('all', '');
-            });
 
             var stateKey = 'DataTables_serviceTickets';
 
