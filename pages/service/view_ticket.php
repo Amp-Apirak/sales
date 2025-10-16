@@ -133,6 +133,25 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+// ฟังก์ชันแปลงค่า travel_mode เป็นข้อความภาษาไทย
+function getTravelModeLabel($mode) {
+    $labels = [
+        'personal_car' => 'รถส่วนตัว',
+        'company_car' => 'รถบริษัท',
+        'taxi' => 'แท็กซี่ / รถรับจ้าง',
+        'electric_train' => 'รถไฟฟ้า (BTS/MRT)',
+        'bus' => 'รถโดยสารประจำทาง',
+        'van' => 'รถตู้โดยสาร',
+        'train' => 'รถไฟ',
+        'boat' => 'เรือโดยสาร',
+        'plane' => 'เครื่องบิน',
+        'others_mileage' => 'อื่นๆ (ต้องบันทึกเลขไมล์)',
+        'others' => 'อื่นๆ (ไม่ต้องบันทึกเลขไมล์)'
+    ];
+
+    return $labels[$mode] ?? $mode;
+}
+
 // Badge colors
 $statusColors = [
     'Draft' => 'secondary',
@@ -969,7 +988,7 @@ $slaColors = [
 
                                     <div class="info-item">
                                         <div class="info-label">ยานพาหนะ:</div>
-                                        <div class="info-value"><?php echo htmlspecialchars($onsite['travel_mode'] ?? '-'); ?></div>
+                                        <div class="info-value"><?php echo htmlspecialchars(getTravelModeLabel($onsite['travel_mode'] ?? '')); ?></div>
                                     </div>
 
                                     <?php if ($onsite['odometer_start'] || $onsite['odometer_end']): ?>

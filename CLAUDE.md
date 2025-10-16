@@ -795,6 +795,55 @@ From `config/validation.php`:
 - **PHP DateTime Parse:** `d/m/Y H:i`
 - **MySQL Storage:** `YYYY-MM-DD HH:mm:ss` (e.g., `2025-10-25 14:30:00`)
 
+### 2025-10-16: Service Ticket Onsite Travel Mode Display Fix
+**Issue:** In `view_ticket.php`, the "ยานพาหนะ" (Vehicle) field under "รายละเอียดการเดินทาง Onsite" section displayed raw database values (e.g., `personal_car`) instead of user-friendly Thai labels
+
+**Root Cause:**
+- The system stored travel mode as English keys (`personal_car`, `company_car`, etc.) in database
+- Display directly showed these values without translation to Thai labels
+
+**File Fixed:**
+1. **`pages/service/view_ticket.php`** (Lines 136-153, 991)
+   - **Problem:** Displayed `$onsite['travel_mode']` raw value (e.g., `personal_car`)
+   - **Fix:** Added `getTravelModeLabel()` function to map database values to Thai labels
+   - **Function Added:**
+   ```php
+   function getTravelModeLabel($mode) {
+       $labels = [
+           'personal_car' => 'รถส่วนตัว',
+           'company_car' => 'รถบริษัท',
+           'taxi' => 'แท็กซี่ / รถรับจ้าง',
+           'electric_train' => 'รถไฟฟ้า (BTS/MRT)',
+           'bus' => 'รถโดยสารประจำทาง',
+           'van' => 'รถตู้โดยสาร',
+           'train' => 'รถไฟ',
+           'boat' => 'เรือโดยสาร',
+           'plane' => 'เครื่องบิน',
+           'others_mileage' => 'อื่นๆ (ต้องบันทึกเลขไมล์)',
+           'others' => 'อื่นๆ (ไม่ต้องบันทึกเลขไมล์)'
+       ];
+       return $labels[$mode] ?? $mode;
+   }
+   ```
+   - **Display Changed From:** `<?php echo htmlspecialchars($onsite['travel_mode'] ?? '-'); ?>`
+   - **Display Changed To:** `<?php echo htmlspecialchars(getTravelModeLabel($onsite['travel_mode'] ?? '')); ?>`
+   - **Impact:** Users now see readable Thai labels instead of technical database values
+
+**Travel Mode Mapping:**
+| Database Value | Thai Label |
+|----------------|------------|
+| personal_car | รถส่วนตัว |
+| company_car | รถบริษัท |
+| taxi | แท็กซี่ / รถรับจ้าง |
+| electric_train | รถไฟฟ้า (BTS/MRT) |
+| bus | รถโดยสารประจำทาง |
+| van | รถตู้โดยสาร |
+| train | รถไฟ |
+| boat | เรือโดยสาร |
+| plane | เครื่องบิน |
+| others_mileage | อื่นๆ (ต้องบันทึกเลขไมล์) |
+| others | อื่นๆ (ไม่ต้องบันทึกเลขไมล์) |
+
 ---
 
-**Version:** 2.0.2 | **Updated:** 2025-10-16 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP
+**Version:** 2.0.3 | **Updated:** 2025-10-16 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP
