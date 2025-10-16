@@ -125,8 +125,15 @@ try {
             if ($value === '') {
                 $value = null;
             } else {
-                $timestamp = strtotime($value);
-                $value = $timestamp ? date('Y-m-d H:i:s', $timestamp) : null;
+                // แปลงรูปแบบวันที่จาก DD/MM/YYYY HH:mm เป็น YYYY-MM-DD HH:mm:ss สำหรับ MySQL
+                $dt = DateTime::createFromFormat('d/m/Y H:i', $value);
+                if ($dt !== false) {
+                    $value = $dt->format('Y-m-d H:i:s');
+                } else {
+                    // ถ้าแปลงไม่ได้ ลองใช้ strtotime เผื่อเป็นรูปแบบอื่น
+                    $timestamp = strtotime($value);
+                    $value = $timestamp ? date('Y-m-d H:i:s', $timestamp) : null;
+                }
             }
         }
 

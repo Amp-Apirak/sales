@@ -71,6 +71,25 @@ try {
     $start_at = !empty($_POST['start_at']) ? $_POST['start_at'] : null;
     $due_at = !empty($_POST['due_at']) ? $_POST['due_at'] : null;
 
+    // แปลงรูปแบบวันที่จาก DD/MM/YYYY HH:mm เป็น YYYY-MM-DD HH:mm:ss สำหรับ MySQL
+    if ($start_at) {
+        $dt = DateTime::createFromFormat('d/m/Y H:i', $start_at);
+        if ($dt !== false) {
+            $start_at = $dt->format('Y-m-d H:i:s');
+        } else {
+            $start_at = null; // ถ้าแปลงไม่ได้ให้เป็น null
+        }
+    }
+
+    if ($due_at) {
+        $dt = DateTime::createFromFormat('d/m/Y H:i', $due_at);
+        if ($dt !== false) {
+            $due_at = $dt->format('Y-m-d H:i:s');
+        } else {
+            $due_at = null; // ถ้าแปลงไม่ได้ให้เป็น null
+        }
+    }
+
     $created_by = $_SESSION['user_id'];
 
     // Watchers (array)

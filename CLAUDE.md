@@ -727,6 +727,74 @@ From `config/validation.php`:
 4. Access edit_customer.php?customer_id=other_team → Error + redirect
 ```
 
+### 2025-10-16: Service Ticket Date/Time Fields Not Saving Fix
+**Issue:** Date/time fields "กำหนดเริ่มดำเนินการ (วันเวลา)" and "กำหนดแล้วเสร็จ (วันเวลา)" in service ticket creation form were not saving to database
+
+**Root Cause:**
+- Form displays dates using Tempus Dominus datetimepicker with Thai format: `DD/MM/YYYY HH:mm`
+- MySQL columns `start_at` and `due_at` expect format: `YYYY-MM-DD HH:mm:ss`
+- API endpoint received dates but didn't convert format before database insertion
+
+**Files Fixed:**
+1. **`pages/service/api/create_ticket.php`** (Lines 74-91)
+   - **Problem:** Received `$_POST['start_at']` and `$_POST['due_at']` in Thai format (DD/MM/YYYY HH:mm) and passed directly to database without conversion
+   - **Fix:** Added PHP DateTime conversion logic after receiving POST data
+   - **Code Added:**
+   ```php
+   // แปลงรูปแบบวันที่จาก DD/MM/YYYY HH:mm เป็น YYYY-MM-DD HH:mm:ss สำหรับ MySQL
+   if ($start_at) {
+       $dt = DateTime::createFromFormat('d/m/Y H:i', $start_at);
+       if ($dt !== false) {
+           $start_at = $dt->format('Y-m-d H:i:s');
+       } else {
+           $start_at = null; // ถ้าแปลงไม่ได้ให้เป็น null
+       }
+   }
+
+   if ($due_at) {
+       $dt = DateTime::createFromFormat('d/m/Y H:i', $due_at);
+       if ($dt !== false) {
+           $due_at = $dt->format('Y-m-d H:i:s');
+       } else {
+           $due_at = null; // ถ้าแปลงไม่ได้ให้เป็น null
+       }
+   }
+   ```
+   - **Impact:** Dates now properly convert from display format to MySQL DATETIME format before insertion
+
+2. **`pages/service/api/update_ticket.php`** (Lines 124-138)
+   - **Problem:** Used `strtotime()` to parse date/time, which cannot correctly handle Thai format `DD/MM/YYYY HH:mm`
+   - **Fix:** Changed to use `DateTime::createFromFormat()` with fallback to `strtotime()` for backward compatibility
+   - **Code Modified:**
+   ```php
+   if (in_array($field, ['start_at', 'due_at'], true)) {
+       if ($value === '') {
+           $value = null;
+       } else {
+           // แปลงรูปแบบวันที่จาก DD/MM/YYYY HH:mm เป็น YYYY-MM-DD HH:mm:ss สำหรับ MySQL
+           $dt = DateTime::createFromFormat('d/m/Y H:i', $value);
+           if ($dt !== false) {
+               $value = $dt->format('Y-m-d H:i:s');
+           } else {
+               // ถ้าแปลงไม่ได้ ลองใช้ strtotime เผื่อเป็นรูปแบบอื่น
+               $timestamp = strtotime($value);
+               $value = $timestamp ? date('Y-m-d H:i:s', $timestamp) : null;
+           }
+       }
+   }
+   ```
+   - **Impact:** Both creating and editing tickets now properly save date/time fields
+
+**Related Files (unchanged):**
+- `pages/service/add_account.php` - Create ticket form with datetimepicker using format `DD/MM/YYYY HH:mm` (Lines 655-680, 858-879)
+- `pages/service/edit_ticket.php` - Edit ticket form with datetimepicker using format `DD/MM/YYYY HH:mm` (Lines 672-696, 892-912)
+- Database columns: `service_tickets.start_at`, `service_tickets.due_at` (type: DATETIME)
+
+**Date Format Pattern:**
+- **User Input (Display):** `DD/MM/YYYY HH:mm` (e.g., `25/10/2025 14:30`)
+- **PHP DateTime Parse:** `d/m/Y H:i`
+- **MySQL Storage:** `YYYY-MM-DD HH:mm:ss` (e.g., `2025-10-25 14:30:00`)
+
 ---
 
-**Version:** 2.0.1 | **Updated:** 2025-10-16 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP
+**Version:** 2.0.2 | **Updated:** 2025-10-16 | **DB:** 48 tables | **PHP:** 7.4+ | **Stack:** XAMPP/LAMP
