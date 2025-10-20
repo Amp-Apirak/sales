@@ -1088,7 +1088,7 @@ $slaColors = [
                                         <div class="comment-actions">
                                             <label class="btn-attach mb-0">
                                                 <i class="fas fa-paperclip"></i> แนบไฟล์
-                                                <input type="file" id="ticket_files" name="attachments[]" multiple style="display:none" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt">
+                                                <input type="file" id="ticket_files" name="attachments[]" multiple style="display:none" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt,.html,.htm">
                                             </label>
                                             <button type="submit" class="btn-post-comment">
                                                 <i class="fas fa-paper-plane"></i>โพสต์ความคิดเห็น

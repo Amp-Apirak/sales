@@ -63,7 +63,12 @@ try {
     }
 
     // ไฟล์ที่อนุญาต
-    $allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'docx', 'xlsx', 'doc', 'xls', 'txt'];
+    $allowedExtensions = [
+        'jpg', 'jpeg', 'png',
+        'pdf', 'docx', 'xlsx', 'doc', 'xls', 'txt',
+        'html', 'htm',
+        'mp4', 'mov', 'm4v', 'webm'
+    ];
     $maxFileSize = 50 * 1024 * 1024; // 50 MB
 
     $uploadedFiles = [];

@@ -338,10 +338,13 @@ try {
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
         $allowed = [
-            'image/jpeg','image/png','image/gif','application/pdf',
+            'image/jpeg','image/png','image/gif',
+            'application/pdf',
             'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/zip','application/x-zip-compressed','text/plain'
+            'application/zip','application/x-zip-compressed',
+            'text/plain','text/html','application/xhtml+xml',
+            'video/mp4','video/quicktime','video/webm','video/x-m4v'
         ];
         $maxSize = 10 * 1024 * 1024; // 10 MB
 
