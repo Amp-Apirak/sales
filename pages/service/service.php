@@ -129,7 +129,10 @@ $filterStatus     = $_GET['status']          ?? '';
 $filterServiceCat = $_GET['servicecategory'] ?? '';
 $filterCategory   = $_GET['category']        ?? '';
 $filterSubCat     = $_GET['subcategory']     ?? '';
-$filterChannel    = $_GET['channel']         ?? ''; // เพิ่ม Channel filter
+$filterChannel    = $_GET['channel']         ?? '';
+$filterProject    = $_GET['project_id']      ?? ''; // เพิ่มตัวกรองโปรเจกต์
+$filterStartDate  = $_GET['start_date']      ?? ''; // เพิ่มตัวกรองวันที่เริ่ม
+$filterEndDate    = $_GET['end_date']        ?? ''; // เพิ่มตัวกรองวันที่สิ้นสุด
 
 // โหลดตัวเลือกสำหรับ dropdown
 // Job Owner: Executive เห็นทั้งหมด, Supervisor เห็นเฉพาะทีม, อื่นๆ เห็นเฉพาะตนเอง
@@ -172,6 +175,7 @@ function distinctOptions(PDO $db, string $col, string $visibilityClause, array $
 
 $categoryTypeOptions = distinctOptions($condb, 'ticket_type', $visibility['clause'], $visibility['params']);
 $slaOptions          = distinctOptions($condb, 'sla_target', $visibility['clause'], $visibility['params']);
+$slaStatusOptions    = distinctOptions($condb, 'sla_status', $visibility['clause'], $visibility['params']);
 $priorityOptions     = distinctOptions($condb, 'priority', $visibility['clause'], $visibility['params']);
 $sourceOptions       = distinctOptions($condb, 'source', $visibility['clause'], $visibility['params']);
 $urgencyOptions      = distinctOptions($condb, 'urgency', $visibility['clause'], $visibility['params']);
@@ -180,7 +184,21 @@ $statusOptions       = distinctOptions($condb, 'status', $visibility['clause'], 
 $serviceCatOptions   = distinctOptions($condb, 'service_category', $visibility['clause'], $visibility['params']);
 $categoryOptions     = distinctOptions($condb, 'category', $visibility['clause'], $visibility['params']);
 $subCategoryOptions  = distinctOptions($condb, 'sub_category', $visibility['clause'], $visibility['params']);
-$channelOptions      = distinctOptions($condb, 'channel', $visibility['clause'], $visibility['params']); // เพิ่ม Channel options
+$channelOptions      = distinctOptions($condb, 'channel', $visibility['clause'], $visibility['params']);
+
+// ดึงรายการโปรเจกต์ทั้งหมดที่ผู้ใช้มีสิทธิ์เห็น
+$projectSql = "SELECT DISTINCT p.project_id, p.project_name 
+               FROM projects p
+               INNER JOIN service_tickets st ON st.project_id = p.project_id
+               WHERE " . $visibility['clause'] . " 
+               AND p.project_id IS NOT NULL
+               ORDER BY p.project_name";
+$stmtProj = $condb->prepare($projectSql);
+foreach ($visibility['params'] as $key => $value) {
+    $stmtProj->bindValue($key, $value);
+}
+$stmtProj->execute();
+$projectOptions = $stmtProj->fetchAll(PDO::FETCH_ASSOC);
 
 // สร้าง WHERE/Params ใช้ซ้ำได้ ทั้งรายการและ Metrics
 $where = ' WHERE ' . $visibility['clause'];
@@ -202,10 +220,26 @@ $mapFilters = [
     'sub_category'     => $filterSubCat,
     'sla_target'       => $filterSla,
     'sla_status'       => $filterSlaStatus,
-    'channel'          => $filterChannel, // เพิ่ม Channel filter
+    'channel'          => $filterChannel,
 ];
 foreach ($mapFilters as $col => $val) {
     if ($val !== '' && $val !== null) { $where .= " AND st.$col = :$col"; $params[":$col"] = $val; }
+}
+
+// กรองตามโปรเจกต์
+if (!empty($filterProject)) {
+    $where .= " AND st.project_id = :project_id";
+    $params[':project_id'] = $filterProject;
+}
+
+// กรองตามช่วงเวลา start_at และ due_at
+if (!empty($filterStartDate)) {
+    $where .= " AND st.start_at >= :start_date";
+    $params[':start_date'] = $filterStartDate . ' 00:00:00';
+}
+if (!empty($filterEndDate)) {
+    $where .= " AND st.due_at <= :end_date";
+    $params[':end_date'] = $filterEndDate . ' 23:59:59';
 }
 
 $defaultFilterValues = [
@@ -221,7 +255,10 @@ $defaultFilterValues = [
     'category'        => '',
     'subcategory'     => '',
     'channel'         => '',
-    'sla_status'      => ''
+    'sla_status'      => '',
+    'project_id'      => '',
+    'start_date'      => '',
+    'end_date'        => ''
 ];
 
 // ค้นหาข้อความ
@@ -1398,6 +1435,17 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                         </div>
                                                         <div class="col-sm-2">
                                                             <div class="form-group">
+                                                                <label>SLA Status</label>
+                                                                <select class="custom-select select2" name="sla_status">
+                                                                    <option value="">เลือก</option>
+                                                                    <?php foreach ($slaStatusOptions as $v): ?>
+                                                                        <option value="<?php echo htmlspecialchars($v); ?>" <?php echo ($filterSlaStatus === $v ? 'selected' : ''); ?>><?php echo htmlspecialchars($v); ?></option>
+                                                                    <?php endforeach; ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-2">
+                                                            <div class="form-group">
                                                                 <label>Priority</label>
                                                                 <select class="custom-select select2" name="priority">
                                                                     <option value="">เลือก</option>
@@ -1495,6 +1543,31 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                                 </select>
                                                             </div>
                                                         </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">
+                                                                <label>Project</label>
+                                                                <select class="custom-select select2" name="project_id">
+                                                                    <option value="">ทั้งหมด</option>
+                                                                    <?php foreach ($projectOptions as $proj): ?>
+                                                                        <option value="<?php echo htmlspecialchars($proj['project_id']); ?>" <?php echo ($filterProject === $proj['project_id'] ? 'selected' : ''); ?>>
+                                                                            <?php echo htmlspecialchars($proj['project_name']); ?>
+                                                                        </option>
+                                                                    <?php endforeach; ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-2">
+                                                            <div class="form-group">
+                                                                <label>Start Date</label>
+                                                                <input type="date" class="form-control" name="start_date" value="<?php echo htmlspecialchars($filterStartDate); ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-2">
+                                                            <div class="form-group">
+                                                                <label>End Date</label>
+                                                                <input type="date" class="form-control" name="end_date" value="<?php echo htmlspecialchars($filterEndDate); ?>">
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </form>
                                             </div>
@@ -1548,6 +1621,8 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                             <tr class="text-center align-middle">
                                                 <th class="text-nowrap table-header-tooltip ticket-summary-col" title="รายละเอียด Ticket โดยรวม">Ticket</th>
                                                 <th class="text-nowrap table-header-tooltip ticket-details-col" title="ข้อมูลประกอบเพิ่มเติมของ Ticket">รายละเอียด</th>
+                                                <th class="text-nowrap table-header-tooltip" title="วันที่เริ่มดำเนินการ">วันเริ่ม</th>
+                                                <th class="text-nowrap table-header-tooltip" title="วันที่กำหนดแล้วเสร็จ">วันแล้วเสร็จ</th>
                                                 <th class="text-nowrap table-header-tooltip ticket-actions-col text-center" title="สถานะ SLA และการดำเนินการ">SLA &amp; Action</th>
                                             </tr>
                                         </thead>
@@ -1555,7 +1630,7 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                             <?php $exportRows = []; ?>
                                             <?php if (empty($tickets)): ?>
                                                 <tr>
-                                                    <td colspan="3" class="text-center">ไม่พบข้อมูล Ticket</td>
+                                                    <td colspan="5" class="text-center">ไม่พบข้อมูล Ticket</td>
                                                 </tr>
                                             <?php else: ?>
                                                 <?php foreach ($tickets as $ticket): ?>
@@ -1614,6 +1689,17 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
 
                                                         $createdDisplay = date('Y-m-d H:i', strtotime($ticket['created_at']));
                                                         $createdShort = date('d M Y', strtotime($ticket['created_at']));
+                                                        
+                                                        // จัดการแสดงวันที่เริ่มและสิ้นสุด
+                                                        $startAtDisplay = '-';
+                                                        if (!empty($ticket['start_at']) && $ticket['start_at'] !== '0000-00-00 00:00:00') {
+                                                            $startAtDisplay = date('d/m/Y H:i', strtotime($ticket['start_at']));
+                                                        }
+                                                        $dueAtDisplay = '-';
+                                                        if (!empty($ticket['due_at']) && $ticket['due_at'] !== '0000-00-00 00:00:00') {
+                                                            $dueAtDisplay = date('d/m/Y H:i', strtotime($ticket['due_at']));
+                                                        }
+                                                        
                                                         $resolvedDisplay = '-';
                                                         if (!empty($ticket['resolved_at']) && $ticket['resolved_at'] !== '0000-00-00 00:00:00') {
                                                             $resolvedDisplay = date('Y-m-d H:i', strtotime($ticket['resolved_at']));
@@ -1688,6 +1774,8 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                             'priority' => $ticket['priority'] ?? '',
                                                             'source' => $ticket['source'] ?? '',
                                                             'created_at' => $createdDisplay,
+                                                            'start_at' => $startAtDisplay,
+                                                            'due_at' => $dueAtDisplay,
                                                             'attachments' => $attachmentsExportValue,
                                                         ];
                                                 ?>
@@ -1846,6 +1934,12 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                                     <span class="detail-value"><?php echo htmlspecialchars($ticket['source'] ?? '-'); ?></span>
                                                                 </div>
                                                             </div>
+                                                        </td>
+                                                        <td class="text-center text-nowrap" data-title="วันเริ่ม">
+                                                            <small class="text-muted"><?php echo htmlspecialchars($startAtDisplay); ?></small>
+                                                        </td>
+                                                        <td class="text-center text-nowrap" data-title="วันแล้วเสร็จ">
+                                                            <small class="text-muted"><?php echo htmlspecialchars($dueAtDisplay); ?></small>
                                                         </td>
                                                         <td class="ticket-actions" data-title="SLA &amp; Action">
                                                             <div class="ticket-actions-inner">
