@@ -1687,6 +1687,17 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                             $watchersDisplay = mb_substr($watchersDisplay, 0, 150, 'UTF-8') . '...';
                                                         }
 
+                                                        // ตัดข้อความ Category ที่ยาวเกิน 30 ตัวอักษร
+                                                        $serviceCategory = $ticket['service_category'] ?? '-';
+                                                        $serviceCategoryDisplay = mb_strlen($serviceCategory, 'UTF-8') > 30 
+                                                            ? mb_substr($serviceCategory, 0, 30, 'UTF-8') . '...' 
+                                                            : $serviceCategory;
+                                                        
+                                                        $category = $ticket['category'] ?? '-';
+                                                        $categoryDisplay = mb_strlen($category, 'UTF-8') > 30 
+                                                            ? mb_substr($category, 0, 30, 'UTF-8') . '...' 
+                                                            : $category;
+
                                                         $createdDisplay = date('Y-m-d H:i', strtotime($ticket['created_at']));
                                                         $createdShort = date('d M Y', strtotime($ticket['created_at']));
                                                         
@@ -1919,11 +1930,15 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                                 </div>
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Service Category</span>
-                                                                    <span class="detail-value"><?php echo htmlspecialchars($ticket['service_category'] ?? '-'); ?></span>
+                                                                    <span class="detail-value" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($serviceCategory, ENT_QUOTES, 'UTF-8'); ?>">
+                                                                        <?php echo htmlspecialchars($serviceCategoryDisplay); ?>
+                                                                    </span>
                                                                 </div>
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Category</span>
-                                                                    <span class="detail-value"><?php echo htmlspecialchars($ticket['category'] ?? '-'); ?></span>
+                                                                    <span class="detail-value" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($category, ENT_QUOTES, 'UTF-8'); ?>">
+                                                                        <?php echo htmlspecialchars($categoryDisplay); ?>
+                                                                    </span>
                                                                 </div>
                                                                 <div class="detail-item">
                                                                     <span class="detail-label">Sub-Category</span>
@@ -1936,10 +1951,10 @@ $classicViewUrl = 'service2.php' . ($modernViewQuery ? '?' . $modernViewQuery : 
                                                             </div>
                                                         </td>
                                                         <td class="text-center text-nowrap" data-title="วันเริ่ม">
-                                                            <small class="text-muted"><?php echo htmlspecialchars($startAtDisplay); ?></small>
+                                                            <?php echo htmlspecialchars($startAtDisplay); ?>
                                                         </td>
                                                         <td class="text-center text-nowrap" data-title="วันแล้วเสร็จ">
-                                                            <small class="text-muted"><?php echo htmlspecialchars($dueAtDisplay); ?></small>
+                                                            <?php echo htmlspecialchars($dueAtDisplay); ?>
                                                         </td>
                                                         <td class="ticket-actions" data-title="SLA &amp; Action">
                                                             <div class="ticket-actions-inner">

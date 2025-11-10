@@ -1085,6 +1085,21 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQu
                                                             $watchersFull = $watcherNames;
                                                         }
 
+                                                        // ตัดข้อความ Category ที่ยาวเกิน 30 ตัวอักษร
+                                                        $ticketType = $ticket['ticket_type'] ?? '-';
+                                                        $ticketTypeDisplay = mb_strlen($ticketType, 'UTF-8') > 30 
+                                                            ? mb_substr($ticketType, 0, 30, 'UTF-8') . '...' 
+                                                            : $ticketType;
+                                                        
+                                                        $serviceCategory = $ticket['service_category'] ?? '-';
+                                                        $serviceCategoryDisplay = mb_strlen($serviceCategory, 'UTF-8') > 30 
+                                                            ? mb_substr($serviceCategory, 0, 30, 'UTF-8') . '...' 
+                                                            : $serviceCategory;
+                                                        
+                                                        $category = $ticket['category'] ?? '-';
+                                                        $categoryDisplay = mb_strlen($category, 'UTF-8') > 30 
+                                                            ? mb_substr($category, 0, 30, 'UTF-8') . '...' 
+                                                            : $category;
                                                     ?>
                                                     <tr>
                                                         <td class="text-nowrap text-center">
@@ -1118,14 +1133,18 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQu
                                                             <span class="watcher-text"><?php echo htmlspecialchars($watchersDisplay, ENT_QUOTES, 'UTF-8'); ?></span>
                                                         </td>
                                                         <td class="text-nowrap text-center"><?php echo $slaDisplay; ?></td>
-                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['service_category'] ?? '-'); ?></td>
-                                                        <td class="text-nowrap"><?php echo htmlspecialchars($ticket['category'] ?? '-'); ?></td>
+                                                        <td class="text-nowrap" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($serviceCategory, ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <?php echo htmlspecialchars($serviceCategoryDisplay); ?>
+                                                        </td>
+                                                        <td class="text-nowrap" data-toggle="tooltip" data-placement="top" title="<?php echo htmlspecialchars($category, ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <?php echo htmlspecialchars($categoryDisplay); ?>
+                                                        </td>
                                                         <td class="text-nowrap"><?php echo htmlspecialchars($ticket['sub_category'] ?? '-'); ?></td>
                                                         <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['impact'] ?? '-'); ?></td>
                                                         <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['priority'] ?? '-'); ?></td>
                                                         <td class="text-nowrap text-center"><?php echo htmlspecialchars($ticket['source'] ?? '-'); ?></td>
-                                                        <td class="text-nowrap text-center"><small class="text-muted"><?php echo htmlspecialchars($startAtDisplay); ?></small></td>
-                                                        <td class="text-nowrap text-center"><small class="text-muted"><?php echo htmlspecialchars($dueAtDisplay); ?></small></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($startAtDisplay); ?></td>
+                                                        <td class="text-nowrap text-center"><?php echo htmlspecialchars($dueAtDisplay); ?></td>
                                                         <td class="text-nowrap text-center"><?php echo date('Y-m-d H:i', strtotime($ticket['created_at'])); ?></td>
                                                         <td class="text-nowrap text-center">
                                                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
