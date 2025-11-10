@@ -1211,6 +1211,14 @@ $classicViewUrl = $_SERVER['PHP_SELF'] . ($modernViewQuery ? '?' . $modernViewQu
         $(function () {
             $('[data-toggle="tooltip"]').tooltip();
 
+            // Initialize Select2 for all select dropdowns in filter form
+            $('.select2').select2({
+                theme: 'bootstrap4',
+                placeholder: 'เลือก...',
+                allowClear: true,
+                width: '100%'
+            });
+
             var $filterForm = $('#serviceFilterForm');
             var defaultFilters = <?php echo json_encode($defaultFilterValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
             var $statusSelect = $filterForm.find('select[name="status"]');
