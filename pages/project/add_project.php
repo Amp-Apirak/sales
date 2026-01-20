@@ -592,8 +592,8 @@ if ($role === 'Executive') {
                                             <div class="row">
                                                 <div class="col-12 col-md-3">
                                                     <div class="form-group">
-                                                        <label>วันเปิดการขาย</label>
-                                                        <input type="date" name="sales_date" class="form-control">
+                                                        <label>วันเปิดการขาย<span class="text-danger">*</span></label>
+                                                        <input type="date" name="sales_date" class="form-control" required>
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-3">
