@@ -1,0 +1,56 @@
+
+/* กำหนดให้ทุก cell ในตาราง #costTable เป็น text-nowrap */
+#costTable th,
+#costTable td {
+    white-space: nowrap !important;
+}
+
+/* ทำให้ตารางสามารถ scroll ในแนวนอนได้เมื่อเนื้อหาเกินขอบ */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* ปรับความกว้างขั้นต่ำของ column ให้เหมาะสม */
+#costTable th {
+    min-width: 100px;
+    /* ปรับตามความเหมาะสม */
+}
+
+/* column ที่ต้องการความกว้างมากกว่า เช่น Description */
+#costTable th:nth-child(3) {
+    min-width: 200px;
+}
+
+/* กำหนดความกว้างขั้นต่ำของแต่ละคอลัมน์ */
+#costTable th:nth-child(1),
+/* Type */
+#costTable td:nth-child(1) {
+    min-width: 200px;
+    /* เพิ่มจาก 100px เป็น 150px */
+}
+
+#costTable th:nth-child(2),
+/* PART No. */
+#costTable td:nth-child(2) {
+    min-width: 200px;
+    /* เพิ่มจาก 100px เป็น 200px */
+}
+
+
+#costTable th:nth-child(3),
+/* PART No. */
+#costTable td:nth-child(3) {
+    min-width: 600px;
+    /* เพิ่มจาก 100px เป็น 200px */
+}
+
+/* ทำให้ตารางสามารถ scroll ในแนวนอนได้เมื่อเนื้อหาเกินขอบ */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* กำหนดให้ทุก cell ในตาราง #costTable เป็น text-nowrap */
+#costTable th,
+#costTable td {
+    white-space: nowrap !important;
+}

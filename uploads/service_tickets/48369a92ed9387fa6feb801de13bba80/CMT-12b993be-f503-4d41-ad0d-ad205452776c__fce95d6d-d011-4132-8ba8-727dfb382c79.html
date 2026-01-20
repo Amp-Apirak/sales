@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หน้าจอแสดงการเรียกคิว - ห้องเจาะเลือด THAMC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo svg {
+            width: 40px;
+            height: 40px;
+            color: white;
+        }
+
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: #2d3748;
+            line-height: 1.2;
+        }
+
+        .header-title p {
+            font-size: 18px;
+            color: #718096;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .current-time {
+            font-size: 42px;
+            font-weight: 800;
+            color: #667eea;
+            line-height: 1;
+        }
+
+        .current-date {
+            font-size: 18px;
+            color: #718096;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            padding: 30px 40px;
+            overflow: hidden;
+        }
+
+        /* Current Queue Display */
+        .current-queue-section {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .current-queue-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .section-label {
+            font-size: 28px;
+            font-weight: 700;
+            color: #718096;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-label svg {
+            width: 32px;
+            height: 32px;
+            color: #667eea;
+        }
+
+        .current-display {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .queue-number-display {
+            font-size: 180px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            text-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.4));
+            }
+            50% {
+                transform: scale(1.05);
+                filter: drop-shadow(0 0 40px rgba(102, 126, 234, 0.6));
+            }
+        }
+
+        .counter-display {
+            font-size: 72px;
+            font-weight: 800;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 25px 60px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .counter-label {
+            font-size: 42px;
+            color: #718096;
+            font-weight: 600;
+        }
+
+        .counter-number {
+            color: #667eea;
+        }
+
+        .patient-name-display {
+            font-size: 38px;
+            font-weight: 700;
+            color: #2d3748;
+            text-align: center;
+            padding: 20px 40px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 15px;
+            max-width: 80%;
+        }
+
+        /* Waiting Queue List */
+        .waiting-queue-section {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .waiting-queue-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+        }
+
+        .waiting-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #718096;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .waiting-title svg {
+            width: 28px;
+            height: 28px;
+            color: #48bb78;
+        }
+
+        .waiting-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .waiting-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .waiting-list::-webkit-scrollbar-track {
+            background: #f7fafc;
+            border-radius: 10px;
+        }
+
+        .waiting-list::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        .waiting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 12px;
+            border-left: 5px solid #48bb78;
+            transition: all 0.3s ease;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .waiting-item:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .waiting-queue-num {
+            font-size: 38px;
+            font-weight: 900;
+            color: #667eea;
+            min-width: 100px;
+        }
+
+        .waiting-counter {
+            font-size: 28px;
+            font-weight: 700;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .counter-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: 800;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Footer */
+        .footer {
+            background: white;
+            padding: 15px 40px;
+            text-align: center;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .footer-text {
+            font-size: 18px;
+            color: #718096;
+            font-weight: 600;
+        }
+
+        .footer-highlight {
+            color: #667eea;
+            font-weight: 800;
+        }
+
+        /* Animations */
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+
+        .blink {
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        /* No Queue Message */
+        .no-queue-message {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #cbd5e0;
+            gap: 20px;
+        }
+
+        .no-queue-message svg {
+            width: 120px;
+            height: 120px;
+            opacity: 0.3;
+        }
+
+        .no-queue-message p {
+            font-size: 32px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                </svg>
+            </div>
+            <div class="header-title">
+                <h1>ห้องเจาะเลือด</h1>
+                <p>โรงพยาบาลเทพธารินทร์</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="current-time" id="currentTime">00:00:00</div>
+            <div class="current-date" id="currentDate">วันที่ 00 มกราคม 0000</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Current Queue Display -->
+        <div class="current-queue-section">
+            <div class="section-label">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                </svg>
+                กำลังเรียกคิว
+            </div>
+
+            <div class="current-display" id="currentDisplay">
+                <div class="no-queue-message">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p>รอการเรียกคิว...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waiting Queue List -->
+        <div class="waiting-queue-section">
+            <div class="waiting-title">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+                คิวที่กำลังรอ
+            </div>
+            <div class="waiting-list" id="waitingList">
+                <!-- Waiting items will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p class="footer-text">
+            <span class="footer-highlight">THAMC Blood Test Queue System</span> |
+            กรุณาเตรียมความพร้อมเมื่อถึงคิวของท่าน
+        </p>
+    </div>
+
+    <script>
+        // Update time and date
+        function updateTime() {
+            const now = new Date();
+
+            // Update time
+            const timeStr = now.toLocaleTimeString('th-TH', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeStr;
+
+            // Update date
+            const dateStr = now.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            });
+            document.getElementById('currentDate').textContent = dateStr;
+        }
+
+        // Mock data for demonstration
+        let currentQueue = {
+            queueNumber: 'A035',
+            counterNumber: 3,
+            patientName: 'นายอนุชา รุ่งเรือง'
+        };
+
+        let waitingQueues = [
+            { queueNumber: 'A036', counterNumber: 1 },
+            { queueNumber: 'A037', counterNumber: 2 },
+            { queueNumber: 'W003', counterNumber: 3 },
+            { queueNumber: 'A038', counterNumber: 1 },
+            { queueNumber: 'U006', counterNumber: 2 }
+        ];
+
+        // Render current queue
+        function renderCurrentQueue() {
+            const displayDiv = document.getElementById('currentDisplay');
+
+            if (currentQueue) {
+                displayDiv.innerHTML = `
+                    <div class="queue-number-display blink">${currentQueue.queueNumber}</div>
+                    <div class="counter-display">
+                        <span class="counter-label">ช่อง</span>
+                        <span class="counter-number">${currentQueue.counterNumber}</span>
+                    </div>
+                    ${currentQueue.patientName ? `<div class="patient-name-display">${currentQueue.patientName}</div>` : ''}
+                `;
+            } else {
+                displayDiv.innerHTML = `
+                    <div class="no-queue-message">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p>รอการเรียกคิว...</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render waiting queues
+        function renderWaitingQueues() {
+            const listDiv = document.getElementById('waitingList');
+
+            if (waitingQueues.length > 0) {
+                listDiv.innerHTML = waitingQueues.map(queue => `
+                    <div class="waiting-item">
+                        <div class="waiting-queue-num">${queue.queueNumber}</div>
+                        <div class="waiting-counter">
+                            ช่อง <span class="counter-badge">${queue.counterNumber}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                listDiv.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; color: #cbd5e0;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 80px; height: 80px; opacity: 0.3; margin-bottom: 15px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p style="font-size: 22px; font-weight: 700;">ไม่มีคิวที่รอ</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Play notification sound (optional - you can add an audio file)
+        function playNotificationSound() {
+            // You can add: const audio = new Audio('notification.mp3'); audio.play();
+            console.log('🔔 Notification sound played');
+        }
+
+        // Simulate queue update (In real application, this would come from server)
+        function simulateQueueUpdate() {
+            // This is just for demonstration
+            // In production, you would use WebSocket or polling to get real-time updates
+
+            setInterval(() => {
+                // Randomly update queue (for demo purposes)
+                const queues = ['A040', 'A041', 'W004', 'U007', 'C005'];
+                const randomQueue = queues[Math.floor(Math.random() * queues.length)];
+                const randomCounter = Math.floor(Math.random() * 5) + 1;
+
+                // Uncomment below to see random updates
+                // currentQueue = {
+                //     queueNumber: randomQueue,
+                //     counterNumber: randomCounter,
+                //     patientName: 'คุณ' + randomQueue
+                // };
+                // renderCurrentQueue();
+                // playNotificationSound();
+            }, 10000); // Update every 10 seconds
+        }
+
+        // Initialize
+        updateTime();
+        setInterval(updateTime, 1000);
+        renderCurrentQueue();
+        renderWaitingQueues();
+        // simulateQueueUpdate(); // Uncomment to enable demo mode
+
+        // In production, you would implement:
+        // - WebSocket connection to receive real-time queue updates
+        // - API polling to fetch latest queue status
+        // - Sound notification when new queue is called
+        // - Animation effects when queue changes
+    </script>
+</body>
+</html>

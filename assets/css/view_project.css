@@ -1,0 +1,531 @@
+
+/* การกำหนดรูปแบบการแสดงผลของหน้าเว็บ */
+body {
+    font-family: 'Sarabun', sans-serif;
+    background-color: #f8f9fa;
+    font-size: 14px;
+}
+
+.content-wrapper {
+    padding: 20px;
+}
+
+.project-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 5px solid #3498db;
+}
+
+.project-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.project-status {
+    display: inline-block;
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    background-color: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.project-date {
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.info-card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+    transition: box-shadow 0.3s ease;
+}
+
+.info-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.info-card-header {
+    background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 100%);
+    color: #2c3e50;
+    padding: 15px 20px;
+    font-weight: 600;
+    font-size: 18px;
+    border-bottom: 2px solid #dee2e6;
+    border-left: 4px solid #5dade2;
+}
+
+.info-card-body {
+    padding: 20px;
+}
+
+.info-item {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #34495e;
+    width: 150px;
+    flex-shrink: 0;
+}
+
+.info-value {
+    flex-grow: 1;
+    color: #2c3e50;
+}
+
+/* สไตล์สำหรับส่วนสรุปทางการเงิน */
+.financial-summary {
+    background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    border-left: 4px solid #27ae60;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.financial-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.financial-label {
+    font-weight: 600;
+    color: #34495e;
+}
+
+.financial-value {
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.profit-highlight {
+    color: #27ae60;
+    font-size: 18px;
+}
+
+/* สไตล์ปุ่มแก้ไข */
+.edit-button {
+    float: right;
+    background-color: transparent;
+    color: #3498db;
+    border: 1px solid #3498db;
+    padding: 5px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.edit-button:hover {
+    background-color: #3498db;
+    color: white;
+    box-shadow: 0 2px 6px rgba(52, 152, 219, 0.3);
+    transform: translateY(-1px);
+}
+
+/* สไตล์สำหรับตาราง */
+.table {
+    width: 100%;
+    margin-bottom: 1rem;
+    color: #212529;
+}
+
+.table th,
+.table td {
+    padding: 0.75rem;
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* สไตล์สำหรับสถานะการชำระเงิน */
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+/* สไตล์สำหรับปุ่มขนาดเล็ก */
+.btn-sm {
+    padding: .25rem .5rem;
+    font-size: .875rem;
+    line-height: 1.5;
+    border-radius: .2rem;
+}
+
+.mr-1 {
+    margin-right: .25rem !important;
+}
+
+/* สไตล์สำหรับการแสดงผลบนอุปกรณ์มือถือ */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* ปรับ font size ให้อ่านง่ายบนมือถือ */
+    .info-label {
+        font-size: 13px;
+        width: 120px;
+    }
+
+    .info-value {
+        font-size: 13px;
+    }
+
+    /* ปรับ header ให้เหมาะกับมือถือ */
+    .project-header {
+        padding: 15px;
+    }
+
+    .project-title {
+        font-size: 20px;
+    }
+
+    .project-status {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+
+    /* ปรับการ์ดให้แสดงผลดีบนมือถือ */
+    .info-card-header {
+        font-size: 16px;
+        padding: 12px 15px;
+    }
+
+    .info-card-body {
+        padding: 15px;
+    }
+
+    /* ทำให้ตารางแสดงผลแบบ stack บนมือถือ */
+    .table thead {
+        display: none;
+    }
+
+    .table tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .table tbody td:last-child {
+        border-bottom: none;
+    }
+
+    .table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #2c3e50;
+        margin-right: 10px;
+    }
+
+    /* ปรับปุ่มให้เหมาะกับมือถือ */
+    .edit-button {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+
+    .btn-sm {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+
+    /* ตารางลูกค้าบนมือถือ */
+    .customer-table thead {
+        display: none;
+    }
+
+    .customer-table tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .customer-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 13px;
+    }
+
+    .customer-table tbody td:last-child {
+        border-bottom: none;
+    }
+
+    .customer-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #2c3e50;
+        margin-right: 10px;
+        min-width: 100px;
+    }
+
+    /* ปรับส่วนสรุปการเงินบนมือถือ */
+    .financial-summary {
+        padding: 15px;
+    }
+
+    .financial-item {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .financial-label,
+    .financial-value {
+        font-size: 14px;
+    }
+
+    .profit-highlight {
+        font-size: 16px;
+    }
+
+    /* ปรับส่วน info-item ให้แสดงแบบ stack */
+    .info-item {
+        flex-direction: column;
+        margin-bottom: 12px;
+    }
+
+    .info-label {
+        margin-bottom: 5px;
+        width: 100%;
+    }
+
+    .info-value {
+        width: 100%;
+        padding-left: 0;
+    }
+}
+
+/* สำหรับ Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .info-label {
+        width: 180px;
+    }
+
+    .project-title {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 767px) {
+    .payment-card .card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+
+    .payment-card .card-body {
+        padding: 15px;
+    }
+
+    .payment-card .card-title {
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .payment-card .card-text {
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+
+    .payment-card .btn-group {
+        display: flex;
+        justify-content: space-between;
+    }
+}
+
+/* สไตล์สำหรับการจัดการความสูงของการ์ด */
+.equal-height-cards {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.equal-height-cards>[class*='col-'] {
+    display: flex;
+    flex-direction: column;
+}
+
+.equal-height-cards .info-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.equal-height-cards .info-card-body {
+    flex: 1;
+}
+
+.info-card {
+    min-height: 300px;
+    /* ปรับตามความเหมาะสม */
+}
+
+/* ตารางลูกค้า - Responsive */
+.customer-table {
+    width: 100%;
+    font-size: 14px;
+}
+
+.customer-table thead th {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px;
+    white-space: nowrap;
+}
+
+.customer-table tbody td {
+    padding: 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+
+/* เพิ่ม CSS เพื่อสร้างเส้นใต้ให้กับ Tab */
+.nav-pills {
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 10px;
+    /* margin-bottom: 20px; */
+}
+
+.nav-pills .nav-link {
+    border-bottom: 3px solid transparent;
+}
+
+.nav-pills .nav-link.active {
+    background-color: transparent;
+    border-bottom: 3px solid #007bff;
+    color: #007bff;
+}
+
+/* .tab-content {
+    padding-top: 20px;
+} */
+
+.btn-sm {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* สไตล์สำหรับการจัดการความกว้างของการ์ดรูปภาพ Tab 3 */
+.image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.image-card {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.image-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.image-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.image-info {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-card:hover .delete-btn {
+    opacity: 1;
+}
+
+.lightbox {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.lightbox-content {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+}
+
+.close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+}

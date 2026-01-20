@@ -1,0 +1,1088 @@
+<!-- Modal สำหรับเพิ่ม/แก้ไขงาน -->
+<div class="modal fade" id="taskModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskModalTitle">เพิ่มงานใหม่</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm">
+                    <input type="hidden" id="task_id" name="task_id">
+                    <input type="hidden" id="parent_task_id" name="parent_task_id">
+                    <div class="form-group">
+                        <label>ชื่องาน</label>
+                        <input type="text" class="form-control" id="task_name" name="task_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>รายละเอียด</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>ผู้รับผิดชอบ</label>
+                        <select class="form-control select2-multiple" id="assigned_users" name="assigned_users[]" multiple="multiple" data-placeholder="เลือกผู้รับผิดชอบ...">
+                            <?php foreach ($users as $user): ?>
+                                <option value="<?php echo $user['user_id']; ?>">
+                                    <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> พิมพ์ชื่อเพื่อค้นหา หรือเลือกจากรายชื่อ (สามารถเลือกได้หลายคน)
+                        </small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>วันเวลาเริ่ม</label>
+                                <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>วันเวลาสิ้นสุด</label>
+                                <input type="datetime-local" class="form-control" id="end_date" name="end_date" required
+                                    <?php if ($role === 'Seller' || $role === 'Engineer'): ?>
+                                        readonly
+                                        style="background-color: #e9ecef; cursor: not-allowed;"
+                                        title="คุณไม่มีสิทธิ์แก้ไขวันที่สิ้นสุด"
+                                    <?php endif; ?>>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>สถานะ</label>
+                                <select class="form-control" id="status" name="status" required>
+                                    <option value="Pending">รอดำเนินการ</option>
+                                    <option value="In Progress">กำลังดำเนินการ</option>
+                                    <option value="Completed">เสร็จสิ้น</option>
+                                    <option value="Cancelled">ยกเลิก</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>ความคืบหน้า (%)</label>
+                                <input type="number" class="form-control" id="progress" name="progress" min="0" max="100" value="0" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>ระดับความสำคัญ</label>
+                        <select class="form-control" id="priority" name="priority" required>
+                            <option value="Low">ต่ำ</option>
+                            <option value="Medium">ปานกลาง</option>
+                            <option value="High">สูง</option>
+                            <option value="Urgent">เร่งด่วน</option>
+                        </select>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="saveTask()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- เพิ่ม JavaScript -->
+<script>
+    const PROJECT_ID = <?php echo json_encode($project_id); ?>;
+    const PROJECT_NAME = <?php echo json_encode($project['project_name'] ?? 'Project Tasks'); ?>;
+
+    $(document).ready(function() {
+        loadTasks();
+        // ไม่เรียก initializeSelect2() ที่นี่เพราะจะเรียกใน modal แทน
+
+        // จัดการเมื่อปิด modal
+        $('#taskModal').on('hidden.bs.modal', function() {
+            // ทำลาย Select2 เมื่อปิด modal
+            if ($('#assigned_users').hasClass('select2-hidden-accessible')) {
+                $('#assigned_users').select2('destroy');
+            }
+            // ลบ event handlers ทั้งหมด
+            $('#taskModal').off('shown.bs.modal.select2init shown.bs.modal.select2edit');
+        });
+
+        $('#taskModal').on('change', '#status', function () {
+            handleStatusProgressControl($(this));
+        });
+
+        handleStatusProgressControl($('#taskModal #status'));
+    });
+
+    // ฟังก์ชันสำหรับ initialize Select2
+    function initializeSelect2() {
+        // ตรวจสอบว่า Select2 ถูก initialize แล้วหรือไม่
+        if ($('#assigned_users').hasClass('select2-hidden-accessible')) {
+            $('#assigned_users').select2('destroy');
+        }
+
+        $('#assigned_users').select2({
+            theme: 'bootstrap4',
+            placeholder: 'เลือกผู้รับผิดชอบ...',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('#taskModal'), // สำคัญ: กำหนด parent เป็น modal
+            language: {
+                noResults: function() {
+                    return "ไม่พบผลลัพธ์";
+                },
+                searching: function() {
+                    return "กำลังค้นหา...";
+                },
+                inputTooShort: function() {
+                    return "พิมพ์อย่างน้อย 1 ตัวอักษร";
+                },
+                loadingMore: function() {
+                    return "กำลังโหลดข้อมูลเพิ่มเติม...";
+                }
+            }
+        });
+    }
+
+    function getCurrentLocalDateTime() {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        return now.toISOString().slice(0, 16);
+    }
+
+    function formatDateTimeLocal(value) {
+        if (!value || value === '0000-00-00' || value === '0000-00-00 00:00:00') {
+            return '';
+        }
+        if (value.includes('T')) {
+            return value.slice(0, 16);
+        }
+        if (value.includes(' ')) {
+            return value.replace(' ', 'T').slice(0, 16);
+        }
+        return value + 'T00:00';
+    }
+
+    function handleStatusProgressControl(statusElement) {
+        const $status = statusElement && statusElement.length ? statusElement : $('#taskModal #status');
+        if (!$status.length) {
+            return;
+        }
+
+        const $modal = $status.closest('#taskModal');
+        const $progressInput = $modal.find('#progress');
+        const status = ($status.val() || '').trim();
+
+        if (status === 'Pending' || status === 'Cancelled') {
+            $progressInput.val(0).prop('readonly', true);
+        } else if (status === 'In Progress') {
+            $progressInput.prop('readonly', false);
+        } else if (status === 'Completed') {
+            $progressInput.val(100).prop('readonly', true);
+        } else {
+            $progressInput.prop('readonly', false);
+        }
+    }
+
+    function loadTasks() {
+        $.ajax({
+            url: 'management/get_tasks.php',
+            type: 'GET',
+            data: {
+                project_id: PROJECT_ID
+            },
+            success: function(response) {
+                $('#task-container').html(response);
+            }
+        });
+    }
+
+    function exportTasks(format) {
+        if (!format) {
+            return;
+        }
+
+        const normalizedFormat = String(format).toLowerCase();
+
+        if (normalizedFormat === 'pdf') {
+            const taskContainer = document.querySelector('#task-container');
+            if (!taskContainer || !taskContainer.textContent.trim()) {
+                alert('ไม่มีข้อมูลงานให้ดาวน์โหลด');
+                return;
+            }
+
+            const exportWrapper = document.createElement('div');
+            exportWrapper.style.fontFamily = '"Sarabun", "Noto Sans Thai", sans-serif';
+            exportWrapper.style.padding = '16px';
+
+            const heading = document.createElement('h2');
+            heading.textContent = `รายการงาน - ${PROJECT_NAME}`;
+            heading.style.textAlign = 'center';
+            heading.style.marginBottom = '12px';
+            exportWrapper.appendChild(heading);
+
+            const clonedTasks = taskContainer.cloneNode(true);
+            exportWrapper.appendChild(clonedTasks);
+
+            html2pdf().set({
+                margin: 10,
+                filename: buildTaskExportFilename('pdf'),
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                }
+            }).from(exportWrapper).save();
+
+            return;
+        }
+
+        const exportUrl = `management/export_tasks.php?project_id=${encodeURIComponent(PROJECT_ID)}&format=${encodeURIComponent(normalizedFormat)}`;
+        window.location.href = exportUrl;
+    }
+
+    function buildTaskExportFilename(extension) {
+        const rawName = (PROJECT_NAME || 'project_tasks').toString();
+        const supportsNormalize = typeof rawName.normalize === 'function';
+        const baseName = supportsNormalize ? rawName.normalize('NFD') : rawName;
+        const normalizedName = baseName
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^0-9A-Za-zก-๙ _-]/g, '')
+            .trim()
+            .replace(/\s+/g, '_');
+
+        const base = normalizedName || 'project_tasks';
+        const timestamp = new Date()
+            .toISOString()
+            .replace(/[-:T]/g, '')
+            .slice(0, 14);
+
+        return `${base}_${timestamp}.${extension}`;
+    }
+
+    function showAddTaskModal(parentTaskId = null) {
+        $('#taskForm')[0].reset();
+        $('#task_id').val('');
+        $('#parent_task_id').val(parentTaskId);
+        $('#taskModalTitle').text(parentTaskId ? 'เพิ่ม Sub Task' : 'เพิ่มงานใหม่');
+        const now = getCurrentLocalDateTime();
+        $('#start_date').val(now);
+        $('#end_date').val(now);
+        $('#status').val('Pending');
+        $('#progress').val(0);
+        handleStatusProgressControl($('#taskModal #status'));
+        $('#taskModal').modal('show');
+    }
+
+    // ฟังก์ชันอื่นๆ จะเพิ่มในขั้นตอนถัดไป
+
+    function saveTask() {
+        // แปลงข้อมูลจาก form เป็น object
+        let formData = new FormData($('#taskForm')[0]);
+
+        // แปลงข้อมูลเป็น plain object
+        let formDataObj = {};
+        formData.forEach((value, key) => {
+            // กรณีที่เป็น assigned_users[] (multiple select)
+            if (key === 'assigned_users[]') {
+                if (!formDataObj['assigned_users']) {
+                    formDataObj['assigned_users'] = [];
+                }
+                formDataObj['assigned_users'].push(value);
+            } else {
+                formDataObj[key] = value;
+            }
+        });
+
+        // เพิ่ม project_id
+        formDataObj.project_id = '<?php echo $project_id; ?>';
+
+        const requiredFields = [
+            { key: 'task_name', label: 'ชื่องาน' },
+            { key: 'description', label: 'รายละเอียด' },
+            { key: 'start_date', label: 'วันเวลาเริ่ม' },
+            { key: 'end_date', label: 'วันเวลาสิ้นสุด' },
+            { key: 'status', label: 'สถานะ' },
+            { key: 'priority', label: 'ระดับความสำคัญ' }
+        ];
+
+        const missingField = requiredFields.find(field => !formDataObj[field.key] || String(formDataObj[field.key]).trim() === '');
+        if (missingField) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ครบถ้วน',
+                text: `กรุณากรอก${missingField.label}`
+            });
+            return;
+        }
+
+        const startDate = new Date(formDataObj.start_date);
+        const endDate = new Date(formDataObj.end_date);
+
+        if (isNaN(startDate.getTime())) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'รูปแบบวันเวลาเริ่มไม่ถูกต้อง'
+            });
+            return;
+        }
+
+        if (isNaN(endDate.getTime())) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'รูปแบบวันเวลาสิ้นสุดไม่ถูกต้อง'
+            });
+            return;
+        }
+
+        if (endDate < startDate) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'วันเวลาสิ้นสุดต้องไม่น้อยกว่าวันเวลาเริ่ม'
+            });
+            return;
+        }
+
+        const status = formDataObj.status;
+        let progressValue = parseFloat(formDataObj.progress ?? 0);
+
+        if (isNaN(progressValue)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'กรุณากรอกค่าความคืบหน้าที่เป็นตัวเลข'
+            });
+            return;
+        }
+
+        if (progressValue < 0 || progressValue > 100) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ถูกต้อง',
+                text: 'ค่าความคืบหน้าต้องอยู่ระหว่าง 0 - 100'
+            });
+            return;
+        }
+
+        if (status === 'Pending' || status === 'Cancelled') {
+            progressValue = 0;
+        } else if (status === 'Completed') {
+            progressValue = 100;
+        }
+
+        formDataObj.progress = progressValue;
+        $('#taskModal #progress').val(progressValue);
+
+        $.ajax({
+            url: 'management/save_task.php',
+            type: 'POST',
+            data: formDataObj,
+            success: function(response) {
+                try {
+                    if (typeof response === 'string') {
+                        response = JSON.parse(response);
+                    }
+
+                    if (response.status === 'success') {
+                        $('#taskModal').modal('hide');
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'สำเร็จ',
+                            text: response.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            loadTasks();
+                        });
+                    } else {
+                        throw new Error(response.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+                    }
+                } catch (e) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: e.message
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้: ' + error
+                });
+            }
+        });
+    }
+
+    function deleteTask(taskId) {
+        // แสดง confirmation dialog
+        Swal.fire({
+            title: 'ยืนยันการลบ',
+            text: 'คุณต้องการลบงานนี้และงานย่อยทั้งหมดใช่หรือไม่?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'ใช่, ลบเลย',
+            cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'management/delete_task.php',
+                    type: 'POST',
+                    data: {
+                        task_id: taskId
+                    },
+                    success: function(response) {
+                        try {
+                            // ตรวจสอบว่า response เป็น JSON string
+                            if (typeof response === 'string') {
+                                response = JSON.parse(response);
+                            }
+
+                            if (response.status === 'success') {
+                                // แสดงข้อความสำเร็จ
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'ลบสำเร็จ',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    // โหลดข้อมูล tasks ใหม่
+                                    loadTasks();
+                                });
+                            } else {
+                                throw new Error(response.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+                            }
+                        } catch (e) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: e.message
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้: ' + error
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    function editTask(taskId) {
+        // เรียกข้อมูล task ที่ต้องการแก้ไข
+        $.ajax({
+            url: 'management/edit_task.php',
+            type: 'GET',
+            data: {
+                task_id: taskId
+            },
+            success: function(response) {
+                try {
+                    if (typeof response === 'string') {
+                        response = JSON.parse(response);
+                    }
+
+                    if (response.status === 'success') {
+                        const task = response.data;
+
+                        // กำหนดค่าให้กับฟอร์ม
+                        $('#task_id').val(task.task_id);
+                        $('#parent_task_id').val(task.parent_task_id);
+                        $('#task_name').val(task.task_name);
+                        $('#description').val(task.description);
+                        $('#start_date').val(formatDateTimeLocal(task.start_date));
+                        $('#end_date').val(formatDateTimeLocal(task.end_date));
+                        $('#status').val(task.status);
+
+                        if (task.status === 'Completed') {
+                            $('#progress').val(100);
+                        } else if (task.status === 'Pending' || task.status === 'Cancelled') {
+                            $('#progress').val(0);
+                        } else {
+                            $('#progress').val(task.progress);
+                        }
+                        $('#priority').val(task.priority);
+
+                        // เปลี่ยนชื่อปุ่มและหัวข้อ Modal
+                        $('#taskModalTitle').text('แก้ไขงาน');
+
+                        // แสดง Modal
+                        $('#taskModal').modal('show');
+
+                        handleStatusProgressControl($('#taskModal #status'));
+
+                        // ลบ event handler เก่าก่อน
+                        $('#taskModal').off('shown.bs.modal.select2edit');
+
+                        // Re-initialize Select2 หลังจาก modal แสดงแล้ว แล้วกำหนดค่า
+                        $('#taskModal').one('shown.bs.modal.select2edit', function() {
+                            setTimeout(function() {
+                                initializeSelect2();
+                                // กำหนดค่าให้ select2 multiple หลังจาก initialize แล้ว
+                                $('#assigned_users').val(task.assigned_users || []).trigger('change');
+                            }, 100);
+                        });
+
+                        // Trigger event หลัง modal แสดงแล้ว
+                        $('#taskModal').on('shown.bs.modal', function() {
+                            $('#taskModal').trigger('shown.bs.modal.select2edit');
+                        });
+                    } else {
+                        throw new Error(response.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+                    }
+                } catch (e) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: e.message
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้: ' + error
+                });
+            }
+        });
+    }
+
+    // แก้ไขฟังก์ชัน showAddTaskModal ให้รองรับการแก้ไข
+    function showAddTaskModal(parentTaskId = null) {
+        // รีเซ็ตฟอร์ม
+        $('#taskForm')[0].reset();
+
+        // ทำลาย Select2 ก่อนแล้วสร้างใหม่
+        if ($('#assigned_users').hasClass('select2-hidden-accessible')) {
+            $('#assigned_users').select2('destroy');
+        }
+
+        // รีเซ็ต select
+        $('#assigned_users').val(null);
+
+        // กำหนดค่าเริ่มต้น
+        $('#task_id').val(''); // เคลียร์ task_id เพื่อระบุว่าเป็นการเพิ่มใหม่
+        $('#parent_task_id').val(parentTaskId);
+        const now = getCurrentLocalDateTime();
+        $('#start_date').val(now);
+        $('#end_date').val(now);
+        $('#status').val('Pending');
+        $('#progress').val(0);
+        handleStatusProgressControl($('#taskModal #status'));
+
+        // กำหนดชื่อปุ่มและหัวข้อ Modal
+        $('#taskModalTitle').text(parentTaskId ? 'เพิ่ม Sub Task' : 'เพิ่มงานใหม่');
+
+        // แสดง Modal
+        $('#taskModal').modal('show');
+
+        // ลบ event handler เก่าก่อน
+        $('#taskModal').off('shown.bs.modal.select2init');
+
+        // Re-initialize Select2 หลังจาก modal แสดงแล้ว
+        $('#taskModal').one('shown.bs.modal.select2init', function() {
+            setTimeout(function() {
+                initializeSelect2();
+            }, 100);
+        });
+
+        // Trigger event หลัง modal แสดงแล้ว
+        $('#taskModal').on('shown.bs.modal', function() {
+            $('#taskModal').trigger('shown.bs.modal.select2init');
+        });
+    }
+
+
+    // เพิ่มฟังก์ชันสำหรับ initialize Sortable
+    function initSortable() {
+        const tbody = document.querySelector('#tasks-table tbody');
+        new Sortable(tbody, {
+            handle: '.task-handle',
+            animation: 150,
+            onEnd: function(evt) {
+                const taskId = evt.item.dataset.taskId;
+                const prevRow = evt.item.previousElementSibling;
+                const nextRow = evt.item.nextElementSibling;
+
+                let newLevel = 0;
+                let newParentId = null;
+
+                // ตรวจสอบว่า Task นี้ควรเป็น Sub Task ของ Task ก่อนหน้าหรือไม่
+                if (prevRow) {
+                    const prevLevel = parseInt(prevRow.dataset.level || 0);
+
+                    // ตรวจสอบระยะห่างจากขอบซ้ายเพื่อกำหนดว่าเป็น Sub Task หรือไม่
+                    const currentIndent = evt.item.querySelector('.task-handle').offsetLeft;
+                    const prevIndent = prevRow.querySelector('.task-handle').offsetLeft;
+
+                    if (currentIndent > prevIndent) {
+                        // ถ้าระยะห่างจากขอบซ้ายมากกว่า แสดงว่าเป็น Sub Task ของ Task ก่อนหน้า
+                        newLevel = prevLevel + 1;
+                        newParentId = prevRow.dataset.taskId;
+                    } else if (currentIndent < prevIndent) {
+                        // ถ้าระยะห่างจากขอบซ้ายน้อยกว่า แสดงว่าเป็น Task หลัก
+                        newLevel = prevLevel - 1;
+                        newParentId = prevRow.dataset.parentTaskId || null;
+                    } else {
+                        // ถ้าระยะห่างเท่ากัน แสดงว่าเป็น Task ระดับเดียวกัน
+                        newLevel = prevLevel;
+                        newParentId = prevRow.dataset.parentTaskId || null;
+                    }
+                }
+
+                // ส่งข้อมูลไปอัพเดทที่ฐานข้อมูล
+                $.ajax({
+                    url: 'management/update_task_position.php',
+                    type: 'POST',
+                    data: {
+                        task_id: taskId,
+                        new_parent_id: newParentId,
+                        new_level: newLevel
+                    },
+                    success: function(response) {
+                        try {
+                            // ตรวจสอบว่า response เป็น JSON string
+                            if (typeof response === 'string') {
+                                response = JSON.parse(response);
+                            }
+
+                            if (response.status === 'success') {
+                                // แสดงข้อความสำเร็จ
+                                const Toast = Swal.mixin({
+                                    toast: true,
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 1500,
+                                    timerProgressBar: true
+                                });
+                                Toast.fire({
+                                    icon: 'success',
+                                    title: 'บันทึกตำแหน่งสำเร็จ'
+                                });
+                                // โหลดข้อมูลใหม่
+                                loadTasks();
+                            } else {
+                                throw new Error(response.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+                            }
+                        } catch (e) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: e.message
+                            });
+                            loadTasks();
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถบันทึกตำแหน่งได้'
+                        });
+                        loadTasks();
+                    }
+                });
+            }
+        });
+    }
+
+    // เพิ่มฟังก์ชันสำหรับอัพเดทตำแหน่งงาน
+    function updateTaskPosition(taskId, newParentId, newIndex) {
+        $.ajax({
+            url: 'management/update_task_position.php',
+            type: 'POST',
+            data: {
+                task_id: taskId,
+                new_parent_id: newParentId,
+                new_index: newIndex
+            },
+            success: function(response) {
+                try {
+                    if (typeof response === 'string') {
+                        response = JSON.parse(response);
+                    }
+
+                    if (response.status === 'success') {
+                        // แสดงข้อความสำเร็จแบบเบาๆ
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 1500,
+                            timerProgressBar: true
+                        });
+
+                        Toast.fire({
+                            icon: 'success',
+                            title: 'อัพเดทตำแหน่งสำเร็จ'
+                        });
+                    } else {
+                        throw new Error(response.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
+                    }
+                } catch (e) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: e.message
+                    });
+
+                    // โหลดข้อมูลใหม่เมื่อเกิดข้อผิดพลาด
+                    loadTasks();
+                }
+            },
+            error: function(xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
+                });
+                loadTasks();
+            }
+        });
+    }
+
+    // เพิ่มการเรียกใช้ initSortable หลังจากโหลด tasks
+    function loadTasks() {
+        $.ajax({
+            url: 'management/get_tasks.php',
+            type: 'GET',
+            data: {
+                project_id: '<?php echo $project_id; ?>'
+            },
+            success: function(response) {
+                $('#task-container').html(response);
+                // เรียกใช้ initSortable หลังจากโหลด tasks
+                initSortable();
+                // subtasks จะถูกซ่อนไว้ตั้งแต่เริ่มต้นแล้วใน PHP
+            }
+        });
+    }
+
+    // ฟังก์ชันขยาย Task ทั้งหมด
+    function expandAllTasks() {
+        $('.task-row[data-level="0"]').each(function() {
+            const currentRow = $(this);
+            const currentLevel = parseInt(currentRow.data('level'));
+            let nextRow = currentRow.next();
+
+            // แสดงรายการ subtasks ทั้งหมด
+            while (nextRow.length && parseInt(nextRow.data('level')) > currentLevel) {
+                nextRow.show();
+                nextRow = nextRow.next();
+            }
+
+            // เปลี่ยนไอคอนเป็น fa-caret-down
+            currentRow.find('.toggle-subtasks').removeClass('fa-caret-right').addClass('fa-caret-down');
+        });
+
+        // ขยาย subtasks ของ subtasks ด้วย (recursive)
+        $('.task-row[data-level]:not([data-level="0"])').each(function() {
+            const currentRow = $(this);
+            const currentLevel = parseInt(currentRow.data('level'));
+            let nextRow = currentRow.next();
+
+            // แสดงรายการ subtasks
+            while (nextRow.length && parseInt(nextRow.data('level')) > currentLevel) {
+                nextRow.show();
+                nextRow = nextRow.next();
+            }
+
+            // เปลี่ยนไอคอนเป็น fa-caret-down
+            currentRow.find('.toggle-subtasks').removeClass('fa-caret-right').addClass('fa-caret-down');
+        });
+    }
+
+    // ฟังก์ชันย่อ Task ทั้งหมด
+    function collapseAllTasks() {
+        $('.task-row[data-level="0"]').each(function() {
+            const currentRow = $(this);
+            const currentLevel = parseInt(currentRow.data('level'));
+            let nextRow = currentRow.next();
+
+            // ซ่อนรายการ subtasks ทั้งหมด
+            while (nextRow.length && parseInt(nextRow.data('level')) > currentLevel) {
+                nextRow.hide();
+                nextRow = nextRow.next();
+            }
+
+            // เปลี่ยนไอคอนเป็น fa-caret-right
+            currentRow.find('.toggle-subtasks').removeClass('fa-caret-down').addClass('fa-caret-right');
+        });
+    }
+</script>
+
+<style>
+    .task-row[data-level] {
+        transition: background-color 0.3s;
+    }
+
+    .task-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .task-handle {
+        color: #ccc;
+    }
+
+    .task-handle:hover {
+        color: #666;
+    }
+
+    .toggle-subtasks {
+        transition: transform 0.2s;
+    }
+
+    .toggle-subtasks.expanded {
+        transform: rotate(90deg);
+    }
+
+    .btn-xs {
+        padding: 0.1rem 0.3rem;
+        font-size: 0.75rem;
+    }
+
+    .toggle-subtasks {
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .fa-caret-right {
+        transform: rotate(0deg);
+    }
+
+    .fa-caret-down {
+        transform: rotate(90deg);
+    }
+
+    .task-row {
+        transition: all 0.2s ease;
+    }
+
+    .task-row.sortable-ghost {
+        opacity: 0.5;
+        background-color: #e3f2fd !important;
+    }
+
+    .task-row.sortable-drag {
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .task-handle {
+        cursor: move;
+        opacity: 0.6;
+    }
+
+    .task-handle:hover {
+        opacity: 1;
+    }
+
+    /* เพิ่มพื้นที่สำหรับการลากแบบ indent */
+    .task-row td:first-child {
+        padding-left: 20px;
+        position: relative;
+    }
+
+    /* แสดงเส้นแนวตั้งเมื่อลาก */
+    .task-row.sortable-ghost td:first-child::before {
+        content: '';
+        position: absolute;
+        left: 40px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #2196f3;
+    }
+
+    /* สไตล์สำหรับ tooltip */
+    .tooltip-inner {
+        max-width: 300px;
+        text-align: left;
+        padding: 8px;
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+
+    /* สไตล์สำหรับชื่องานและปุ่มรายละเอียด */
+    .task-name {
+        vertical-align: middle;
+    }
+
+    .btn-link.text-info {
+        text-decoration: none;
+    }
+
+    .btn-link.text-info:hover {
+        color: #0056b3 !important;
+    }
+
+    /* สไตล์สำหรับปุ่มในกลุ่ม */
+    .btn-group .btn-xs {
+        padding: 0.1rem 0.3rem;
+        font-size: 0.75rem;
+    }
+
+    /* สไตล์สำหรับ Select2 */
+    .select2-container--bootstrap4 .select2-selection--multiple {
+        min-height: 38px;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+    }
+
+    .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice {
+        background-color: #007bff;
+        border: 1px solid #007bff;
+        color: #fff;
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        margin: 0.125rem;
+        font-size: 0.875rem;
+    }
+
+    .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove {
+        color: #fff;
+        margin-right: 0.25rem;
+    }
+
+    .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #ffc107;
+    }
+
+    .select2-container--bootstrap4 .select2-search--inline .select2-search__field {
+        min-width: 150px;
+    }
+
+    .select2-dropdown {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .select2-results__option--highlighted {
+        background-color: #007bff !important;
+        color: #fff !important;
+    }
+</style>
+
+<script>
+    $(document).ready(function() {
+        // จัดการการ Toggle subtasks
+        $(document).on('click', '.toggle-subtasks', function() {
+            const icon = $(this);
+            icon.toggleClass('fa-caret-down fa-caret-right'); // สลับไอคอนระหว่าง down กับ right
+
+            const currentRow = icon.closest('tr');
+            const currentLevel = parseInt(currentRow.data('level'));
+            let nextRow = currentRow.next();
+
+            while (nextRow.length && parseInt(nextRow.data('level')) > currentLevel) {
+                nextRow.toggle();
+                nextRow = nextRow.next();
+            }
+        });
+    });
+
+    // อัพเดท initSortable function
+    function initSortable() {
+        const taskContainer = document.querySelector('#tasks-table tbody');
+        new Sortable(taskContainer, {
+            handle: '.task-handle',
+            animation: 150,
+            onEnd: function(evt) {
+                const taskId = evt.item.dataset.taskId;
+                const targetRow = evt.item;
+                const prevRow = evt.item.previousElementSibling;
+                const currentIndent = parseInt(evt.item.getAttribute('data-level') || 0);
+
+                let newParentId = null;
+                let newLevel = 0;
+
+                if (prevRow) {
+                    const prevLevel = parseInt(prevRow.getAttribute('data-level') || 0);
+                    const dragOffset = evt.originalEvent.offsetX;
+
+                    // คำนวณระดับใหม่ตามระยะห่างจากขอบซ้าย
+                    if (dragOffset > 50) { // ถ้าลากเข้าไปด้านใน > 50px
+                        // ทำให้เป็น subtask ของ task ก่อนหน้า
+                        newLevel = prevLevel + 1;
+                        newParentId = prevRow.getAttribute('data-task-id');
+                    } else {
+                        // อยู่ระดับเดียวกับ task ก่อนหน้า
+                        newLevel = prevLevel;
+                        // หา parent ID จาก task ก่อนหน้าที่อยู่ระดับเดียวกัน
+                        newParentId = prevRow.getAttribute('data-parent-id');
+                    }
+                }
+
+                // อัพเดตตำแหน่งและระดับ
+                $.ajax({
+                    url: 'management/update_task_position.php',
+                    type: 'POST',
+                    data: {
+                        task_id: taskId,
+                        new_parent_id: newParentId,
+                        new_level: newLevel,
+                        new_position: evt.newIndex
+                    },
+                    success: function(response) {
+                        try {
+                            const result = JSON.parse(response);
+                            if (result.status === 'success') {
+                                // รีโหลดรายการ tasks เพื่อแสดงผลที่ถูกต้อง
+                                loadTasks();
+                            } else {
+                                throw new Error(result.message || 'เกิดข้อผิดพลาดในการอัพเดตตำแหน่ง');
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: error.message
+                            });
+                            loadTasks(); // รีโหลดกลับสู่สถานะเดิม
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์'
+                        });
+                        loadTasks(); // รีโหลดกลับสู่สถานะเดิม
+                    }
+                });
+            }
+        });
+    }
+
+    // แสดงชื่อผู้รับผิดชอบในรูปแบบ Avatar ในตาราง
+    $(document).ready(function() {
+        // เปิดใช้งาน tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // รีเฟรช tooltips หลังจากโหลดข้อมูลใหม่
+        $(document).ajaxComplete(function() {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+    });
+</script>
