@@ -5,6 +5,12 @@ session_start();
 // เชื่อมต่อฐานข้อมูล
 include('../../../config/condb.php');
 
+// ===== ตรวจสอบ Session =====
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    header("Location: " . BASE_URL . "login.php");
+    exit;
+}
+
 // ตรวจสอบว่ามีการส่ง id มาหรือไม่
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     // ถ้าไม่มี id ให้ redirect กลับไปหน้า supplier.php

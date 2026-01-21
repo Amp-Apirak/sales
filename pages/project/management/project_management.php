@@ -2,6 +2,12 @@
 session_start();
 include('../../../config/condb.php');
 
+// ===== ตรวจสอบ Session =====
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    header("Location: " . BASE_URL . "login.php");
+    exit;
+}
+
 // ตรวจสอบ project_id ที่ส่งมา
 if (!isset($_GET['project_id'])) {
     echo "ไม่พบรหัสโครงการ";

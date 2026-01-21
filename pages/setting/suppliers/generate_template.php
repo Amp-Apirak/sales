@@ -4,6 +4,13 @@ session_start();
 
 // เชื่อมต่อฐานข้อมูล
 include('../../../config/condb.php');
+
+// ===== ตรวจสอบ Session =====
+if (!isset($_SESSION['role']) || !isset($_SESSION['user_id'])) {
+    header("Location: " . BASE_URL . "login.php");
+    exit;
+}
+
 require '../../../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;

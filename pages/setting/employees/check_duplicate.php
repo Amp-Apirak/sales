@@ -2,6 +2,14 @@
 session_start();
 include('../../../config/condb.php');
 
+// ===== ตรวจสอบ Session =====
+if (!isset($_SESSION['role']) || !isset($_SESSION['user_id'])) {
+    header('Content-Type: application/json');
+    http_response_code(401);
+    echo json_encode(['error' => 'กรุณาเข้าสู่ระบบก่อนใช้งาน']);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $field = $_POST['field'];
     $value = $_POST['value'];

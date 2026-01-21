@@ -2,6 +2,12 @@
 session_start();
 include('../../../config/condb.php');
 
+// ===== ตรวจสอบ Session =====
+if (!isset($_SESSION['role']) || !isset($_SESSION['team_id']) || !isset($_SESSION['user_id'])) {
+    header("Location: " . BASE_URL . "login.php");
+    exit;
+}
+
 // ตรวจสอบว่ามีการส่ง project_id มาหรือไม่
 if (!isset($_GET['project_id'])) {
     // ถ้าไม่มี project_id ให้ redirect กลับไปหน้า project.php

@@ -2,6 +2,11 @@
 session_start();
 include('../../../config/condb.php');
 
+// ===== ตรวจสอบ Session =====
+if (!isset($_SESSION['role']) || !isset($_SESSION['user_id'])) {
+    exit('<div class="alert alert-danger">กรุณาเข้าสู่ระบบก่อนใช้งาน</div>');
+}
+
 // รับค่า project_id จาก GET request
 $project_id = $_GET['project_id'] ?? null;
 
